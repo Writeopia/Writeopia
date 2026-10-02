@@ -1,6 +1,7 @@
 package io.writeopia.core.folders.di
 
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.mockk
 import io.writeopia.auth.core.data.WorkspaceApi
 import io.writeopia.auth.core.manager.AuthRepository
@@ -8,6 +9,7 @@ import io.writeopia.core.folders.sync.ConfigFileWatcher
 import io.writeopia.core.folders.sync.WorkspaceSync
 import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
 import io.writeopia.sdk.models.user.WriteopiaUser
+import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -18,6 +20,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlin.test.AfterTest
@@ -196,19 +199,54 @@ class WorkspaceHandlerImplTest {
         assertFalse(fakeWatcher.isWatching)
     }
 
+    @Test
+    fun `loadAvailableWorkspaces does not call the backend in the private space`() = runBlocking {
+        val workspaceApi = mockk<WorkspaceApi>()
+        val handler = createHandler(isLoggedIn = false, workspaceApi = workspaceApi)
+        val scope = CoroutineScope(Dispatchers.Default + Job())
+        testScope = scope
+        handler.initScope(scope)
+
+        handler.loadAvailableWorkspaces()
+        val result = handler.availableWorkspaces.first { it !is ResultData.Idle }
+
+        assertEquals(ResultData.Complete(emptyList()), result)
+        coVerify(exactly = 0) { workspaceApi.getAvailableWorkspaces() }
+    }
+
+    @Test
+    fun `loadAvailableWorkspaces asks the backend when logged in`() = runBlocking {
+        val workspaces = listOf(Workspace.disconnectedWorkspace().copy(id = "cloud", name = "Cloud"))
+        val workspaceApi = mockk<WorkspaceApi> {
+            coEvery { getAvailableWorkspaces() } returns ResultData.Complete(workspaces)
+        }
+        val handler = createHandler(isLoggedIn = true, workspaceApi = workspaceApi)
+        val scope = CoroutineScope(Dispatchers.Default + Job())
+        testScope = scope
+        handler.initScope(scope)
+
+        handler.loadAvailableWorkspaces()
+        val result = handler.availableWorkspaces.first { it !is ResultData.Idle }
+
+        assertEquals(ResultData.Complete(workspaces), result)
+    }
+
     private fun createHandler(
         configFileWatcher: ConfigFileWatcher = FakeConfigFileWatcher(),
         workspaceConfigRepository: WorkspaceConfigRepository? = null,
-        savedPath: String? = null
+        savedPath: String? = null,
+        isLoggedIn: Boolean = false,
+        workspaceApi: WorkspaceApi = mockk(),
     ): WorkspaceHandlerImpl {
         val mockAuthRepo = mockk<AuthRepository> {
             coEvery { getUser() } returns WriteopiaUser.disconnectedUser()
             coEvery { getWorkspace() } returns Workspace.disconnectedWorkspace()
             coEvery { listenForUser() } returns MutableStateFlow(WriteopiaUser.disconnectedUser())
             coEvery { listenForWorkspace() } returns MutableStateFlow(Workspace.disconnectedWorkspace())
+            coEvery { isLoggedIn() } returns isLoggedIn
         }
 
-        val mockWorkspaceApi = mockk<WorkspaceApi>()
+        val mockWorkspaceApi = workspaceApi
         val mockWorkspaceSync = mockk<WorkspaceSync>()
 
         val mockConfigRepo = workspaceConfigRepository ?: mockk<WorkspaceConfigRepository> {

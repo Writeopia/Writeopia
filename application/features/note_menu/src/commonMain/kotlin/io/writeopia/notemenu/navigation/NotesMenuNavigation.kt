@@ -7,6 +7,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavType
@@ -146,3 +147,40 @@ fun NavController.navigateToNotes(navigation: NotesNavigation) {
         )
     }
 }
+
+/**
+ * Goes back to a folder of the breadcrumb (or the root), popping the screens above it when it's
+ * already on the back stack, so the stack doesn't grow with each tap; opens it otherwise.
+ */
+fun NavController.navigateBackToNotes(navigation: NotesNavigation) {
+    // Popping by route can't tell two folders apart: the route matching ignores the arguments
+    // of the entries, so the first folder screen from the top always matches. The entry is
+    // found by its arguments instead and everything above it is popped.
+    @Suppress("RestrictedApi")
+    val stack = currentBackStack.value
+    val target = stack.lastOrNull { entry -> entry.shows(navigation) }
+
+    when {
+        target == null -> navigateToNotes(navigation)
+
+        else -> repeat(stack.size - 1 - stack.indexOf(target)) { popBackStack() }
+    }
+}
+
+private fun NavBackStackEntry.shows(navigation: NotesNavigation): Boolean =
+    when (navigation) {
+        is NotesNavigation.Folder ->
+            destination.route == NoteMenuDestiny.noteMenu() &&
+                savedStateHandle.get<String?>(NAVIGATION_TYPE) == navigation.navigationType.type &&
+                savedStateHandle.get<String?>(NAVIGATION_PATH) == navigation.id
+
+        NotesNavigation.Favorites ->
+            destination.route == NoteMenuDestiny.noteMenu() &&
+                savedStateHandle.get<String?>(NAVIGATION_TYPE) == navigation.navigationType.type
+
+        NotesNavigation.Root -> destination.route == Destinations.MAIN_APP.id || showsRootNotes()
+    }
+
+private fun NavBackStackEntry.showsRootNotes(): Boolean =
+    destination.route == NoteMenuDestiny.noteMenu() &&
+        savedStateHandle.get<String?>(NAVIGATION_TYPE) == NotesNavigationType.ROOT.type

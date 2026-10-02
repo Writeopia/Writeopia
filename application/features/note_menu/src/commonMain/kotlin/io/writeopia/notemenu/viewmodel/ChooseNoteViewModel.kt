@@ -31,6 +31,12 @@ interface ChooseNoteViewModel : FolderController {
      */
     val currentFolder: StateFlow<Folder?>
 
+    /**
+     * The folders from the root down to the one displayed, for the breadcrumb. Empty when not
+     * inside a folder (root or favorites).
+     */
+    val folderPath: StateFlow<List<Folder>>
+
     val documentsState: StateFlow<ResultData<NotesUi>>
 
     val menuItemsPerFolderId: StateFlow<Map<String, List<MenuItem>>>

@@ -26,7 +26,8 @@ interface GlobalShellViewModel : FolderController, LocalAiConfigController {
 
     val showSettingsState: StateFlow<Boolean>
 
-    val folderPath: StateFlow<List<String>>
+    /** The folders from the root down to the one shown, for the breadcrumb of the header. */
+    val folderPath: StateFlow<List<Folder>>
 
     val showSearchDialog: StateFlow<Boolean>
 

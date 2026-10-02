@@ -1,3 +1,4 @@
+import org.jetbrains.compose.compose
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -125,6 +126,8 @@ kotlin {
                 implementation(libs.kotlin.test)
                 implementation(libs.kotlinx.coroutines.test)
                 implementation(libs.mockk)
+                implementation(compose("org.jetbrains.compose.ui:ui-test-junit4"))
+                implementation(compose.desktop.currentOs)
             }
         }
 

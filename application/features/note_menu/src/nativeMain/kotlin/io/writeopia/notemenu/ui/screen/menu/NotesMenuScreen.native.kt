@@ -11,6 +11,7 @@ import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.controller.LocalAiConfigController
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.common.utils.NotesNavigation
+import io.writeopia.notemenu.navigation.navigateBackToNotes
 import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -54,6 +55,7 @@ actual fun NotesMenuScreen(
         isWideLayout = isWideLayout,
         sideMenuContent = sideMenuContent,
         onCurrentFolderDeleted = { navigationController.popBackStack() },
+        navigateToAncestor = navigationController::navigateBackToNotes,
         modifier = modifier,
     )
 }

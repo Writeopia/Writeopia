@@ -30,6 +30,7 @@ internal fun ChooseNoteScreen(
     isWideLayout: Boolean = false,
     sideMenuContent: @Composable () -> Unit = {},
     onCurrentFolderDeleted: () -> Unit = {},
+    navigateToAncestor: (NotesNavigation) -> Unit = navigateToNotes,
     modifier: Modifier = Modifier,
 ) {
     val hasSelectedNotes by chooseNoteViewModel.hasSelectedNotes.collectAsState()
@@ -63,6 +64,7 @@ internal fun ChooseNoteScreen(
         isWideLayout = isWideLayout,
         sideMenuContent = sideMenuContent,
         onCurrentFolderDeleted = onCurrentFolderDeleted,
+        navigateToAncestor = navigateToAncestor,
         modifier = modifier,
     )
 }

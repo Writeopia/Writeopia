@@ -167,6 +167,16 @@ internal class ChooseNoteKmpViewModel(
         }
     }
 
+    // The items listened to are only the contents of the folder shown, so the ancestors are
+    // looked up one by one from the current folder.
+    override val folderPath: StateFlow<List<Folder>> by lazy {
+        currentFolder
+            .map { folder ->
+                folder?.let { pathTo(it, notesUseCase::getFolderById) } ?: emptyList()
+            }
+            .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     override val notesArrangement: StateFlow<NotesArrangement> by lazy {
         authRepository.listenForUser()

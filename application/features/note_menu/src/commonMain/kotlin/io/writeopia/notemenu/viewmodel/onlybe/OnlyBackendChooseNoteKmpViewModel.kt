@@ -22,6 +22,7 @@ import io.writeopia.notemenu.viewmodel.FolderController
 import io.writeopia.notemenu.viewmodel.FolderDestination
 import io.writeopia.notemenu.viewmodel.SyncState
 import io.writeopia.notemenu.viewmodel.UserState
+import io.writeopia.notemenu.viewmodel.pathTo
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.id.GenerateId
@@ -103,6 +104,11 @@ internal class OnlyBackendChooseNoteKmpViewModel(
 
     // Editing, moving and deleting the current folder is not offered in the backend only mode.
     override val currentFolder: StateFlow<Folder?> = MutableStateFlow(null)
+
+    // Asked to the backend: the cached items only hold the folders visited on the way down, so
+    // they are not enough when the app starts straight inside a folder.
+    private val _folderPath = MutableStateFlow<List<Folder>>(emptyList())
+    override val folderPath: StateFlow<List<Folder>> = _folderPath.asStateFlow()
 
     private val _notesArrangement = MutableStateFlow(NotesArrangement.GRID)
     override val notesArrangement: StateFlow<NotesArrangement> = _notesArrangement.asStateFlow()
@@ -202,6 +208,22 @@ internal class OnlyBackendChooseNoteKmpViewModel(
 
         // Initial load
         loadFolderContents()
+        loadFolderPath()
+    }
+
+    private fun loadFolderPath() {
+        if (notesNavigation !is NotesNavigation.Folder) return
+
+        viewModelScope.launch(Dispatchers.Default) {
+            val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
+            val result = documentsApi.getFolderPath(notesNavigation.id, workspace.id)
+
+            _folderPath.value = when (result) {
+                is ResultData.Complete -> result.data
+                // Offline or failing: whatever the visited folders tell is better than nothing.
+                else -> menuItemsPerFolderId.value.pathTo(notesNavigation.id)
+            }
+        }
     }
 
     private fun loadFolderContents() {
@@ -543,6 +565,7 @@ internal class OnlyBackendChooseNoteKmpViewModel(
             if (result is ResultData.Complete) {
                 stopEditingFolder()
                 loadFolderContents()
+                loadFolderPath()
             }
         }
     }

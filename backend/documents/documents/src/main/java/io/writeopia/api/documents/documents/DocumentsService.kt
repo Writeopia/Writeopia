@@ -110,6 +110,30 @@ object DocumentsService {
         writeopiaDb: WriteopiaDbBackend
     ): Folder? = writeopiaDb.getFolderById(id, workspaceId)
 
+    /**
+     * The folders from the root down to [id] (included), for the breadcrumb of a folder. Empty
+     * when the folder doesn't exist. A broken parent link ends the path where it stops resolving.
+     */
+    suspend fun getFolderPath(
+        id: String,
+        workspaceId: String,
+        writeopiaDb: WriteopiaDbBackend
+    ): List<Folder> {
+        val path = ArrayDeque<Folder>()
+        val visited = mutableSetOf<String>()
+        var current = writeopiaDb.getFolderById(id, workspaceId)
+
+        // The visited set guards against a cycle in corrupted parent links.
+        while (current != null && visited.add(current.id)) {
+            path.addFirst(current)
+            current = current.parentId
+                .takeIf { parentId -> parentId != Folder.ROOT_PATH }
+                ?.let { parentId -> writeopiaDb.getFolderById(parentId, workspaceId) }
+        }
+
+        return path
+    }
+
     suspend fun createFolder(
         parentFolderId: String,
         title: String,

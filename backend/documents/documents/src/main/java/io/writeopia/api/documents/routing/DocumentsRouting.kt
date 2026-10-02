@@ -218,6 +218,28 @@ fun Routing.documentsRoute(
         }
     }
 
+    get("/api/docs/workspace/{workspaceId}/folder/{folderId}/path") {
+        val userId = call.requirePremiumUserId(writeopiaDb, debug) ?: return@get
+        val folderId = call.pathParameters["folderId"]!!
+        val workspaceId = call.pathParameters["workspaceId"] ?: ""
+
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            val path = DocumentsService.getFolderPath(folderId, workspaceId, writeopiaDb)
+
+            if (path.isNotEmpty()) {
+                call.respond(
+                    status = HttpStatusCode.OK,
+                    message = path.map { folder -> folder.toApi() }
+                )
+            } else {
+                call.respond(
+                    status = HttpStatusCode.NotFound,
+                    message = "No folder with id: $folderId"
+                )
+            }
+        }
+    }
+
     get("/api/docs/workspace/{workspaceId}/folder/{folderId}/contents") {
         val userId = call.requirePremiumUserId(writeopiaDb, debug) ?: return@get
         val folderId = call.pathParameters["folderId"]!!
