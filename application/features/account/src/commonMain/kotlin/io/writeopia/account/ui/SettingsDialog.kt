@@ -207,14 +207,14 @@ private fun AccountScreen(
         val titleStyle = MaterialTheme.typography.titleLarge
         val titleColor = MaterialTheme.colorScheme.onBackground
 
-        ChooseTeam(workspaces)
-        Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
-
-        Text(WrStrings.account(), style = titleStyle, color = titleColor)
-
         val userOnline by userOnlineState.collectAsState()
 
-        if (userOnline.id != WriteopiaUser.DISCONNECTED) {
+        if (userOnline.isOnline) {
+            ChooseTeam(workspaces)
+            Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
+
+            Text(WrStrings.account(), style = titleStyle, color = titleColor)
+
             Text(
                 "${WrStrings.account()}: ${userOnline.name} - ${userOnline.tier.tierName()}",
                 style = MaterialTheme.typography.bodySmall,

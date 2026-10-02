@@ -47,4 +47,6 @@ interface WorkspaceHandler {
     fun exportWorkspace(workspaceId: String)
 
     fun resetExportState()
+
+    fun clearWorkspaces()
 }

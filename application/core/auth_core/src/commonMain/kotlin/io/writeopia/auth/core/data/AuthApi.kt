@@ -32,7 +32,14 @@ import io.writeopia.sdk.serialization.data.auth.TokenRefreshResponse
 import io.writeopia.sdk.serialization.data.WriteopiaUserApi
 import io.writeopia.sdk.serialization.data.auth.ResetPasswordRequest
 
-class AuthApi(private val client: HttpClient, private val baseUrl: String) {
+class AuthApi(
+    private val clientProvider: () -> HttpClient,
+    private val baseUrl: String
+) {
+    constructor(client: HttpClient, baseUrl: String) : this({ client }, baseUrl)
+
+    private val client: HttpClient get() = clientProvider()
+
     suspend fun login(identifier: String, password: String): ResultData<AuthResponse> = try {
         val httpResponse = client.post("$baseUrl/api/auth/login") {
             contentType(ContentType.Application.Json)

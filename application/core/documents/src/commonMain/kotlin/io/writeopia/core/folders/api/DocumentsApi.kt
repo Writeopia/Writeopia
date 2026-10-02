@@ -47,7 +47,13 @@ import kotlin.time.Instant
  * API for document operations. Authentication is handled automatically by the HTTP client's
  * bearer auth plugin - no manual token passing required.
  */
-class DocumentsApi(private val client: HttpClient, private val baseUrl: String) {
+class DocumentsApi(
+    private val clientProvider: () -> HttpClient,
+    private val baseUrl: String
+) {
+    constructor(client: HttpClient, baseUrl: String) : this({ client }, baseUrl)
+
+    private val client: HttpClient get() = clientProvider()
 
     suspend fun getFolderNewData(
         folderId: String,

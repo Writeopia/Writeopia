@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
+import androidx.navigation.NavOptionsBuilder
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import io.writeopia.auth.core.manager.LoginStatus
@@ -75,11 +76,12 @@ fun NavGraphBuilder.startScreen(
                     } else {
                         Destinations.WORKSPACE_TYPE_CHOICE.id
                     }
+
                     LoginStatus.CHOOSE_WORKSPACE -> Destinations.CHOOSE_WORKSPACE.id
                     LoginStatus.EMAIL_NOT_CONFIRMED -> Destinations.EMAIL_CONFIRM.id
                     LoginStatus.ONLINE, LoginStatus.OFFLINE_CHOSEN -> Destinations.MAIN_APP.id
                 }
-                navigationController.navigate(destination)
+                navigationController.navigateAndResetStack(destination)
             }
         }
     }
@@ -158,9 +160,7 @@ fun NavGraphBuilder.authNavigation(
                 },
                 onResend = emailConfirmViewModel::onResend,
                 navigateBack = {
-                    navController.navigate(Destinations.AUTH_MENU_INNER_NAVIGATION.id) {
-                        popUpTo(Destinations.EMAIL_CONFIRM.id) { inclusive = true }
-                    }
+                    navController.navigateAndResetStack(Destinations.AUTH_MENU_INNER_NAVIGATION.id)
                 }
             )
         }
@@ -271,6 +271,9 @@ fun NavGraphBuilder.authNavigation(
         composable(Destinations.CHOOSE_WORKSPACE.id) {
             val workspacesViewModel = authInjection.provideChooseWorkspaceViewModel()
 
+            val canGoBack =
+                navController.previousBackStackEntry?.destination?.route == Destinations.MAIN_APP.id
+
             LaunchedEffect(Unit) {
                 workspacesViewModel.loadWorkspaces()
             }
@@ -292,11 +295,8 @@ fun NavGraphBuilder.authNavigation(
                     onCreateWorkspace = { name -> workspacesViewModel.createWorkspace(name) },
                     onResetCreateWorkspaceState = workspacesViewModel::resetCreateWorkspaceState,
                     retry = workspacesViewModel::loadWorkspaces,
-                    onBackClick = {
-                        navController.navigate(Destinations.AUTH_MENU.id) {
-                            popUpTo(Destinations.CHOOSE_WORKSPACE.id) { inclusive = true }
-                        }
-                    }
+                    onBackClick = { navController.navigateUp() },
+                    canGoBack
                 )
             }
         }
@@ -411,12 +411,28 @@ fun NavController.navigateAuthRegister() {
     navigate(Destinations.AUTH_REGISTER.id)
 }
 
+fun NavController.navigateAndResetStack(
+    destination: String,
+    builder: (NavOptionsBuilder.() -> Unit)? = null
+) {
+    val popTarget = currentBackStack.value
+        .getOrNull(1)
+        ?.destination?.id ?: graph.startDestinationId
+
+    navigate(destination) {
+        popUpTo(popTarget) {
+            inclusive = true
+        }
+        builder?.invoke(this)
+    }
+}
+
 fun NavController.navigateToApp() {
-    navigate(Destinations.MAIN_APP.id)
+    navigateAndResetStack(Destinations.MAIN_APP.id)
 }
 
 fun NavController.navigateToWorkspaceChoice() {
-    navigate(Destinations.CHOOSE_WORKSPACE.id)
+    navigateAndResetStack(Destinations.CHOOSE_WORKSPACE.id)
 }
 
 fun NavController.navigateToEmailConfirm() {
@@ -436,9 +452,5 @@ fun NavController.navigateToForgotPasswordNewPassword() {
 }
 
 fun NavController.navigateToAccountDeletionPending() {
-    navigate(Destinations.ACCOUNT_DELETION_STARTED.id) {
-        popUpTo(graph.startDestinationId) {
-            inclusive = true
-        }
-    }
+    navigateAndResetStack(Destinations.ACCOUNT_DELETION_STARTED.id)
 }
