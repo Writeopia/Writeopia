@@ -2,7 +2,6 @@
 
 package io.writeopia.api.documents.documents.repository
 
-import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.presentation.Presentation
 import io.writeopia.sdk.models.presentation.Slide
 import io.writeopia.sdk.models.span.SpanInfo
@@ -33,11 +32,7 @@ fun WriteopiaDbBackend.savePresentation(presentation: Presentation) {
         )
         presentationStepEntityQueries.deleteByPresentationId(presentation.id)
         presentation.slides.forEachIndexed { slideIndex, slide ->
-            val titleStep = StoryStep(
-                id = "${presentation.id}-$slideIndex-title",
-                type = StoryTypes.TITLE.type,
-                text = slide.title
-            )
+            val titleStep = StoryStep(type = StoryTypes.TITLE.type, text = slide.title)
             insertPresentationStep(titleStep, presentation.id, slideIndex, 0.0)
             slide.content.forEachIndexed { index, step ->
                 insertPresentationStep(step, presentation.id, slideIndex, (index + 1).toDouble())
@@ -74,7 +69,9 @@ private fun WriteopiaDbBackend.insertPresentationStep(
     position: Double
 ) {
     presentationStepEntityQueries.insert(
-        id = step.id.ifBlank { GenerateId.generate() },
+        // The row id comes from where the step sits, not from the parsed step: unique by
+        // construction, and the same on every save of the presentation.
+        id = "$presentationId-$slideIndex-${position.toInt()}",
         presentation_id = presentationId,
         slide_index = slideIndex,
         type = step.type.number,

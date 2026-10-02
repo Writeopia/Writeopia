@@ -1191,10 +1191,14 @@ fun Routing.documentsRoute(
                         status = HttpStatusCode.BadRequest,
                         message = GeneratePresentationResponse(error = result.message)
                     )
-                    is PresentationsService.GenerateResult.Error -> call.respond(
-                        status = HttpStatusCode.InternalServerError,
-                        message = GeneratePresentationResponse(error = result.message)
-                    )
+                    is PresentationsService.GenerateResult.Error -> {
+                        // The detail (the AI's or the parser's message) stays in the logs.
+                        logger.error("Presentation generation failed for document $documentId: ${result.message}")
+                        call.respond(
+                            status = HttpStatusCode.InternalServerError,
+                            message = GeneratePresentationResponse(error = "Failed to generate presentation")
+                        )
+                    }
                     PresentationsService.GenerateResult.GenAiUnavailable -> call.respond(
                         status = HttpStatusCode.ServiceUnavailable,
                         message = GeneratePresentationResponse(error = "GenAI service is not configured")
@@ -1204,7 +1208,7 @@ fun Routing.documentsRoute(
                 logger.error("Error generating presentation for document $documentId", e)
                 call.respond(
                     status = HttpStatusCode.InternalServerError,
-                    message = GeneratePresentationResponse(error = "Failed to generate presentation: ${e.message}")
+                    message = GeneratePresentationResponse(error = "Failed to generate presentation")
                 )
             }
         }
