@@ -1,0 +1,15 @@
+CREATE TABLE presentationEntity (
+  id TEXT PRIMARY KEY,
+  document_id TEXT NOT NULL,
+  workspace_id TEXT NOT NULL,
+  title TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+
+CREATE TABLE presentationStepEntity (
+  id TEXT PRIMARY KEY,
+  presentation_id TEXT NOT NULL,
+  slide_index INTEGER NOT NULL,
+  position REAL NOT NULL,
+  content TEXT NOT NULL
+);

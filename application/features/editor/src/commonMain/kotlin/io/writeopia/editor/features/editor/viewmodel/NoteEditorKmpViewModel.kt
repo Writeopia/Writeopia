@@ -12,6 +12,11 @@ import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.genai.repository.GenAiRepository
 import io.writeopia.common.utils.collections.toNodeTree
 import io.writeopia.core.folders.api.DocumentsApi
+import io.writeopia.core.presentations.PresentationsStore
+import io.writeopia.core.presentations.api.PresentationsApi
+import io.writeopia.editor.features.presentation.repository.LocalPresentationGenerator
+import io.writeopia.editor.features.presentation.viewmodel.PresentationsController
+import io.writeopia.editor.features.presentation.viewmodel.PresentationsSource
 import io.writeopia.common.utils.file.SaveImage
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.common.utils.toList
@@ -107,11 +112,49 @@ class NoteEditorKmpViewModel(
     private val documentLoadUseCase: DocumentLoadUseCase? = null,
     private val storyStepSyncApi: (suspend (StoryStepSyncRequest) -> StoryStepSyncResponse)? = null,
     private val documentsApi: DocumentsApi? = null,
-    private val aiTaskManager: AiTaskManager = AiTaskManager.singleton()
+    private val aiTaskManager: AiTaskManager = AiTaskManager.singleton(),
+    presentationsApi: PresentationsApi? = null,
+    presentationsStore: PresentationsStore? = null
 ) : NoteEditorViewModel,
     ViewModel(),
     BackstackInform by writeopiaManager,
     BackstackHandler by writeopiaManager {
+
+    /**
+     * The presentations of the document, made by the backend in an online workspace and by the
+     * local AI elsewhere, like the Mac app.
+     */
+    override val presentations: PresentationsController? =
+        if (presentationsApi != null || presentationsStore != null) {
+            PresentationsController(
+                scope = viewModelScope,
+                documentId = { writeopiaManager.documentInfo.value.id },
+                authRepository = authRepository,
+                cloud = presentationsApi?.let { api -> { _ -> PresentationsSource.Cloud(api, api) } },
+                local = if (presentationsStore != null && localAiRepository != null) {
+                    { userId ->
+                        if (localAiRepository.getSelectedModel(userId) == null) {
+                            null
+                        } else {
+                            PresentationsSource.Local(
+                                store = presentationsStore,
+                                generator = LocalPresentationGenerator(
+                                    localAiRepository = localAiRepository,
+                                    store = presentationsStore,
+                                    userId = { userId },
+                                    documentTitle = { writeopiaManager.getDocument().title },
+                                    documentMarkdown = { documentToMarkdown.parse(writeopiaManager.getDocument().content) }
+                                )
+                            )
+                        }
+                    }
+                } else {
+                    null
+                }
+            )
+        } else {
+            null
+        }
 
     init {
         viewModelScope.launch(Dispatchers.Default) {

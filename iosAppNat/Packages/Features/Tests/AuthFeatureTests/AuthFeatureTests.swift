@@ -303,6 +303,47 @@ private func makeSession(
         #expect(session.aiClient == nil)
     }
 
+    @Test func presentationsNeedTheCloudOrOllama() {
+        // An online premium workspace: the backend makes the presentations on every platform.
+        let cloud = session(online: true, appleIntelligence: true)
+        cloud.aiProvider = .cloud
+        #expect(cloud.supportsPresentations)
+        #expect(cloud.resolvedAi?.provider == .cloud)
+        guard case .cloud(let api)? = cloud.presentationsSource else { Issue.record("the cloud makes the presentations"); return }
+        #expect(api.workspaceId == "w1")
+        #expect((cloud.presentationsRepository as? PresentationsAPI)?.workspaceId == "w1")
+
+        let ollama = session(online: false, appleIntelligence: true)
+        ollama.aiProvider = .ollama
+        ollama.localAiModel = "gemma"
+        #expect(ollama.resolvedAi?.provider == .ollama)
+
+        let apple = session(online: true, appleIntelligence: true)
+
+        // The cloud can't answer offline, so the pick falls back to Apple Intelligence.
+        let fallback = session(online: false, appleIntelligence: true)
+        fallback.aiProvider = .cloud
+        #expect(fallback.aiClient === fallback.appleIntelligence)
+
+        // Nothing can make presentations in the private space without Ollama.
+        let none = session(online: false, appleIntelligence: false)
+        #expect(!none.supportsPresentations)
+        #expect(!fallback.supportsPresentations)
+
+        #if os(macOS)
+        // The Mac follows the AI in use: Ollama keeps the presentations on the device, and Apple
+        // Intelligence makes none.
+        #expect(ollama.supportsPresentations)
+        guard case .local? = ollama.presentationsSource else { Issue.record("Ollama keeps the presentations on the device"); return }
+        #expect(ollama.presentationsRepository is PresentationsStore)
+        #expect(!apple.supportsPresentations)
+        #else
+        // The phones only use the cloud, whatever AI the editor runs with.
+        #expect(!ollama.supportsPresentations)
+        #expect(apple.supportsPresentations)
+        #endif
+    }
+
     @Test func appleIntelligenceIsTheDefaultInBothSpaces() {
         let offline = session(online: false, appleIntelligence: true)
         #expect(offline.aiProvider == .appleIntelligence)

@@ -92,6 +92,7 @@ internal fun NoteEditorScreen(
     isToolbarVisible: Boolean = true,
     isWideLayout: Boolean = false,
     onPresentationClick: () -> Unit = {},
+    showPresentation: Boolean = false,
     onDocumentDelete: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
@@ -220,6 +221,7 @@ internal fun NoteEditorScreen(
                     highLightBlockClick = noteEditorViewModel::toggleHighLightBlock,
                     cardBlockClick = noteEditorViewModel::toggleCardBlock,
                     onPresentationClick = onPresentationClick,
+                    showPresentation = showPresentation,
                     changeFontFamily = noteEditorViewModel::changeFontFamily,
                     addImage = noteEditorViewModel::addImage,
                     onImagePickRequest = launchImagePicker,
@@ -300,7 +302,9 @@ internal fun NoteEditorScreen(
                     onShareJson = { noteEditorViewModel.shareDocumentInJson() },
                     onShareMd = { noteEditorViewModel.shareDocumentInMarkdown() },
                     changeFontFamily = noteEditorViewModel::changeFontFamily,
-                    selectedState = noteEditorViewModel.fontFamily
+                    selectedState = noteEditorViewModel.fontFamily,
+                    showPresentation = showPresentation,
+                    onPresentationClick = onPresentationClick
                 )
             }
 

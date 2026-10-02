@@ -1,0 +1,25 @@
+CREATE TABLE presentationStepEntity (
+  id TEXT PRIMARY KEY,
+  presentation_id TEXT NOT NULL,
+  slide_index INTEGER NOT NULL,
+  position REAL NOT NULL,
+  content TEXT NOT NULL
+);
+
+selectByPresentationId:
+SELECT *
+FROM presentationStepEntity
+WHERE presentation_id = ?
+ORDER BY slide_index, position;
+
+insert:
+INSERT INTO presentationStepEntity(id, presentation_id, slide_index, position, content)
+VALUES (?, ?, ?, ?, ?)
+ON CONFLICT(id) DO
+UPDATE SET presentation_id=excluded.presentation_id, slide_index=excluded.slide_index,
+position=excluded.position, content=excluded.content;
+
+deleteByPresentationId:
+DELETE
+FROM presentationStepEntity
+WHERE presentation_id = ?;

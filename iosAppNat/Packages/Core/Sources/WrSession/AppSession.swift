@@ -158,23 +158,60 @@ public final class AppSession {
     /// Apple Intelligence runs on the device, so it also works in the private space and offline.
     /// The cloud AI is used when picked in the open space, or when Apple Intelligence isn't
     /// available on this device.
-    public var aiClient: AiStreaming? {
+    public var aiClient: AiStreaming? { resolvedAi?.client }
+
+    /// The AI that answers right now, with the provider it belongs to: the one picked, or the
+    /// one it falls back to.
+    public var resolvedAi: (provider: AiProvider, client: AiStreaming)? {
         let appleIntelligenceReady = isAppleIntelligenceAvailable()
         // The cloud AI needs a session and a workspace of the open space.
         let cloudReady = isOnline && workspace.map { $0.id != Workspace.localId } == true
         switch aiProvider {
         case .appleIntelligence:
-            if appleIntelligenceReady { return appleIntelligence }
-            return cloudReady ? aiAPI : nil
+            if appleIntelligenceReady { return (.appleIntelligence, appleIntelligence) }
+            return cloudReady ? (.cloud, aiAPI) : nil
         case .cloud:
-            if cloudReady { return aiAPI }
-            return appleIntelligenceReady ? appleIntelligence : nil
+            if cloudReady { return (.cloud, aiAPI) }
+            return appleIntelligenceReady ? (.appleIntelligence, appleIntelligence) : nil
         case .ollama:
-            if let ollamaAi { return ollamaAi }
-            if appleIntelligenceReady { return appleIntelligence }
-            return cloudReady ? aiAPI : nil
+            if let ollamaAi { return (.ollama, ollamaAi) }
+            if appleIntelligenceReady { return (.appleIntelligence, appleIntelligence) }
+            return cloudReady ? (.cloud, aiAPI) : nil
         }
     }
+
+    /// Where the presentations of the documents come from: the backend in an online workspace, or
+    /// the Mac itself with Ollama. Nil in the private space and, on the Mac, with Apple
+    /// Intelligence, too small for a whole document.
+    public var presentationsSource: PresentationsSource? {
+        let cloud: PresentationsSource? = {
+            guard isOnline, let workspace, workspace.id != Workspace.localId else { return nil }
+            return .cloud(PresentationsAPI(client: client, workspaceId: workspace.id))
+        }()
+        #if os(macOS)
+        // The Mac follows the AI in use: the cloud, or Ollama on the machine itself.
+        switch resolvedAi?.provider {
+        case .cloud: return cloud
+        case .ollama: return .local
+        case .appleIntelligence, nil: return nil
+        }
+        #else
+        // The phones only use the cloud, whatever AI the editor runs with: the backend makes the
+        // presentation in any online workspace.
+        return cloud
+        #endif
+    }
+
+    /// Reads the presentations `presentationsSource` makes, e.g. for the presentation window.
+    public var presentationsRepository: PresentationsRepository? {
+        switch presentationsSource {
+        case .cloud(let api): api
+        case .local: documents as? PresentationsRepository
+        case nil: nil
+        }
+    }
+
+    public var supportsPresentations: Bool { presentationsSource != nil }
 
     /// Image uploads; nil outside the open space, where images stay on the device.
     public var imageUploader: ImageUploading? {

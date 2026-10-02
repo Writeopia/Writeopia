@@ -69,7 +69,8 @@ public struct SearchRootView: View {
             aiClient: session.aiClient,
             publishing: session.publishing,
             imageUploader: session.imageUploader,
-            isPremium: session.user?.isPremium ?? false
+            isPremium: session.user?.isPremium ?? false,
+            presentations: session.presentationsSource
         )
             .id("\(session.workspace?.id ?? "")-\(session.documentsVersion)")
     }
@@ -83,19 +84,22 @@ struct SearchView: View {
     private let publishing: DocumentPublishing?
     private let imageUploader: ImageUploading?
     private let isPremium: Bool
+    private let presentations: PresentationsSource?
 
     init(
         repository: DocumentsRepository,
         aiClient: AiStreaming?,
         publishing: DocumentPublishing?,
         imageUploader: ImageUploading?,
-        isPremium: Bool
+        isPremium: Bool,
+        presentations: PresentationsSource? = nil
     ) {
         self.repository = repository
         self.aiClient = aiClient
         self.publishing = publishing
         self.imageUploader = imageUploader
         self.isPremium = isPremium
+        self.presentations = presentations
         _viewModel = State(initialValue: SearchViewModel(repository: repository))
     }
 
@@ -123,7 +127,8 @@ struct SearchView: View {
                         aiClient: aiClient,
                         publishing: publishing,
                         imageUploader: imageUploader,
-                        isPremium: isPremium
+                        isPremium: isPremium,
+                        presentations: presentations
                     ) { link in
                         path.append(.document(id: link.id, title: link.title ?? "Untitled"))
                     }

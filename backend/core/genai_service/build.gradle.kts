@@ -17,6 +17,7 @@ kotlin {
 
 dependencies {
     implementation(project(":backend:core:connection"))
+    implementation(project(":writeopia_models"))
 
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.serialization.json)

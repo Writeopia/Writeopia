@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import java.nio.file.ClosedWatchServiceException
 import kotlinx.serialization.json.Json
 import java.io.File
 import java.nio.file.FileSystems
@@ -60,8 +61,14 @@ class JvmConfigFileWatcher(
 
         watchJob = coroutineScope.launch {
             while (isActive) {
-                // poll() with timeout to allow cancellation checks
-                val key = watchService?.poll(2, TimeUnit.SECONDS)
+                // poll() with timeout to allow cancellation checks. The service may be closed by
+                // stopWatching() while poll() blocks: that ends the loop instead of crashing the
+                // coroutine (an uncaught exception that tests pick up).
+                val key = try {
+                    watchService?.poll(2, TimeUnit.SECONDS)
+                } catch (e: ClosedWatchServiceException) {
+                    break
+                }
 
                 if (key != null) {
                     for (event in key.pollEvents()) {

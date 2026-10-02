@@ -1,5 +1,6 @@
 package io.writeopia.api.genai.service
 
+import io.writeopia.sdk.models.presentation.PresentationPrompt
 import com.google.genai.Client
 import io.writeopia.api.genai.model.AiGenerateResponse
 import io.writeopia.api.genai.model.TokenUsage
@@ -194,6 +195,15 @@ class GenAiService(
 
     fun streamSummaryWithUsage(text: String, modelName: String? = null, onUsage: (TokenUsage) -> Unit): Flow<AiGenerateResponse> {
         return streamGenerateWithUsage("$SUMMARY_PROMPT:\n```\n$text\n```", modelName, onUsage)
+    }
+
+    /** The Markdown of the slides of a presentation of `text` (the Markdown of a document). */
+    suspend fun generatePresentation(text: String, modelName: String? = null): AiGenerateResponse {
+        return generate(PresentationPrompt.forDocument(text), modelName)
+    }
+
+    suspend fun generatePresentationWithUsage(text: String, modelName: String? = null): Pair<AiGenerateResponse, TokenUsage> {
+        return generateWithUsage(PresentationPrompt.forDocument(text), modelName)
     }
 
     suspend fun generateActionPoints(text: String, modelName: String? = null): AiGenerateResponse {

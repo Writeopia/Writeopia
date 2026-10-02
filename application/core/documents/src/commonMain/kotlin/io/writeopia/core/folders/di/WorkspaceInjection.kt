@@ -1,5 +1,6 @@
 package io.writeopia.core.folders.di
 
+import io.writeopia.core.presentations.api.PresentationsApi
 import io.writeopia.auth.core.data.WorkspaceApi
 import io.writeopia.auth.core.di.AuthCoreInjectionNeo
 import io.writeopia.auth.core.manager.WorkspaceHandler
@@ -75,6 +76,11 @@ class WorkspaceInjection private constructor(
     fun provideDocumentsApi(): DocumentsApi = DocumentsApi(
         connectionInjector().httpClient(),
         connectionInjector().baseUrl()
+    )
+
+    fun providePresentationsApi(): PresentationsApi = PresentationsApi(
+        clientProvider = { connectionInjector().httpClient() },
+        baseUrl = connectionInjector().baseUrl()
     )
 
     fun provideMediaApi(): MediaApi = MediaApi(

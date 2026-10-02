@@ -55,6 +55,8 @@ kotlin {
                 implementation(project(":plugins:writeopia_serialization"))
                 implementation(project(":plugins:writeopia_network"))
                 implementation(project(":plugins:writeopia_presentation"))
+                implementation(project(":plugins:writeopia_import_document"))
+                implementation(project(":plugins:writeopia_persistence_sqldelight"))
 
 //                implementation(project(":application:core:resources"))
                 implementation(project(":application:core:utils"))
@@ -94,6 +96,18 @@ kotlin {
 
         val jvmMain by getting {
             dependencies {
+                implementation(compose.desktop.currentOs)
+            }
+        }
+
+        val jvmTest by getting {
+            dependencies {
+                implementation(libs.kotlin.test)
+                implementation(libs.kotlinx.coroutines.test)
+                implementation(libs.mockk)
+                // An in-memory database for the store of the presentations.
+                implementation(project(":application:core:persistence_sqldelight"))
+                implementation(libs.sqldelight.jvm)
             }
         }
     }

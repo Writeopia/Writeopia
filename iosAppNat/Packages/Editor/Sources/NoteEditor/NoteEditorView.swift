@@ -38,6 +38,12 @@ public struct NoteEditorView: View {
     /// Line with the cursor when the AI dialog opened (the focus goes away with the keyboard).
     @State private var aiCursorStepId: String?
     @State private var showMenu = false
+    @State private var showPresentations = false
+    /// The presentation shown full screen (the phones; the Mac opens a window).
+    @State private var presentationShown: Presentation?
+    #if os(macOS)
+    @Environment(\.openWindow) private var openWindow
+    #endif
     @State private var showPublish = false
     @State private var showPremium = false
     @State private var drawingTarget: DrawingTarget?
@@ -61,6 +67,7 @@ public struct NoteEditorView: View {
         publishing: DocumentPublishing? = nil,
         imageUploader: ImageUploading? = nil,
         isPremium: Bool = false,
+        presentations: PresentationsSource? = nil,
         openDocumentLink: @escaping (DocumentLink) -> Void = { _ in }
     ) {
         _viewModel = State(initialValue: NoteEditorViewModel(
@@ -69,7 +76,8 @@ public struct NoteEditorView: View {
             aiClient: aiClient,
             publishing: publishing,
             imageUploader: imageUploader,
-            isPremium: isPremium
+            isPremium: isPremium,
+            presentations: presentations
         ))
         fallbackTitle = title
         self.openDocumentLink = openDocumentLink
@@ -229,6 +237,15 @@ public struct NoteEditorView: View {
         }
     }
 
+    /// A presentation opens in its own window on the Mac, and over the whole screen on the phones.
+    private func openPresentation(_ presentation: Presentation) {
+        #if os(macOS)
+        openWindow(value: PresentationWindowRef(presentationId: presentation.id))
+        #else
+        presentationShown = presentation
+        #endif
+    }
+
     private func deleteDocument() {
         Task {
             if await viewModel.deleteDocument() {
@@ -291,6 +308,7 @@ public struct NoteEditorView: View {
                                 onImageFilePicked: addImage(fileURL:),
                                 onPublishClick: publishClick,
                                 onDelete: deleteDocument,
+                                onPresentationClick: { showPresentations = true },
                                 tab: $sideTab
                             )
                             .padding(.trailing, 10)
@@ -348,13 +366,37 @@ public struct NoteEditorView: View {
         #endif
         .animation(.snappy, value: isWideLayout)
         .sheet(isPresented: $showMenu) {
-            NoteMenuSheet(viewModel: viewModel, onPublishClick: publishClick, onDelete: deleteDocument)
+            NoteMenuSheet(
+                viewModel: viewModel,
+                onPublishClick: publishClick,
+                onDelete: deleteDocument,
+                onPresentationsClick: { showPresentations = true }
+            )
                 .wrSheetSize(width: 440, height: 560)
         }
         .sheet(isPresented: $showPublish) {
             PublishSheet(viewModel: viewModel)
                 .wrSheetSize(width: 440, height: 400)
         }
+        .sheet(isPresented: $showPresentations) {
+            if let presentations = viewModel.presentations {
+                PresentationsSheet(viewModel: presentations, onOpen: openPresentation)
+                    .wrSheetSize(width: 440, height: 480)
+            }
+        }
+        #if os(iOS)
+        .fullScreenCover(item: $presentationShown) { presentation in
+            NavigationStack {
+                PresentationView(presentation: presentation)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") { presentationShown = nil }
+                                .accessibilityIdentifier("presentation.done")
+                        }
+                    }
+            }
+        }
+        #endif
         .alert("Premium Feature", isPresented: $showPremium) {
             Button("OK", role: .cancel) {}
         } message: {
