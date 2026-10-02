@@ -77,6 +77,7 @@ internal fun MobileChooseNoteScreen(
     newNote: () -> Unit,
     navigateToAccount: () -> Unit,
     navigateToNotes: (NotesNavigation) -> Unit,
+    navigateBack: () -> Unit,
     nestedScrollConnection: NestedScrollConnection? = null,
     isToolbarVisible: Boolean = true,
     navigationBar: @Composable () -> Unit,
@@ -159,6 +160,7 @@ internal fun MobileChooseNoteScreen(
                         folder = currentFolder,
                         folderTitleModifier = toolbarTitleModifier,
                         accountClick = navigateToAccount,
+                        backClick = navigateBack,
                         menuClick = chooseNoteViewModel::showEditMenu
                     )
                 }
@@ -316,6 +318,8 @@ internal fun MobileChooseNoteScreen(
 // Big enough for a finger, the default of the icon picker is sized for a mouse.
 private val TOUCH_COLOR_SIZE = 30.dp
 
+const val NAVIGATE_BACK_TEST_TAG = "NotesMenuNavigateBack"
+
 private enum class CurrentFolderDialog {
     EDIT,
     MOVE,
@@ -331,12 +335,28 @@ private fun TopBar(
     folder: Folder? = null,
     folderTitleModifier: Modifier = Modifier,
     accountClick: () -> Unit = {},
+    backClick: () -> Unit = {},
     menuClick: () -> Unit = {}
 ) {
     val title = titleState.collectAsState().value
     val folderTitle = folderTitleState.collectAsState().value
 
     TopAppBar(
+        navigationIcon = {
+            // Only folders and favorites sit on top of the root screen, so only they can go back.
+            if (folderTitle != null) {
+                Icon(
+                    modifier = Modifier
+                        .semantics { testTag = NAVIGATE_BACK_TEST_TAG }
+                        .clip(CircleShape)
+                        .clickable(onClick = backClick)
+                        .padding(10.dp),
+                    imageVector = WrIcons.backArrowMobile,
+                    contentDescription = "Back",
+                    tint = MaterialTheme.colorScheme.onPrimary
+                )
+            }
+        },
         title = {
             if (folderTitle != null) {
                 Row(verticalAlignment = Alignment.CenterVertically) {

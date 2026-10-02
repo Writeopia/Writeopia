@@ -49,6 +49,7 @@ actual fun NotesMenuScreen(
         newNote = onNewNoteClick,
         navigateToAccount = onAccountClick,
         navigateToNotes = navigateToFolders,
+        navigateBack = { navigationController.navigateUp() },
         nestedScrollConnection = nestedScrollConnection,
         isToolbarVisible = isToolbarVisible,
         navigationBar = navigationBar,

@@ -306,7 +306,6 @@ class GlobalShellKmpViewModel(
         workspaceHandler.exportWorkspaceState
 
     init {
-        folderStateController.initCoroutine(viewModelScope)
         workspaceHandler.initScope(viewModelScope)
 
         // Models can be downloaded from elsewhere (like the local AI setup of the onboarding), so

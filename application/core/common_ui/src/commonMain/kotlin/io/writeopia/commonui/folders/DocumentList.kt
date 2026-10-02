@@ -185,6 +185,8 @@ private fun FolderItem(
                 offset = DpOffset(y = 6.dp, x = 6.dp)
             ) {
                 IconsPicker(
+                    initialIconName = folder.icon?.label,
+                    initialTint = folder.icon?.tint,
                     iconSelect = { icon, tint -> changeIcon(folder.id, icon, tint) }
                 )
             }
@@ -283,6 +285,8 @@ private fun DocumentItem(
             offset = DpOffset(y = 6.dp, x = 6.dp)
         ) {
             IconsPicker(
+                initialIconName = document.icon?.label,
+                initialTint = document.icon?.tint,
                 iconSelect = { icon, tint -> changeIcon(document.documentId, icon, tint) }
             )
         }
