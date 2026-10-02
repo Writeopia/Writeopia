@@ -170,6 +170,21 @@ class DocumentsApi(private val client: HttpClient, private val baseUrl: String) 
         }
     }
 
+    /** The folders from the root down to [folderId] (included), for the breadcrumb. */
+    suspend fun getFolderPath(
+        folderId: String,
+        workspaceId: String
+    ): ResultData<List<Folder>> {
+        val response = client.get("$baseUrl/api/docs/workspace/$workspaceId/folder/$folderId/path")
+
+        return if (response.status.isSuccess()) {
+            ResultData.Complete(response.body<List<FolderApi>>().map { folderApi -> folderApi.toModel() })
+        } else {
+            println("error getting folder path: $response")
+            ResultData.Error()
+        }
+    }
+
     suspend fun getFolderContents(
         folderId: String,
         workspaceId: String

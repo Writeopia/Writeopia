@@ -105,14 +105,10 @@ internal class OnlyBackendChooseNoteKmpViewModel(
     // Editing, moving and deleting the current folder is not offered in the backend only mode.
     override val currentFolder: StateFlow<Folder?> = MutableStateFlow(null)
 
-    override val folderPath: StateFlow<List<Folder>> = when (notesNavigation) {
-        is NotesNavigation.Folder ->
-            menuItemsPerFolderId
-                .map { perFolder -> perFolder.pathTo(notesNavigation.id) }
-                .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
-
-        NotesNavigation.Root, NotesNavigation.Favorites -> MutableStateFlow(emptyList())
-    }
+    // Asked to the backend: the cached items only hold the folders visited on the way down, so
+    // they are not enough when the app starts straight inside a folder.
+    private val _folderPath = MutableStateFlow<List<Folder>>(emptyList())
+    override val folderPath: StateFlow<List<Folder>> = _folderPath.asStateFlow()
 
     private val _notesArrangement = MutableStateFlow(NotesArrangement.GRID)
     override val notesArrangement: StateFlow<NotesArrangement> = _notesArrangement.asStateFlow()
@@ -212,6 +208,22 @@ internal class OnlyBackendChooseNoteKmpViewModel(
 
         // Initial load
         loadFolderContents()
+        loadFolderPath()
+    }
+
+    private fun loadFolderPath() {
+        if (notesNavigation !is NotesNavigation.Folder) return
+
+        viewModelScope.launch(Dispatchers.Default) {
+            val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
+            val result = documentsApi.getFolderPath(notesNavigation.id, workspace.id)
+
+            _folderPath.value = when (result) {
+                is ResultData.Complete -> result.data
+                // Offline or failing: whatever the visited folders tell is better than nothing.
+                else -> menuItemsPerFolderId.value.pathTo(notesNavigation.id)
+            }
+        }
     }
 
     private fun loadFolderContents() {
@@ -553,6 +565,7 @@ internal class OnlyBackendChooseNoteKmpViewModel(
             if (result is ResultData.Complete) {
                 stopEditingFolder()
                 loadFolderContents()
+                loadFolderPath()
             }
         }
     }

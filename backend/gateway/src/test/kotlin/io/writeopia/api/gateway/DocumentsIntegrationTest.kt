@@ -577,6 +577,51 @@ class DocumentationIntegrationTests {
         }
 
     @Test
+    fun `the path of a folder goes from the root down to it`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val workspaceId = Random.nextInt().toString()
+        val now = Clock.System.now()
+
+        fun folder(id: String, parentId: String) = FolderApi(
+            id = "$id-$workspaceId",
+            title = "Folder $id",
+            parentId = parentId,
+            createdAt = now,
+            lastUpdatedAt = now,
+            workspaceId = workspaceId,
+            itemCount = 0L,
+        )
+
+        val a = folder("a", "root")
+        val b = folder("b", a.id)
+        val c = folder("c", b.id)
+        val other = folder("other", "root")
+
+        val saveResponse = client.post("/api/docs/workspace/folder") {
+            contentType(ContentType.Application.Json)
+            setBody(SendFoldersRequest(listOf(a, b, c, other), workspaceId))
+        }
+        assertEquals(HttpStatusCode.OK, saveResponse.status)
+
+        val pathResponse = client.get("/api/docs/workspace/$workspaceId/folder/${c.id}/path")
+        assertEquals(HttpStatusCode.OK, pathResponse.status)
+        assertEquals(listOf(a.id, b.id, c.id), pathResponse.body<List<FolderApi>>().map { it.id })
+
+        val topLevelResponse = client.get("/api/docs/workspace/$workspaceId/folder/${a.id}/path")
+        assertEquals(listOf(a.id), topLevelResponse.body<List<FolderApi>>().map { it.id })
+
+        val missingResponse = client.get("/api/docs/workspace/$workspaceId/folder/missing/path")
+        assertEquals(HttpStatusCode.NotFound, missingResponse.status)
+
+        // Clean up
+        db.deleteDocumentById(a.id, b.id, c.id, other.id)
+    }
+
+    @Test
     fun `it should be possible to create a folder inside another folder`() = testApplication {
         application {
             module(db, debugMode = true)
