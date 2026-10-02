@@ -1,6 +1,8 @@
 package io.writeopia.api.gateway
 
 import io.ktor.client.call.body
+import io.ktor.client.statement.bodyAsText
+import io.ktor.client.HttpClient
 import io.ktor.client.plugins.cookies.HttpCookies
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.delete
@@ -20,6 +22,7 @@ import io.writeopia.app.requests.AddUserToWorkspaceRequest
 import io.writeopia.api.core.auth.models.ManageUserRequest
 import io.writeopia.api.core.auth.models.UserStatus
 import io.writeopia.api.core.auth.repository.deleteUserByEmail
+import io.writeopia.api.core.auth.repository.getConfirmationCode
 import io.writeopia.api.core.auth.repository.getUserByEmail
 import io.writeopia.api.core.auth.repository.insertUser
 import io.writeopia.api.core.auth.repository.userExistsByUsernameOrEmail
@@ -27,6 +30,8 @@ import io.writeopia.api.geteway.configurePersistence
 import io.writeopia.api.geteway.module
 import io.writeopia.sdk.serialization.data.WorkspaceApi
 import io.writeopia.sdk.serialization.data.auth.AuthResponse
+import io.writeopia.sdk.serialization.data.auth.EmailConfirmResponse
+import io.writeopia.sdk.serialization.data.auth.EmailResendRequest
 import io.writeopia.sdk.serialization.data.auth.LoginRequest
 import io.writeopia.sdk.serialization.data.auth.RegisterRequest
 import io.writeopia.sdk.serialization.data.auth.RegisterResponse
@@ -39,6 +44,7 @@ import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -773,6 +779,119 @@ class AuthIntegrationTest {
         val workspaceOfUser3 = getWorkspaceResponse3.body<List<WorkspaceApi>>()
         assertEquals(1, workspaceOfUser3.size)
     }
+
+    @Test
+    fun `email resend should return the same response for unknown and active emails`() =
+        testApplication {
+            application {
+                module(db, debugMode = true)
+            }
+
+            val client = defaultClient()
+            val activeEmail = "resend_active_${Random.nextInt()}@gmail.com"
+            val unknownEmail = "resend_unknown_${Random.nextInt()}@gmail.com"
+
+            try {
+                db.insertUser(
+                    name = "Active User",
+                    username = "resend_active_${Random.nextInt()}",
+                    email = activeEmail,
+                    password = "password",
+                    salt = "salt",
+                    status = UserStatus.ACTIVE,
+                )
+
+                val unknownResponse = client.resendConfirmation(unknownEmail)
+                val activeResponse = client.resendConfirmation(activeEmail)
+
+                assertEquals(HttpStatusCode.OK, unknownResponse.status)
+                assertEquals(unknownResponse.status, activeResponse.status)
+                assertEquals(unknownResponse.bodyAsText(), activeResponse.bodyAsText())
+
+                val body = unknownResponse.body<EmailConfirmResponse>()
+                assertTrue(body.success)
+                val message = assertNotNull(body.message)
+                assertFalse(message.contains("not found", ignoreCase = true))
+                assertFalse(message.contains("already", ignoreCase = true))
+            } finally {
+                db.deleteUserByEmail(activeEmail)
+            }
+        }
+
+    @Test
+    fun `email resend should return the same response for deletion pending and unknown emails`() =
+        testApplication {
+            application {
+                module(db, debugMode = true)
+            }
+
+            val client = defaultClient()
+            val deletionEmail = "resend_deletion_${Random.nextInt()}@gmail.com"
+            val unknownEmail = "resend_unknown_${Random.nextInt()}@gmail.com"
+
+            try {
+                db.insertUser(
+                    name = "Deleting User",
+                    username = "resend_deletion_${Random.nextInt()}",
+                    email = deletionEmail,
+                    password = "password",
+                    salt = "salt",
+                    status = UserStatus.DELETION_PENDING,
+                )
+
+                val unknownResponse = client.resendConfirmation(unknownEmail)
+                val deletionResponse = client.resendConfirmation(deletionEmail)
+
+                assertEquals(unknownResponse.status, deletionResponse.status)
+                assertEquals(unknownResponse.bodyAsText(), deletionResponse.bodyAsText())
+            } finally {
+                db.deleteUserByEmail(deletionEmail)
+            }
+        }
+
+    @Test
+    fun `email resend should still issue a new code for pending accounts with the generic response`() =
+        testApplication {
+            application {
+                module(db, debugMode = true)
+            }
+
+            val client = defaultClient()
+            val pendingEmail = "resend_pending_${Random.nextInt()}@gmail.com"
+            val unknownEmail = "resend_unknown_${Random.nextInt()}@gmail.com"
+
+            try {
+                db.insertUser(
+                    name = "Pending User",
+                    username = "resend_pending_${Random.nextInt()}",
+                    email = pendingEmail,
+                    password = "password",
+                    salt = "salt",
+                    status = UserStatus.EMAIL_CONFIRMATION_PENDING,
+                    confirmationCode = "000000",
+                    confirmationCodeExpiry = 0L,
+                )
+
+                val unknownResponse = client.resendConfirmation(unknownEmail)
+                val pendingResponse = client.resendConfirmation(pendingEmail)
+
+                assertEquals(HttpStatusCode.OK, pendingResponse.status)
+                assertEquals(unknownResponse.status, pendingResponse.status)
+                assertEquals(unknownResponse.bodyAsText(), pendingResponse.bodyAsText())
+
+                val code = assertNotNull(db.getConfirmationCode(pendingEmail))
+                assertNotEquals("000000", code.code)
+                assertTrue((code.expiry ?: 0L) > 0L)
+            } finally {
+                db.deleteUserByEmail(pendingEmail)
+            }
+        }
+
+    private suspend fun HttpClient.resendConfirmation(email: String) =
+        post("/api/auth/email/resend") {
+            contentType(ContentType.Application.Json)
+            setBody(EmailResendRequest(email))
+        }
 }
 
 /**
