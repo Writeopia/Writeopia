@@ -23,6 +23,7 @@ import io.writeopia.sdk.serialization.request.GeneratePresentationRequest
 import io.writeopia.sdk.serialization.response.GeneratePresentationResponse
 import io.writeopia.sdk.serialization.response.PresentationsResponse
 import kotlinx.coroutines.CancellationException
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 
 /**
@@ -71,7 +72,15 @@ class PresentationsApi(
                 // Encoded here, so the call doesn't depend on the plugins of the client.
                 setBody(json.encodeToString(GeneratePresentationRequest.serializer(), GeneratePresentationRequest()))
             }
-            val body = runCatching { json.decodeFromString<GeneratePresentationResponse>(response.bodyAsText()) }.getOrNull()
+            val text = response.bodyAsText()
+            // Only a malformed body is tolerated here; a cancellation while reading propagates.
+            val body = try {
+                json.decodeFromString<GeneratePresentationResponse>(text)
+            } catch (e: SerializationException) {
+                null
+            } catch (e: IllegalArgumentException) {
+                null
+            }
             val presentation = body?.presentation
             if (response.status.isSuccess() && presentation != null) {
                 presentation.toModel(workspaceId)

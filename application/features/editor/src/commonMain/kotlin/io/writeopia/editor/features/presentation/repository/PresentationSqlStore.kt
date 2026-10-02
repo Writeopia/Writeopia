@@ -64,27 +64,33 @@ class PresentationSqlStore(
         run {
             val presentationQueries = presentationQueries ?: return@run
             val stepQueries = stepQueries ?: return@run
-            presentationQueries.insert(
-                id = presentation.id,
-                document_id = presentation.documentId,
-                workspace_id = presentation.workspaceId,
-                title = presentation.title,
-                created_at = presentation.createdAt.toEpochMilliseconds()
-            )
-            stepQueries.deleteByPresentationId(presentation.id)
-            presentation.slides.forEachIndexed { slideIndex, slide ->
-                val title = StoryStep(id = "${presentation.id}-$slideIndex-title", type = StoryTypes.TITLE.type, text = slide.title)
-                insertStep(stepQueries, title, presentation.id, slideIndex, 0.0)
-                slide.content.forEachIndexed { index, step ->
-                    insertStep(stepQueries, step, presentation.id, slideIndex, (index + 1).toDouble())
+            // The header and every step land together, or not at all.
+            presentationQueries.transaction {
+                presentationQueries.insert(
+                    id = presentation.id,
+                    document_id = presentation.documentId,
+                    workspace_id = presentation.workspaceId,
+                    title = presentation.title,
+                    created_at = presentation.createdAt.toEpochMilliseconds()
+                )
+                stepQueries.deleteByPresentationId(presentation.id)
+                presentation.slides.forEachIndexed { slideIndex, slide ->
+                    val title = StoryStep(id = "${presentation.id}-$slideIndex-title", type = StoryTypes.TITLE.type, text = slide.title)
+                    insertStep(stepQueries, title, presentation.id, slideIndex, 0.0)
+                    slide.content.forEachIndexed { index, step ->
+                        insertStep(stepQueries, step, presentation.id, slideIndex, (index + 1).toDouble())
+                    }
                 }
             }
         }
 
     override suspend fun deletePresentation(id: String, workspaceId: String): ResultData<Unit> =
         run {
-            stepQueries?.deleteByPresentationId(id)
-            presentationQueries?.deleteById(id)
+            val presentationQueries = presentationQueries ?: return@run
+            presentationQueries.transaction {
+                stepQueries?.deleteByPresentationId(id)
+                presentationQueries.deleteById(id)
+            }
         }
 
     private suspend fun insertStep(

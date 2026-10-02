@@ -15,6 +15,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /**
@@ -70,6 +73,15 @@ class PresentationsController(
 
     init {
         refresh()
+        // The source follows the workspace: a switch between the open and the private space
+        // changes who makes the presentations.
+        scope.launch(dispatcher) {
+            authRepository.listenForWorkspace()
+                .map { it.id }
+                .distinctUntilChanged()
+                .drop(1)
+                .collect { refresh() }
+        }
     }
 
     /** Resolves the source again, e.g. after the workspace or the local model changed. */
@@ -148,8 +160,8 @@ class PresentationsController(
     /** Makes a new presentation of the document; it ends up in [generated] and in the list. */
     fun generate() {
         val generator = generator() ?: return
-        if (_isGenerating.value) return
-        _isGenerating.value = true
+        // Claimed atomically: two clicks can't start two generations.
+        if (!_isGenerating.compareAndSet(expect = false, update = true)) return
         generation = scope.launch(dispatcher) {
             try {
                 when (val result = generator.generatePresentation(documentId(), workspaceId)) {
