@@ -40,6 +40,7 @@ actual fun NotesMenuScreen(
 ) {
     MobileChooseNoteScreen(
         isDarkTheme = isDarkTheme,
+        folderId = folderId,
         chooseNoteViewModel = chooseNoteViewModel,
         sharedTransitionScope = sharedTransitionScope,
         animatedVisibilityScope = animatedVisibilityScope,

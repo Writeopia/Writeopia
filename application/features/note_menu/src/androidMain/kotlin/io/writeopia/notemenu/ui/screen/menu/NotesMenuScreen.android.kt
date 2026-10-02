@@ -40,6 +40,7 @@ actual fun NotesMenuScreen(
 ) {
     ChooseNoteScreen(
         isDarkTheme = isDarkTheme,
+        folderId = folderId,
         chooseNoteViewModel = chooseNoteViewModel,
         sharedTransitionScope = sharedTransitionScope,
         animatedVisibilityScope = animatedVisibilityScope,
