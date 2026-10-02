@@ -282,8 +282,6 @@ internal class ChooseNoteKmpViewModel(
     }
 
     init {
-        folderController.initCoroutine(viewModelScope)
-
         viewModelScope.launch(Dispatchers.Default) {
             // Sync delete/move events from server before loading documents
             // This ensures local state reflects any deletions/moves from other devices

@@ -15,6 +15,8 @@ import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,7 +31,12 @@ class FolderStateController private constructor(
     private val authRepository: AuthRepository,
     private val documentsApi: DocumentsApi,
 ) : FolderController {
-    private lateinit var coroutineScope: CoroutineScope
+    // The controller is shared by every notes screen, so it can't borrow a ViewModel scope: on
+    // mobile each folder screen has its own ViewModel and leaving the folder would cancel the
+    // scope, silently dropping every later folder change. The scope lives as long as the
+    // instance and is cancelled with it.
+    private val coroutineScope: CoroutineScope =
+        CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     private var localUserId: String? = null
 
@@ -44,10 +51,6 @@ class FolderStateController private constructor(
     // folder changes, so screens showing a folder itself (its name, its icon) listen to this.
     private val _folderChanges = MutableStateFlow(0L)
     val folderChanges: StateFlow<Long> = _folderChanges.asStateFlow()
-
-    fun initCoroutine(coroutineScope: CoroutineScope) {
-        this.coroutineScope = coroutineScope
-    }
 
     override fun addFolder(parentId: String) {
         coroutineScope.launch(Dispatchers.Default) {
@@ -316,5 +319,6 @@ class FolderStateController private constructor(
         _selectedNotes.value = emptySet()
         editingFolderMutable.value = null
         localUserId = null
+        coroutineScope.cancel()
     }
 }

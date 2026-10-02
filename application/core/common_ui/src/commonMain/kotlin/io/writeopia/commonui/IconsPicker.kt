@@ -44,11 +44,13 @@ fun IconsPicker(
     colorSize: Dp = 12.dp,
     iconSelect: (String, Int) -> Unit,
 ) {
-    val defaultColor = MaterialTheme.colorScheme.onBackground
     val selectedBackground = MaterialTheme.colorScheme.primaryContainer
+    val tintColors = ColorUtils.tintColors()
 
+    // Without a saved tint the first color of the palette is selected, so the picker always
+    // shows which color an icon gets: the theme's text color isn't in the palette.
     var tintColor by remember {
-        mutableStateOf(initialTint?.let(::Color) ?: defaultColor)
+        mutableStateOf(initialTint?.let(::Color) ?: tintColors.first())
     }
 
     var selectedIconName by remember {
@@ -69,7 +71,7 @@ fun IconsPicker(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            ColorUtils.tintColors().forEach { color ->
+            tintColors.forEach { color ->
                 val isSelected = color == tintColor
                 val selectedSize = colorSize * 4 / 3
 

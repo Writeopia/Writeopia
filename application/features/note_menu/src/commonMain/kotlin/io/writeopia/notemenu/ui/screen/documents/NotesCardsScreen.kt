@@ -608,6 +608,8 @@ private fun FolderItem(
                             modifier = Modifier.background(WriteopiaTheme.colorScheme.cardBg),
                         ) {
                             IconsPicker(
+                                initialIconName = folderUi.icon?.label,
+                                initialTint = folderUi.icon?.tint,
                                 iconSelect = { icon, tint ->
                                     changeIcon(
                                         folderUi.id,
