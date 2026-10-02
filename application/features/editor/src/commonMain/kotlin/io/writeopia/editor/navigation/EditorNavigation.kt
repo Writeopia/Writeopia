@@ -124,7 +124,10 @@ fun NavGraphBuilder.editorNavigation(
                 nestedScrollConnection = nestedScrollConnection,
                 isToolbarVisible = isToolbarVisible,
                 isWideLayout = isWideLayout,
-                modifier = sharedModifier(this),
+                modifier = Modifier.background(
+                    WriteopiaTheme.colorScheme.cardBg,
+                    MaterialTheme.shapes.large
+                ),
             )
         }
 
@@ -145,11 +148,11 @@ fun NavGraphBuilder.editorNavigation(
 @Composable
 private fun SharedTransitionScope.sharedModifier(
     animatedVisibilityScope: AnimatedVisibilityScope,
-    documentId: String? = null
+    documentId: String
 ) =
     Modifier
         .sharedBounds(
-            rememberSharedContentState(key = "noteInit${documentId ?: ""}"),
+            rememberSharedContentState(key = "noteInit$documentId"),
             animatedVisibilityScope = animatedVisibilityScope,
             resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds
         )

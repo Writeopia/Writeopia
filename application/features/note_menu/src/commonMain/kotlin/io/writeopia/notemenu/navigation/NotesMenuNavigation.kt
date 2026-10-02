@@ -1,6 +1,10 @@
 package io.writeopia.notemenu.navigation
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
@@ -8,10 +12,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.navigation.NavController
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import androidx.savedstate.read
 import io.writeopia.common.utils.Destinations
 import io.writeopia.di.LocalAiConfigInjector
 import io.writeopia.model.ColorThemeOption
@@ -49,6 +55,10 @@ fun NavGraphBuilder.notesMenuNavigation(
 ) {
     composable(
         route = NoteMenuDestiny.noteMenu(),
+        enterTransition = folderEnter,
+        exitTransition = folderExit,
+        popEnterTransition = folderPopEnter,
+        popExitTransition = folderPopExit,
         arguments = listOf(
             navArgument(NAVIGATION_TYPE) {
                 type = NavType.StringType
@@ -100,7 +110,11 @@ fun NavGraphBuilder.notesMenuNavigation(
         )
     }
 
-    composable(route = Destinations.MAIN_APP.id) { backStackEntry ->
+    composable(
+        route = Destinations.MAIN_APP.id,
+        exitTransition = folderExit,
+        popEnterTransition = folderPopEnter,
+    ) { backStackEntry ->
         val notesNavigation = NotesNavigation.Root
 
         val chooseNoteViewModel: ChooseNoteViewModel =
@@ -130,6 +144,64 @@ fun NavGraphBuilder.notesMenuNavigation(
             sideMenuContent = sideMenuContent,
             modifier = Modifier.background(MaterialTheme.colorScheme.background)
         )
+    }
+}
+
+/**
+ * Folders open with an iOS-like push: the folder slides in from the right over the previous
+ * screen, which slides a third of the way to the left behind it. Popping reverses it. Any other
+ * destination, like a document, keeps the default transition, so its shared element still plays.
+ */
+private const val FOLDER_TRANSITION_DURATION = 350
+private const val BACK_SCREEN_PARALLAX = 3
+
+private fun NavBackStackEntry.isFolderScreen(): Boolean =
+    destination.route == NoteMenuDestiny.noteMenu() &&
+        arguments?.read { getStringOrNull(NAVIGATION_TYPE) } == NotesNavigationType.FOLDER.type
+
+private val folderEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition? = {
+    if (targetState.isFolderScreen()) {
+        slideIntoContainer(
+            towards = AnimatedContentTransitionScope.SlideDirection.Left,
+            animationSpec = tween(FOLDER_TRANSITION_DURATION)
+        )
+    } else {
+        null
+    }
+}
+
+private val folderExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition? = {
+    if (targetState.isFolderScreen()) {
+        slideOutOfContainer(
+            towards = AnimatedContentTransitionScope.SlideDirection.Left,
+            animationSpec = tween(FOLDER_TRANSITION_DURATION),
+            targetOffset = { fullWidth -> fullWidth / BACK_SCREEN_PARALLAX }
+        )
+    } else {
+        null
+    }
+}
+
+private val folderPopEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition? = {
+    if (initialState.isFolderScreen()) {
+        slideIntoContainer(
+            towards = AnimatedContentTransitionScope.SlideDirection.Right,
+            animationSpec = tween(FOLDER_TRANSITION_DURATION),
+            initialOffset = { fullWidth -> fullWidth / BACK_SCREEN_PARALLAX }
+        )
+    } else {
+        null
+    }
+}
+
+private val folderPopExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition? = {
+    if (initialState.isFolderScreen()) {
+        slideOutOfContainer(
+            towards = AnimatedContentTransitionScope.SlideDirection.Right,
+            animationSpec = tween(FOLDER_TRANSITION_DURATION)
+        )
+    } else {
+        null
     }
 }
 

@@ -120,7 +120,7 @@ fun NotesCardsScreen(
                     val isEmpty = documents.data.documentUiList.isEmpty()
 
                     if (isEmpty) {
-                        TapToStartButton(isEmpty, animatedVisibilityScope, newNote)
+                        TapToStartButton(isEmpty, newNote)
                     } else {
                         val notesUi: NotesUi = documents.data
 
@@ -295,14 +295,11 @@ private fun LazyStaggeredGridNotes(
         contentPadding = contentPadding,
         content = {
             item(span = StaggeredGridItemSpan.FullLine) {
-                sharedTransitionScope.run {
-                    TapToStartButton(
-                        isEmpty = false,
-                        animatedVisibilityScope = animatedVisibilityScope,
-                        newNote = newNote,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
+                TapToStartButton(
+                    isEmpty = false,
+                    newNote = newNote,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
 
             itemsIndexed(
@@ -378,14 +375,11 @@ private fun LazyGridNotes(
         contentPadding = contentPadding,
         content = {
             item(span = { GridItemSpan(this.maxLineSpan) }) {
-                sharedTransitionScope.run {
-                    TapToStartButton(
-                        isEmpty = false,
-                        animatedVisibilityScope = animatedVisibilityScope,
-                        newNote = newNote,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
+                TapToStartButton(
+                    isEmpty = false,
+                    newNote = newNote,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
 
             itemsIndexed(
@@ -453,14 +447,11 @@ private fun LazyColumnNotes(
         contentPadding = contentPadding,
         content = {
             item {
-                sharedTransitionScope.run {
-                    TapToStartButton(
-                        isEmpty = false,
-                        animatedVisibilityScope = animatedVisibilityScope,
-                        newNote = newNote,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
+                TapToStartButton(
+                    isEmpty = false,
+                    newNote = newNote,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
 
             itemsIndexed(
@@ -828,11 +819,9 @@ private fun shadowModifier(): Modifier =
             spotColor = WriteopiaTheme.colorScheme.cardShadow
         )
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-private fun SharedTransitionScope.TapToStartButton(
+private fun TapToStartButton(
     isEmpty: Boolean,
-    animatedVisibilityScope: AnimatedVisibilityScope,
     newNote: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -840,11 +829,6 @@ private fun SharedTransitionScope.TapToStartButton(
 
     Box(
         modifier
-            .sharedBounds(
-                rememberSharedContentState(key = "noteInit"),
-                animatedVisibilityScope = animatedVisibilityScope,
-                resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds
-            )
             .fillMaxWidth()
             .let { modifierLet ->
                 if (isEmpty) {
