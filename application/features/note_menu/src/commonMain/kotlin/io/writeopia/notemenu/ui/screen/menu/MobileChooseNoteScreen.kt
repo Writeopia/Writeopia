@@ -11,11 +11,13 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -81,6 +83,7 @@ internal fun MobileChooseNoteScreen(
     isWideLayout: Boolean = false,
     sideMenuContent: @Composable () -> Unit = {},
     onCurrentFolderDeleted: () -> Unit = {},
+    navigateToAncestor: (NotesNavigation) -> Unit = navigateToNotes,
     modifier: Modifier = Modifier,
 ) {
     LaunchedEffect(key1 = "refresh", block = {
@@ -194,6 +197,7 @@ internal fun MobileChooseNoteScreen(
                     paddingValues = adjustedPaddingValues,
                     newNote = newNote,
                     navigateToNotes = navigateToNotes,
+                    navigateToAncestor = navigateToAncestor,
                     isWideLayout = isWideLayout,
                     sideMenuContent = sideMenuContent,
                 )
@@ -472,6 +476,7 @@ private fun Content(
     selectionListener: (String, Boolean) -> Unit,
     newNote: () -> Unit,
     navigateToNotes: (NotesNavigation) -> Unit,
+    navigateToAncestor: (NotesNavigation) -> Unit,
     paddingValues: PaddingValues,
     isWideLayout: Boolean,
     sideMenuContent: @Composable () -> Unit,
@@ -485,30 +490,46 @@ private fun Content(
             sideMenuContent()
         }
 
-        NotesCardsScreen(
-            isDarkTheme = isDarkTheme,
-            documents = chooseNoteViewModel.documentsState.collectAsState().value,
-            showAddMenuState = chooseNoteViewModel.showAddMenuState,
-            animatedVisibilityScope = animatedVisibilityScope,
-            sharedTransitionScope = sharedTransitionScope,
-            loadNote = loadNote,
-            selectionListener = selectionListener,
-            hideShowMenu = chooseNoteViewModel::hideAddMenu,
-            folderClick = { id ->
-                val handled = chooseNoteViewModel.handleMenuItemTap(id)
-                if (!handled) {
-                    navigateToNotes(NotesNavigation.Folder(id))
-                }
-            },
-            changeIcon = chooseNoteViewModel::changeIcons,
-            moveRequest = chooseNoteViewModel::moveToFolder,
-            onSelection = {},
-            newNote = newNote,
-            newFolder = chooseNoteViewModel::newFolder,
-            editFolder = chooseNoteViewModel::editFolder,
-            modifier = Modifier
-                .weight(1F)
-                .fillMaxHeight()
-        )
+        Column(modifier = Modifier.weight(1F).fillMaxHeight()) {
+            val folderPath by chooseNoteViewModel.folderPath.collectAsState()
+
+            // Only inside a folder: the root and the favorites have nowhere to go back to.
+            if (folderPath.isNotEmpty()) {
+                FolderBreadcrumb(
+                    path = folderPath,
+                    onSelect = { folder ->
+                        navigateToAncestor(
+                            folder?.let { NotesNavigation.Folder(it.id) } ?: NotesNavigation.Root
+                        )
+                    }
+                )
+            }
+
+            NotesCardsScreen(
+                isDarkTheme = isDarkTheme,
+                documents = chooseNoteViewModel.documentsState.collectAsState().value,
+                showAddMenuState = chooseNoteViewModel.showAddMenuState,
+                animatedVisibilityScope = animatedVisibilityScope,
+                sharedTransitionScope = sharedTransitionScope,
+                loadNote = loadNote,
+                selectionListener = selectionListener,
+                hideShowMenu = chooseNoteViewModel::hideAddMenu,
+                folderClick = { id ->
+                    val handled = chooseNoteViewModel.handleMenuItemTap(id)
+                    if (!handled) {
+                        navigateToNotes(NotesNavigation.Folder(id))
+                    }
+                },
+                changeIcon = chooseNoteViewModel::changeIcons,
+                moveRequest = chooseNoteViewModel::moveToFolder,
+                onSelection = {},
+                newNote = newNote,
+                newFolder = chooseNoteViewModel::newFolder,
+                editFolder = chooseNoteViewModel::editFolder,
+                modifier = Modifier
+                    .weight(1F)
+                    .fillMaxWidth()
+            )
+        }
     }
 }

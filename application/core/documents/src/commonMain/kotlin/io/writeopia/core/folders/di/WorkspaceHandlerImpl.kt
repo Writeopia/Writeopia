@@ -96,8 +96,13 @@ class WorkspaceHandlerImpl(
 
     override fun loadAvailableWorkspaces() {
         coroutineScope.launch {
-            val result = workspaceApi.getAvailableWorkspaces()
-            _availableWorkspaces.value = result
+            // The private space has no account, so there are no cloud workspaces to list and the
+            // backend isn't contacted at all.
+            _availableWorkspaces.value = if (authRepository.isLoggedIn()) {
+                workspaceApi.getAvailableWorkspaces()
+            } else {
+                ResultData.Complete(emptyList())
+            }
         }
     }
 

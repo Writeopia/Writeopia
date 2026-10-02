@@ -14,7 +14,6 @@ import io.writeopia.genai.api.GenAiApi
 import io.writeopia.auth.core.manager.WorkspaceHandler
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.collections.toNodeTree
-import io.writeopia.common.utils.collections.traverse
 import io.writeopia.common.utils.download.DownloadParser
 import io.writeopia.common.utils.download.DownloadState
 import io.writeopia.common.utils.icons.IconChange
@@ -38,6 +37,7 @@ import io.writeopia.model.UiConfiguration
 import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
 import io.writeopia.notemenu.viewmodel.FolderController
 import io.writeopia.notemenu.viewmodel.FolderStateController
+import io.writeopia.notemenu.viewmodel.pathTo
 import io.writeopia.repository.UiConfigurationRepository
 import io.writeopia.responses.DownloadModelResponse
 import io.writeopia.sdk.import.json.WriteopiaJsonParser
@@ -282,17 +282,12 @@ class GlobalShellKmpViewModel(
         }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
     }
 
-    override val folderPath: StateFlow<List<String>> by lazy {
+    override val folderPath: StateFlow<List<Folder>> by lazy {
         combine(
             menuItemsPerFolderId,
             notesNavigationUseCase.navigationState
         ) { perFolder, navigation ->
-            val menuItems = perFolder.values.flatten().map { it.toUiCard() }
-            listOf("Home") + menuItems.traverse(
-                navigation.id,
-                filterPredicate = { item -> item is MenuItemUi.FolderUi },
-                mapFunc = { item -> item.title }
-            )
+            perFolder.pathTo(navigation.id)
         }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
     }
 

@@ -22,6 +22,7 @@ import io.writeopia.notemenu.viewmodel.FolderController
 import io.writeopia.notemenu.viewmodel.FolderDestination
 import io.writeopia.notemenu.viewmodel.SyncState
 import io.writeopia.notemenu.viewmodel.UserState
+import io.writeopia.notemenu.viewmodel.pathTo
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.id.GenerateId
@@ -103,6 +104,15 @@ internal class OnlyBackendChooseNoteKmpViewModel(
 
     // Editing, moving and deleting the current folder is not offered in the backend only mode.
     override val currentFolder: StateFlow<Folder?> = MutableStateFlow(null)
+
+    override val folderPath: StateFlow<List<Folder>> = when (notesNavigation) {
+        is NotesNavigation.Folder ->
+            menuItemsPerFolderId
+                .map { perFolder -> perFolder.pathTo(notesNavigation.id) }
+                .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+        NotesNavigation.Root, NotesNavigation.Favorites -> MutableStateFlow(emptyList())
+    }
 
     private val _notesArrangement = MutableStateFlow(NotesArrangement.GRID)
     override val notesArrangement: StateFlow<NotesArrangement> = _notesArrangement.asStateFlow()
