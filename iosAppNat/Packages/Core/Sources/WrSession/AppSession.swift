@@ -180,18 +180,26 @@ public final class AppSession {
         }
     }
 
-    /// Where the presentations of the documents come from: the backend with the cloud AI, the
-    /// device with Ollama. Nil with Apple Intelligence, too small for a whole document.
+    /// Where the presentations of the documents come from: the backend in an online workspace, or
+    /// the Mac itself with Ollama. Nil in the private space and, on the Mac, with Apple
+    /// Intelligence, too small for a whole document.
     public var presentationsSource: PresentationsSource? {
-        switch resolvedAi?.provider {
-        case .cloud:
-            guard let workspace, workspace.id != Workspace.localId else { return nil }
+        let cloud: PresentationsSource? = {
+            guard isOnline, let workspace, workspace.id != Workspace.localId else { return nil }
             return .cloud(PresentationsAPI(client: client, workspaceId: workspace.id))
-        case .ollama:
-            return .local
-        case .appleIntelligence, nil:
-            return nil
+        }()
+        #if os(macOS)
+        // The Mac follows the AI in use: the cloud, or Ollama on the machine itself.
+        switch resolvedAi?.provider {
+        case .cloud: return cloud
+        case .ollama: return .local
+        case .appleIntelligence, nil: return nil
         }
+        #else
+        // The phones only use the cloud, whatever AI the editor runs with: the backend makes the
+        // presentation in any online workspace.
+        return cloud
+        #endif
     }
 
     /// Reads the presentations `presentationsSource` makes, e.g. for the presentation window.

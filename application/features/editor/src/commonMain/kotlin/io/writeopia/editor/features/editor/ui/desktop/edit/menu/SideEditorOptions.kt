@@ -96,6 +96,7 @@ fun SideEditorOptions(
     highLightBlockClick: () -> Unit,
     cardBlockClick: () -> Unit,
     onPresentationClick: () -> Unit,
+    showPresentation: Boolean = false,
     changeFontFamily: (Font) -> Unit,
     addImage: (String) -> Unit,
     onImagePickRequest: (() -> Unit)? = null,
@@ -321,6 +322,26 @@ fun SideEditorOptions(
                         .padding(9.dp),
                     tint = tint(SideMenuTab.AI)
                 )
+
+                if (showPresentation) {
+                    Spacer(modifier = Modifier.height(spacing))
+
+                    Icon(
+                        imageVector = WrIcons.play,
+                        contentDescription = "Presentation",
+                        modifier = Modifier
+                            .padding(horizontal = spacing)
+                            .clip(MaterialTheme.shapes.medium)
+                            .background(MaterialTheme.colorScheme.background)
+                            .clickable {
+                                changeSideMenuTab(SideMenuTab.NONE)
+                                onPresentationClick()
+                            }
+                            .size(40.dp)
+                            .padding(9.dp),
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(spacing))
 

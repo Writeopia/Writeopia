@@ -62,6 +62,8 @@ import writeopia.writeopia_ui.generated.resources.title
 class HeaderDrawer(
     private val modifier: Modifier = Modifier,
     private val forceEditorButtonAppear: Boolean = false,
+    /** False for a document that can't be edited (locked, a slide of a presentation): no edit button. */
+    private val showsEditButton: Boolean = true,
     private val headerClick: () -> Unit = {},
     private val textDrawer: () -> SimpleTextDrawer,
 //    private val multipleSelection: (Int) -> Unit,
@@ -147,7 +149,7 @@ class HeaderDrawer(
             }
 
             AnimatedVisibility(
-                isHovered || forceEditorButtonAppear,
+                showsEditButton && (isHovered || forceEditorButtonAppear),
                 enter = fadeIn(),
                 exit = fadeOut(),
                 modifier = Modifier
@@ -206,6 +208,7 @@ fun headerDrawer(
         },
         headerClick = headerClick,
         forceEditorButtonAppear = forceEditorButtonAppear,
+        showsEditButton = enabled,
         placeHolderStyle = { drawConfig.titlePlaceHolderStyle(fontFamily) }
     )
 

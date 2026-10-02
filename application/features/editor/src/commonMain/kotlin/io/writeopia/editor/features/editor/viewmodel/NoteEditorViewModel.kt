@@ -1,5 +1,6 @@
 package io.writeopia.editor.features.editor.viewmodel
 
+import io.writeopia.editor.features.presentation.viewmodel.PresentationsController
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.editor.model.EditState
 import io.writeopia.model.Font
@@ -20,6 +21,9 @@ import kotlinx.coroutines.flow.StateFlow
 interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 
     val writeopiaManager: WriteopiaStateManager
+
+    /** The presentations of the document; null when nothing can make them. */
+    val presentations: PresentationsController?
 
     val isEditable: StateFlow<Boolean>
 

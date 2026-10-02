@@ -1,5 +1,7 @@
 package io.writeopia.editor.di
 
+import io.writeopia.editor.features.presentation.repository.PresentationSqlStore
+import io.writeopia.sqldelight.di.WriteopiaDbInjector
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.writeopia.auth.core.di.AuthCoreInjectionNeo
@@ -121,7 +123,11 @@ class EditorKmpInjector private constructor(
             storyStepSyncApi = { request ->
                 connectionInjection.storyStepSyncApi().syncStorySteps(request)
             },
-            documentsApi = workspaceInjection.provideDocumentsApi()
+            documentsApi = workspaceInjection.provideDocumentsApi(),
+            presentationsApi = workspaceInjection.providePresentationsApi(),
+            presentationsStore = WriteopiaDbInjector.singleton()?.database?.let { db ->
+                PresentationSqlStore(db.presentationEntityQueries, db.presentationStepEntityQueries)
+            }
         )
 
     @Composable

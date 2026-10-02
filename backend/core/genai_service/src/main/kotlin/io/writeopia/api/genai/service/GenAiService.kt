@@ -1,5 +1,6 @@
 package io.writeopia.api.genai.service
 
+import io.writeopia.sdk.models.presentation.PresentationPrompt
 import com.google.genai.Client
 import io.writeopia.api.genai.model.AiGenerateResponse
 import io.writeopia.api.genai.model.TokenUsage
@@ -17,36 +18,6 @@ data class GenAiResult(
 
 private const val SUMMARY_PROMPT =
     "Summarize the following text while preserving its key points and main ideas. Use at most 12 lines. Keep the summary concise and clear. If the text contains multiple sections, highlight the most important aspects of each. Maintain the original tone and intent where possible. Detect the language of the text and write in the same language"
-
-/**
- * Asks for the slides of a presentation, one per `---`, in the Markdown `PresentationMarkdownParser`
- * reads. The same prompt the apps send to a local model, so both make the same presentation.
- */
-private val PRESENTATION_PROMPT = """
-Create a slide presentation from the document below. Write it in Markdown, following these rules:
-- Every slide starts with a heading line ("## Title of the slide").
-- Below the heading, write a short description of the slide: a few sentences, "- " items for a list or "[] " items for a checklist. Keep every slide short enough to be read at a glance.
-- Every slide ends with a line containing only "---".
-- Make roughly one slide per section of the document. When sections are too small, merge them into one slide; when a section is too long, split it. The presentation must make sense on its own.
-- Start with a title slide and end with a closing slide. Use between 3 and 12 slides.
-- Use the language of the document.
-- Answer with the Markdown of the slides only, without comments about the task and without wrapping it in a code block.
-
-Example of the format:
-## Why the sky is blue
-
-Sunlight scatters in the atmosphere, and blue light scatters the most.
----
-
-## What we will see
-
-[] The physics of scattering
-- Sunsets and their colors
----
-
-## Thank you!
-The presentation is over.
-""".trimIndent()
 
 private const val ACTIONS_POINTS_PROMPT =
     "Extract key action points from the following text. Create just an introduction and the list of action items with at most 10. Don't add conclusions or introductions. Use the language of the text"
@@ -228,11 +199,11 @@ class GenAiService(
 
     /** The Markdown of the slides of a presentation of `text` (the Markdown of a document). */
     suspend fun generatePresentation(text: String, modelName: String? = null): AiGenerateResponse {
-        return generate("$PRESENTATION_PROMPT\n\nThe document:\n```\n$text\n```", modelName)
+        return generate(PresentationPrompt.forDocument(text), modelName)
     }
 
     suspend fun generatePresentationWithUsage(text: String, modelName: String? = null): Pair<AiGenerateResponse, TokenUsage> {
-        return generateWithUsage("$PRESENTATION_PROMPT\n\nThe document:\n```\n$text\n```", modelName)
+        return generateWithUsage(PresentationPrompt.forDocument(text), modelName)
     }
 
     suspend fun generateActionPoints(text: String, modelName: String? = null): AiGenerateResponse {

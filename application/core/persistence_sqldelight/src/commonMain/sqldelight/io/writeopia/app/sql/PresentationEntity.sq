@@ -1,0 +1,30 @@
+CREATE TABLE presentationEntity (
+  id TEXT PRIMARY KEY,
+  document_id TEXT NOT NULL,
+  workspace_id TEXT NOT NULL,
+  title TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+
+selectById:
+SELECT *
+FROM presentationEntity
+WHERE id = ? AND workspace_id = ?;
+
+selectByDocumentId:
+SELECT *
+FROM presentationEntity
+WHERE document_id = ? AND workspace_id = ?
+ORDER BY created_at DESC;
+
+insert:
+INSERT INTO presentationEntity(id, document_id, workspace_id, title, created_at)
+VALUES (?, ?, ?, ?, ?)
+ON CONFLICT(id) DO
+UPDATE SET document_id=excluded.document_id, workspace_id=excluded.workspace_id, title=excluded.title,
+created_at=excluded.created_at;
+
+deleteById:
+DELETE
+FROM presentationEntity
+WHERE id = ?;

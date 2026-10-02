@@ -14,6 +14,7 @@ struct NoteMenuSheet: View {
     @Bindable var viewModel: NoteEditorViewModel
     let onPublishClick: () -> Void
     let onDelete: () -> Void
+    var onPresentationsClick: () -> Void = {}
     @State private var confirmsDelete = false
     @State private var exportedFile: ExportedFile?
     @State private var exportError: String?
@@ -56,6 +57,16 @@ struct NoteMenuSheet: View {
                         onPublishClick()
                     }
                     .accessibilityIdentifier("menu.publish")
+                }
+
+                if viewModel.showsPresentations {
+                    Section("Presentations") {
+                        WrSheetRow("Presentations", systemImage: "play.rectangle") {
+                            dismiss()
+                            onPresentationsClick()
+                        }
+                        .accessibilityIdentifier("menu.presentations")
+                    }
                 }
 
                 Section {

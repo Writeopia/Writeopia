@@ -41,6 +41,8 @@ internal fun NoteGlobalActionsMenu(
     changeFontFamily: (Font) -> Unit,
     selectedState: StateFlow<Font>,
     onPublishClick: () -> Unit = {},
+    showPresentation: Boolean = false,
+    onPresentationClick: () -> Unit = {},
 ) {
     Box(
         modifier = Modifier
@@ -76,6 +78,20 @@ internal fun NoteGlobalActionsMenu(
                 selectedColor = WriteopiaTheme.colorScheme.highlight,
                 defaultColor = MaterialTheme.colorScheme.background
             )
+
+            if (showPresentation) {
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Title("Presentation")
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                ShareButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    text = "Presentations",
+                    onClick = onPresentationClick
+                )
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 

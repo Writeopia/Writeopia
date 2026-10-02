@@ -3,14 +3,13 @@ import WrData
 import WrDesign
 import WrModels
 
-/// The presentations of the document, opened from the side menu: the ones generated before,
-/// and a button that asks the AI for a new one. A presentation opens in its own window.
+/// The presentations of the document, opened from the menus: the ones generated before, and a
+/// button that asks the AI for a new one.
 struct PresentationsSheet: View {
     let viewModel: PresentationsViewModel
+    /// Shows a presentation: a window on the Mac, full screen on the phones.
+    let onOpen: (Presentation) -> Void
     @Environment(\.dismiss) private var dismiss
-    #if os(macOS)
-    @Environment(\.openWindow) private var openWindow
-    #endif
     /// The presentation whose deletion waits for a confirmation.
     @State private var deleting: Presentation?
 
@@ -136,9 +135,7 @@ struct PresentationsSheet: View {
     }
 
     private func open(_ presentation: Presentation) {
-        #if os(macOS)
-        openWindow(value: PresentationWindowRef(presentationId: presentation.id))
-        #endif
         dismiss()
+        onOpen(presentation)
     }
 }
