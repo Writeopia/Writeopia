@@ -31,6 +31,7 @@ import io.writeopia.mobile.AppMobile
 import io.writeopia.model.isDarkTheme
 import io.writeopia.notemenu.di.NotesMenuKmpInjection
 import io.writeopia.notemenu.di.UiConfigurationInjector
+import io.writeopia.core.notifications.RequestAiNotificationsPermission
 import io.writeopia.persistence.room.DatabaseConfigAndroid
 import io.writeopia.persistence.room.WriteopiaApplicationDatabase
 import io.writeopia.persistence.room.injection.AppRoomDaosInjection
@@ -47,6 +48,7 @@ class NavigationActivity : ComponentActivity() {
 
         setContent {
             ImageLoadConfig.configImageLoad()
+            RequestAiNotificationsPermission()
 
             // Exposes Compose test tags as resource ids so UiAutomator (baseline profile
             // generation) can find them.
