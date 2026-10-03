@@ -84,6 +84,13 @@ internal class ChooseNoteKmpViewModel(
     private val documentToJson: DocumentToJson = DocumentToJson(),
     private val writeopiaJsonParser: WriteopiaJsonParser = WriteopiaJsonParser(),
     private val supportedImageFiles: Set<String> = setOf("jpg", "jpeg", "png"),
+    private val documentsSummarizer: DocumentsSummarizer = DocumentsSummarizer(
+        notesUseCase = notesUseCase,
+        authRepository = authRepository,
+        documentsApi = documentsApi,
+        localAiRepository = localAiRepository,
+        documentToMarkdown = documentToMarkdown,
+    ),
 ) : ChooseNoteViewModel, ViewModel(), FolderController by folderController {
 
     override val currentFolderId: String get() = notesNavigation.id
@@ -530,58 +537,35 @@ internal class ChooseNoteKmpViewModel(
 
     override fun summarizeDocuments() {
         if (!hasSelectedNotes.value) return
-        if (localAiRepository == null) return
 
         val selectedIds = selectedNotes.value.toList()
         val documentCount = selectedIds.size
-        cancelEditMenu()
+        val targetFolderId = when (notesNavigation.navigationType) {
+            NotesNavigationType.FOLDER -> notesNavigation.id
+            else -> Folder.ROOT_PATH
+        }
 
-        viewModelScope.launch {
+        hideAiOptions()
+        cancelEditMenu()
+        clearSelection()
+
+        viewModelScope.launch(Dispatchers.Default) {
             val workspaceId = getWorkspaceId()
             val userId = getUserId()
             val taskId = GenerateId.generate()
 
-            val documents = notesUseCase.loadDocumentsByIds(selectedIds, workspaceId)
-            val prompt = buildString {
-                documents.forEach { doc ->
-                    val documentMd = documentToMarkdown.parse(doc.content)
-
-                    appendLine("====================================================")
-                    appendLine(documentMd)
-                    appendLine("====================================================")
-                    appendLine()
-                }
-            }
-
+            // The summarizer picks the AI the user selected: local when configured, cloud otherwise.
             AiTaskManager.singleton().enqueueTask(
                 id = taskId,
                 type = AiTaskType.SUMMARIZATION,
                 description = "Summarizing $documentCount document${if (documentCount > 1) "s" else ""}"
             ) {
-                val aiPromptResultMd = PromptService.prompt(
-                    userId = userId,
-                    prompt = prompt,
-                    localAiRepository = localAiRepository,
-                    markdownResult = true
+                documentsSummarizer.summarize(
+                    documentIds = selectedIds,
+                    targetFolderId = targetFolderId,
+                    workspaceId = workspaceId,
+                    userId = userId
                 )
-
-                if (aiPromptResultMd == null) {
-                    Result.failure(Exception("AI response was empty"))
-                } else {
-                    val document = MarkdownToDocument.readMarkdown(
-                        markdownText = aiPromptResultMd,
-                        parentId = notesNavigation.id,
-                        workspaceId = workspaceId,
-                    )
-
-                    if (document == null) {
-                        Result.failure(Exception("Failed to parse AI response"))
-                    } else {
-                        notesUseCase.saveDocumentDb(document)
-                        syncDocumentsToBackend(listOf(document))
-                        Result.success(Unit)
-                    }
-                }
             }
         }
     }

@@ -49,6 +49,8 @@ import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import io.writeopia.ai.task.AiTaskManager
+import io.writeopia.ai.task.ui.AiTaskIndicator
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.notemenu.ui.screen.FolderSharedKeys
@@ -294,6 +296,19 @@ internal fun MobileChooseNoteScreen(
                     onMove = chooseNoteViewModel::showMoveSelection,
                     showCopy = !selectionHasFolders,
                     shape = MaterialTheme.shapes.large
+                )
+
+                // Progress of the AI summaries, which run in the background after the selection
+                // is cleared. Without it a tap on the AI button would give no feedback at all.
+                val aiTaskManager = AiTaskManager.singleton()
+
+                AiTaskIndicator(
+                    tasksFlow = aiTaskManager.tasks,
+                    onClearFinished = aiTaskManager::clearFinishedTasks,
+                    onCancelTask = aiTaskManager::cancelTask,
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(start = 16.dp, bottom = contentBottomPadding + 16.dp)
                 )
 
                 val showMoveSelection by chooseNoteViewModel.moveSelectionState.collectAsState()
