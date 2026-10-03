@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A wand with sparkles, the AI icon of the app, in the single color notifications need. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M3,21 L14.5,9.5 L12,7 L0.5,18.5 Z M14,3 L14.9,5.1 L17,6 L14.9,6.9 L14,9 L13.1,6.9 L11,6 L13.1,5.1 Z M20,8 L20.6,9.4 L22,10 L20.6,10.6 L20,12 L19.4,10.6 L18,10 L19.4,9.4 Z M19,15 L19.75,16.75 L21.5,17.5 L19.75,18.25 L19,20 L18.25,18.25 L16.5,17.5 L18.25,16.75 Z" />
+</vector>

@@ -20,6 +20,11 @@ class UiConfigurationSqlDelightRepositoryTest {
         )
     }
 
+    @Test
+    fun shouldBePossibleToKeepTheAiProvider() = runTest {
+        UiConfigurationRepositoryCommonTest.shouldBePossibleToKeepTheAiProvider(getRepository())
+    }
+
     private suspend fun getRepository(): UiConfigurationRepository {
         val database = DatabaseFactory.createDatabase(DriverFactory())
         return UiConfigurationSqlDelightDao(database)

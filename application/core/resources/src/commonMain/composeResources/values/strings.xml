@@ -226,6 +226,12 @@
   <string name="ai">AI</string>
   <string name="cloud_ai">Cloud AI</string>
   <string name="cloud_ai_usage">Cloud AI Usage</string>
+  <string name="run_ai_with">Run AI with</string>
+  <string name="ai_provider_cloud_hint">AI runs on the Writeopia servers and uses your monthly tokens.</string>
+  <string name="ai_provider_cloud_offline_only_hint">Sign in to use the cloud AI.</string>
+  <string name="ai_provider_local_hint">AI runs on this machine through Ollama and doesn't use your monthly tokens.</string>
+  <string name="ai_provider_local_unconfigured_hint">Pick a model of the local AI below. Until then, the cloud AI answers.</string>
+  <string name="ai_provider_local_unconfigured_offline_hint">Pick a model of the local AI below. Until then, no AI answers.</string>
   <string name="current_month_usage">Current Month Usage</string>
   <string name="total_tokens">Total Tokens</string>
   <string name="input_tokens">Input Tokens</string>

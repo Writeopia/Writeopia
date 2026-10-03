@@ -1,0 +1,9 @@
+<resources>
+    <string name="ai_tasks_channel_name">AI tasks</string>
+    <string name="ai_tasks_channel_description">Progress of summaries and other AI tasks running in the background</string>
+    <string name="ai_task_queued">Waiting…</string>
+    <string name="ai_task_running">Running…</string>
+    <string name="ai_task_done">Done</string>
+    <string name="ai_task_failed">Failed</string>
+    <string name="ai_task_cancel">Cancel</string>
+</resources>

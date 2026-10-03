@@ -10,12 +10,15 @@ import io.writeopia.core.presentations.PresentationGenerator
 import io.writeopia.core.presentations.PresentationsStore
 import io.writeopia.editor.features.presentation.viewmodel.PresentationsController
 import io.writeopia.editor.features.presentation.viewmodel.PresentationsSource
+import io.writeopia.model.AiProvider
 import io.writeopia.sdk.models.presentation.Presentation
 import io.writeopia.sdk.models.presentation.Slide
 import io.writeopia.sdk.models.user.Tier
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -94,6 +97,7 @@ class PresentationsControllerTest {
             authRepository = auth(online, Tier.PREMIUM),
             cloud = { PresentationsSource.Cloud(cloud, cloud) },
             local = { PresentationsSource.Local(local, local) },
+            providerChanges = emptyFlow(),
             dispatcher = UnconfinedTestDispatcher(testScheduler)
         )
 
@@ -111,6 +115,75 @@ class PresentationsControllerTest {
     }
 
     @Test
+    fun `the local AI picked in the settings is used online too`() = runTest(UnconfinedTestDispatcher()) {
+        val cloud = FakePresentations(answer = presentation("w1"))
+        val local = FakePresentations(answer = presentation("w1"))
+        val controller = PresentationsController(
+            scope = this,
+            documentId = { "d1" },
+            authRepository = auth(online, Tier.PREMIUM),
+            cloud = { PresentationsSource.Cloud(cloud, cloud) },
+            local = { PresentationsSource.Local(local, local) },
+            selectedProvider = { AiProvider.LOCAL },
+            providerChanges = emptyFlow(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler)
+        )
+
+        controller.generate()
+
+        assertEquals(listOf("d1"), local.generatedFor)
+        assertTrue(cloud.generatedFor.isEmpty())
+    }
+
+    @Test
+    fun `the local AI picked without a model falls back to the cloud`() = runTest(UnconfinedTestDispatcher()) {
+        val cloud = FakePresentations(answer = presentation("w1"))
+        val controller = PresentationsController(
+            scope = this,
+            documentId = { "d1" },
+            authRepository = auth(online, Tier.PREMIUM),
+            cloud = { PresentationsSource.Cloud(cloud, cloud) },
+            local = { null },
+            selectedProvider = { AiProvider.LOCAL },
+            providerChanges = emptyFlow(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler)
+        )
+
+        controller.generate()
+
+        assertEquals(listOf("d1"), cloud.generatedFor)
+    }
+
+    @Test
+    fun `picking another provider in the settings changes the source`() = runTest(UnconfinedTestDispatcher()) {
+        val cloud = FakePresentations(answer = presentation("w1"))
+        val local = FakePresentations(answer = presentation("w1"))
+        var provider = AiProvider.CLOUD
+        val changes = MutableSharedFlow<AiProvider>(extraBufferCapacity = 1)
+        // The listener of the changes never ends, so it runs in the background scope
+        val controller = PresentationsController(
+            scope = backgroundScope,
+            documentId = { "d1" },
+            authRepository = auth(online, Tier.PREMIUM),
+            cloud = { PresentationsSource.Cloud(cloud, cloud) },
+            local = { PresentationsSource.Local(local, local) },
+            selectedProvider = { provider },
+            providerChanges = changes,
+            dispatcher = UnconfinedTestDispatcher(testScheduler)
+        )
+
+        controller.generate()
+        assertEquals(listOf("d1"), cloud.generatedFor)
+
+        provider = AiProvider.LOCAL
+        changes.emit(AiProvider.LOCAL)
+        controller.generate()
+
+        assertEquals(listOf("d1"), local.generatedFor)
+        assertEquals(listOf("d1"), cloud.generatedFor, "the cloud wasn't asked again")
+    }
+
+    @Test
     fun `an online workspace without premium asks for premium instead of a dialog`() = runTest(UnconfinedTestDispatcher()) {
         val cloud = FakePresentations()
         val controller = PresentationsController(
@@ -119,6 +192,7 @@ class PresentationsControllerTest {
             authRepository = auth(online, Tier.FREE),
             cloud = { PresentationsSource.Cloud(cloud, cloud) },
             local = null,
+            providerChanges = emptyFlow(),
             dispatcher = UnconfinedTestDispatcher(testScheduler)
         )
 
@@ -138,6 +212,7 @@ class PresentationsControllerTest {
             authRepository = auth(Workspace.disconnectedWorkspace(), Tier.FREE),
             cloud = { error("the cloud isn't used offline") },
             local = { PresentationsSource.Local(local, local) },
+            providerChanges = emptyFlow(),
             dispatcher = UnconfinedTestDispatcher(testScheduler)
         )
         assertTrue(withModel.isAvailable.value)
@@ -151,6 +226,7 @@ class PresentationsControllerTest {
             authRepository = auth(Workspace.disconnectedWorkspace(), Tier.FREE),
             cloud = { error("the cloud isn't used offline") },
             local = { null },
+            providerChanges = emptyFlow(),
             dispatcher = UnconfinedTestDispatcher(testScheduler)
         )
         assertFalse(withoutModel.isAvailable.value)
@@ -166,6 +242,7 @@ class PresentationsControllerTest {
             authRepository = auth(online, Tier.PREMIUM),
             cloud = { PresentationsSource.Cloud(cloud, cloud) },
             local = null,
+            providerChanges = emptyFlow(),
             dispatcher = UnconfinedTestDispatcher(testScheduler)
         )
 

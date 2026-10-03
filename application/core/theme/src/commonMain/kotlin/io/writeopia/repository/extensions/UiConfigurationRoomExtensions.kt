@@ -1,6 +1,7 @@
 package io.writeopia.repository.extensions
 
 import io.writeopia.model.AccentColor
+import io.writeopia.model.AiProvider
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.model.Font
 import io.writeopia.model.UiConfiguration
@@ -10,7 +11,8 @@ fun UiConfiguration.toRoomEntity() = UiConfigurationEntity(
     userId = userId,
     colorThemeOption = colorThemeOption.theme,
     accentColor = accentColor.id,
-    font = font.label
+    font = font.label,
+    aiProvider = aiProvider?.id
 )
 
 fun UiConfigurationEntity.toModel() = UiConfiguration(
@@ -18,5 +20,6 @@ fun UiConfigurationEntity.toModel() = UiConfiguration(
     colorThemeOption = ColorThemeOption.fromText(colorThemeOption) ?: ColorThemeOption.SYSTEM,
     accentColor = AccentColor.fromId(accentColor),
     sideMenuWidth = 500F,
-    font = Font.fromLabel(this.font)
+    font = Font.fromLabel(this.font),
+    aiProvider = AiProvider.fromId(aiProvider)
 )

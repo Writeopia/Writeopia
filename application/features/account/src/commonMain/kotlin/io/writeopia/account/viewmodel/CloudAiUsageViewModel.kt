@@ -11,7 +11,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class CloudAiUsageViewModel(
-    private val genAiApi: GenAiApi?
+    private val genAiApi: GenAiApi?,
+    /** True with a session in an online workspace. Offline the endpoint can't answer. */
+    private val isCloudAiAvailable: suspend () -> Boolean = { true },
 ) : ViewModel() {
 
     private val _usageState = MutableStateFlow<CloudAiUsageState>(CloudAiUsageState.Loading)
@@ -29,6 +31,11 @@ class CloudAiUsageViewModel(
         }
 
         viewModelScope.launch {
+            if (!isCloudAiAvailable()) {
+                _usageState.value = CloudAiUsageState.Error("Sign in to see the cloud AI usage")
+                return@launch
+            }
+
             _usageState.value = CloudAiUsageState.Loading
 
             when (val result = api.getUsage()) {

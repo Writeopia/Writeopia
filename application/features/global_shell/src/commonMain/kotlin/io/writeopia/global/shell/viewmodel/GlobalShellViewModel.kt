@@ -4,6 +4,7 @@ import io.writeopia.account.ui.CloudAiUsageState
 import io.writeopia.common.utils.download.DownloadState
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.controller.LocalAiConfigController
+import io.writeopia.model.AiProvider
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.notemenu.viewmodel.FolderController
 import io.writeopia.sdk.models.document.MenuItem
@@ -63,11 +64,22 @@ interface GlobalShellViewModel : FolderController, LocalAiConfigController {
 
     val cloudAiUsageState: StateFlow<CloudAiUsageState>
 
+    /** The AI the user picked to answer the AI commands, local or cloud. */
+    val aiProviderState: StateFlow<AiProvider>
+
+    /** The providers the user can pick right now, in the order shown. No cloud while offline. */
+    val aiProviderChoices: StateFlow<List<AiProvider>>
+
+    /** True with a session in an online workspace: the cloud AI and its usage can be reached. */
+    val isCloudAiAvailable: StateFlow<Boolean>
+
     override val autoConfigureState: StateFlow<ResultData<Unit>>
 
     fun init()
 
     fun loadCloudAiUsage()
+
+    fun selectAiProvider(provider: AiProvider)
 
     fun expandFolder(id: String)
 

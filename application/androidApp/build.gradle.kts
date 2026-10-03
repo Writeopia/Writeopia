@@ -101,6 +101,7 @@ dependencies {
     implementation(project(":application:core:documents"))
     implementation(project(":application:core:auth_core"))
     implementation(project(":application:core:genai"))
+    implementation(project(":application:core:notifications"))
 
     implementation(project(":application:features:editor"))
     implementation(project(":application:features:note_menu"))

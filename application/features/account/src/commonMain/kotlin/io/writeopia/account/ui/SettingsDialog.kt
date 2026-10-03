@@ -59,6 +59,7 @@ import io.writeopia.commonui.SettingsPanel
 import io.writeopia.commonui.buttons.CommonButton
 import io.writeopia.commonui.workplace.WorkspacePathSelector
 import io.writeopia.controller.LocalAiConfigController
+import io.writeopia.model.AiProvider
 import io.writeopia.localaiconfig.ui.LocalAiConfigScreen
 import io.writeopia.model.AccentColor
 import io.writeopia.model.ColorThemeOption
@@ -79,6 +80,10 @@ fun SettingsDialog(
     selectedColorTheme: StateFlow<ColorThemeOption?>,
     selectedAccentColor: StateFlow<AccentColor?>,
     localAiConfigController: LocalAiConfigController,
+    aiProviderState: StateFlow<AiProvider>,
+    aiProviderChoices: StateFlow<List<AiProvider>>,
+    isCloudAiAvailable: StateFlow<Boolean>,
+    selectAiProvider: (AiProvider) -> Unit,
     cloudAiUsageState: StateFlow<CloudAiUsageState>,
     userOnlineState: StateFlow<WriteopiaUser>,
     showDeleteConfirmation: StateFlow<Boolean>,
@@ -165,6 +170,10 @@ fun SettingsDialog(
                 },
                 aiScreen = {
                     AiSection(
+                        aiProviderState = aiProviderState,
+                        aiProviderChoices = aiProviderChoices,
+                        isCloudAiAvailable = isCloudAiAvailable,
+                        selectAiProvider = selectAiProvider,
                         cloudAiUsageState = cloudAiUsageState,
                         loadCloudAiUsage = loadCloudAiUsage,
                         localAiConfigController = localAiConfigController,
@@ -513,6 +522,10 @@ private fun WorkspaceSection(
 
 @Composable
 private fun AiSection(
+    aiProviderState: StateFlow<AiProvider>,
+    aiProviderChoices: StateFlow<List<AiProvider>>,
+    isCloudAiAvailable: StateFlow<Boolean>,
+    selectAiProvider: (AiProvider) -> Unit,
     cloudAiUsageState: StateFlow<CloudAiUsageState>,
     loadCloudAiUsage: () -> Unit,
     localAiConfigController: LocalAiConfigController,
@@ -520,15 +533,29 @@ private fun AiSection(
     Column {
         val titleStyle = MaterialTheme.typography.titleLarge
         val titleColor = MaterialTheme.colorScheme.onBackground
+        val cloudAiAvailable by isCloudAiAvailable.collectAsState()
 
-        // Cloud AI Section
-        Text(WrStrings.cloudAi(), style = titleStyle, color = titleColor)
-
-        Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
-
-        CloudAiUsageSection(cloudAiUsageState, loadCloudAiUsage)
+        // Who answers the AI commands, like the "Run AI with" picker of the Mac app
+        AiProviderOptions(
+            selectedProviderState = aiProviderState,
+            choicesState = aiProviderChoices,
+            localAiModelState = localAiConfigController.localAiSelectedModelState,
+            isOnline = cloudAiAvailable,
+            selectProvider = selectAiProvider
+        )
 
         Spacer(modifier = Modifier.height(32.dp))
+
+        // Cloud AI usage: only with a session, offline the endpoint can't answer
+        if (cloudAiAvailable) {
+            Text(WrStrings.cloudAi(), style = titleStyle, color = titleColor)
+
+            Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
+
+            CloudAiUsageSection(cloudAiUsageState, loadCloudAiUsage)
+
+            Spacer(modifier = Modifier.height(32.dp))
+        }
 
         // Local AI Section - shared with the offline space's first-run setup screen
         LocalAiConfigScreen(controller = localAiConfigController)

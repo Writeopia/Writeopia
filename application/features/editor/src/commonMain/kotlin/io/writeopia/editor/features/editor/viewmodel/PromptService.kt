@@ -1,6 +1,5 @@
 package io.writeopia.editor.features.editor.viewmodel
 
-import io.writeopia.LocalAiRepository
 import io.writeopia.sdk.model.action.Action
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
@@ -11,47 +10,54 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onStart
 
+/**
+ * Streams the answers of the AI into the document. The AI itself is whatever the user picked, so
+ * the callers only hand over the function that streams the answer of a prompt.
+ */
 object PromptService {
 
+    const val NO_AI_MESSAGE = "No AI is available. Pick one in the settings, or sign in to use the cloud AI."
+
+    /** Streams the answer about the text [targetMode] points to, right after it. */
     suspend fun documentPrompt(
-        userId: String,
         targetMode: AiTargetMode,
-        promptFn: (String, String, String) -> Flow<ResultData<String>>,
         writeopiaManager: WriteopiaStateManager,
-        localAiRepository: LocalAiRepository
+        streamFn: (String) -> Flow<ResultData<String>>,
     ) {
         val (text, position) = getTextAndPosition(targetMode, writeopiaManager)
 
         if (text == null) return
 
-        val url = localAiRepository.getConfiguredUrl(userId)?.trim()
+        streamFn(text).handleStream(writeopiaManager, position)
+    }
 
-        if (url == null) {
-            writeopiaManager.changeStoryState(
-                Action.StoryStateChange(
-                    storyStep = StoryStep(
-                        type = StoryTypes.AI_ANSWER.type,
-                        text = "Local AI is not configured or not running."
-                    ),
-                    position = position,
-                )
-            )
-        } else {
-            val model = localAiRepository.getSelectedModel(userId)
-                ?: return
+    /** Streams the answer of [prompt] at [promptPosition], or after the cursor. */
+    suspend fun prompt(
+        prompt: String?,
+        writeopiaManager: WriteopiaStateManager,
+        streamFn: (String) -> Flow<ResultData<String>>,
+        promptPosition: Double? = null
+    ) {
+        val position = promptPosition ?: writeopiaManager.getNextPosition()
 
-            promptFn(model, text, url).handleStream(writeopiaManager, position)
+        if (prompt != null && position != null) {
+            streamFn(prompt).handleStream(writeopiaManager, position)
         }
     }
 
-    suspend fun promptWithMode(
-        userId: String,
-        targetMode: AiTargetMode,
-        writeopiaManager: WriteopiaStateManager,
-        localAiRepository: LocalAiRepository
-    ) {
-        val (text, position) = getTextAndPosition(targetMode, writeopiaManager)
-        prompt(userId, text, writeopiaManager, localAiRepository, position)
+    /** Tells the user, in the document, that no AI could answer where [targetMode] points to. */
+    fun noAiAvailable(targetMode: AiTargetMode, writeopiaManager: WriteopiaStateManager) {
+        val (_, position) = getTextAndPosition(targetMode, writeopiaManager)
+        noAiAvailableAt(position, writeopiaManager)
+    }
+
+    fun noAiAvailableAt(position: Double, writeopiaManager: WriteopiaStateManager) {
+        writeopiaManager.changeStoryState(
+            Action.StoryStateChange(
+                storyStep = StoryStep(type = StoryTypes.AI_ANSWER.type, text = NO_AI_MESSAGE),
+                position = position,
+            )
+        )
     }
 
     private fun getTextAndPosition(
@@ -80,69 +86,6 @@ object PromptService {
                     ?: (lastPos + 1)
                 cursorText to pos
             }
-        }
-    }
-
-    suspend fun prompt(
-        userId: String,
-        prompt: String?,
-        writeopiaManager: WriteopiaStateManager,
-        localAiRepository: LocalAiRepository,
-        promptPosition: Double? = null
-    ) {
-        val position = promptPosition ?: writeopiaManager.getNextPosition()
-
-        if (prompt != null && position != null) {
-            val url = localAiRepository.getConfiguredUrl(userId)?.trim()
-
-            if (url == null) {
-                writeopiaManager.changeStoryState(
-                    Action.StoryStateChange(
-                        storyStep = StoryStep(
-                            type = StoryTypes.AI_ANSWER.type,
-                            text = "Local AI is not configured or not running."
-                        ),
-                        position = position,
-                    )
-                )
-            } else {
-                val model = localAiRepository.getSelectedModel(userId) ?: return
-
-                localAiRepository.streamReply(model, prompt, url)
-                    .handleStream(writeopiaManager, position)
-            }
-        }
-    }
-
-    /**
-     * GenAI-compatible version of documentPrompt that only needs the prompt text.
-     * Used for cloud AI services where model/URL are configured server-side.
-     */
-    suspend fun documentPromptGenAi(
-        targetMode: AiTargetMode,
-        promptFn: (String) -> Flow<ResultData<String>>,
-        writeopiaManager: WriteopiaStateManager
-    ) {
-        val (text, position) = getTextAndPosition(targetMode, writeopiaManager)
-
-        if (text == null) return
-
-        promptFn(text).handleStream(writeopiaManager, position)
-    }
-
-    /**
-     * GenAI-compatible version of prompt that only needs the prompt text.
-     */
-    suspend fun promptGenAi(
-        prompt: String?,
-        writeopiaManager: WriteopiaStateManager,
-        streamFn: (String) -> Flow<ResultData<String>>,
-        promptPosition: Double? = null
-    ) {
-        val position = promptPosition ?: writeopiaManager.getNextPosition()
-
-        if (prompt != null && position != null) {
-            streamFn(prompt).handleStream(writeopiaManager, position)
         }
     }
 

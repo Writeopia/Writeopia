@@ -4,5 +4,6 @@ class UiConfigurationEntity(
     val userId: String,
     val colorThemeOption: String,
     val accentColor: String = "purple",
-    val font: String
+    val font: String,
+    val aiProvider: String? = null
 )

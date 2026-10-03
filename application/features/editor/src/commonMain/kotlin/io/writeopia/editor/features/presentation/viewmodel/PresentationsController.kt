@@ -1,9 +1,11 @@
 package io.writeopia.editor.features.presentation.viewmodel
 
+import io.writeopia.ai.AiClients
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.core.presentations.PresentationGenerator
 import io.writeopia.core.presentations.PresentationsRepository
 import io.writeopia.core.presentations.PresentationsStore
+import io.writeopia.model.AiProvider
 import io.writeopia.sdk.models.presentation.Presentation
 import io.writeopia.sdk.models.user.Tier
 import io.writeopia.sdk.models.utils.ResultData
@@ -12,6 +14,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,8 +24,9 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /**
- * Who makes and keeps the presentations of the document, resolved like the Mac app does: the
- * backend in an online workspace, the local AI (Ollama) elsewhere.
+ * Who makes and keeps the presentations of the document, resolved like the Mac app does: it
+ * follows the AI the user picked, the backend or the local AI (Ollama), each falling back to the
+ * other when it isn't ready.
  */
 sealed interface PresentationsSource {
     /** The backend generates, parses and keeps the presentations. */
@@ -38,6 +42,10 @@ sealed interface PresentationsSource {
 /**
  * The presentations of a document: the ones made before and the making of a new one. The app
  * only shows what the source gives back, like the Mac app.
+ *
+ * @param selectedProvider the AI the user picked, see [AiClients.selectedProvider]. The cloud by
+ * default, which is all the phones and the web have.
+ * @param providerChanges tells when the user picks another provider, so the source follows.
  */
 class PresentationsController(
     private val scope: CoroutineScope,
@@ -45,6 +53,8 @@ class PresentationsController(
     private val authRepository: AuthRepository,
     private val cloud: ((workspaceId: String) -> PresentationsSource.Cloud)?,
     private val local: (suspend (userId: String) -> PresentationsSource.Local?)?,
+    private val selectedProvider: suspend (userId: String) -> AiProvider = { AiProvider.CLOUD },
+    private val providerChanges: Flow<AiProvider> = AiClients.providerChanges,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default
 ) {
     private val _source = MutableStateFlow<PresentationsSource?>(null)
@@ -82,6 +92,10 @@ class PresentationsController(
                 .drop(1)
                 .collect { refresh() }
         }
+        // And the AI the user picks in the settings
+        scope.launch(dispatcher) {
+            providerChanges.collect { refresh() }
+        }
     }
 
     /** Resolves the source again, e.g. after the workspace or the local model changed. */
@@ -98,10 +112,17 @@ class PresentationsController(
         val user = authRepository.getUser()
         workspaceId = workspace?.id ?: Workspace.disconnectedWorkspace().id
         val online = workspace != null && workspace.id != Workspace.disconnectedWorkspace().id
-        return when {
-            online && cloud != null -> if (user.tier == Tier.PREMIUM) cloud.invoke(workspace.id) else PresentationsSource.NeedsPremium
-            local != null -> local.invoke(user.id)
-            else -> null
+
+        val cloudSource = when {
+            !online || cloud == null -> null
+            user.tier == Tier.PREMIUM -> cloud.invoke(workspace.id)
+            else -> PresentationsSource.NeedsPremium
+        }
+        val localSource = local?.invoke(user.id)
+
+        return when (selectedProvider(user.id)) {
+            AiProvider.LOCAL -> localSource ?: cloudSource
+            AiProvider.CLOUD -> cloudSource ?: localSource
         }
     }
 
