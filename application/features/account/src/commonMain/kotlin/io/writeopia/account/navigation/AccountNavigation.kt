@@ -753,7 +753,13 @@ fun NavGraphBuilder.accountMenuNavigation(
                 }
             }
         ) { paddingValues ->
+            val aiSettingsViewModel = AccountMenuKmpInjector.singleton().provideAiSettingsViewModel()
+
             SettingsAiScreen(
+                aiProviderState = aiSettingsViewModel.aiProvider,
+                aiProviderChoices = aiSettingsViewModel.aiProviderChoices,
+                isOnlineState = aiSettingsViewModel.isOnline,
+                selectAiProvider = aiSettingsViewModel::selectAiProvider,
                 modifier = Modifier.background(WriteopiaTheme.colorScheme.lightBackground)
                     .padding(paddingValues),
                 navigateToCloudAi = navigateToSettingsCloudAi

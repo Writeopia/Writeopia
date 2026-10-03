@@ -17,20 +17,30 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import io.writeopia.common.utils.icons.WrIcons
+import io.writeopia.model.AiProvider
 import io.writeopia.resources.WrStrings
 import io.writeopia.theme.WriteopiaTheme
+import kotlinx.coroutines.flow.StateFlow
 
 @Composable
 fun SettingsAiScreen(
+    aiProviderState: StateFlow<AiProvider>,
+    aiProviderChoices: StateFlow<List<AiProvider>>,
+    isOnlineState: StateFlow<Boolean>,
+    selectAiProvider: (AiProvider) -> Unit,
     navigateToCloudAi: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val isOnline by isOnlineState.collectAsState()
+
     Column(
         modifier = modifier.fillMaxSize()
             .padding(16.dp)
@@ -38,12 +48,25 @@ fun SettingsAiScreen(
     ) {
         Spacer(modifier = Modifier.height(8.dp))
 
-        AiMenuItem(
-            title = WrStrings.cloudAi(),
-            description = "View cloud AI usage",
-            icon = WrIcons.cloudSync,
-            onClick = navigateToCloudAi
+        AiProviderOptions(
+            selectedProviderState = aiProviderState,
+            choicesState = aiProviderChoices,
+            localAiModelState = null,
+            isOnline = isOnline,
+            selectProvider = selectAiProvider
         )
+
+        // The usage lives in the backend, so the entry only shows with a session
+        if (isOnline) {
+            Spacer(modifier = Modifier.height(24.dp))
+
+            AiMenuItem(
+                title = WrStrings.cloudAi(),
+                description = "View cloud AI usage",
+                icon = WrIcons.cloudSync,
+                onClick = navigateToCloudAi
+            )
+        }
     }
 }
 

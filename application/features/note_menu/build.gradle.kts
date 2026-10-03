@@ -71,6 +71,7 @@ kotlin {
                 implementation(project(":application:core:documents"))
                 implementation(project(":application:core:resources"))
                 implementation(project(":application:core:local_ai"))
+                implementation(project(":application:core:ai"))
                 implementation(project(":application:core:configuration"))
                 implementation(project(":application:core:connection"))
                 implementation(project(":application:core:forcegraph"))

@@ -6,6 +6,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.LocalAiRepository
+import io.writeopia.ai.AiClients
+import io.writeopia.ai.UiConfigurationAiProviderStore
+import io.writeopia.model.AiProvider
 import io.writeopia.account.ui.CloudAiUsageState
 import io.writeopia.api.LocalAiAutoConfigApi
 import io.writeopia.auth.core.data.AuthApi
@@ -88,6 +91,13 @@ class GlobalShellKmpViewModel(
     private val useBackendOnly: Boolean = false,
     private val menuItemsRepository: MenuItemsRepository? = null,
     private val genAiApi: GenAiApi? = null,
+    /** Picks the AI that answers, local or cloud, following the choice of the user. */
+    private val aiClients: AiClients = AiClients(
+        localAiRepository = localAiRepository,
+        genAiRepository = null,
+        authRepository = authRepository,
+        providerStore = UiConfigurationAiProviderStore(uiConfigurationRepo),
+    ),
 ) : GlobalShellViewModel, ViewModel(), FolderController by folderStateController {
 
     private var sideMenuWidthState = MutableStateFlow<Float?>(null)
@@ -162,6 +172,17 @@ class GlobalShellKmpViewModel(
 
     private val _cloudAiUsageState = MutableStateFlow<CloudAiUsageState>(CloudAiUsageState.Loading)
     override val cloudAiUsageState: StateFlow<CloudAiUsageState> = _cloudAiUsageState.asStateFlow()
+
+    private val _aiProviderState = MutableStateFlow(aiClients.defaultProvider)
+    override val aiProviderState: StateFlow<AiProvider> = _aiProviderState.asStateFlow()
+
+    override val isCloudAiAvailable: StateFlow<Boolean> = loginStateTrigger
+        .map { aiClients.isCloudAiReady() }
+        .stateIn(viewModelScope, SharingStarted.Lazily, false)
+
+    override val aiProviderChoices: StateFlow<List<AiProvider>> = loginStateTrigger
+        .map { aiClients.offeredProviders() }
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     override val localAiUrl: StateFlow<String> =
         localAiConfigState.map { config ->
@@ -308,6 +329,13 @@ class GlobalShellKmpViewModel(
     init {
         workspaceHandler.initScope(viewModelScope)
 
+        // The provider in use follows the session: offline, a saved cloud choice gives way.
+        viewModelScope.launch(Dispatchers.Default) {
+            loginStateTrigger.collect {
+                _aiProviderState.value = aiClients.selectedProvider(getUserId())
+            }
+        }
+
         // Models can be downloaded from elsewhere (like the local AI setup of the onboarding), so
         // the list of models is refreshed whenever any model download finishes.
         viewModelScope.launch {
@@ -404,6 +432,12 @@ class GlobalShellKmpViewModel(
         }
 
         viewModelScope.launch {
+            // Offline the endpoint can't answer, so the request is not even made.
+            if (!aiClients.isCloudAiReady()) {
+                _cloudAiUsageState.value = CloudAiUsageState.Error("Sign in to see the cloud AI usage")
+                return@launch
+            }
+
             _cloudAiUsageState.value = CloudAiUsageState.Loading
 
             when (val result = api.getUsage()) {
@@ -512,6 +546,14 @@ class GlobalShellKmpViewModel(
 
     override fun changeWorkspaceLocalPath(path: String) {
         workspaceHandler.changeWorkspaceLocalPath(path)
+    }
+
+    override fun selectAiProvider(provider: AiProvider) {
+        _aiProviderState.value = provider
+
+        viewModelScope.launch(Dispatchers.Default) {
+            aiClients.selectProvider(getUserId(), provider)
+        }
     }
 
     override fun changeLocalAiUrl(url: String) {

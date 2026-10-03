@@ -190,6 +190,12 @@
   <string name="ai">IA</string>
   <string name="cloud_ai">IA na Nuvem</string>
   <string name="cloud_ai_usage">Uso de IA na Nuvem</string>
+  <string name="run_ai_with">Executar IA com</string>
+  <string name="ai_provider_cloud_hint">A IA roda nos servidores do Writeopia e usa seus tokens mensais.</string>
+  <string name="ai_provider_cloud_offline_only_hint">Entre na sua conta para usar a IA na nuvem.</string>
+  <string name="ai_provider_local_hint">A IA roda nesta máquina com o Ollama e não usa seus tokens mensais.</string>
+  <string name="ai_provider_local_unconfigured_hint">Escolha um modelo da IA local abaixo. Até então, a IA na nuvem responde.</string>
+  <string name="ai_provider_local_unconfigured_offline_hint">Escolha um modelo da IA local abaixo. Até então, nenhuma IA responde.</string>
   <string name="current_month_usage">Uso do Mês Atual</string>
   <string name="total_tokens">Total de Tokens</string>
   <string name="input_tokens">Tokens de Entrada</string>

@@ -6,6 +6,9 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.LocalAiRepository
+import io.writeopia.ai.AiClients
+import io.writeopia.ai.AiCommand
+import io.writeopia.ai.UiConfigurationAiProviderStore
 import io.writeopia.ai.task.AiTaskManager
 import io.writeopia.ai.task.AiTaskType
 import io.writeopia.auth.core.manager.AuthRepository
@@ -113,6 +116,13 @@ class NoteEditorKmpViewModel(
     private val storyStepSyncApi: (suspend (StoryStepSyncRequest) -> StoryStepSyncResponse)? = null,
     private val documentsApi: DocumentsApi? = null,
     private val aiTaskManager: AiTaskManager = AiTaskManager.singleton(),
+    /** Picks the AI that answers, local or cloud, following the choice of the user in the settings. */
+    private val aiClients: AiClients = AiClients(
+        localAiRepository = localAiRepository,
+        genAiRepository = genAiRepository,
+        authRepository = authRepository,
+        providerStore = UiConfigurationAiProviderStore(uiConfigurationRepository),
+    ),
     presentationsApi: PresentationsApi? = null,
     presentationsStore: PresentationsStore? = null
 ) : NoteEditorViewModel,
@@ -856,73 +866,44 @@ class NoteEditorKmpViewModel(
     }
 
     override fun askAiWithMode(targetMode: AiTargetMode) {
-        if (localAiRepository != null) {
-            val docId = documentId.value
-            val taskId = "editor-$docId-${GenerateId.generate()}"
-
-            aiTaskManager.enqueueTask(
-                id = taskId,
-                type = AiTaskType.TEXT_GENERATION,
-                description = "Generating text..."
-            ) {
-                PromptService.promptWithMode(
-                    authRepository.getUser().id,
-                    targetMode,
-                    writeopiaManager,
-                    localAiRepository
-                )
-                Result.success(Unit)
-            }
-        } else if (genAiRepository != null) {
-            documentPromptGenAi(targetMode, genAiRepository::streamGenerate)
-        }
+        documentAi(targetMode, AiCommand.PROMPT)
     }
 
     override fun aiSummary(targetMode: AiTargetMode) {
-        if (localAiRepository != null) {
-            documentPrompt(targetMode, localAiRepository::streamSummary)
-        } else if (genAiRepository != null) {
-            documentPromptGenAi(targetMode, genAiRepository::streamSummary)
-        }
+        documentAi(targetMode, AiCommand.SUMMARY)
     }
 
     override fun aiActionPoints(targetMode: AiTargetMode) {
-        if (localAiRepository != null) {
-            documentPrompt(targetMode, localAiRepository::streamActionsPoints)
-        } else if (genAiRepository != null) {
-            documentPromptGenAi(targetMode, genAiRepository::streamActionPoints)
-        }
+        documentAi(targetMode, AiCommand.ACTION_POINTS)
     }
 
     override fun aiFaq(targetMode: AiTargetMode) {
-        if (localAiRepository != null) {
-            documentPrompt(targetMode, localAiRepository::streamFaq)
-        } else if (genAiRepository != null) {
-            documentPromptGenAi(targetMode, genAiRepository::streamFaq)
-        }
+        documentAi(targetMode, AiCommand.FAQ)
     }
 
     override fun aiTags(targetMode: AiTargetMode) {
-        if (localAiRepository != null) {
-            documentPrompt(targetMode, localAiRepository::streamTags)
-        } else if (genAiRepository != null) {
-            documentPromptGenAi(targetMode, genAiRepository::streamTags)
-        }
+        documentAi(targetMode, AiCommand.TAGS)
     }
 
     override fun aiSection(position: Double) {
-        if (localAiRepository == null) return
-
         val sectionText = writeopiaManager.getStory(position)?.text ?: return
 
         val docId = documentId.value
         val taskId = "editor-$docId-${GenerateId.generate()}"
+        val answerPosition = position + 0.001
 
         aiTaskManager.enqueueTask(
             id = taskId,
             type = AiTaskType.TEXT_GENERATION,
             description = "Generating section..."
         ) {
+            val ai = aiClients.resolve(authRepository.getUser().id)
+
+            if (ai == null) {
+                PromptService.noAiAvailableAt(answerPosition, writeopiaManager)
+                return@enqueueTask Result.failure(Exception(PromptService.NO_AI_MESSAGE))
+            }
+
             val prompt =
                 """
                 Create a document section for a document.
@@ -933,12 +914,41 @@ class NoteEditorKmpViewModel(
 
                 Use the language of the text. Do not add titles. Create contect for this section: $sectionText
                 """
+
             PromptService.prompt(
-                userId = authRepository.getUser().id,
                 prompt = prompt,
-                writeopiaManager,
-                localAiRepository,
-                position + 0.001
+                writeopiaManager = writeopiaManager,
+                streamFn = { text -> ai.stream(AiCommand.PROMPT, text) },
+                promptPosition = answerPosition
+            )
+            Result.success(Unit)
+        }
+    }
+
+    /**
+     * Runs [command] over the text [targetMode] points to, with the AI the user picked. The answer
+     * streams into the document right after that text.
+     */
+    private fun documentAi(targetMode: AiTargetMode, command: AiCommand) {
+        val docId = documentId.value
+        val taskId = "editor-$docId-${GenerateId.generate()}"
+
+        aiTaskManager.enqueueTask(
+            id = taskId,
+            type = AiTaskType.TEXT_GENERATION,
+            description = "Generating text..."
+        ) {
+            val ai = aiClients.resolve(authRepository.getUser().id)
+
+            if (ai == null) {
+                PromptService.noAiAvailable(targetMode, writeopiaManager)
+                return@enqueueTask Result.failure(Exception(PromptService.NO_AI_MESSAGE))
+            }
+
+            PromptService.documentPrompt(
+                targetMode = targetMode,
+                writeopiaManager = writeopiaManager,
+                streamFn = { text -> ai.stream(command, text) }
             )
             Result.success(Unit)
         }
@@ -1065,58 +1075,6 @@ class NoteEditorKmpViewModel(
     override fun titleClick(tag: Tag) {
         viewModelScope.launch(Dispatchers.Default) {
             writeopiaManager.addTitle(tag)
-        }
-    }
-
-    private fun documentPrompt(
-        targetMode: AiTargetMode,
-        promptFn: (String, String, String) -> Flow<ResultData<String>>
-    ) {
-        if (localAiRepository == null) return
-
-        val docId = documentId.value
-        val taskId = "editor-$docId-${GenerateId.generate()}"
-
-        aiTaskManager.enqueueTask(
-            id = taskId,
-            type = AiTaskType.TEXT_GENERATION,
-            description = "Generating text..."
-        ) {
-            PromptService.documentPrompt(
-                userId = authRepository.getUser().id,
-                targetMode = targetMode,
-                promptFn = promptFn,
-                writeopiaManager = writeopiaManager,
-                localAiRepository = localAiRepository
-            )
-            Result.success(Unit)
-        }
-    }
-
-    private fun documentPromptGenAi(
-        targetMode: AiTargetMode,
-        promptFn: (String) -> Flow<ResultData<String>>
-    ) {
-        val docId = documentId.value
-        val taskId = "editor-$docId-${GenerateId.generate()}"
-
-        aiTaskManager.enqueueTask(
-            id = taskId,
-            type = AiTaskType.TEXT_GENERATION,
-            description = "Generating text..."
-        ) {
-            val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
-
-            if (workspace.id == Workspace.disconnectedWorkspace().id) {
-                return@enqueueTask Result.success(Unit)
-            }
-
-            PromptService.documentPromptGenAi(
-                targetMode = targetMode,
-                promptFn = promptFn,
-                writeopiaManager = writeopiaManager
-            )
-            Result.success(Unit)
         }
     }
 

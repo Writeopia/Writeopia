@@ -195,12 +195,10 @@ fun DesktopNotesMenu(
 
             val hasSelectedNotes by chooseNoteViewModel.hasSelectedNotes.collectAsState()
             val selectionHasFolders by chooseNoteViewModel.selectionHasFolders.collectAsState()
-            val currentPlatform = LocalPlatform.current
 
-            // Enable AI summary for desktop (with Local AI) or web (with GenAI backend). Folders
-            // can't be summarized nor duplicated: with one selected, only favorite and delete stay.
-            val showAiSummary =
-                (localAiConfigController != null || currentPlatform == PlatformType.WEB) && !selectionHasFolders
+            // The summary runs with the AI the user picked, local or cloud. Folders can't be
+            // summarized nor duplicated: with one selected, only favorite and delete stay.
+            val showAiSummary = !selectionHasFolders
 
             NotesSelectionMenu(
                 modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 40.dp)

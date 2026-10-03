@@ -16,6 +16,12 @@ import writeopia.application.core.resources.generated.resources.ai_explanation
 import writeopia.application.core.resources.generated.resources.ai_model
 import writeopia.application.core.resources.generated.resources.cloud_ai
 import writeopia.application.core.resources.generated.resources.cloud_ai_usage
+import writeopia.application.core.resources.generated.resources.run_ai_with
+import writeopia.application.core.resources.generated.resources.ai_provider_cloud_hint
+import writeopia.application.core.resources.generated.resources.ai_provider_cloud_offline_only_hint
+import writeopia.application.core.resources.generated.resources.ai_provider_local_hint
+import writeopia.application.core.resources.generated.resources.ai_provider_local_unconfigured_hint
+import writeopia.application.core.resources.generated.resources.ai_provider_local_unconfigured_offline_hint
 import writeopia.application.core.resources.generated.resources.current_month_usage
 import writeopia.application.core.resources.generated.resources.error_loading_usage
 import writeopia.application.core.resources.generated.resources.input_tokens
@@ -858,6 +864,25 @@ object WrStrings {
 
     @Composable
     fun cloudAiUsage() = stringResource(Res.string.cloud_ai_usage)
+
+    @Composable
+    fun runAiWith() = stringResource(Res.string.run_ai_with)
+
+    @Composable
+    fun aiProviderCloudHint() = stringResource(Res.string.ai_provider_cloud_hint)
+
+    @Composable
+    fun aiProviderCloudOfflineOnlyHint() = stringResource(Res.string.ai_provider_cloud_offline_only_hint)
+
+    @Composable
+    fun aiProviderLocalHint() = stringResource(Res.string.ai_provider_local_hint)
+
+    @Composable
+    fun aiProviderLocalUnconfiguredHint() = stringResource(Res.string.ai_provider_local_unconfigured_hint)
+
+    @Composable
+    fun aiProviderLocalUnconfiguredOfflineHint() =
+        stringResource(Res.string.ai_provider_local_unconfigured_offline_hint)
 
     @Composable
     fun currentMonthUsage() = stringResource(Res.string.current_month_usage)

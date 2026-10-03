@@ -13,6 +13,7 @@ import kotlinx.coroutines.runBlocking
 private const val COLOR_THEME_OPTION = "colorThemeOption"
 private const val ACCENT_COLOR_OPTION = "accentColorOption"
 private const val FONT_OPTION = "fontOptions"
+private const val AI_PROVIDER_OPTION = "aiProviderOption"
 
 class UiConfigurationPreferenceDao(
     private val sharedPreferences: SharedPreferences
@@ -32,6 +33,7 @@ class UiConfigurationPreferenceDao(
             .putString(COLOR_THEME_OPTION, configuration.colorThemeOption)
             .putString(ACCENT_COLOR_OPTION, configuration.accentColor)
             .putString(FONT_OPTION, configuration.font)
+            .putString(AI_PROVIDER_OPTION, configuration.aiProvider)
             .apply()
 
         themeState.value = configuration
@@ -51,7 +53,8 @@ class UiConfigurationPreferenceDao(
             font = sharedPreferences.getString(
                 FONT_OPTION,
                 Font.SYSTEM.label
-            ) ?: Font.SYSTEM.label
+            ) ?: Font.SYSTEM.label,
+            aiProvider = sharedPreferences.getString(AI_PROVIDER_OPTION, null)
         )
 
     override fun listenForConfigurationByUserId(userId: String): Flow<UiConfigurationEntity?> {

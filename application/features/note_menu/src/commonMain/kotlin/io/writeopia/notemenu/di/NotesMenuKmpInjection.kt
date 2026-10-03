@@ -3,6 +3,10 @@ package io.writeopia.notemenu.di
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.writeopia.LocalAiRepository
+import io.writeopia.ai.AiClients
+import io.writeopia.ai.UiConfigurationAiProviderStore
+import io.writeopia.core.configuration.di.UiConfigurationCoreInjector
+import io.writeopia.genai.di.GenAiInjection
 import io.writeopia.auth.core.di.AuthCoreInjectionNeo
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.core.configuration.di.AppConfigurationInjector
@@ -36,7 +40,8 @@ class NotesMenuKmpInjection private constructor(
     private val selectionState: StateFlow<Boolean>,
     private val keyboardEventFlow: Flow<KeyboardEvent>,
     private val appConnectionInjection: AppConnectionInjection = AppConnectionInjection.singleton(),
-    private val localAiInjection: LocalAiInjection? = null
+    private val localAiInjection: LocalAiInjection? = null,
+    private val genAiInjection: GenAiInjection? = GenAiInjection.singleton(),
 ) : NotesMenuInjection {
     // Always get fresh connection to handle logout/login scenarios
     private fun connectionInjector() = WriteopiaConnectionInjector.singleton()
@@ -102,6 +107,14 @@ class NotesMenuKmpInjection private constructor(
         localAiRepository: LocalAiRepository? = localAiInjection?.provideRepository()
     ): ChooseNoteKmpViewModel =
         ChooseNoteKmpViewModel(
+            aiClients = AiClients(
+                localAiRepository = localAiRepository,
+                genAiRepository = genAiInjection?.provideRepository(),
+                authRepository = authCoreInjection.provideAuthRepository(),
+                providerStore = UiConfigurationAiProviderStore(
+                    UiConfigurationCoreInjector.singleton().provideUiConfigurationRepository()
+                ),
+            ),
             notesUseCase = notesUseCase,
             notesConfig = notesConfig,
             authRepository = authCoreInjection.provideAuthRepository(),

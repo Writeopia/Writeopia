@@ -69,6 +69,7 @@ kotlin {
                 implementation(project(":application:core:models"))
                 implementation(project(":application:core:local_ai"))
                 implementation(project(":application:core:genai"))
+                implementation(project(":application:core:ai"))
                 implementation(project(":application:core:resources"))
                 implementation(project(":application:core:connection"))
                 implementation(project(":application:core:configuration"))

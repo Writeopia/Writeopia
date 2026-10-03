@@ -3,13 +3,18 @@ package io.writeopia.account.di
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.writeopia.account.viewmodel.AccountMenuKmpViewModel
+import io.writeopia.account.viewmodel.AiSettingsViewModel
 import io.writeopia.account.viewmodel.AccountMenuViewModel
 import io.writeopia.account.viewmodel.CloudAiUsageViewModel
 import io.writeopia.account.viewmodel.UserAddViewModel
 import io.writeopia.account.viewmodel.UserEditViewModel
 import io.writeopia.account.viewmodel.UserSearchViewModel
 import io.writeopia.account.viewmodel.WorkspaceUsersViewModel
+import io.writeopia.ai.AiClients
+import io.writeopia.ai.UiConfigurationAiProviderStore
 import io.writeopia.auth.core.di.AuthCoreInjectionNeo
+import io.writeopia.core.configuration.di.UiConfigurationCoreInjector
+import io.writeopia.di.LocalAiInjection
 import io.writeopia.core.folders.di.WorkspaceInjection
 import io.writeopia.genai.di.GenAiInjection
 
@@ -17,6 +22,8 @@ class AccountMenuKmpInjector private constructor(
     private val workspaceInjection: WorkspaceInjection = WorkspaceInjection.singleton(),
     private val authCoreInjection: AuthCoreInjectionNeo = AuthCoreInjectionNeo.singleton(),
     private val genAiInjection: GenAiInjection? = GenAiInjection.singleton(),
+    /** Null on the phones, which have no local AI. */
+    private val localAiInjection: LocalAiInjection? = null,
 ) {
 
     @Composable
@@ -98,11 +105,33 @@ class AccountMenuKmpInjector private constructor(
             )
         }
 
+    private fun provideAiClients(): AiClients =
+        AiClients(
+            localAiRepository = localAiInjection?.provideRepository(),
+            genAiRepository = genAiInjection?.provideRepository(),
+            authRepository = authCoreInjection.provideAuthRepository(),
+            providerStore = UiConfigurationAiProviderStore(
+                UiConfigurationCoreInjector.singleton().provideUiConfigurationRepository()
+            ),
+        )
+
+    @Composable
+    fun provideAiSettingsViewModel(): AiSettingsViewModel =
+        viewModel {
+            AiSettingsViewModel(
+                aiClients = provideAiClients(),
+                authRepository = authCoreInjection.provideAuthRepository(),
+            )
+        }
+
     @Composable
     fun provideCloudAiUsageViewModel(): CloudAiUsageViewModel =
         viewModel {
+            val aiClients = provideAiClients()
+
             CloudAiUsageViewModel(
-                genAiApi = genAiInjection?.provideGenAiApi()
+                genAiApi = genAiInjection?.provideGenAiApi(),
+                isCloudAiAvailable = { aiClients.isCloudAiReady() }
             )
         }
 

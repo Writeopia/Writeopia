@@ -2,6 +2,8 @@ package io.writeopia.global.shell.di
 
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
+import io.writeopia.ai.AiClients
+import io.writeopia.ai.UiConfigurationAiProviderStore
 import io.writeopia.api.LocalAiAutoConfigApi
 import io.writeopia.auth.core.di.AuthCoreInjectionNeo
 import io.writeopia.controller.LocalAiConfigController
@@ -81,6 +83,14 @@ class SideMenuKmpInjector(
                 useBackendOnly = useBackendOnly,
                 menuItemsRepository = menuItemsRepository,
                 genAiApi = genAiInjection?.provideGenAiApi(),
+                aiClients = AiClients(
+                    localAiRepository = localAiInjection.provideRepository(),
+                    genAiRepository = genAiInjection?.provideRepository(),
+                    authRepository = authCoreInjection.provideAuthRepository(),
+                    providerStore = UiConfigurationAiProviderStore(
+                        UiConfigurationCoreInjector.singleton().provideUiConfigurationRepository()
+                    ),
+                ),
             )
         }
 

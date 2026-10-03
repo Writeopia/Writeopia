@@ -5,6 +5,7 @@ package io.writeopia.notemenu.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.LocalAiRepository
+import io.writeopia.ai.AiClients
 import io.writeopia.ai.task.AiTaskManager
 import io.writeopia.ai.task.AiTaskType
 import io.writeopia.auth.core.manager.AuthRepository
@@ -84,11 +85,13 @@ internal class ChooseNoteKmpViewModel(
     private val documentToJson: DocumentToJson = DocumentToJson(),
     private val writeopiaJsonParser: WriteopiaJsonParser = WriteopiaJsonParser(),
     private val supportedImageFiles: Set<String> = setOf("jpg", "jpeg", "png"),
+    /** Picks the AI of the summaries: the one the user selected, local or cloud. */
+    private val aiClients: AiClients? = null,
     private val documentsSummarizer: DocumentsSummarizer = DocumentsSummarizer(
         notesUseCase = notesUseCase,
         authRepository = authRepository,
         documentsApi = documentsApi,
-        localAiRepository = localAiRepository,
+        aiClients = aiClients,
         documentToMarkdown = documentToMarkdown,
     ),
 ) : ChooseNoteViewModel, ViewModel(), FolderController by folderController {

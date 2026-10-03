@@ -1,6 +1,7 @@
 package io.writeopia.repository
 
 import io.writeopia.model.AccentColor
+import io.writeopia.model.AiProvider
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.model.Font
 import io.writeopia.model.UiConfiguration
@@ -57,6 +58,7 @@ class UiConfigurationLocalStorageRepository : UiConfigurationRepository {
         localStorage.setItem("${prefix}accent_color", config.accentColor.id)
         localStorage.setItem("${prefix}side_menu_width", config.sideMenuWidth.toString())
         localStorage.setItem("${prefix}font", config.font.label)
+        config.aiProvider?.let { provider -> localStorage.setItem("${prefix}ai_provider", provider.id) }
     }
 
     private fun loadFromLocalStorage(userId: String): UiConfiguration? {
@@ -65,9 +67,16 @@ class UiConfigurationLocalStorageRepository : UiConfigurationRepository {
         val accentColor = localStorage.getItem("${prefix}accent_color")
         val sideMenuWidth = localStorage.getItem("${prefix}side_menu_width")
         val font = localStorage.getItem("${prefix}font")
+        val aiProvider = localStorage.getItem("${prefix}ai_provider")
 
         // If no data exists, return null
-        if (colorTheme == null && accentColor == null && sideMenuWidth == null && font == null) {
+        if (
+            colorTheme == null &&
+            accentColor == null &&
+            sideMenuWidth == null &&
+            font == null &&
+            aiProvider == null
+        ) {
             return null
         }
 
@@ -76,7 +85,8 @@ class UiConfigurationLocalStorageRepository : UiConfigurationRepository {
             colorThemeOption = ColorThemeOption.fromText(colorTheme) ?: ColorThemeOption.SYSTEM,
             accentColor = AccentColor.fromId(accentColor),
             sideMenuWidth = sideMenuWidth?.toFloatOrNull() ?: 280F,
-            font = font?.let { runCatching { Font.fromLabel(it) }.getOrNull() } ?: Font.SYSTEM
+            font = font?.let { runCatching { Font.fromLabel(it) }.getOrNull() } ?: Font.SYSTEM,
+            aiProvider = AiProvider.fromId(aiProvider)
         )
     }
 

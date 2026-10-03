@@ -71,6 +71,7 @@ kotlin {
                 implementation(project(":application:features:note_menu"))
                 implementation(project(":application:features:account"))
                 implementation(project(":application:core:genai"))
+                implementation(project(":application:core:ai"))
 
                 implementation(libs.kotlinx.serialization.json)
                 //
