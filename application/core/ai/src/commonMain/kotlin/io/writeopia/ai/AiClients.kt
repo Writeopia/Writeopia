@@ -5,6 +5,9 @@ import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.genai.repository.GenAiRepository
 import io.writeopia.model.AiProvider
 import io.writeopia.sdk.models.workspace.Workspace
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 
 /**
  * Holds the AI clients of the app and picks the one that answers, following the provider the user
@@ -57,6 +60,7 @@ class AiClients(
 
     suspend fun selectProvider(userId: String, provider: AiProvider) {
         providerStore.saveProvider(userId, provider)
+        _providerChanges.emit(provider)
     }
 
     /** True when the local AI has a server and a model, so it can answer right now. */
@@ -87,5 +91,15 @@ class AiClients(
         val model = repository.getSelectedModel(userId)?.trim()?.takeIf { it.isNotEmpty() } ?: return null
 
         return ResolvedAi.Local(repository, url, model)
+    }
+
+    companion object {
+        private val _providerChanges = MutableSharedFlow<AiProvider>(extraBufferCapacity = 1)
+
+        /**
+         * Emits whenever the user picks a provider, from any screen. The settings and the editor
+         * have their own [AiClients], so the choice is shared here for whoever has to react.
+         */
+        val providerChanges: SharedFlow<AiProvider> = _providerChanges.asSharedFlow()
     }
 }

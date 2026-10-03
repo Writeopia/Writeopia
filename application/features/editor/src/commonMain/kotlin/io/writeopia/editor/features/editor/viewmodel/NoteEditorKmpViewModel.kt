@@ -131,8 +131,8 @@ class NoteEditorKmpViewModel(
     BackstackHandler by writeopiaManager {
 
     /**
-     * The presentations of the document, made by the backend in an online workspace and by the
-     * local AI elsewhere, like the Mac app.
+     * The presentations of the document, made by the AI the user picked: the backend in an online
+     * workspace, or the local AI, like the Mac app. The phones only have the backend.
      */
     override val presentations: PresentationsController? =
         if (presentationsApi != null || presentationsStore != null) {
@@ -140,6 +140,7 @@ class NoteEditorKmpViewModel(
                 scope = viewModelScope,
                 documentId = { writeopiaManager.documentInfo.value.id },
                 authRepository = authRepository,
+                selectedProvider = aiClients::selectedProvider,
                 cloud = presentationsApi?.let { api -> { _ -> PresentationsSource.Cloud(api, api) } },
                 local = if (presentationsStore != null && localAiRepository != null) {
                     { userId ->
