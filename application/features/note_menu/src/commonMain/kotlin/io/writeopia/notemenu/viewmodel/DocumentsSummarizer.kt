@@ -68,7 +68,8 @@ internal class DocumentsSummarizer(
             prompt = prompt,
             url = ai.url,
             markdownResult = true
-        ) ?: return Result.failure(Exception("AI response was empty"))
+        )?.takeIf { answer -> answer.isNotBlank() }
+            ?: return Result.failure(Exception("AI response was empty"))
 
         val document = MarkdownToDocument.readMarkdown(
             markdownText = aiPromptResultMd,

@@ -154,6 +154,25 @@ class DocumentsSummarizerTest {
     }
 
     @Test
+    fun `a blank answer of the local AI fails instead of saving an empty document`() = runTest {
+        resolvedAi(localAi())
+        coEvery { notesUseCase.loadDocumentsByIds(listOf("1"), workspaceId) } returns listOf(document("1"))
+        coEvery {
+            localAiRepository.generateCompleteSummary("llama3", any(), "http://localhost:11434", true)
+        } returns "   \n"
+
+        val result = summarizer().summarize(
+            documentIds = listOf("1"),
+            targetFolderId = "folder",
+            workspaceId = workspaceId,
+            userId = userId
+        )
+
+        assertTrue(result.isFailure)
+        coVerify(exactly = 0) { notesUseCase.saveDocumentDb(any()) }
+    }
+
+    @Test
     fun `without AI clients the cloud is used`() = runTest {
         coEvery { authRepository.isLoggedIn() } returns true
         coEvery { notesUseCase.loadDocumentsByIds(any(), workspaceId) } returns emptyList()

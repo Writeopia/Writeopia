@@ -38,6 +38,13 @@ class AiTaskNotifier(
     /** What was last shown for each task, so an unchanged task doesn't re-notify. */
     private val shown = mutableMapOf<String, Pair<AiTaskStatus, Float?>>()
 
+    /**
+     * The notification of each task. Handed out in order instead of hashing the task id, so two
+     * tasks can never share a notification, or a cancel intent, by a hash collision.
+     */
+    private val notificationIds = mutableMapOf<String, Int>()
+    private var nextNotificationId = FIRST_NOTIFICATION_ID
+
     fun start() {
         createChannel()
 
@@ -45,7 +52,9 @@ class AiTaskNotifier(
             aiTaskManager.tasks.collect { tasks ->
                 tasks.forEach(::show)
                 // Tasks leave the list a while after they finish; forget them too.
-                shown.keys.retainAll(tasks.mapTo(mutableSetOf()) { task -> task.id })
+                val current = tasks.mapTo(mutableSetOf()) { task -> task.id }
+                shown.keys.retainAll(current)
+                notificationIds.keys.retainAll(current)
             }
         }
     }
@@ -56,7 +65,7 @@ class AiTaskNotifier(
         shown[task.id] = state
 
         val manager = NotificationManagerCompat.from(context)
-        val notificationId = task.id.hashCode()
+        val notificationId = notificationIdFor(task.id)
 
         if (task.status == AiTaskStatus.CANCELLED) {
             manager.cancel(notificationId)
@@ -136,10 +145,13 @@ class AiTaskNotifier(
         )
     }
 
+    private fun notificationIdFor(taskId: String): Int =
+        notificationIds.getOrPut(taskId) { nextNotificationId++ }
+
     private fun cancelIntent(taskId: String): PendingIntent =
         PendingIntent.getBroadcast(
             context,
-            taskId.hashCode(),
+            notificationIdFor(taskId),
             CancelAiTaskReceiver.intent(context, taskId),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
@@ -168,5 +180,6 @@ class AiTaskNotifier(
     companion object {
         const val CHANNEL_ID = "ai_tasks"
         private const val PROGRESS_MAX = 100
+        private const val FIRST_NOTIFICATION_ID = 1
     }
 }
