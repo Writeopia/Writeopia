@@ -93,6 +93,8 @@ object PromptService {
         writeopiaManager: WriteopiaStateManager,
         position: Double
     ) {
+        val blockPositions = mutableListOf(position)
+
         this.onStart {
             writeopiaManager.loadingAtPosition(position)
         }.onCompletion {
@@ -106,16 +108,31 @@ object PromptService {
                 is ResultData.InProgress -> ""
             }
         }.collect { resultText ->
-            writeopiaManager.changeStoryState(
-                Action.StoryStateChange(
-                    storyStep = StoryStep(
-                        type = StoryTypes.AI_ANSWER.type,
-                        text = resultText
+            val blocks = AiAnswerStreamBuffer.splitIntoBlocks(resultText)
+
+            while (blockPositions.size < blocks.size) {
+                val newPosition = blockPositions.last() + 1
+
+                writeopiaManager.addAtPosition(
+                    StoryStep(type = StoryTypes.AI_ANSWER.type, text = ""),
+                    newPosition
+                )
+
+                blockPositions.add(newPosition)
+            }
+
+            blocks.forEachIndexed { index, blockText ->
+                writeopiaManager.changeStoryState(
+                    Action.StoryStateChange(
+                        storyStep = StoryStep(
+                            type = StoryTypes.AI_ANSWER.type,
+                            text = blockText
+                        ),
+                        position = blockPositions[index],
                     ),
-                    position = position,
-                ),
-                trackIt = false
-            )
+                    trackIt = false
+                )
+            }
         }
     }
 }
