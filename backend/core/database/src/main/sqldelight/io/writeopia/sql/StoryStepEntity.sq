@@ -15,7 +15,7 @@ CREATE TABLE story_step_entity (
   tags TEXT NOT NULL,
   spans TEXT NOT NULL,
   link_to_document TEXT,
-  last_updated_at INTEGER
+  last_updated_at BIGINT
 );
 
 selectByDocumentId:
@@ -62,6 +62,26 @@ deleteByIds:
 DELETE
 FROM story_step_entity
 WHERE id IN ?;
+
+deleteByIdsForDocument:
+DELETE
+FROM story_step_entity
+WHERE document_id = ? AND id IN ?;
+
+deleteDescendantsForDocument:
+WITH RECURSIVE descendants(id, document_id) AS (
+  SELECT id, document_id
+  FROM story_step_entity
+  WHERE document_id = ? AND parent_id = ?
+  UNION ALL
+  SELECT child.id, child.document_id
+  FROM story_step_entity AS child
+  INNER JOIN descendants AS parent
+    ON child.parent_id = parent.id
+   AND child.document_id = parent.document_id
+)
+DELETE FROM story_step_entity
+WHERE id IN (SELECT id FROM descendants);
 
 selectByParentId:
 SELECT *

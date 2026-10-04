@@ -1,3 +1,4 @@
+
 @file:OptIn(ExperimentalTime::class)
 
 package io.writeopia.sdk.persistence.core.tracker
@@ -23,6 +24,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
@@ -56,6 +58,305 @@ class OnUpdateDocumentTrackerTest {
     }
 
     @Test
+    fun lineEditShouldPersistStoryStepFreshnessTimestamp() = runTest {
+        val sourceDocument = sourceDocument(emptyList())
+        val editedStep = sourceDocument.content.values.single().copy(
+            text = "updated",
+            lastUpdatedAt = null,
+        )
+        val recorder = RecordingDocumentUpdate()
+        val tracker = OnUpdateDocumentTracker(recorder)
+
+        val job = launch {
+            tracker.saveOnStoryChanges(
+                MutableStateFlow(
+                    StoryState(
+                        stories = mapOf(0.0 to editedStep),
+                        lastEdit = LastEdit.LineEdition(0.0, editedStep),
+                    ) to sourceDocument.info()
+                ),
+                MutableStateFlow(sourceDocument.workspaceId),
+                MutableStateFlow(emptyMap()),
+            )
+        }
+
+        val persisted = withTimeout(1_000) { recorder.savedStoryStep.await() }
+        job.cancel()
+
+        assertNotNull(persisted.lastUpdatedAt)
+    }
+
+    @Test
+    fun commentChangeAfterLineEditShouldPreserveTimestampInFullSave() = runTest {
+        val conversation = conversation()
+        val sourceDocument = sourceDocument(listOf(conversation))
+        val editedStep = sourceDocument.content.values.single().copy(
+            text = "updated",
+            lastUpdatedAt = null,
+        )
+        val recorder = RecordingDocumentUpdate()
+        val tracker = OnUpdateDocumentTracker(recorder)
+        val documentEditionFlow = MutableStateFlow(
+            StoryState(
+                stories = sourceDocument.content,
+                lastEdit = LastEdit.Nothing,
+            ) to sourceDocument.info()
+        )
+        val commentConversationsFlow = MutableStateFlow(sourceDocument.commentConversations)
+
+        val job = launch {
+            tracker.saveOnStoryChanges(
+                documentEditionFlow,
+                MutableStateFlow(sourceDocument.workspaceId),
+                commentConversationsFlow,
+            )
+        }
+        runCurrent()
+
+        documentEditionFlow.value = StoryState(
+            stories = mapOf(0.0 to editedStep),
+            lastEdit = LastEdit.LineEdition(0.0, editedStep),
+        ) to sourceDocument.info()
+        runCurrent()
+
+        val reply = Comment(id = "comment-2", text = "reply")
+        commentConversationsFlow.value = mapOf(
+            conversation.id to conversation.comments + reply
+        )
+
+        val incrementallyPersisted = withTimeout(1_000) { recorder.savedStoryStep.await() }
+        val persisted = withTimeout(1_000) { recorder.savedDocument.await() }
+        job.cancel()
+
+        assertNotNull(incrementallyPersisted.lastUpdatedAt)
+        assertEquals(
+            incrementallyPersisted.lastUpdatedAt,
+            persisted.content.values.single().lastUpdatedAt,
+        )
+    }
+
+    @Test
+    fun commentChangeAfterInfoEditShouldPreserveTimestampInFullSave() = runTest {
+        val conversation = conversation()
+        val sourceDocument = sourceDocument(listOf(conversation))
+        val editedStep = sourceDocument.content.values.single().copy(
+            text = "updated",
+            lastUpdatedAt = null,
+        )
+        val recorder = RecordingDocumentUpdate()
+        val tracker = OnUpdateDocumentTracker(recorder)
+        val documentEditionFlow = MutableStateFlow(
+            StoryState(
+                stories = sourceDocument.content,
+                lastEdit = LastEdit.Nothing,
+            ) to sourceDocument.info()
+        )
+        val commentConversationsFlow = MutableStateFlow(sourceDocument.commentConversations)
+
+        val job = launch {
+            tracker.saveOnStoryChanges(
+                documentEditionFlow,
+                MutableStateFlow(sourceDocument.workspaceId),
+                commentConversationsFlow,
+            )
+        }
+        runCurrent()
+
+        documentEditionFlow.value = StoryState(
+            stories = mapOf(0.0 to editedStep),
+            lastEdit = LastEdit.InfoEdition(0.0, editedStep),
+        ) to sourceDocument.info()
+        runCurrent()
+
+        val reply = Comment(id = "comment-2", text = "reply")
+        commentConversationsFlow.value = mapOf(
+            conversation.id to conversation.comments + reply
+        )
+
+        val incrementallyPersisted = withTimeout(1_000) { recorder.savedStoryStep.await() }
+        val persisted = withTimeout(1_000) { recorder.savedDocument.await() }
+        job.cancel()
+
+        assertNotNull(incrementallyPersisted.lastUpdatedAt)
+        assertEquals(
+            incrementallyPersisted.lastUpdatedAt,
+            persisted.content.values.single().lastUpdatedAt,
+        )
+    }
+
+    @Test
+    fun commentChangeAfterLineBreakShouldPreserveBatchTimestampsInFullSave() = runTest {
+        val conversation = conversation()
+        val sourceDocument = sourceDocument(listOf(conversation))
+        val first = sourceDocument.content.values.single().copy(
+            id = "step-1",
+            text = "first",
+            lastUpdatedAt = null,
+        )
+        val second = StoryStep(
+            id = "step-2",
+            text = "second",
+            type = StoryTypes.TEXT.type,
+            lastUpdatedAt = null,
+        )
+        val recorder = RecordingDocumentUpdate()
+        val tracker = OnUpdateDocumentTracker(recorder)
+        val documentEditionFlow = MutableStateFlow(
+            StoryState(
+                stories = sourceDocument.content,
+                lastEdit = LastEdit.Nothing,
+            ) to sourceDocument.info()
+        )
+        val commentConversationsFlow = MutableStateFlow(sourceDocument.commentConversations)
+
+        val job = launch {
+            tracker.saveOnStoryChanges(
+                documentEditionFlow,
+                MutableStateFlow(sourceDocument.workspaceId),
+                commentConversationsFlow,
+            )
+        }
+        runCurrent()
+
+        documentEditionFlow.value = StoryState(
+            stories = mapOf(0.0 to first, 1.0 to second),
+            lastEdit = LastEdit.LineBreakEdition(
+                originalStep = 0.0 to first,
+                newStep = 1.0 to second,
+            ),
+        ) to sourceDocument.info()
+        runCurrent()
+
+        commentConversationsFlow.value = mapOf(
+            conversation.id to conversation.comments + Comment(id = "comment-2", text = "reply")
+        )
+
+        val incrementallyPersisted = withTimeout(1_000) { recorder.savedStorySteps.await() }
+        val persisted = withTimeout(1_000) { recorder.savedDocument.await() }
+        job.cancel()
+
+        val incrementalTimestamps = incrementallyPersisted.associate { (position, step) ->
+            position to assertNotNull(step.lastUpdatedAt)
+        }
+        assertEquals(
+            incrementalTimestamps,
+            persisted.content.mapValues { (_, step) -> step.lastUpdatedAt },
+        )
+    }
+
+    @Test
+    fun commentChangeAfterBulkEditShouldPreserveBatchTimestampsInFullSave() = runTest {
+        val conversation = conversation()
+        val sourceDocument = sourceDocument(listOf(conversation))
+        val first = sourceDocument.content.values.single().copy(
+            id = "step-1",
+            text = "first",
+            lastUpdatedAt = null,
+        )
+        val second = StoryStep(
+            id = "step-2",
+            text = "second",
+            type = StoryTypes.TEXT.type,
+            lastUpdatedAt = null,
+        )
+        val recorder = RecordingDocumentUpdate()
+        val tracker = OnUpdateDocumentTracker(recorder)
+        val documentEditionFlow = MutableStateFlow(
+            StoryState(
+                stories = sourceDocument.content,
+                lastEdit = LastEdit.Nothing,
+            ) to sourceDocument.info()
+        )
+        val commentConversationsFlow = MutableStateFlow(sourceDocument.commentConversations)
+
+        val job = launch {
+            tracker.saveOnStoryChanges(
+                documentEditionFlow,
+                MutableStateFlow(sourceDocument.workspaceId),
+                commentConversationsFlow,
+            )
+        }
+        runCurrent()
+
+        val editedSteps = listOf(0.0 to first, 1.0 to second)
+        documentEditionFlow.value = StoryState(
+            stories = editedSteps.toMap(),
+            lastEdit = LastEdit.BulkEdition(editedSteps),
+        ) to sourceDocument.info()
+        runCurrent()
+
+        commentConversationsFlow.value = mapOf(
+            conversation.id to conversation.comments + Comment(id = "comment-2", text = "reply")
+        )
+
+        val incrementallyPersisted = withTimeout(1_000) { recorder.savedStorySteps.await() }
+        val persisted = withTimeout(1_000) { recorder.savedDocument.await() }
+        job.cancel()
+
+        val incrementalTimestamps = incrementallyPersisted.associate { (position, step) ->
+            position to assertNotNull(step.lastUpdatedAt)
+        }
+        assertEquals(
+            incrementalTimestamps,
+            persisted.content.mapValues { (_, step) -> step.lastUpdatedAt },
+        )
+    }
+
+    @Test
+    fun commentChangeAfterEraseMergeShouldPreserveTimestampInFullSave() = runTest {
+        val conversation = conversation()
+        val sourceDocument = sourceDocument(listOf(conversation))
+        val merged = sourceDocument.content.values.single().copy(
+            id = "step-1",
+            text = "merged",
+            lastUpdatedAt = null,
+        )
+        val recorder = RecordingDocumentUpdate()
+        val tracker = OnUpdateDocumentTracker(recorder)
+        val documentEditionFlow = MutableStateFlow(
+            StoryState(
+                stories = sourceDocument.content,
+                lastEdit = LastEdit.Nothing,
+            ) to sourceDocument.info()
+        )
+        val commentConversationsFlow = MutableStateFlow(sourceDocument.commentConversations)
+
+        val job = launch {
+            tracker.saveOnStoryChanges(
+                documentEditionFlow,
+                MutableStateFlow(sourceDocument.workspaceId),
+                commentConversationsFlow,
+            )
+        }
+        runCurrent()
+
+        documentEditionFlow.value = StoryState(
+            stories = mapOf(0.0 to merged),
+            lastEdit = LastEdit.EraseEdition(
+                deletedId = "step-deleted",
+                updatedStep = 0.0 to merged,
+            ),
+        ) to sourceDocument.info()
+        runCurrent()
+
+        commentConversationsFlow.value = mapOf(
+            conversation.id to conversation.comments + Comment(id = "comment-2", text = "reply")
+        )
+
+        val incrementallyPersisted = withTimeout(1_000) {
+            recorder.savedStorySteps.await().single().second
+        }
+        val persisted = withTimeout(1_000) { recorder.savedDocument.await() }
+        job.cancel()
+
+        assertNotNull(incrementallyPersisted.lastUpdatedAt)
+        assertEquals(
+            incrementallyPersisted.lastUpdatedAt,
+            persisted.content.getValue(0.0).lastUpdatedAt,
+        )
+    }
+
+    @Test
     fun legacySaveShouldRejectCommentBearingDocumentsBeforePersisting() = runTest {
         val conversation = conversation()
         val sourceDocument = sourceDocument(listOf(conversation))
@@ -71,6 +372,52 @@ class OnUpdateDocumentTrackerTest {
                     ) to sourceDocument.info()
                 ),
                 MutableStateFlow(sourceDocument.workspaceId),
+            )
+        }
+
+        assertFalse(recorder.savedDocument.isCompleted)
+    }
+
+    @Test
+    fun legacySaveShouldRejectNestedCommentSpansBeforePersisting() = runTest {
+        val now = Clock.System.now()
+        val conversation = conversation()
+        val document = Document(
+            id = "document-nested",
+            content = mapOf(
+                0.0 to StoryStep(
+                    text = "parent",
+                    type = StoryTypes.TEXT.type,
+                    steps = listOf(
+                        StoryStep(
+                            text = "nested",
+                            type = StoryTypes.TEXT.type,
+                            spans = setOf(
+                                SpanInfo.create(0, 6, Span.COMMENT, conversation.id)
+                            ),
+                        )
+                    ),
+                )
+            ),
+            createdAt = now,
+            lastUpdatedAt = now,
+            lastSyncedAt = null,
+            workspaceId = "workspace-1",
+            parentId = "root",
+            commentConversations = mapOf(conversation.id to conversation.comments),
+        )
+        val recorder = RecordingDocumentUpdate()
+        val tracker = OnUpdateDocumentTracker(recorder)
+
+        assertFailsWith<IllegalStateException> {
+            tracker.saveOnStoryChanges(
+                MutableStateFlow(
+                    StoryState(
+                        stories = document.content,
+                        lastEdit = LastEdit.Whole,
+                    ) to document.info()
+                ),
+                MutableStateFlow(document.workspaceId),
             )
         }
 
@@ -153,6 +500,8 @@ class OnUpdateDocumentTrackerTest {
 
     private class RecordingDocumentUpdate : DocumentUpdate {
         val savedDocument = CompletableDeferred<Document>()
+        val savedStoryStep = CompletableDeferred<StoryStep>()
+        val savedStorySteps = CompletableDeferred<List<Pair<Double, StoryStep>>>()
 
         override suspend fun saveDocument(document: Document) {
             if (!savedDocument.isCompleted) savedDocument.complete(document)
@@ -164,7 +513,9 @@ class OnUpdateDocumentTrackerTest {
             storyStep: StoryStep,
             position: Double,
             documentId: String,
-        ) = Unit
+        ) {
+            if (!savedStoryStep.isCompleted) savedStoryStep.complete(storyStep)
+        }
 
         override suspend fun updateStoryStep(
             storyStep: StoryStep,
@@ -175,7 +526,9 @@ class OnUpdateDocumentTrackerTest {
         override suspend fun saveStorySteps(
             steps: List<Pair<Double, StoryStep>>,
             documentId: String,
-        ) = Unit
+        ) {
+            if (!savedStorySteps.isCompleted) savedStorySteps.complete(steps)
+        }
 
         override suspend fun deleteStoryStep(storyStepId: String, documentId: String) = Unit
     }

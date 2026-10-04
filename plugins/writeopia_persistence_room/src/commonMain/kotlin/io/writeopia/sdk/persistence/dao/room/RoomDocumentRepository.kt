@@ -9,7 +9,6 @@ import io.writeopia.sdk.model.document.DocumentInfo
 import io.writeopia.sdk.model.document.info
 import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.document.Document
-import io.writeopia.sdk.models.link.DocumentLink
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.search.DocumentSearch
 import io.writeopia.sdk.repository.DocumentRepository
@@ -21,6 +20,7 @@ import io.writeopia.sdk.persistence.parse.toCommentConversations
 import io.writeopia.sdk.persistence.parse.toCommentEntities
 import io.writeopia.sdk.persistence.parse.toEntity
 import io.writeopia.sdk.persistence.parse.toModel
+import io.writeopia.sdk.persistence.parse.toStoryTree
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
@@ -158,8 +158,9 @@ class RoomDocumentRepository(
             require(existing == null || existing.workspaceId == document.workspaceId) {
                 "Document does not belong to the requested workspace"
             }
+            if (existing?.isDeleted == true && !document.deleted) return@writeTransaction
 
-            saveDocumentMetadata(document)
+            saveDocumentMetadataInTransaction(document)
 
             document.content.toEntity(document.id).let { data ->
                 storyUnitEntityDao?.deleteDocumentContent(documentId = document.id)
@@ -173,6 +174,18 @@ class RoomDocumentRepository(
     }
 
     override suspend fun saveDocumentMetadata(document: Document) {
+        writeTransaction {
+            saveDocumentMetadataInTransaction(document)
+        }
+    }
+
+    private suspend fun saveDocumentMetadataInTransaction(document: Document) {
+        val existing = documentEntityDao.loadDocumentById(document.id)
+        require(existing == null || existing.workspaceId == document.workspaceId) {
+            "Document does not belong to the requested workspace"
+        }
+        if (existing?.isDeleted == true && !document.deleted) return
+
         documentEntityDao.insertDocuments(document.toEntity())
     }
 
@@ -217,12 +230,25 @@ class RoomDocumentRepository(
 
     override suspend fun saveStoryStep(storyStep: StoryStep, position: Double, documentId: String) {
         val dbPos = storyStep.dbPosition ?: position
-        storyUnitEntityDao?.insertStoryUnits(storyStep.toEntity(dbPos, documentId))
+        val entities = mapOf(dbPos to storyStep).toEntity(documentId)
+        writeTransaction {
+            storyUnitEntityDao?.deleteDescendants(listOf(storyStep.id), documentId)
+            storyUnitEntityDao?.insertStoryUnits(*entities.toTypedArray())
+        }
     }
 
     override suspend fun saveStorySteps(steps: List<Pair<Double, StoryStep>>, documentId: String) {
-        steps.forEach { (position, storyStep) ->
-            storyUnitEntityDao?.insertStoryUnits(storyStep.toEntity(position, documentId))
+        val entities = steps.flatMap { (position, storyStep) ->
+            mapOf(position to storyStep).toEntity(documentId)
+        }
+        writeTransaction {
+            if (steps.isNotEmpty()) {
+                storyUnitEntityDao?.deleteDescendants(
+                    steps.map { (_, step) -> step.id },
+                    documentId,
+                )
+            }
+            storyUnitEntityDao?.insertStoryUnits(*entities.toTypedArray())
         }
     }
 
@@ -275,28 +301,16 @@ class RoomDocumentRepository(
      * This method removes the story units that are not in the root level (they don't have parents)
      * and loads the inner steps of the steps that have children.
      */
-    private suspend fun loadInnerSteps(storyEntities: List<StoryStepEntity>): Map<Double, StoryStep> =
-        storyEntities.filter { entity -> entity.parentId == null }
-            .sortedBy { it.position }
-            .associate { entity -> entity.position to entity }
-            .mapValues { (_, entity) ->
-                if (entity.linkToDocument != null) {
-                    val title = documentEntityDao.getDocumentTitleById(entity.linkToDocument)
-                    return@mapValues entity.toModel(
-                        documentLink = DocumentLink(
-                            entity.linkToDocument,
-                            title
-                        )
-                    )
-                }
+    private suspend fun loadInnerSteps(
+        storyEntities: List<StoryStepEntity>,
+    ): Map<Double, StoryStep> {
+        val documentLinkTitles = mutableMapOf<String, String?>()
+        for (documentId in storyEntities.mapNotNull { it.linkToDocument }.distinct()) {
+            documentLinkTitles[documentId] = documentEntityDao.getDocumentTitleById(documentId)
+        }
 
-                if (entity.hasInnerSteps) {
-                    val innerSteps = storyUnitEntityDao?.queryInnerSteps(entity.id) ?: emptyList()
-                    return@mapValues entity.toModel(innerSteps)
-                }
-
-                entity.toModel()
-            }
+        return storyEntities.toStoryTree(documentLinkTitles)
+    }
 
     private suspend fun <T> writeTransaction(block: suspend () -> T): T =
         database.useWriterConnection { transactor ->

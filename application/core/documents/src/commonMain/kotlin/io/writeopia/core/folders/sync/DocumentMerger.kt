@@ -27,16 +27,36 @@ class DocumentMerger {
      * @param backendDocument The document from the backend (can be null)
      * @return The merged document, or null if both inputs are null
      */
-    fun merge(localDocument: Document?, backendDocument: Document?): Document? =
+    fun merge(
+        localDocument: Document?,
+        backendDocument: Document?,
+        localOverrideStepIds: Set<String> = emptySet(),
+        localDeletedStepIds: Set<String> = emptySet(),
+    ): Document? =
         when {
             localDocument == null && backendDocument == null -> null
             localDocument == null -> backendDocument
             backendDocument == null -> localDocument
-            else -> mergeDocuments(localDocument, backendDocument)
+            else -> mergeDocuments(
+                localDocument,
+                backendDocument,
+                localOverrideStepIds,
+                localDeletedStepIds,
+            )
         }
 
-    private fun mergeDocuments(localDocument: Document, backendDocument: Document): Document {
-        val mergedContent = mergeContent(localDocument.content, backendDocument.content)
+    private fun mergeDocuments(
+        localDocument: Document,
+        backendDocument: Document,
+        localOverrideStepIds: Set<String>,
+        localDeletedStepIds: Set<String>,
+    ): Document {
+        val mergedContent = mergeContent(
+            localDocument.content,
+            backendDocument.content,
+            localOverrideStepIds,
+            localDeletedStepIds,
+        )
 
         // Use the metadata from the newer document
         val baseDocument = if (localDocument.lastUpdatedAt >= backendDocument.lastUpdatedAt) {
@@ -66,8 +86,16 @@ class DocumentMerger {
             .asSequence()
             .flatMap { step -> step.referencedCommentConversationIds() }
             .toSet()
+        val tombstonedIds =
+            primary.filterValues { comments ->
+                comments.isNotEmpty() && comments.all { comment -> comment.deleted }
+            }.keys +
+                fallback.filterValues { comments ->
+                    comments.isNotEmpty() && comments.all { comment -> comment.deleted }
+                }.keys
+        val retainedIds = referencedIds + tombstonedIds
 
-        return referencedIds.mapNotNull { conversationId ->
+        return retainedIds.mapNotNull { conversationId ->
             val primaryComments = primary[conversationId].orEmpty()
             val fallbackComments = fallback[conversationId].orEmpty()
             val primaryById = primaryComments.associateBy { comment -> comment.id }
@@ -75,6 +103,11 @@ class DocumentMerger {
             val commentIds = (primaryComments + fallbackComments)
                 .map { comment -> comment.id }
                 .distinct()
+            val primaryDeleted =
+                primaryComments.isNotEmpty() && primaryComments.all { comment -> comment.deleted }
+            val fallbackDeleted =
+                fallbackComments.isNotEmpty() && fallbackComments.all { comment -> comment.deleted }
+            val conversationDeleted = primaryDeleted || fallbackDeleted
 
             val mergedComments = commentIds.mapNotNull { commentId ->
                 val primaryComment = primaryById[commentId]
@@ -84,6 +117,12 @@ class DocumentMerger {
                     fallbackComment?.deleted == true -> fallbackComment
                     primaryComment != null -> primaryComment
                     else -> fallbackComment
+                }
+            }.let { comments ->
+                if (conversationDeleted) {
+                    comments.map { comment -> comment.copy(deleted = true) }
+                } else {
+                    comments
                 }
             }
 
@@ -105,13 +144,15 @@ class DocumentMerger {
 
     private fun mergeContent(
         localContent: Map<Double, StoryStep>,
-        backendContent: Map<Double, StoryStep>
+        backendContent: Map<Double, StoryStep>,
+        localOverrideStepIds: Set<String>,
+        localDeletedStepIds: Set<String>,
     ): Map<Double, StoryStep> {
         // Build maps from StoryStep ID to (position, StoryStep) for lookup
         val localById = localContent.entries.associate { (pos, step) -> step.id to (pos to step) }
         val backendById = backendContent.entries.associate { (pos, step) -> step.id to (pos to step) }
 
-        val allStepIds = localById.keys + backendById.keys
+        val allStepIds = (localById.keys + backendById.keys) - localDeletedStepIds
         val mergedSteps = mutableListOf<Pair<Double, StoryStep>>()
 
         for (stepId in allStepIds) {
@@ -119,20 +160,22 @@ class DocumentMerger {
             val backendEntry = backendById[stepId]
 
             val (position, step) = when {
+                stepId in localOverrideStepIds && localEntry != null -> localEntry
                 localEntry == null && backendEntry != null -> backendEntry
                 localEntry != null && backendEntry == null -> localEntry
                 localEntry != null && backendEntry != null -> {
-                    // Both exist - compare lastUpdatedAt, local wins on tie or null
-                    val localTimestamp = localEntry.second.lastUpdatedAt ?: Long.MAX_VALUE
-                    val backendTimestamp = backendEntry.second.lastUpdatedAt ?: 0L
+                    val localTimestamp = localEntry.second.lastUpdatedAt
+                    val backendTimestamp = backendEntry.second.lastUpdatedAt
 
-                    if (localTimestamp >= backendTimestamp) {
-                        localEntry
-                    } else {
-                        backendEntry
+                    when {
+                        localTimestamp == null && backendTimestamp == null -> localEntry
+                        localTimestamp == null -> backendEntry
+                        backendTimestamp == null -> localEntry
+                        localTimestamp >= backendTimestamp -> localEntry
+                        else -> backendEntry
                     }
                 }
-                else -> continue // Both null, shouldn't happen
+                else -> continue
             }
 
             mergedSteps.add(position to step)

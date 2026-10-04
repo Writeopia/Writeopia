@@ -575,6 +575,7 @@ class NoteEditorKmpViewModel(
                         documentId = documentId,
                         documentEditionFlow = writeopiaManager.documentEditionState,
                         workspaceIdFlow = writeopiaManager.workspaceIdFlow,
+                        commentConversationsFlow = writeopiaManager.commentConversations,
                         syncApi = syncApi
                     )
                 }
@@ -606,6 +607,9 @@ class NoteEditorKmpViewModel(
                 documentLoadUseCase.fetchAndMergeFromBackend(
                     documentId = documentId,
                     workspaceId = workspace.id,
+                    currentLocalDocument = {
+                        writeopiaManager.getDocument().copy(workspaceId = workspace.id)
+                    },
                     onMergeComplete = { mergedDocument ->
                         // Update the document in the manager with merged content
                         writeopiaManager.updateDocument(mergedDocument)
@@ -669,6 +673,7 @@ class NoteEditorKmpViewModel(
                     documentId = documentId,
                     documentEditionFlow = writeopiaManager.documentEditionState,
                     workspaceIdFlow = writeopiaManager.workspaceIdFlow,
+                    commentConversationsFlow = writeopiaManager.commentConversations,
                     syncApi = syncApi
                 )
             }
@@ -987,7 +992,11 @@ class NoteEditorKmpViewModel(
     override fun deleteDocument() {
         viewModelScope.launch(Dispatchers.Default) {
             val document = writeopiaManager.getDocument()
-            documentRepository.deleteDocument(document, document.workspaceId)
+            deleteDocumentThenUnregister(
+                document = document,
+                delete = documentRepository::deleteDocument,
+                unregister = documentSyncManager::unregisterFromSync,
+            )
         }
     }
 
@@ -1228,4 +1237,13 @@ class NoteEditorKmpViewModel(
         if (!isEditable.value) return
         writeopiaManager.addSpreadsheet(columnCount)
     }
+}
+
+internal suspend fun deleteDocumentThenUnregister(
+    document: Document,
+    delete: suspend (Document, String) -> Unit,
+    unregister: (String) -> Unit,
+) {
+    delete(document, document.workspaceId)
+    unregister(document.id)
 }
