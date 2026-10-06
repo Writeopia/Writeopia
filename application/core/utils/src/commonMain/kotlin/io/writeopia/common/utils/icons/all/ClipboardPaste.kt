@@ -39,11 +39,11 @@ internal val ClipboardPaste: ImageVector
                 horizontalLineTo(9f)
                 arcToRelative(1f, 1f, 0f, isMoreThanHalf = false, isPositiveArc = false, -1f, 1f)
                 verticalLineToRelative(2f)
-                curveToRelative(00f, 0.60f, 0.40f, 10f, 10f, 10f)
+                curveToRelative(0f, 0.6f, 0.4f, 1f, 1f, 1f)
                 horizontalLineToRelative(6f)
-                curveToRelative(0.60f, 00f, 10f, -0.40f, 10f, -10f)
+                curveToRelative(0.6f, 0f, 1f, -0.4f, 1f, -1f)
                 verticalLineTo(3f)
-                curveToRelative(00f, -0.60f, -0.40f, -10f, -10f, -10f)
+                curveToRelative(0f, -0.6f, -0.4f, -1f, -1f, -1f)
                 close()
             }
             path(

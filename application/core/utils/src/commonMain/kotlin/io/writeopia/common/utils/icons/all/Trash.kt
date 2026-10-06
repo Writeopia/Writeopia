@@ -51,9 +51,9 @@ internal val Trash: ImageVector
             ) {
                 moveTo(19f, 6f)
                 verticalLineToRelative(14f)
-                curveToRelative(00f, 10f, -10f, 20f, -20f, 20f)
+                curveToRelative(0f, 1f, -1f, 2f, -2f, 2f)
                 horizontalLineTo(7f)
-                curveToRelative(-10f, 00f, -20f, -10f, -20f, -20f)
+                curveToRelative(-1f, 0f, -2f, -1f, -2f, -2f)
                 verticalLineTo(6f)
             }
             path(
@@ -69,9 +69,9 @@ internal val Trash: ImageVector
             ) {
                 moveTo(8f, 6f)
                 verticalLineTo(4f)
-                curveToRelative(00f, -10f, 10f, -20f, 20f, -20f)
+                curveToRelative(0f, -1f, 1f, -2f, 2f, -2f)
                 horizontalLineToRelative(4f)
-                curveToRelative(10f, 00f, 20f, 10f, 20f, 20f)
+                curveToRelative(1f, 0f, 2f, 1f, 2f, 2f)
                 verticalLineToRelative(2f)
             }
         }.build()
