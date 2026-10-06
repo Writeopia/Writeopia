@@ -29,7 +29,7 @@ public struct PresentationWindowScene: Scene {
     }
 }
 
-/// Loads the presentation of the window from the repository of the current workspace.
+/// Loads the presentation of the window from the backend or the device, wherever it was made.
 struct PresentationWindowView: View {
     let presentationId: String
     @Environment(AppSession.self) private var session
@@ -51,7 +51,7 @@ struct PresentationWindowView: View {
         .background(WrColors.systemBackground)
         .task(id: presentationId) {
             isLoading = true
-            presentation = try? await session.presentationsRepository?.presentation(id: presentationId)
+            presentation = await session.presentation(id: presentationId)
             isLoading = false
         }
     }

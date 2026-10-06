@@ -51,6 +51,12 @@ fun WriteopiaDbBackend.getPresentationsByDocumentId(documentId: String, workspac
         .executeAsList()
         .map { entity -> entity.toModel(loadSlides(entity.id)) }
 
+/** The presentations of the workspace whose title has [query], newest first, without their slides. */
+fun WriteopiaDbBackend.searchPresentations(query: String, workspaceId: String): List<Presentation> =
+    presentationEntityQueries.searchByTitle(query, workspaceId)
+        .executeAsList()
+        .map { entity -> entity.toModel(emptyList()) }
+
 /** Removes the presentation and its steps; false when it doesn't exist in the workspace. */
 fun WriteopiaDbBackend.deletePresentation(id: String, workspaceId: String): Boolean {
     val exists = presentationEntityQueries.selectById(id, workspaceId).executeAsOneOrNull() != null

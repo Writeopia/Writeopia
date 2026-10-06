@@ -17,6 +17,7 @@ import io.writeopia.common.utils.collections.toNodeTree
 import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.presentations.PresentationsStore
 import io.writeopia.core.presentations.api.PresentationsApi
+import io.writeopia.editor.features.presentation.repository.CloudPresentationsSaver
 import io.writeopia.editor.features.presentation.repository.LocalPresentationGenerator
 import io.writeopia.editor.features.presentation.viewmodel.PresentationsController
 import io.writeopia.editor.features.presentation.viewmodel.PresentationsSource
@@ -141,7 +142,9 @@ class NoteEditorKmpViewModel(
                 documentId = { writeopiaManager.documentInfo.value.id },
                 authRepository = authRepository,
                 selectedProvider = aiClients::selectedProvider,
-                cloud = presentationsApi?.let { api -> { _ -> PresentationsSource.Cloud(api, api) } },
+                localStore = presentationsStore,
+                // What the cloud sends is kept on the device too, for the search and offline.
+                cloud = presentationsApi?.let { api -> cloudSource(api, presentationsStore) },
                 local = if (presentationsStore != null && localAiRepository != null) {
                     { userId ->
                         if (localAiRepository.getSelectedModel(userId) == null) {
@@ -1228,4 +1231,18 @@ class NoteEditorKmpViewModel(
         if (!isEditable.value) return
         writeopiaManager.addSpreadsheet(columnCount)
     }
+}
+
+/** The cloud source; what it sends is also kept in [store], when the device has one. */
+private fun cloudSource(
+    api: PresentationsApi,
+    store: PresentationsStore?
+): (String) -> PresentationsSource.Cloud {
+    val source = if (store != null) {
+        val saver = CloudPresentationsSaver(api, store)
+        PresentationsSource.Cloud(saver, saver)
+    } else {
+        PresentationsSource.Cloud(api, api)
+    }
+    return { _ -> source }
 }

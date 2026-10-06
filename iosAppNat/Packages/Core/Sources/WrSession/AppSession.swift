@@ -186,7 +186,8 @@ public final class AppSession {
     public var presentationsSource: PresentationsSource? {
         let cloud: PresentationsSource? = {
             guard isOnline, let workspace, workspace.id != Workspace.localId else { return nil }
-            return .cloud(PresentationsAPI(client: client, workspaceId: workspace.id))
+            // What the backend sends is kept on the device too, for the search and offline.
+            return .cloud(PresentationsAPI(client: client, workspaceId: workspace.id, store: documents as? PresentationsStore))
         }()
         #if os(macOS)
         // The Mac follows the AI in use: the cloud, or Ollama on the machine itself.
@@ -212,6 +213,24 @@ public final class AppSession {
     }
 
     public var supportsPresentations: Bool { presentationsSource != nil }
+
+    /// A presentation with its slides, from the backend or the device, e.g. one picked in the
+    /// search. Nil when neither has it.
+    public func presentation(id: String) async -> Presentation? {
+        var repositories: [PresentationsRepository] = []
+        if isOnline, let workspace, workspace.id != Workspace.localId {
+            repositories.append(PresentationsAPI(client: client, workspaceId: workspace.id, store: documents as? PresentationsStore))
+        }
+        if let local = documents as? PresentationsRepository {
+            repositories.append(local)
+        }
+        for repository in repositories {
+            if let presentation = try? await repository.presentation(id: id) {
+                return presentation
+            }
+        }
+        return nil
+    }
 
     /// Image uploads; nil outside the open space, where images stay on the device.
     public var imageUploader: ImageUploading? {

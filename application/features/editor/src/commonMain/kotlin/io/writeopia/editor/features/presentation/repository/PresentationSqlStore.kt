@@ -22,9 +22,10 @@ import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
 /**
- * The presentations the local AI generates, kept in the app database like the documents: one
- * row per step, the title of each slide as a `TITLE` step at position 0 of its slide. The
- * queries are null where the database doesn't exist (Android), and then nothing is kept.
+ * The presentations the local AI generates and the ones the backend sends, saved in the app
+ * database like the documents: one row per step, the title of each slide as a `TITLE` step at
+ * position 0 of its slide. The queries are null where the database doesn't exist (Android), and
+ * then nothing is kept.
  */
 class PresentationSqlStore(
     private val presentationQueries: PresentationEntityQueries?,

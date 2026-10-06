@@ -20,6 +20,7 @@ import io.writeopia.api.documents.documents.repository.allFoldersByWorkspaceId
 import io.writeopia.api.documents.documents.repository.deletePresentation
 import io.writeopia.api.documents.documents.repository.getPresentationById
 import io.writeopia.api.documents.documents.repository.getPresentationsByDocumentId
+import io.writeopia.api.documents.documents.repository.searchPresentations
 import io.writeopia.api.documents.documents.repository.getDocumentsByParentId
 import io.writeopia.api.documents.documents.repository.getFoldersByParentId
 import io.writeopia.api.documents.documents.repository.getIdsByParentId
@@ -55,6 +56,7 @@ import io.writeopia.sdk.serialization.response.FolderContentResponse
 import io.writeopia.sdk.serialization.response.GeneratePresentationResponse
 import io.writeopia.sdk.serialization.response.GenerateSummaryResponse
 import io.writeopia.sdk.serialization.response.PresentationsResponse
+import io.writeopia.sdk.serialization.response.SearchResponse
 import io.writeopia.sdk.serialization.response.SyncEventApi
 import io.writeopia.sdk.serialization.response.WorkspaceDiffResponse
 import io.writeopia.sql.WriteopiaDbBackend
@@ -193,8 +195,17 @@ fun Routing.documentsRoute(
                     }
 
                 if (result is ResultData.Complete) {
-                    logger.info("Search completed - returning ${result.data.size} documents")
-                    call.respond(status = HttpStatusCode.OK, message = result.data)
+                    val presentations = writeopiaDb.searchPresentations(query, workspaceId)
+                    logger.info(
+                        "Search completed - returning ${result.data.size} documents and ${presentations.size} presentations"
+                    )
+                    call.respond(
+                        status = HttpStatusCode.OK,
+                        message = SearchResponse(
+                            documents = result.data,
+                            presentations = presentations.map { it.toApi() }
+                        )
+                    )
                 } else {
                     logger.error("Search failed - internal error")
                     call.respond(HttpStatusCode.InternalServerError)

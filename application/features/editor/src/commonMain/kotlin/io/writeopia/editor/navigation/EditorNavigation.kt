@@ -8,6 +8,7 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -42,8 +43,16 @@ fun NavGraphBuilder.editorNavigation(
 ) {
     sharedTransitionScope.run {
         composable(
-            route = "${Destinations.EDITOR.id}/{noteId}/{noteTitle}",
-            arguments = listOf(navArgument("noteId") { type = NavType.StringType }),
+            route = "${Destinations.EDITOR.id}/{noteId}/{noteTitle}?presentationId={presentationId}",
+            arguments = listOf(
+                navArgument("noteId") { type = NavType.StringType },
+                // A presentation of the document to play once it opens, e.g. picked in the search.
+                navArgument("presentationId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            ),
             enterTransition = {
                 slideInHorizontally(
                     initialOffsetX = { intSize -> intSize }
@@ -68,6 +77,15 @@ fun NavGraphBuilder.editorNavigation(
                     )
 
                 noteDetailsViewModel.setTheme(isDarkTheme)
+
+                val presentationId = backStackEntry.savedStateHandle.get<String?>("presentationId")
+                LaunchedEffect(presentationId) {
+                    if (presentationId != null) {
+                        // Consumed, so coming back to the document doesn't open it again.
+                        backStackEntry.savedStateHandle["presentationId"] = null
+                        noteDetailsViewModel.presentations?.openPresentation(presentationId)
+                    }
+                }
 
                 TextEditorScreen(
                     noteId.takeIf { it != "null" },

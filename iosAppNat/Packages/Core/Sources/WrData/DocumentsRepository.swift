@@ -8,6 +8,8 @@ public protocol DocumentsRepository: AnyObject {
     func folderContents(folderId: String) async throws -> FolderContents
     func document(id: String) async throws -> WrDocument
     func search(query: String) async throws -> [WrDocument]
+    /// What the search shows: the documents and the presentations, the latter without slides.
+    func searchAll(query: String) async throws -> SearchResults
     func createFolder(title: String, parentId: String) async throws -> Folder
     func createDocument(title: String, parentId: String) async throws -> WrDocument
     func moveDocument(id: String, toFolder folderId: String) async throws
@@ -49,7 +51,33 @@ public enum MoveError: Error, Equatable {
     }
 }
 
+/// What the search of a workspace finds. Encoded like the backend's `SearchResponse`.
+public struct SearchResults: Decodable, Sendable {
+    public var documents: [WrDocument]
+    public var presentations: [Presentation]
+
+    public init(documents: [WrDocument] = [], presentations: [Presentation] = []) {
+        self.documents = documents
+        self.presentations = presentations
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case documents, presentations
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        documents = try container.decodeIfPresent([WrDocument].self, forKey: .documents) ?? []
+        presentations = try container.decodeIfPresent([Presentation].self, forKey: .presentations) ?? []
+    }
+}
+
 extension DocumentsRepository {
+    /// Only the documents, for the repositories without presentations.
+    public func searchAll(query: String) async throws -> SearchResults {
+        SearchResults(documents: try await search(query: query))
+    }
+
     // Sources without folders of their own (editor previews and tests) don't need to offer these.
     public func folder(id: String) async throws -> Folder? { nil }
 
@@ -122,8 +150,13 @@ public final class RemoteDocumentsRepository: DocumentsRepository {
     }
 
     public func search(query: String) async throws -> [WrDocument] {
+        try await searchAll(query: query).documents
+    }
+
+    /// One request: the backend finds the documents and the presentations together.
+    public func searchAll(query: String) async throws -> SearchResults {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return [] }
+        guard !trimmed.isEmpty else { return SearchResults() }
         return try await client.get("\(base)/document/search", query: [URLQueryItem(name: "q", value: trimmed)])
     }
 

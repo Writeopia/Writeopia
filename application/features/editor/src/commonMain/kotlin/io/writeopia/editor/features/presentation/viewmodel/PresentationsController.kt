@@ -51,6 +51,8 @@ sealed interface PresentationsSource {
  * @param selectedProvider the AI the user picked, see [AiClients.selectedProvider]. The cloud by
  * default, which is all the phones and the web have.
  * @param providerChanges tells when the user picks another provider, so the source follows.
+ * @param localStore the presentations the local AI made, read by [openPresentation] even when the
+ * local AI isn't the source anymore.
  * @param aiTaskManager runs the generation as an AI task, so it keeps going after the editor is
  * closed and shows like the other AI tasks: the indicator on the desktop, a notification on Android.
  */
@@ -62,6 +64,7 @@ class PresentationsController(
     private val local: (suspend (userId: String) -> PresentationsSource.Local?)?,
     private val selectedProvider: suspend (userId: String) -> AiProvider = { AiProvider.CLOUD },
     private val providerChanges: Flow<AiProvider> = AiClients.providerChanges,
+    private val localStore: PresentationsRepository? = null,
     private val aiTaskManager: AiTaskManager = AiTaskManager.singleton(),
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default
 ) {
@@ -86,7 +89,10 @@ class PresentationsController(
     val isGenerating: StateFlow<Boolean> = _isGenerating.asStateFlow()
     val error: StateFlow<String?> = _error.asStateFlow()
 
-    /** The presentation just made, to be opened; cleared by [consumeGenerated]. */
+    /**
+     * The presentation to open: the one just made, or the one asked for by [openPresentation].
+     * Cleared by [consumeGenerated].
+     */
     val generated: StateFlow<Presentation?> = _generated.asStateFlow()
 
     init {
@@ -172,6 +178,34 @@ class PresentationsController(
             is PresentationsSource.Local -> source.generator
             else -> null
         }
+
+    /**
+     * Opens a presentation by its id, e.g. one picked in the search. It is looked for in the
+     * backend first, when the workspace is online with a premium account, then on the device.
+     */
+    fun openPresentation(presentationId: String) {
+        scope.launch(dispatcher) {
+            val workspace = authRepository.getWorkspace()
+            val user = authRepository.getUser()
+            val workspaceId = workspace?.id ?: Workspace.disconnectedWorkspace().id
+            val online = workspace != null && workspace.id != Workspace.disconnectedWorkspace().id
+
+            val repositories = listOfNotNull(
+                cloud?.takeIf { online && user.tier == Tier.PREMIUM }?.invoke(workspaceId)?.repository,
+                localStore
+            )
+
+            val presentation = repositories.firstNotNullOfOrNull { repository ->
+                (repository.presentation(presentationId, workspaceId) as? ResultData.Complete)?.data
+            }
+
+            if (presentation != null) {
+                _generated.value = presentation
+            } else {
+                _error.value = "The presentation was not found."
+            }
+        }
+    }
 
     fun load() {
         val repository = repository() ?: return

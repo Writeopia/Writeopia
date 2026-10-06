@@ -103,4 +103,21 @@ class PresentationsRepositoryTest {
         assertTrue(db.presentationStepEntityQueries.selectByPresentationId(saved.id).executeAsList().isEmpty())
         assertFalse(db.deletePresentation(saved.id, workspaceId))
     }
+
+    @Test
+    fun `search finds the presentations of the workspace by title, newest first`() {
+        val older = presentation("doc-1", "Sky colors", 10)
+        val newer = presentation("doc-2", "Why the SKY is blue", 20)
+        val other = presentation("doc-3", "Oceans", 30)
+        val elsewhere = presentation("doc-4", "Sky elsewhere", 40).copy(workspaceId = "another-workspace")
+        listOf(older, newer, other, elsewhere).forEach(db::savePresentation)
+
+        val found = db.searchPresentations("sky", workspaceId)
+
+        assertEquals(listOf(newer.id, older.id), found.map { it.id })
+        assertEquals(listOf("doc-2", "doc-1"), found.map { it.documentId })
+        assertTrue(found.all { it.slides.isEmpty() })
+
+        db.deletePresentation(elsewhere.id, "another-workspace")
+    }
 }

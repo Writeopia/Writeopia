@@ -17,6 +17,13 @@ FROM presentationEntity
 WHERE document_id = ? AND workspace_id = ?
 ORDER BY created_at DESC;
 
+search:
+SELECT *
+FROM presentationEntity
+WHERE title LIKE '%' || ? || '%' AND workspace_id = ?
+ORDER BY created_at DESC
+LIMIT 10;
+
 insert:
 INSERT INTO presentationEntity(id, document_id, workspace_id, title, created_at)
 VALUES (?, ?, ?, ?, ?)

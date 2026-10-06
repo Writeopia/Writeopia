@@ -50,6 +50,7 @@ import io.writeopia.model.isDarkTheme
 import io.writeopia.navigation.Navigation
 import io.writeopia.navigation.notes.navigateToFolder
 import io.writeopia.navigation.notes.navigateToNoteMobile
+import io.writeopia.navigation.notes.navigateToNoteWithPresentation
 import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
 import io.writeopia.notemenu.di.NotesMenuInjection
 import io.writeopia.notemenu.di.NotesMenuKmpInjection
@@ -321,7 +322,8 @@ fun DesktopApp(
                                     onSearchType = searchViewModel::onSearchType,
                                     onDismissRequest = globalShellViewModel::hideSearch,
                                     documentClick = navigationController::navigateToNoteMobile,
-                                    onFolderClick = navigationController::navigateToFolder
+                                    onFolderClick = navigationController::navigateToFolder,
+                                    presentationClick = navigationController::navigateToNoteWithPresentation
                                 )
                             }
 

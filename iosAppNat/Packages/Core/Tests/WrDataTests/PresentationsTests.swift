@@ -151,6 +151,22 @@ private let sample = """
         #expect(listed.allSatisfy { $0.slides.count == 3 })
     }
 
+    @Test func searchFindsThePresentationsByTitleNewestFirst() async throws {
+        let repository = LocalDocumentsRepository(directory: directory, seedsWelcome: false)
+        let old = presentation(documentId: "doc", title: "Sky colors", createdAt: 1)
+        let recent = presentation(documentId: "other", title: "Why the SKY is blue", createdAt: 2)
+        let unrelated = presentation(documentId: "doc", title: "Oceans", createdAt: 3)
+        for item in [old, recent, unrelated] {
+            try await repository.savePresentation(item)
+        }
+
+        let found = try await repository.searchPresentations(query: " sky ")
+
+        #expect(found.map(\.title) == ["Why the SKY is blue", "Sky colors"])
+        #expect(found.map(\.documentId) == ["other", "doc"])
+        #expect(try await repository.searchPresentations(query: "  ").isEmpty)
+    }
+
     @Test func savingAgainReplacesTheSlides() async throws {
         let repository = LocalDocumentsRepository(directory: directory, seedsWelcome: false)
         var saved = presentation(documentId: "doc", title: "Sky", createdAt: 1)

@@ -31,6 +31,14 @@ fun NavController.navigateToNoteMobile(id: String, title: String) {
     }
 }
 
+/**
+ * Opens the document a presentation was made from and plays the presentation over it. Navigates
+ * even when the document is already open, so the presentation shows.
+ */
+fun NavController.navigateToNoteWithPresentation(documentId: String, presentationId: String, title: String) {
+    navigate("${Destinations.EDITOR.id}/$documentId/${title.encodeForNavigation()}?presentationId=$presentationId")
+}
+
 fun NavController.navigateToAccount() {
     navigate(Destinations.ACCOUNT.id)
 }
