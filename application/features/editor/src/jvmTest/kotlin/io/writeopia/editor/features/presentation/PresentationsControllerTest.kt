@@ -4,6 +4,9 @@ package io.writeopia.editor.features.presentation
 
 import io.mockk.coEvery
 import io.mockk.mockk
+import io.writeopia.ai.task.AiTaskManager
+import io.writeopia.ai.task.AiTaskStatus
+import io.writeopia.ai.task.AiTaskType
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.core.presentations.PresentationException
 import io.writeopia.core.presentations.PresentationGenerator
@@ -17,8 +20,10 @@ import io.writeopia.sdk.models.user.Tier
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -65,6 +70,13 @@ private class FakePresentations(var answer: Presentation? = null, var failure: S
 
 class PresentationsControllerTest {
 
+    /** Runs the AI tasks right away, instead of in the background like the app does. */
+    private fun TestScope.aiTasks() = AiTaskManager(
+        dispatcher = UnconfinedTestDispatcher(testScheduler),
+        scope = backgroundScope,
+        autoRemoveDelayMs = 0
+    )
+
     private fun presentation(workspaceId: String) = Presentation(
         documentId = "d1",
         workspaceId = workspaceId,
@@ -98,6 +110,7 @@ class PresentationsControllerTest {
             cloud = { PresentationsSource.Cloud(cloud, cloud) },
             local = { PresentationsSource.Local(local, local) },
             providerChanges = emptyFlow(),
+            aiTaskManager = aiTasks(),
             dispatcher = UnconfinedTestDispatcher(testScheduler)
         )
 
@@ -126,6 +139,7 @@ class PresentationsControllerTest {
             local = { PresentationsSource.Local(local, local) },
             selectedProvider = { AiProvider.LOCAL },
             providerChanges = emptyFlow(),
+            aiTaskManager = aiTasks(),
             dispatcher = UnconfinedTestDispatcher(testScheduler)
         )
 
@@ -146,6 +160,7 @@ class PresentationsControllerTest {
             local = { null },
             selectedProvider = { AiProvider.LOCAL },
             providerChanges = emptyFlow(),
+            aiTaskManager = aiTasks(),
             dispatcher = UnconfinedTestDispatcher(testScheduler)
         )
 
@@ -169,6 +184,7 @@ class PresentationsControllerTest {
             local = { PresentationsSource.Local(local, local) },
             selectedProvider = { provider },
             providerChanges = changes,
+            aiTaskManager = aiTasks(),
             dispatcher = UnconfinedTestDispatcher(testScheduler)
         )
 
@@ -193,6 +209,7 @@ class PresentationsControllerTest {
             cloud = { PresentationsSource.Cloud(cloud, cloud) },
             local = null,
             providerChanges = emptyFlow(),
+            aiTaskManager = aiTasks(),
             dispatcher = UnconfinedTestDispatcher(testScheduler)
         )
 
@@ -213,6 +230,7 @@ class PresentationsControllerTest {
             cloud = { error("the cloud isn't used offline") },
             local = { PresentationsSource.Local(local, local) },
             providerChanges = emptyFlow(),
+            aiTaskManager = aiTasks(),
             dispatcher = UnconfinedTestDispatcher(testScheduler)
         )
         assertTrue(withModel.isAvailable.value)
@@ -227,6 +245,7 @@ class PresentationsControllerTest {
             cloud = { error("the cloud isn't used offline") },
             local = { null },
             providerChanges = emptyFlow(),
+            aiTaskManager = aiTasks(),
             dispatcher = UnconfinedTestDispatcher(testScheduler)
         )
         assertFalse(withoutModel.isAvailable.value)
@@ -243,6 +262,7 @@ class PresentationsControllerTest {
             cloud = { PresentationsSource.Cloud(cloud, cloud) },
             local = null,
             providerChanges = emptyFlow(),
+            aiTaskManager = aiTasks(),
             dispatcher = UnconfinedTestDispatcher(testScheduler)
         )
 
@@ -256,5 +276,40 @@ class PresentationsControllerTest {
         controller.delete(controller.presentations.value.single())
         assertTrue(controller.presentations.value.isEmpty())
         assertTrue(cloud.saved.isEmpty())
+    }
+
+    @Test
+    fun `the generation is an AI task that can be cancelled from outside the editor`() = runTest(UnconfinedTestDispatcher()) {
+        val cloud = FakePresentations()
+        // Never answers, like a slow AI
+        val slow = object : PresentationGenerator {
+            override suspend fun generatePresentation(documentId: String, workspaceId: String): ResultData<Presentation> =
+                awaitCancellation()
+        }
+        val aiTasks = aiTasks()
+        val controller = PresentationsController(
+            scope = this,
+            documentId = { "d1" },
+            authRepository = auth(online, Tier.PREMIUM),
+            cloud = { PresentationsSource.Cloud(cloud, slow) },
+            local = null,
+            providerChanges = emptyFlow(),
+            aiTaskManager = aiTasks,
+            dispatcher = UnconfinedTestDispatcher(testScheduler)
+        )
+
+        controller.generate()
+
+        val task = aiTasks.tasks.value.single()
+        assertEquals(AiTaskType.PRESENTATION, task.type)
+        assertEquals(AiTaskStatus.RUNNING, task.status)
+        assertTrue(controller.isGenerating.value)
+
+        // What the Cancel action of the Android notification does
+        aiTasks.cancelTask(task.id)
+
+        assertFalse(controller.isGenerating.value)
+        assertNull(controller.generated.value)
+        assertNull(controller.error.value)
     }
 }

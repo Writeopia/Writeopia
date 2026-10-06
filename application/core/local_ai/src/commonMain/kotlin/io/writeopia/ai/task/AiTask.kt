@@ -3,6 +3,7 @@ package io.writeopia.ai.task
 enum class AiTaskType {
     SUMMARIZATION,
     TEXT_GENERATION,
+    PRESENTATION,
     MODEL_DOWNLOAD
 }
 
