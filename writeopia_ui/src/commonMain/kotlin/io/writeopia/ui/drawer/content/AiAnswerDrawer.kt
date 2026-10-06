@@ -69,7 +69,8 @@ class AiAnswerDrawer(
     private val onDragStop: () -> Unit,
     private val moveRequest: (Action.Move) -> Unit,
     private val receiveExternalFile: (List<ExternalFile>, Double) -> Unit,
-    private val acceptStoryStep: (Double) -> Unit
+    private val acceptStoryStep: (Double) -> Unit,
+    private val showActionsAlways: Boolean = false
 ) : StoryStepDrawer {
 
     @Composable
@@ -77,6 +78,7 @@ class AiAnswerDrawer(
         val dropInfo = DropInfo(step, drawInfo.position)
         val interactionSource = remember { MutableInteractionSource() }
         val isHovered by interactionSource.collectIsHoveredAsState()
+        val showActions = isHovered || showActionsAlways
 
         val (paddingBottom, paddingTop) = step.tags
             .any { it.tag.isTitle() }
@@ -164,7 +166,7 @@ class AiAnswerDrawer(
                     val clipboardManager = LocalClipboardManager.current
 
                     AnimatedVisibility(
-                        isHovered,
+                        showActions,
                         enter = fadeIn(),
                         exit = fadeOut(),
                         modifier = Modifier.align(Alignment.TopEnd).padding(end = 8.dp)
@@ -201,7 +203,7 @@ class AiAnswerDrawer(
                     }
 
                     AnimatedVisibility(
-                        isHovered,
+                        showActions,
                         enter = fadeIn(),
                         exit = fadeOut(),
                         modifier = Modifier.align(Alignment.TopStart).padding(horizontal = 10.dp)
