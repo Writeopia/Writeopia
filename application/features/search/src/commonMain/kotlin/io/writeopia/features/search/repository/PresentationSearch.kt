@@ -9,8 +9,8 @@ fun interface PresentationSearch {
 }
 
 /**
- * The presentations kept in the app database, the ones the local AI made. The queries are null
- * where the database doesn't exist (Android), and then nothing is found.
+ * The presentations saved in the app database, made by the local AI or sent by the backend. The
+ * queries are null where the database doesn't exist (Android), and then nothing is found.
  */
 class PresentationSqlSearch(private val queries: PresentationEntityQueries?) : PresentationSearch {
 
