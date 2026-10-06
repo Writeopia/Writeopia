@@ -51,6 +51,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import io.writeopia.commonui.buttons.verticalPaddingCommonButton
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import io.writeopia.common.utils.collections.inBatches
@@ -915,7 +916,12 @@ internal fun FontOptions(
     val selected by selectedState.collectAsState()
 
     val currentPlatform = LocalPlatform.current
-    val buttonPadding = if (currentPlatform.isMobile()) 8.dp else 4.dp
+    // On mobile the buttons are as tall as the lock button above them
+    val buttonPadding = if (currentPlatform.isMobile()) {
+        PaddingValues(horizontal = 8.dp, vertical = verticalPaddingCommonButton().dp)
+    } else {
+        PaddingValues(4.dp)
+    }
 
     mapOf(
         Font.SYSTEM.label to FontFamily.Default,

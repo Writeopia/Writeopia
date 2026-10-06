@@ -14,7 +14,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,6 +26,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import io.writeopia.commonui.buttons.verticalPaddingCommonButton
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.FontOptions
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.LockButton
 import io.writeopia.model.Font
@@ -51,7 +54,8 @@ internal fun NoteGlobalActionsMenu(
             .padding(horizontal = 16.dp)
             .pointerInput(Unit) { detectTapGestures { } }
     ) {
-        Column(modifier = Modifier.widthIn(max = 500.dp)) {
+        // Scrolls when the actions don't fit, like on small screens or with large fonts
+        Column(modifier = Modifier.widthIn(max = 500.dp).verticalScroll(rememberScrollState())) {
             Spacer(modifier = Modifier.height(16.dp))
 
             Title(WrStrings.actions())
@@ -126,6 +130,8 @@ internal fun NoteGlobalActionsMenu(
                 text = WrStrings.publishToWeb(),
                 onClick = onPublishClick
             )
+
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
@@ -146,7 +152,8 @@ private fun ShareButton(text: String, modifier: Modifier = Modifier, onClick: ()
             .clip(RoundedCornerShape(6.dp))
             .clickable(onClick = onClick)
             .background(MaterialTheme.colorScheme.background)
-            .padding(8.dp),
+            // The height of the lock button, so all the buttons of the menu match
+            .padding(horizontal = 8.dp, vertical = verticalPaddingCommonButton().dp),
         text = text,
         color = MaterialTheme.colorScheme.onBackground,
         style = MaterialTheme.typography.bodySmall.copy(
