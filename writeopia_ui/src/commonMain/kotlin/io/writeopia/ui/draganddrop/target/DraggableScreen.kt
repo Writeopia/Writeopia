@@ -35,8 +35,8 @@ fun DraggableScreen(
                             localOffset = layoutCoordinates.positionInWindow()
                         }
                         .graphicsLayer {
-                            val offset =
-                                (state.dragPosition + state.dragOffset) - localOffset
+                            val origin = state.ghostPosition ?: state.dragPosition
+                            val offset = (origin + state.dragOffset) - localOffset
 //                            scaleX = 0.8f
 //                            scaleY = 0.8f
                             alpha = if (targetSize == IntSize.Zero) 0f else .90f
