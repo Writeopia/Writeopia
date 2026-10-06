@@ -24,10 +24,13 @@ import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.toSize
 import io.writeopia.sdk.model.draganddrop.DropInfo
 
 @Composable
@@ -42,6 +45,8 @@ fun DragCardTargetMobile(
     content: @Composable BoxScope.() -> Unit
 ) {
     var currentPosition by remember { mutableStateOf(Offset.Zero) }
+    var iconPosition by remember { mutableStateOf(Offset.Zero) }
+    val density = LocalDensity.current
     var maxSize by remember { mutableStateOf(DpSize(0.dp, 0.dp)) }
     val currentState = LocalDragTargetInfo.current
     val haptic = LocalHapticFeedback.current
@@ -49,9 +54,10 @@ fun DragCardTargetMobile(
     Box(
         modifier = modifier
             .onGloballyPositioned { layoutCoordinates ->
-                // Todo: Offset.Zero Is wrong!
-                currentPosition = layoutCoordinates.localToWindow(Offset.Zero)
-                maxSize = DpSize(layoutCoordinates.size.width.dp, layoutCoordinates.size.height.dp)
+                currentPosition = layoutCoordinates.positionInWindow()
+                // The layout size is in pixels, it must be converted to Dp, otherwise the dragged
+                // copy becomes bigger than the original card in screens with density > 1.
+                maxSize = with(density) { layoutCoordinates.size.toSize().toDpSize() }
             },
     ) {
         content()
@@ -72,13 +78,18 @@ fun DragCardTargetMobile(
                         .size(20.dp)
                         .width(dragIconWidth)
                         .pointerHoverIcon(PointerIcon.Hand)
+                        .onGloballyPositioned { layoutCoordinates ->
+                            iconPosition = layoutCoordinates.positionInWindow()
+                        }
                         .pointerInput(Unit) {
                             detectDragGestures(onDragStart = { offset ->
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
 
                                 currentState.dataToDrop = dataToDrop
                                 currentState.isDragging = true
-                                currentState.dragPosition = currentPosition + offset
+                                // The offset is relative to the drag icon, not to the card.
+                                currentState.dragPosition = iconPosition + offset
+                                currentState.ghostPosition = currentPosition
                                 currentState.draggableComposable = {
                                     Box(modifier = Modifier.size(maxSize)) {
                                         content()
@@ -90,9 +101,11 @@ fun DragCardTargetMobile(
                             }, onDragEnd = {
                                 currentState.isDragging = false
                                 currentState.dragOffset = Offset.Zero
+                                currentState.ghostPosition = null
                             }, onDragCancel = {
                                 currentState.isDragging = false
                                 currentState.dragOffset = Offset.Zero
+                                currentState.ghostPosition = null
                             })
                         }
                         .align(Alignment.TopEnd),

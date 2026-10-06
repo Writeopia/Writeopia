@@ -571,7 +571,7 @@ private fun FolderItem(
                 activeBorderColor = MaterialTheme.colorScheme.primary
             ) {
                 DragCardTarget(
-                    modifier = modifier.clip(MaterialTheme.shapes.large),
+                    modifier = Modifier.clip(MaterialTheme.shapes.large),
                     position = position.toDouble(),
                     dataToDrop = DropInfo(folderUi, position.toDouble()),
                     iconTintOnHover = MaterialTheme.colorScheme.onBackground,
