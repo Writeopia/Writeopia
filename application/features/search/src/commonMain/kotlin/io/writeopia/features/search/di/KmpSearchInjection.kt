@@ -3,6 +3,7 @@ package io.writeopia.features.search.di
 import io.writeopia.auth.core.di.AuthCoreInjectionNeo
 import io.writeopia.di.AppConnectionInjection
 import io.writeopia.features.search.api.SearchApi
+import io.writeopia.features.search.repository.PresentationSqlSearch
 import io.writeopia.features.search.repository.SearchRepository
 import io.writeopia.features.search.ui.SearchKmpViewModel
 import io.writeopia.models.interfaces.search.FolderSearch
@@ -41,7 +42,8 @@ class KmpSearchInjection private constructor(
         this.folderDao ?: folderDao.also { this.folderDao = folderDao },
         this.documentDao ?: documentDao.also { this.documentDao = documentDao },
         provideSearchApi(),
-        AuthCoreInjectionNeo.singleton().provideAuthRepository()
+        AuthCoreInjectionNeo.singleton().provideAuthRepository(),
+        PresentationSqlSearch(writeopiaDb?.presentationEntityQueries)
     )
 
     override fun provideViewModel(): SearchKmpViewModel =

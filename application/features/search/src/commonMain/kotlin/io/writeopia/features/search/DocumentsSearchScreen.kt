@@ -25,6 +25,7 @@ fun DocumentsSearchScreen(
     onSearchType: (String) -> Unit,
     documentClick: (String, String) -> Unit,
     onFolderClick: (NotesNavigation) -> Unit,
+    presentationClick: (documentId: String, presentationId: String, title: String) -> Unit,
 ) {
     val search by searchState.collectAsState()
 
@@ -34,6 +35,7 @@ fun DocumentsSearchScreen(
         searchResults,
         documentClick,
         onFolderClick,
+        presentationClick,
         searchInput = {
             SearchInput(
                 search,

@@ -248,7 +248,7 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
 
     public var workspaceId: String { remote.workspaceId }
 
-    // MARK: - Presentations of the local AI: kept in the local cache, never synced.
+    // MARK: - Presentations on this device: the ones of the local AI and copies of the cloud ones, never synced.
 
     public func presentations(ofDocument documentId: String) async throws -> [Presentation] {
         try await local.presentations(ofDocument: documentId)
@@ -292,6 +292,20 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
             return try await remote.search(query: query)
         } catch {
             return try await local.search(query: query)
+        }
+    }
+
+    /// The backend finds the documents and its presentations in one request; the presentations of
+    /// the local AI, never synced, come from this device. Offline, everything comes from here.
+    public func searchAll(query: String) async throws -> SearchResults {
+        do {
+            var results = try await remote.searchAll(query: query)
+            let onDevice = (try? await local.searchPresentations(query: query)) ?? []
+            let known = Set(results.presentations.map(\.id))
+            results.presentations += onDevice.filter { !known.contains($0.id) }
+            return results
+        } catch {
+            return try await local.searchAll(query: query)
         }
     }
 

@@ -479,6 +479,25 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
         return presentation
     }
 
+    /// The documents, and the presentations the local AI made.
+    public func searchAll(query: String) async throws -> SearchResults {
+        SearchResults(
+            documents: try await search(query: query),
+            presentations: try await searchPresentations(query: query)
+        )
+    }
+
+    /// The presentations whose title has `query`, newest first, without their slides.
+    public func searchPresentations(query: String) async throws -> [Presentation] {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return [] }
+        return try db.query(
+            "SELECT id, document_id, title, created_at FROM presentation WHERE title LIKE ? ORDER BY created_at DESC LIMIT 20",
+            [.text("%\(trimmed)%")],
+            row: presentationRow
+        )
+    }
+
     /// Writes the presentation like a document: one row per step, the title of each slide as a
     /// `title` step at position 0 of its slide.
     public func savePresentation(_ presentation: Presentation) async throws {

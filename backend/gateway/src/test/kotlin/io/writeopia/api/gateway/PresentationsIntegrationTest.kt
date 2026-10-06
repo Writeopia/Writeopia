@@ -9,13 +9,20 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.server.testing.testApplication
+import io.writeopia.api.documents.documents.repository.deletePresentation
+import io.writeopia.api.documents.documents.repository.savePresentation
 import io.writeopia.api.geteway.configurePersistence
 import io.writeopia.api.geteway.module
+import io.writeopia.sdk.models.presentation.Presentation
+import io.writeopia.sdk.models.presentation.Slide
 import io.writeopia.sdk.serialization.request.GeneratePresentationRequest
 import io.writeopia.sdk.serialization.response.PresentationsResponse
+import io.writeopia.sdk.serialization.response.SearchResponse
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 class PresentationsIntegrationTest {
 
@@ -60,5 +67,36 @@ class PresentationsIntegrationTest {
 
         // Without WRITEOPIA_USE_CLOUD_AI there's no GenAI service; with it but unconfigured, GenAI is unavailable.
         assertEquals(HttpStatusCode.ServiceUnavailable, response.status)
+    }
+
+    @OptIn(ExperimentalTime::class)
+    @Test
+    fun `the search of the workspace returns its presentations too`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val presentation = Presentation(
+            documentId = "doc-with-slides",
+            workspaceId = "ws-presentations",
+            userId = "user",
+            title = "Quarterly roadmap slides",
+            createdAt = Instant.fromEpochMilliseconds(10),
+            slides = listOf(Slide("Quarterly roadmap slides"))
+        )
+        db.savePresentation(presentation)
+
+        try {
+            val client = defaultClient()
+            val response = client.get("/api/docs/workspace/ws-presentations/document/search?q=roadmap")
+
+            assertEquals(HttpStatusCode.OK, response.status)
+            val found = response.body<SearchResponse>().presentations
+            assertEquals(listOf(presentation.id), found.map { it.id })
+            assertEquals("doc-with-slides", found.single().documentId)
+            assertTrue(found.single().slides.isEmpty())
+        } finally {
+            db.deletePresentation(presentation.id, "ws-presentations")
+        }
     }
 }

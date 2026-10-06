@@ -312,4 +312,38 @@ class PresentationsControllerTest {
         assertNull(controller.generated.value)
         assertNull(controller.error.value)
     }
+
+    @Test
+    fun `a presentation picked in the search opens from the cloud or the device`() = runTest(UnconfinedTestDispatcher()) {
+        val cloud = FakePresentations()
+        val local = FakePresentations()
+        val inCloud = presentation("w1").copy(id = "cloud-p", title = "Cloud")
+        val onDevice = presentation("w1").copy(id = "local-p", title = "Device")
+        cloud.savePresentation(inCloud)
+        local.savePresentation(onDevice)
+
+        val controller = PresentationsController(
+            scope = this,
+            documentId = { "d1" },
+            authRepository = auth(online, Tier.PREMIUM),
+            cloud = { PresentationsSource.Cloud(cloud, cloud) },
+            local = null,
+            localStore = local,
+            providerChanges = emptyFlow(),
+            aiTaskManager = aiTasks(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler)
+        )
+
+        controller.openPresentation("cloud-p")
+        assertEquals("Cloud", controller.generated.value?.title)
+        controller.consumeGenerated()
+
+        controller.openPresentation("local-p")
+        assertEquals("Device", controller.generated.value?.title)
+        controller.consumeGenerated()
+
+        controller.openPresentation("missing")
+        assertNull(controller.generated.value)
+        assertEquals("The presentation was not found.", controller.error.value)
+    }
 }

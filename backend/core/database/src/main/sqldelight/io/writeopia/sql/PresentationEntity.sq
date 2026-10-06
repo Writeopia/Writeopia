@@ -20,6 +20,13 @@ FROM presentation_entity
 WHERE document_id = ? AND workspace_id = ?
 ORDER BY created_at DESC;
 
+searchByTitle:
+SELECT *
+FROM presentation_entity
+WHERE title ILIKE '%' || ? || '%' AND workspace_id = ?
+ORDER BY created_at DESC
+LIMIT 20;
+
 selectIdsByWorkspaceId:
 SELECT id
 FROM presentation_entity

@@ -47,6 +47,7 @@ fun SearchDialog(
     onDismissRequest: () -> Unit,
     documentClick: (String, String) -> Unit,
     onFolderClick: (NotesNavigation) -> Unit,
+    presentationClick: (documentId: String, presentationId: String, title: String) -> Unit,
 ) {
     val search by searchState.collectAsState()
 
@@ -63,6 +64,10 @@ fun SearchDialog(
                 },
                 onFolderClick = { navigation ->
                     onFolderClick(navigation)
+                    onDismissRequest()
+                },
+                presentationClick = { documentId, presentationId, title ->
+                    presentationClick(documentId, presentationId, title)
                     onDismissRequest()
                 },
                 search = search,
@@ -82,6 +87,7 @@ fun SearchScreen(
     searchResults: StateFlow<List<SearchItem>>,
     documentClick: (String, String) -> Unit,
     onFolderClick: (NotesNavigation) -> Unit,
+    presentationClick: (documentId: String, presentationId: String, title: String) -> Unit,
     searchInput: @Composable () -> Unit
 ) {
     Column(modifier = modifier) {
@@ -129,6 +135,36 @@ fun SearchScreen(
                             modifier = Modifier.size(20.dp),
                             imageVector = WrIcons.file,
                             contentDescription = "File",
+                            tint = iconTint
+                        )
+
+                        Spacer(modifier = Modifier.width(spaceWidth))
+
+                        Text(
+                            item.label,
+                            color = iconTint
+                        )
+                    }
+                }
+
+                is SearchItem.PresentationInfo -> {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                            .padding(horizontal = horizontalPadding)
+                            .clip(MaterialTheme.shapes.medium)
+                            .clickable {
+                                presentationClick(item.documentId, item.id, item.label)
+                            }
+                            .padding(
+                                horizontal = innerHorizontalPadding,
+                                vertical = innerVerticalPadding
+                            )
+                    ) {
+                        Icon(
+                            modifier = Modifier.size(20.dp),
+                            imageVector = WrIcons.play,
+                            contentDescription = "Presentation",
                             tint = iconTint
                         )
 

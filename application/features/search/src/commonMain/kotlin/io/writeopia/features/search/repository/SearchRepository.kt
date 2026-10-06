@@ -19,6 +19,7 @@ class SearchRepository(
     private val documentSearch: DocumentSearch,
     private val searchApi: SearchApi,
     private val authRepository: AuthRepository,
+    private val presentationSearch: PresentationSearch = PresentationSearch { _, _ -> emptyList() },
 ) {
     @OptIn(ExperimentalCoroutinesApi::class)
     fun searchNotesAndFoldersLocally(query: String): Flow<List<SearchItem>> {
@@ -46,8 +47,13 @@ class SearchRepository(
                 }
             }
 
-        return combine(foldersFlow, documentsFlow) { folders, documents ->
-            (folders + documents).toSearchItems()
+        val presentationsFlow: Flow<List<SearchItem.PresentationInfo>> =
+            workspaceFlow.flatMapLatest { workspace ->
+                flow { emit(presentationSearch.search(query, workspace.id)) }
+            }
+
+        return combine(foldersFlow, documentsFlow, presentationsFlow) { folders, documents, presentations ->
+            (folders + documents).toSearchItems() + presentations
         }
     }
 
@@ -59,7 +65,16 @@ class SearchRepository(
 
         return authRepository.listenForWorkspace().flatMapLatest { workspace ->
             flow {
-                emit(searchApi.searchApi(query, workspace.id).toSearchItems())
+                val results = searchApi.searchApi(query, workspace.id)
+                val documents = results.documents.toSearchItems()
+                val presentations = results.presentations.map { presentation ->
+                    SearchItem.PresentationInfo(
+                        id = presentation.id,
+                        label = presentation.title,
+                        documentId = presentation.documentId
+                    )
+                }
+                emit(documents + presentations)
             }
         }
     }
@@ -87,4 +102,11 @@ sealed interface SearchItem {
     data class FolderInfo(override val id: String, val label: String) : SearchItem
 
     data class DocumentInfo(override val id: String, val label: String) : SearchItem
+
+    /** A presentation, opened over the document it was made from. */
+    data class PresentationInfo(
+        override val id: String,
+        val label: String,
+        val documentId: String
+    ) : SearchItem
 }

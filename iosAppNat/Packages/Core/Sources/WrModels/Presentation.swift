@@ -52,6 +52,20 @@ public struct Presentation: Codable, Identifiable, Equatable, Sendable {
         self.createdAt = createdAt
         self.slides = slides
     }
+
+    enum CodingKeys: String, CodingKey {
+        case id, documentId, title, createdAt, slides
+    }
+
+    /// The search sends the presentations without their slides.
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        documentId = try container.decode(String.self, forKey: .documentId)
+        title = try container.decodeIfPresent(String.self, forKey: .title) ?? ""
+        createdAt = try container.decodeIfPresent(Int64.self, forKey: .createdAt) ?? 0
+        slides = try container.decodeIfPresent([Slide].self, forKey: .slides) ?? []
+    }
 }
 
 /// What the presentation window shows (`openWindow(value:)`).

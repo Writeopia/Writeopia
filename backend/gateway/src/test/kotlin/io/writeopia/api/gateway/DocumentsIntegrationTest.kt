@@ -25,6 +25,7 @@ import io.writeopia.sdk.models.api.request.documents.FolderDiffRequest
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.serialization.data.DocumentApi
+import io.writeopia.sdk.serialization.response.SearchResponse
 import io.writeopia.sdk.serialization.data.FolderApi
 import io.writeopia.sdk.serialization.data.StoryStepApi
 import io.writeopia.sdk.serialization.extensions.toApi
@@ -1680,7 +1681,7 @@ class DocumentationIntegrationTests {
         val searchResponse = client.get("/api/docs/workspace/$workspaceId/document/search?q=Alpha")
         assertEquals(HttpStatusCode.OK, searchResponse.status)
 
-        val searchResults = searchResponse.body<List<DocumentApi>>()
+        val searchResults = searchResponse.body<SearchResponse>().documents
         assertEquals(2, searchResults.size)
         assertTrue(searchResults.any { it.id == document1.id })
         assertTrue(searchResults.any { it.id == document2.id })
@@ -1724,7 +1725,7 @@ class DocumentationIntegrationTests {
             client.get("/api/docs/workspace/$workspaceId/document/search?q=NonExistentTerm")
         assertEquals(HttpStatusCode.OK, searchResponse.status)
 
-        val searchResults = searchResponse.body<List<DocumentApi>>()
+        val searchResults = searchResponse.body<SearchResponse>().documents
         assertEquals(0, searchResults.size)
 
         // Clean up
@@ -1774,13 +1775,13 @@ class DocumentationIntegrationTests {
         // Search with lowercase
         val searchLower = client.get("/api/docs/workspace/$workspaceId/document/search?q=meeting")
         assertEquals(HttpStatusCode.OK, searchLower.status)
-        val resultsLower = searchLower.body<List<DocumentApi>>()
+        val resultsLower = searchLower.body<SearchResponse>().documents
         assertTrue(resultsLower.any { it.id == document.id })
 
         // Search with uppercase
         val searchUpper = client.get("/api/docs/workspace/$workspaceId/document/search?q=MEETING")
         assertEquals(HttpStatusCode.OK, searchUpper.status)
-        val resultsUpper = searchUpper.body<List<DocumentApi>>()
+        val resultsUpper = searchUpper.body<SearchResponse>().documents
         assertTrue(resultsUpper.any { it.id == document.id })
 
         // Clean up
@@ -1838,7 +1839,7 @@ class DocumentationIntegrationTests {
         val searchResponse1 =
             client.get("/api/docs/workspace/$workspaceId1/document/search?q=Shared")
         assertEquals(HttpStatusCode.OK, searchResponse1.status)
-        val results1 = searchResponse1.body<List<DocumentApi>>()
+        val results1 = searchResponse1.body<SearchResponse>().documents
         assertEquals(1, results1.size)
         assertEquals(document1.id, results1.first().id)
 
@@ -1846,7 +1847,7 @@ class DocumentationIntegrationTests {
         val searchResponse2 =
             client.get("/api/docs/workspace/$workspaceId2/document/search?q=Shared")
         assertEquals(HttpStatusCode.OK, searchResponse2.status)
-        val results2 = searchResponse2.body<List<DocumentApi>>()
+        val results2 = searchResponse2.body<SearchResponse>().documents
         assertEquals(1, results2.size)
         assertEquals(document2.id, results2.first().id)
 
@@ -1885,7 +1886,7 @@ class DocumentationIntegrationTests {
         // Verify document is searchable
         val searchBefore = client.get("/api/docs/workspace/$workspaceId/document/search?q=Deleted")
         assertEquals(HttpStatusCode.OK, searchBefore.status)
-        val resultsBefore = searchBefore.body<List<DocumentApi>>()
+        val resultsBefore = searchBefore.body<SearchResponse>().documents
         assertEquals(1, resultsBefore.size)
 
         // Delete the document
@@ -1898,7 +1899,7 @@ class DocumentationIntegrationTests {
         // Verify document is no longer searchable
         val searchAfter = client.get("/api/docs/workspace/$workspaceId/document/search?q=Deleted")
         assertEquals(HttpStatusCode.OK, searchAfter.status)
-        val resultsAfter = searchAfter.body<List<DocumentApi>>()
+        val resultsAfter = searchAfter.body<SearchResponse>().documents
         assertEquals(0, resultsAfter.size)
     }
 
@@ -1931,17 +1932,17 @@ class DocumentationIntegrationTests {
         // Search with partial match at beginning
         val searchBegin = client.get("/api/docs/workspace/$workspaceId/document/search?q=Quarterly")
         assertEquals(HttpStatusCode.OK, searchBegin.status)
-        assertTrue(searchBegin.body<List<DocumentApi>>().any { it.id == document.id })
+        assertTrue(searchBegin.body<SearchResponse>().documents.any { it.id == document.id })
 
         // Search with partial match in middle
         val searchMiddle = client.get("/api/docs/workspace/$workspaceId/document/search?q=Business")
         assertEquals(HttpStatusCode.OK, searchMiddle.status)
-        assertTrue(searchMiddle.body<List<DocumentApi>>().any { it.id == document.id })
+        assertTrue(searchMiddle.body<SearchResponse>().documents.any { it.id == document.id })
 
         // Search with partial match at end
         val searchEnd = client.get("/api/docs/workspace/$workspaceId/document/search?q=2024")
         assertEquals(HttpStatusCode.OK, searchEnd.status)
-        assertTrue(searchEnd.body<List<DocumentApi>>().any { it.id == document.id })
+        assertTrue(searchEnd.body<SearchResponse>().documents.any { it.id == document.id })
 
         // Clean up
         db.deleteDocumentById(document.id)

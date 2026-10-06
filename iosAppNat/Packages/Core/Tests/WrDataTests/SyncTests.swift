@@ -103,6 +103,9 @@ private func makeStore() -> LocalDocumentsRepository {
 final class FakeBackend: HTTPTransport {
     var folderDiff: FolderContents = FolderContents()
     var remoteDocument: WrDocument?
+    /// The JSON the search answers; the search fails when nil.
+    var searchResponse: String?
+    private(set) var searchRequests = 0
     private(set) var sentDocuments: [[String: Any]] = []
     private(set) var sentFolders: [[String: Any]] = []
     private(set) var stepSyncBodies: [[String: Any]] = []
@@ -158,6 +161,13 @@ final class FakeBackend: HTTPTransport {
         case let path where path.hasSuffix("/steps/sync"):
             stepSyncBodies.append(body)
             response = Data(#"{"serverTimestamp":777,"updatedSteps":[],"deletedIds":[]}"#.utf8)
+        case "/api/docs/workspace/w/document/search":
+            searchRequests += 1
+            if let searchResponse {
+                response = Data(searchResponse.utf8)
+            } else {
+                status = 500
+            }
         case let path where path.hasPrefix("/api/docs/workspace/w/document/"):
             if let remoteDocument {
                 response = try JSONEncoder().encode(remoteDocument)
@@ -338,6 +348,44 @@ final class FakeBackend: HTTPTransport {
         #expect(contents.folders.map(\.id) == ["f"])
         #expect(FileManager.default.fileExists(atPath: directory.appending(path: "imported-json/From a file_old.wrdoc.json").path(percentEncoded: false)))
         #expect(!FileManager.default.fileExists(atPath: directory.appending(path: "From a file_old.wrdoc.json").path(percentEncoded: false)))
+    }
+}
+
+@Suite struct SearchTests {
+    private func makeRepository(_ backend: FakeBackend) -> SyncedDocumentsRepository {
+        let client = APIClient(transport: backend, tokenStore: InMemoryTokenStore(accessToken: "a"), baseURL: URL(string: "https://x.io")!)
+        return SyncedDocumentsRepository(
+            local: makeStore(),
+            remote: RemoteDocumentsRepository(client: client, workspaceId: "w"),
+            api: SyncAPI(client: client, workspaceId: "w")
+        )
+    }
+
+    @Test func oneRequestFindsTheDocumentsAndPresentationsWithTheOnesOnTheDevice() async throws {
+        let backend = FakeBackend()
+        let document = String(decoding: try JSONEncoder().encode(WrDocument(id: "doc", title: "Sky notes", workspaceId: "w", parentId: "root")), as: UTF8.self)
+        backend.searchResponse = """
+            {"documents":[\(document)],"presentations":[{"id":"cloud","documentId":"doc","title":"Sky deck","createdAt":5}]}
+            """
+        let repository = makeRepository(backend)
+        try await repository.savePresentation(Presentation(id: "device", documentId: "doc", title: "Sky by Ollama", createdAt: 3, slides: [Slide(title: "Sky")]))
+
+        let found = try await repository.searchAll(query: "sky")
+
+        #expect(backend.searchRequests == 1)
+        #expect(found.documents.map(\.id) == ["doc"])
+        #expect(found.presentations.map(\.id) == ["cloud", "device"])
+        #expect(found.presentations.allSatisfy { $0.slides.isEmpty })
+    }
+
+    @Test func offlineTheDeviceAnswers() async throws {
+        let backend = FakeBackend()
+        let repository = makeRepository(backend)
+        try await repository.savePresentation(Presentation(id: "device", documentId: "doc", title: "Sky by Ollama", createdAt: 3, slides: [Slide(title: "Sky")]))
+
+        let found = try await repository.searchAll(query: "sky")
+
+        #expect(found.presentations.map(\.id) == ["device"])
     }
 }
 
