@@ -37,7 +37,7 @@ internal val Bell: ImageVector
             ) {
                 moveTo(6f, 8f)
                 arcToRelative(6f, 6f, 0f, isMoreThanHalf = false, isPositiveArc = true, 12f, 0f)
-                curveToRelative(00f, 70f, 30f, 90f, 30f, 90f)
+                curveToRelative(0f, 7f, 3f, 9f, 3f, 9f)
                 horizontalLineTo(3f)
                 reflectiveCurveToRelative(3f, -2f, 3f, -9f)
             }

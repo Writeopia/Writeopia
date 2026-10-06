@@ -36,11 +36,11 @@ internal val BellDot: ImageVector
                 pathFillType = PathFillType.NonZero
             ) {
                 moveTo(19.4f, 14.9f)
-                curveTo(20.20f, 16.40f, 210f, 170f, 210f, 170f)
+                curveTo(20.2f, 16.4f, 21f, 17f, 21f, 17f)
                 horizontalLineTo(3f)
                 reflectiveCurveToRelative(3f, -2f, 3f, -9f)
-                curveToRelative(00f, -3.30f, 2.70f, -60f, 60f, -60f)
-                curveToRelative(0.70f, 00f, 1.30f, 0.10f, 1.90f, 0.30f)
+                curveToRelative(0f, -3.3f, 2.7f, -6f, 6f, -6f)
+                curveToRelative(0.7f, 0f, 1.3f, 0.1f, 1.9f, 0.3f)
             }
             path(
                 fill = null,
