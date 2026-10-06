@@ -1,11 +1,16 @@
 package io.writeopia.editor.features.presentation.viewmodel
 
 import io.writeopia.ai.AiClients
+import io.writeopia.ai.task.AiTaskManager
+import io.writeopia.ai.task.AiTaskStatus
+import io.writeopia.ai.task.AiTaskType
 import io.writeopia.auth.core.manager.AuthRepository
+import io.writeopia.core.presentations.PresentationException
 import io.writeopia.core.presentations.PresentationGenerator
 import io.writeopia.core.presentations.PresentationsRepository
 import io.writeopia.core.presentations.PresentationsStore
 import io.writeopia.model.AiProvider
+import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.presentation.Presentation
 import io.writeopia.sdk.models.user.Tier
 import io.writeopia.sdk.models.utils.ResultData
@@ -13,13 +18,13 @@ import io.writeopia.sdk.models.workspace.Workspace
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
@@ -46,6 +51,8 @@ sealed interface PresentationsSource {
  * @param selectedProvider the AI the user picked, see [AiClients.selectedProvider]. The cloud by
  * default, which is all the phones and the web have.
  * @param providerChanges tells when the user picks another provider, so the source follows.
+ * @param aiTaskManager runs the generation as an AI task, so it keeps going after the editor is
+ * closed and shows like the other AI tasks: the indicator on the desktop, a notification on Android.
  */
 class PresentationsController(
     private val scope: CoroutineScope,
@@ -55,6 +62,7 @@ class PresentationsController(
     private val local: (suspend (userId: String) -> PresentationsSource.Local?)?,
     private val selectedProvider: suspend (userId: String) -> AiProvider = { AiProvider.CLOUD },
     private val providerChanges: Flow<AiProvider> = AiClients.providerChanges,
+    private val aiTaskManager: AiTaskManager = AiTaskManager.singleton(),
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default
 ) {
     private val _source = MutableStateFlow<PresentationsSource?>(null)
@@ -66,7 +74,7 @@ class PresentationsController(
     private val _isGenerating = MutableStateFlow(false)
     private val _error = MutableStateFlow<String?>(null)
     private val _generated = MutableStateFlow<Presentation?>(null)
-    private var generation: Job? = null
+    private var generationTaskId: String? = null
     private var workspaceId = ""
 
     /** True when the button of the side menu should show. */
@@ -183,26 +191,50 @@ class PresentationsController(
         val generator = generator() ?: return
         // Claimed atomically: two clicks can't start two generations.
         if (!_isGenerating.compareAndSet(expect = false, update = true)) return
-        generation = scope.launch(dispatcher) {
-            try {
-                when (val result = generator.generatePresentation(documentId(), workspaceId)) {
-                    is ResultData.Complete -> {
-                        _generated.value = result.data
-                        load()
-                    }
-                    is ResultData.Error -> _error.value = result.exception.message()
-                    else -> {}
+
+        val documentId = documentId()
+        val workspaceId = workspaceId
+        val taskId = "presentation-$documentId-${GenerateId.generate()}"
+        generationTaskId = taskId
+
+        aiTaskManager.enqueueTask(
+            id = taskId,
+            type = AiTaskType.PRESENTATION,
+            description = "Creating a presentation"
+        ) {
+            when (val result = generator.generatePresentation(documentId, workspaceId)) {
+                is ResultData.Complete -> {
+                    _generated.value = result.data
+                    load()
+                    Result.success(Unit)
                 }
-            } finally {
-                _isGenerating.value = false
+
+                is ResultData.Error -> {
+                    val message = result.exception.message()
+                    _error.value = message
+                    Result.failure(PresentationException(message))
+                }
+
+                else -> Result.success(Unit)
             }
+        }
+
+        // The task can also end without running, when it's cancelled in the queue, so its status
+        // is followed instead of the generation.
+        scope.launch(dispatcher) {
+            aiTaskManager.tasks.first { tasks ->
+                tasks.none { task ->
+                    task.id == taskId && (task.status == AiTaskStatus.QUEUED || task.status == AiTaskStatus.RUNNING)
+                }
+            }
+            _isGenerating.value = false
         }
     }
 
     /** Stops the generation in progress; nothing is kept. */
     fun cancel() {
-        generation?.cancel()
-        generation = null
+        generationTaskId?.let(aiTaskManager::cancelTask)
+        generationTaskId = null
     }
 
     fun delete(presentation: Presentation) {

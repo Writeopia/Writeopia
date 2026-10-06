@@ -3,9 +3,13 @@ package io.writeopia.mobile
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -28,6 +32,8 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavOptionsBuilder
 import androidx.navigation.compose.currentBackStackEntryAsState
+import io.writeopia.ai.task.AiTaskManager
+import io.writeopia.ai.task.ui.AiTaskIndicator
 import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.NotesNavigationType
@@ -192,6 +198,23 @@ fun PortraitMobile(
                         )
                     }
                 }
+            }
+
+            // Progress of the AI tasks (summaries, presentations, model downloads), which run in
+            // the background, so it floats over every screen of the app. It sits at the top, below
+            // the top bars, away from the selection menu and the navigation bar.
+            if (!isAuthScreen) {
+                val aiTaskManager = remember { AiTaskManager.singleton() }
+
+                AiTaskIndicator(
+                    tasksFlow = aiTaskManager.tasks,
+                    onClearFinished = aiTaskManager::clearFinishedTasks,
+                    onCancelTask = aiTaskManager::cancelTask,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .windowInsetsPadding(WindowInsets.statusBars)
+                        .padding(start = 16.dp, top = 72.dp)
+                )
             }
         }
     }
