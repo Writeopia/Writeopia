@@ -160,9 +160,11 @@ class AuthApiTest {
                     "name": "Alice",
                     "username": "alice",
                     "email": "alice@test.com",
-                    "enabled": false
+                    "enabled": true
                 },
-                "emailConfirmationRequired": true
+                "emailConfirmationRequired": false,
+                "accessToken": "access",
+                "refreshToken": "refresh"
             }
         """.trimIndent()
 
@@ -182,7 +184,7 @@ class AuthApiTest {
         }
 
         val authApi = AuthApi(client, "https://api.example.com")
-        val result = authApi.register("Alice", "alice@test.com", "MyWorkspace", "password123", "alice")
+        val result = authApi.register("Alice", "alice@test.com", "MyWorkspace", "password123", "alice", "123456")
 
         assertIs<ResultData.Complete<*>>(result)
 
@@ -195,6 +197,7 @@ class AuthApiTest {
         assertTrue(bodyString.contains(""""email":"alice@test.com""""))
         assertTrue(bodyString.contains(""""name":"Alice""""))
         assertTrue(bodyString.contains(""""workspaceName":"MyWorkspace""""))
+        assertTrue(bodyString.contains(""""verificationCode":"123456""""))
     }
 
     @Test
@@ -214,7 +217,7 @@ class AuthApiTest {
         }
 
         val authApi = AuthApi(client, "https://api.example.com")
-        val result = authApi.register("Alice", "alice@test.com", "W", "password123", "alice")
+        val result = authApi.register("Alice", "alice@test.com", "W", "password123", "alice", "123456")
 
         assertIs<ResultData.Error<*>>(result)
         assertEquals("Workspace name must be 3-30 characters", (result as ResultData.Error).exception?.message)

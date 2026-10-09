@@ -76,7 +76,6 @@ fun RegisterScreen(
     nameChanged: (String) -> Unit,
     usernameChanged: (String) -> Unit,
     companyChanged: (String) -> Unit,
-    emailChanged: (String) -> Unit,
     passwordChanged: (String) -> Unit,
     onRegisterRequest: () -> Unit,
     onRegisterSuccess: () -> Unit,
@@ -109,7 +108,6 @@ fun RegisterScreen(
                 canRegisterState,
                 nameChanged,
                 usernameChanged,
-                emailChanged,
                 companyChanged,
                 passwordChanged,
                 onRegisterRequest,
@@ -177,7 +175,6 @@ private fun BoxScope.RegisterContent(
     canRegisterState: StateFlow<Boolean>,
     nameChanged: (String) -> Unit,
     usernameChanged: (String) -> Unit,
-    emailChanged: (String) -> Unit,
     companyChanged: (String) -> Unit,
     passwordChanged: (String) -> Unit,
     onRegisterRequest: () -> Unit,
@@ -251,9 +248,11 @@ private fun BoxScope.RegisterContent(
 
         OutlinedTextField(
             email,
-            onValueChange = emailChanged,
+            onValueChange = {},
             shape = shape,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+            // Verified in the previous step, so it can't change here.
+            enabled = false,
             singleLine = true,
             label = {
                 Text(WrStrings.email())
@@ -384,7 +383,6 @@ fun AuthScreenPreview() {
         nameChanged = {},
         usernameChanged = {},
         companyChanged = {},
-        emailChanged = {},
         passwordChanged = {},
         onRegisterRequest = {},
         onRegisterSuccess = {},

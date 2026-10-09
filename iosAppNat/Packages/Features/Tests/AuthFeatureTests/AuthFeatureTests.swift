@@ -175,23 +175,61 @@ private func makeSession(
         #expect(session.phase == .chooseWorkspace)
     }
 
-    @Test func registerRequiresEmailConfirmation() async {
-        let (session, _) = makeSession([
-            "/api/auth/register": (201, #"{"writeopiaUser":\#(userJson),"emailConfirmationRequired":true}"#),
-        ])
+    @Test func registerVerifiesEmailBeforeCreatingTheAccount() async {
+        let ok = #"{"success":true,"message":"ok"}"#
+        let tokens = InMemoryTokenStore()
+        let (session, transport) = makeSession([
+            "/api/auth/register/email/send": (200, ok),
+            "/api/auth/register/email/verify": (200, ok),
+            "/api/auth/register": (201, #"{"writeopiaUser":\#(userJson),"emailConfirmationRequired":false,"accessToken":"a","refreshToken":"r"}"#),
+        ], tokens: tokens)
         session.chooseOnlineSpace()
 
         let viewModel = RegisterViewModel(session: session)
+        viewModel.email = " Ana@Writeopia.io "
+        #expect(await viewModel.sendCode())
+        #expect(viewModel.resendCooldown > 0)
+
+        viewModel.code = "123456"
+        #expect(await viewModel.verifyCode())
+        #expect(transport.paths == ["/api/auth/register/email/send", "/api/auth/register/email/verify"])
+
         viewModel.name = "Ana"
         viewModel.username = "ana"
         viewModel.workspaceName = "Ana's team"
-        viewModel.email = "ana@writeopia.io"
         viewModel.password = "abcdefg!"
         #expect(viewModel.canRegister)
 
         await viewModel.register()
 
-        #expect(session.phase == .emailConfirmation(email: "ana@writeopia.io"))
+        #expect(transport.paths.last == "/api/auth/register")
+        #expect(tokens.accessToken == "a")
+        #expect(session.phase == .chooseWorkspace)
+    }
+
+    @Test func wrongRegisterCodeShowsErrorAndCreatesNothing() async {
+        let (session, transport) = makeSession([
+            "/api/auth/register/email/verify": (400, #"{"success":false,"message":"Invalid or expired verification code"}"#),
+        ])
+        session.chooseOnlineSpace()
+
+        let viewModel = RegisterViewModel(session: session)
+        viewModel.email = "ana@writeopia.io"
+        viewModel.code = "000000"
+
+        #expect(await viewModel.verifyCode() == false)
+        #expect(viewModel.errorMessage == AuthError.invalidCode.userMessage)
+        #expect(!transport.paths.contains("/api/auth/register"))
+    }
+
+    @Test func invalidEmailCannotAskForRegisterCode() async {
+        let (session, transport) = makeSession()
+        let viewModel = RegisterViewModel(session: session)
+        viewModel.email = "ana@writeopia"
+
+        #expect(!viewModel.canSendCode)
+        #expect(await viewModel.sendCode() == false)
+        #expect(transport.paths.isEmpty)
     }
 
     @Test func passwordRecoveryRunsAllSteps() async {

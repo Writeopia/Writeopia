@@ -17,7 +17,6 @@ import io.writeopia.sdk.serialization.data.auth.ForgotPasswordResponse
 import io.writeopia.sdk.serialization.data.auth.LoginRequest
 import io.writeopia.sdk.serialization.data.auth.PasswordResetWithCodeRequest
 import io.writeopia.sdk.serialization.data.auth.PasswordVerifyCodeRequest
-import io.writeopia.sdk.serialization.data.auth.RegisterRequest
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -46,7 +45,7 @@ class PasswordResetIntegrationTest {
         client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = "Test Workspace",
                     name = "Test User",
                     email = testEmail,

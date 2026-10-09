@@ -51,6 +51,15 @@ CREATE TABLE user_entity (
   status TEXT NOT NULL DEFAULT 'EMAIL_CONFIRMATION_PENDING'
 );
 
+-- Sign-up email ownership proofs - see EmailVerification.sq in the backend database module.
+CREATE TABLE email_verification (
+  email TEXT PRIMARY KEY,
+  code TEXT NOT NULL,
+  code_expiry BIGINT NOT NULL,
+  attempts BIGINT NOT NULL DEFAULT 0,
+  created_at BIGINT NOT NULL
+);
+
 CREATE TABLE refresh_token_entity (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES user_entity(id) ON DELETE CASCADE,
