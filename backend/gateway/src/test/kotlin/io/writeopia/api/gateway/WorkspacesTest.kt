@@ -18,7 +18,6 @@ import io.writeopia.app.dto.WorkspaceUserApi
 import io.writeopia.app.requests.AddUserToWorkspaceRequest
 import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.data.WorkspaceApi
-import io.writeopia.sdk.serialization.data.auth.RegisterRequest
 import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import io.writeopia.sdk.serialization.request.WorkspaceNameChangeRequest
 import io.writeopia.sdk.serialization.request.WorkspaceRoleChangeRequest
@@ -57,7 +56,7 @@ class WorkspacesTest {
         val response = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = workspaceName1,
                     name = "Name",
                     email = email,
@@ -111,7 +110,7 @@ class WorkspacesTest {
         val response = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = workspaceName1,
                     name = "Name",
                     email = email1,
@@ -127,7 +126,7 @@ class WorkspacesTest {
         val response2 = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = "other workspace",
                     name = "Name 2",
                     email = email2,
@@ -207,7 +206,7 @@ class WorkspacesTest {
         val registerResponse = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = workspaceName,
                     name = "Test User",
                     email = email,
@@ -310,7 +309,7 @@ class WorkspacesTest {
         val response = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = workspaceName,
                     name = "Admin User",
                     email = email,
@@ -383,7 +382,7 @@ class WorkspacesTest {
         val response1 = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = workspaceName,
                     name = "Admin User 1",
                     email = email1,
@@ -399,7 +398,7 @@ class WorkspacesTest {
         val response2 = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = "other workspace",
                     name = "Admin User 2",
                     email = email2,
@@ -486,7 +485,7 @@ class WorkspacesTest {
         val response1 = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = workspaceName,
                     name = "Admin User",
                     email = email1,
@@ -502,7 +501,7 @@ class WorkspacesTest {
         val response2 = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = "other workspace",
                     name = "Editor User",
                     email = email2,
@@ -588,7 +587,7 @@ class WorkspacesTest {
         val response = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = workspaceName,
                     name = "Admin User",
                     email = email,

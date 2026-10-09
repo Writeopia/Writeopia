@@ -66,6 +66,9 @@ fun EmailConfirmationScreen(
     onConfirm: () -> Unit,
     onResend: () -> Unit,
     navigateBack: () -> Unit,
+    title: @Composable () -> String = { WrStrings.confirmYourEmail() },
+    subtitle: @Composable (email: String) -> String = { email -> WrStrings.weSentCodeTo(email) },
+    confirmLabel: @Composable () -> String = { WrStrings.confirm() },
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val invalidCodeMessage = WrStrings.invalidCode()
@@ -107,6 +110,9 @@ fun EmailConfirmationScreen(
                 onResend = onResend,
                 resendState = resendState,
                 resendCooldownSeconds = resendCooldownSeconds,
+                title = title,
+                subtitle = subtitle,
+                confirmLabel = confirmLabel,
                 modifier = contentModifier
             )
         }
@@ -165,6 +171,9 @@ private fun BoxScope.EmailConfirmationContent(
     onResend: () -> Unit,
     resendState: StateFlow<ResultData<Boolean>>,
     resendCooldownSeconds: StateFlow<Int>,
+    title: @Composable () -> String,
+    subtitle: @Composable (email: String) -> String,
+    confirmLabel: @Composable () -> String,
     modifier: Modifier = Modifier,
 ) {
     val email by emailState.collectAsState()
@@ -182,7 +191,7 @@ private fun BoxScope.EmailConfirmationContent(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            WrStrings.confirmYourEmail(),
+            title(),
             color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(horizontal = 10.dp),
             style = MaterialTheme.typography.headlineMedium,
@@ -192,7 +201,7 @@ private fun BoxScope.EmailConfirmationContent(
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
-            WrStrings.weSentCodeTo(email),
+            subtitle(email),
             color = WriteopiaTheme.colorScheme.textLighter,
             modifier = Modifier.padding(horizontal = 24.dp),
             style = MaterialTheme.typography.bodyMedium,
@@ -238,7 +247,7 @@ private fun BoxScope.EmailConfirmationContent(
             enabled = code.length == 6
         ) {
             Text(
-                text = WrStrings.confirm(),
+                text = confirmLabel(),
                 color = if (code.length == 6) {
                     MaterialTheme.colorScheme.onPrimary
                 } else {

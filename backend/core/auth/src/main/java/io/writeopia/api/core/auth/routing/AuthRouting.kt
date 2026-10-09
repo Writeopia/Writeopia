@@ -18,10 +18,10 @@ import io.writeopia.api.core.auth.models.UserStatus
 import io.writeopia.api.core.auth.models.toApi
 import io.writeopia.api.core.auth.repository.userExistsByUsernameOrEmail
 import io.writeopia.api.core.auth.repository.getUserById
-import io.writeopia.api.core.auth.repository.updateConfirmationCode
+import io.writeopia.api.core.auth.repository.deleteEmailVerification
 import io.writeopia.api.core.auth.service.AccountDeletionService
 import io.writeopia.api.core.auth.service.AuthService
-import io.writeopia.api.core.auth.service.EmailService
+import io.writeopia.api.core.auth.service.EmailVerificationService
 import io.writeopia.api.core.auth.service.RefreshTokenService
 import io.writeopia.api.core.auth.utils.JwtConfig
 import io.writeopia.api.core.auth.utils.getUserIdFromApiGateway
@@ -168,6 +168,22 @@ fun Routing.authRoute(
                 email = rawRequest.email.trim().lowercase()
             )
             request.validate()
+
+            // The email must be verified before an account exists for it - see
+            // EmailVerificationService. Older clients that don't send a code are rejected.
+            val verificationCode = request.verificationCode
+            if (verificationCode.isNullOrBlank()) {
+                logger.info("register request - missing email verification code")
+                call.respond(HttpStatusCode.BadRequest, "Email verification required")
+                return@post
+            }
+
+            if (!EmailVerificationService.checkCode(writeopiaDb, request.email, verificationCode)) {
+                logger.info("register request - invalid or expired email verification code")
+                call.respond(HttpStatusCode.BadRequest, "Invalid or expired verification code")
+                return@post
+            }
+
             // since we are not allowing email probing and we don't need user data in this case
             if (writeopiaDb.userExistsByUsernameOrEmail(username = request.username, email = request.email)) {
                 logger.info("register request - user or workspace already exist")
@@ -175,21 +191,18 @@ fun Routing.authRoute(
                 return@post
             }
 
-            val confirmationCode = EmailService.generateConfirmationCode()
-            val codeExpiry = EmailService.getCodeExpiry()
             val workspaceId = GenerateId.generate()
 
-            // Run user creation, confirmation code, workspace, membership, and tutorial seeding
-            // in one atomic transaction: a failure anywhere here rolls everything back, so a
-            // user can never end up with a workspace missing its owner or its tutorials.
+            // Run user creation, workspace, membership, tutorial seeding and consuming the
+            // verification code in one atomic transaction: a failure anywhere here rolls
+            // everything back, so a user can never end up with a workspace missing its owner
+            // or its tutorials, and the code stays usable for a retry.
             val wUser = writeopiaDb.transactionWithResult {
                 val user = AuthService.createUser(
                     writeopiaDb,
                     request,
-                    status = UserStatus.EMAIL_CONFIRMATION_PENDING
+                    status = UserStatus.ACTIVE
                 )
-
-                writeopiaDb.updateConfirmationCode(request.email, confirmationCode, codeExpiry)
 
                 provisionWorkspaceForNewUser(
                     writeopiaDb,
@@ -200,20 +213,22 @@ fun Routing.authRoute(
 
                 onWorkspaceProvisioned(user.id, workspaceId)
 
+                writeopiaDb.deleteEmailVerification(request.email)
+
                 user
             }
 
-            EmailService.sendConfirmationEmail(
-                toEmail = request.email,
-                code = confirmationCode,
-                userName = request.name
-            )
+            val tokenPair = with(RefreshTokenService) {
+                writeopiaDb.generateAndStoreTokens(wUser.id)
+            }
 
             call.respond(
                 HttpStatusCode.Created,
                 RegisterResponse(
                     writeopiaUser = wUser.toApi(),
-                    emailConfirmationRequired = true
+                    emailConfirmationRequired = false,
+                    accessToken = tokenPair.accessToken,
+                    refreshToken = tokenPair.refreshToken,
                 ),
             )
         } catch (e: IllegalArgumentException) {

@@ -78,12 +78,57 @@ class AuthApi(
         ResultData.Error(e)
     }
 
+    /**
+     * First step of sign-up: emails a verification code to [email]. The response is the same
+     * whether or not the email is already registered.
+     */
+    suspend fun sendRegisterCode(email: String): ResultData<Boolean> = try {
+        val response = client.post("$baseUrl/api/auth/register/email/send") {
+            contentType(ContentType.Application.Json)
+            setBody(EmailResendRequest(email))
+        }
+
+        if (response.status.isSuccess()) {
+            ResultData.Complete(true)
+        } else {
+            val errorResponse = response.body<EmailConfirmResponse>()
+            ResultData.Error(Exception(errorResponse.message ?: "Failed to send verification code"))
+        }
+    } catch (e: Exception) {
+        println("sendRegisterCode error: ${e.message}")
+        e.printStackTrace()
+        ResultData.Error(e)
+    }
+
+    /**
+     * Second step of sign-up: checks the code sent by [sendRegisterCode]. The code is not
+     * consumed, it must be sent again with [register].
+     */
+    suspend fun verifyRegisterCode(email: String, code: String): ResultData<Boolean> = try {
+        val response = client.post("$baseUrl/api/auth/register/email/verify") {
+            contentType(ContentType.Application.Json)
+            setBody(EmailConfirmRequest(email, code))
+        }
+
+        if (response.status.isSuccess()) {
+            ResultData.Complete(true)
+        } else {
+            val errorResponse = response.body<EmailConfirmResponse>()
+            ResultData.Error(Exception(errorResponse.message ?: "Invalid code"))
+        }
+    } catch (e: Exception) {
+        println("verifyRegisterCode error: ${e.message}")
+        e.printStackTrace()
+        ResultData.Error(e)
+    }
+
     suspend fun register(
         name: String,
         email: String,
         workspaceName: String,
         password: String,
-        username: String
+        username: String,
+        verificationCode: String,
     ): ResultData<RegisterResponse> = try {
         val response = client.post("$baseUrl/api/auth/register") {
             contentType(ContentType.Application.Json)
@@ -94,6 +139,7 @@ class AuthApi(
                     username = username,
                     workspaceName = workspaceName,
                     password = password,
+                    verificationCode = verificationCode,
                 )
             )
         }

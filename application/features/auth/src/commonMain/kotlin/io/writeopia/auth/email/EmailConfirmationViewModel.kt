@@ -8,16 +8,36 @@ import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.serialization.data.toModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
+/**
+ * What the confirmed email is for.
+ */
+enum class EmailConfirmationPurpose {
+    /**
+     * Sign-up: the email is verified before the account exists. The code is kept, because
+     * registration sends it again, and confirming does not sign in.
+     */
+    REGISTRATION,
+
+    /** Accounts created before sign-up required a verified email, still waiting to confirm. */
+    PENDING_ACCOUNT,
+}
+
 internal class EmailConfirmationViewModel(
     private val authRepository: AuthRepository,
     private val authApi: AuthApi,
+    private val purpose: EmailConfirmationPurpose = EmailConfirmationPurpose.PENDING_ACCOUNT,
 ) : ViewModel() {
 
     private val _email = MutableStateFlow("")
@@ -35,13 +55,56 @@ internal class EmailConfirmationViewModel(
     private val _resendCooldownSeconds = MutableStateFlow(0)
     val resendCooldownSeconds = _resendCooldownSeconds.asStateFlow()
 
+    private val _sendCodeState = MutableStateFlow<ResultData<Boolean>>(ResultData.Idle())
+    val sendCodeState = _sendCodeState.asStateFlow()
+
+    val canSendCode: StateFlow<Boolean> = _email
+        .map { EMAIL_REGEX.matches(it.trim()) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), initialValue = false)
+
+    private var cooldownJob: Job? = null
+
     companion object {
         private const val RESEND_COOLDOWN_SECONDS = 30
+        private val EMAIL_REGEX = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
     }
 
     fun loadPendingEmail() {
         viewModelScope.launch {
             _email.value = authRepository.getPendingConfirmationEmail() ?: ""
+        }
+    }
+
+    fun emailChanged(newEmail: String) {
+        _email.value = newEmail
+    }
+
+    /**
+     * Sign-up only: emails a verification code to an email that has no account yet.
+     */
+    fun onSendCode(onSuccess: () -> Unit) {
+        if (!canSendCode.value || _sendCodeState.value is ResultData.Loading) return
+
+        _email.value = _email.value.trim().lowercase()
+        _sendCodeState.value = ResultData.Loading()
+
+        viewModelScope.launch {
+            val result = try {
+                authApi.sendRegisterCode(_email.value)
+            } catch (e: Exception) {
+                ResultData.Error(e)
+            }
+
+            if (result is ResultData.Complete) {
+                _code.value = ""
+                _confirmState.value = ResultData.Idle()
+                startCooldownTimer()
+                onSuccess()
+            } else {
+                delay(300)
+            }
+
+            _sendCodeState.value = result
         }
     }
 
@@ -61,6 +124,11 @@ internal class EmailConfirmationViewModel(
 
         viewModelScope.launch {
             try {
+                if (purpose == EmailConfirmationPurpose.REGISTRATION) {
+                    verifyRegisterCode(onSuccess)
+                    return@launch
+                }
+
                 val result = authApi.confirmEmail(_email.value, _code.value)
 
                 _confirmState.value = when (result) {
@@ -109,7 +177,10 @@ internal class EmailConfirmationViewModel(
 
         viewModelScope.launch {
             try {
-                val result = authApi.resendConfirmationEmail(_email.value)
+                val result = when (purpose) {
+                    EmailConfirmationPurpose.REGISTRATION -> authApi.sendRegisterCode(_email.value)
+                    EmailConfirmationPurpose.PENDING_ACCOUNT -> authApi.resendConfirmationEmail(_email.value)
+                }
 
                 _resendState.value = when (result) {
                     is ResultData.Complete -> {
@@ -133,8 +204,25 @@ internal class EmailConfirmationViewModel(
         }
     }
 
+    /**
+     * Sign-up: checks the code without consuming it. Registration sends it again, and only then
+     * is the account created and signed in.
+     */
+    private suspend fun verifyRegisterCode(onSuccess: () -> Unit) {
+        val result = authApi.verifyRegisterCode(_email.value, _code.value)
+
+        if (result is ResultData.Complete) {
+            onSuccess()
+        } else {
+            delay(300)
+        }
+
+        _confirmState.value = result
+    }
+
     private fun startCooldownTimer() {
-        viewModelScope.launch {
+        cooldownJob?.cancel()
+        cooldownJob = viewModelScope.launch {
             _resendCooldownSeconds.value = RESEND_COOLDOWN_SECONDS
             while (_resendCooldownSeconds.value > 0) {
                 delay(1000)

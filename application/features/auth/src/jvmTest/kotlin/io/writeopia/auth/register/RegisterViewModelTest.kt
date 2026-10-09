@@ -1,15 +1,14 @@
 package io.writeopia.auth.register
 
-import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
-import io.mockk.just
+import io.mockk.every
 import io.mockk.mockk
 import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.sdk.models.utils.ResultData
-import io.writeopia.sdk.serialization.data.auth.RegisterResponse
 import io.writeopia.sdk.serialization.data.WriteopiaUserApi
+import io.writeopia.sdk.serialization.data.auth.RegisterResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -20,6 +19,8 @@ import kotlinx.coroutines.test.setMain
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class RegisterViewModelTest {
@@ -27,6 +28,17 @@ class RegisterViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var authRepository: AuthRepository
     private lateinit var authApi: AuthApi
+
+    private val registerResponse = RegisterResponse(
+        writeopiaUser = WriteopiaUserApi(
+            id = "user-123",
+            name = "Test User",
+            email = "test@example.com"
+        ),
+        emailConfirmationRequired = false,
+        accessToken = "access",
+        refreshToken = "refresh",
+    )
 
     @BeforeTest
     fun setUp() {
@@ -40,77 +52,74 @@ class RegisterViewModelTest {
         Dispatchers.resetMain()
     }
 
-    @Test
-    fun `onRegister should save pending email when email confirmation is required and no admin key`() = runTest {
-        // Given
-        val testUser = WriteopiaUserApi(
-            id = "user-123",
-            name = "Test User",
-            email = "test@example.com"
-        )
-        val registerResponse = RegisterResponse(
-            writeopiaUser = testUser,
-            emailConfirmationRequired = true
-        )
-
-        coEvery { authApi.register(any(), any(), any(), any(), any()) } returns ResultData.Complete(registerResponse)
-        coEvery { authRepository.saveUser(any(), any()) } just Runs
-        coEvery { authRepository.savePendingConfirmationEmail(any()) } just Runs
-
-        val viewModel = RegisterViewModel(authRepository, authApi)
-        viewModel.emailChanged("test@example.com")
-        viewModel.nameChanged("Test User")
-        viewModel.usernameChanged("testuser")
-        viewModel.workspaceChanged("My Workspace")
-        viewModel.passwordChanged("password123")
-
-        // When
-        viewModel.onRegister()
-        advanceUntilIdle()
-
-        // Then - verify register was called and pending email saved (no admin key available)
-        coVerify { authApi.register("Test User", "test@example.com", "My Workspace", "password123", "testuser") }
-        coVerify { authRepository.saveUser(any(), selected = true) }
-        coVerify { authRepository.savePendingConfirmationEmail("test@example.com") }
+    private fun filledViewModel() = RegisterViewModel(authRepository, authApi).apply {
+        setVerifiedEmail("test@example.com", "123456")
+        nameChanged("Test User")
+        usernameChanged("testuser")
+        workspaceChanged("My Workspace")
+        passwordChanged("password123")
     }
 
     @Test
-    fun `onRegister should not call enableUser when registration fails`() = runTest {
-        // Given
-        coEvery { authApi.register(any(), any(), any(), any(), any()) } returns ResultData.Error(Exception("Registration failed"))
+    fun `onRegister should send the verification code and sign the new user in`() = runTest {
+        coEvery { authApi.register(any(), any(), any(), any(), any(), any()) } returns
+            ResultData.Complete(registerResponse)
 
-        val viewModel = RegisterViewModel(authRepository, authApi)
-        viewModel.emailChanged("test@example.com")
-        viewModel.nameChanged("Test User")
-        viewModel.usernameChanged("testuser")
-        viewModel.workspaceChanged("My Workspace")
-        viewModel.passwordChanged("password123")
-
-        // When
+        val viewModel = filledViewModel()
         viewModel.onRegister()
         advanceUntilIdle()
 
-        // Then - enableUser should never be called
-        coVerify(exactly = 0) { authApi.enableUser(any(), any()) }
+        coVerify {
+            authApi.register("Test User", "test@example.com", "My Workspace", "password123", "testuser", "123456")
+        }
+        coVerify { authRepository.saveUser(any(), selected = true) }
+        coVerify {
+            authRepository.saveTokens(
+                userId = "user-123",
+                accessToken = "access",
+                refreshToken = "refresh",
+                expiresAt = any()
+            )
+        }
+        assertEquals(ResultData.Complete(true), viewModel.register.value)
+    }
+
+    @Test
+    fun `on web onRegister should sign in with cookies instead of saving tokens`() = runTest {
+        every { authRepository.useWebLogin } returns true
+        coEvery { authApi.register(any(), any(), any(), any(), any(), any()) } returns
+            ResultData.Complete(registerResponse)
+
+        val viewModel = filledViewModel()
+        viewModel.onRegister()
+        advanceUntilIdle()
+
+        coVerify { authApi.loginWeb("test@example.com", "password123") }
+        coVerify(exactly = 0) { authRepository.saveTokens(any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `onRegister should report a registration error`() = runTest {
+        coEvery { authApi.register(any(), any(), any(), any(), any(), any()) } returns
+            ResultData.Error(Exception("Registration failed"))
+
+        val viewModel = filledViewModel()
+        viewModel.onRegister()
+        advanceUntilIdle()
+
+        assertIs<ResultData.Error<*>>(viewModel.register.value)
+        coVerify(exactly = 0) { authRepository.saveUser(any(), any()) }
     }
 
     @Test
     fun `onRegister should handle registration error gracefully`() = runTest {
-        // Given
-        coEvery { authApi.register(any(), any(), any(), any(), any()) } throws RuntimeException("Network error")
+        coEvery { authApi.register(any(), any(), any(), any(), any(), any()) } throws
+            RuntimeException("Network error")
 
-        val viewModel = RegisterViewModel(authRepository, authApi)
-        viewModel.emailChanged("test@example.com")
-        viewModel.nameChanged("Test User")
-        viewModel.usernameChanged("testuser")
-        viewModel.workspaceChanged("My Workspace")
-        viewModel.passwordChanged("password123")
-
-        // When
+        val viewModel = filledViewModel()
         viewModel.onRegister()
         advanceUntilIdle()
 
-        // Then - should not crash and enableUser should not be called
-        coVerify(exactly = 0) { authApi.enableUser(any(), any()) }
+        assertIs<ResultData.Error<*>>(viewModel.register.value)
     }
 }
