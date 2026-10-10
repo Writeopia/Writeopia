@@ -61,7 +61,7 @@ class WriteopiaActionExecutorTest {
         currentStory.value.stories.toSortedMap().values.map { it.text }
 
     @Test
-    fun `a code snippet written by the AI goes right below the paragraph, without the fence`() = runTest {
+    fun `a code snippet written by the AI goes right below the paragraph, one code block per line`() = runTest {
         val manager = manager()
         val executor = WriteopiaActionExecutor(
             manager,
@@ -71,10 +71,20 @@ class WriteopiaActionExecutorTest {
         executor.execute(WritingSuggestionAction.CODE_BLOCK, "p1", WritingAgentUi.None)
 
         assertEquals(
-            listOf(StoryTypes.TITLE, StoryTypes.TEXT, StoryTypes.CODE_BLOCK, StoryTypes.TEXT),
+            listOf(
+                StoryTypes.TITLE,
+                StoryTypes.TEXT,
+                StoryTypes.CODE_BLOCK,
+                StoryTypes.CODE_BLOCK,
+                StoryTypes.CODE_BLOCK,
+                StoryTypes.TEXT,
+            ),
             manager.typesInOrder()
         )
-        assertEquals("fun main() {\n    println(\"hi\")\n}", manager.currentStory.value.stories[2.0]?.text)
+        assertEquals(
+            listOf("Groceries", "We need milk.", "fun main() {", "    println(\"hi\")", "}", "And eggs."),
+            manager.textsInOrder()
+        )
     }
 
     @Test

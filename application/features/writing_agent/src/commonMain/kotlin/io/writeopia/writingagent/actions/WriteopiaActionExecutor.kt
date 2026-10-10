@@ -216,8 +216,9 @@ class WriteopiaActionExecutor(
     }
 
     /**
-     * Asks the AI for the code the paragraph calls for and inserts it as one code block below
-     * the paragraph. Without an AI an empty code block is inserted, and the failure says why.
+     * Asks the AI for the code the paragraph calls for and inserts it below the paragraph, one
+     * code block per line, like the editor makes them when the user types code. Without an AI an
+     * empty code block is inserted, and the failure says why.
      */
     private suspend fun codeSnippet(storyStepId: String?, position: Double): Result<Unit> {
         val paragraph = manager.getStory(position)?.text ?: ""
@@ -233,10 +234,13 @@ class WriteopiaActionExecutor(
 
         // The document may have changed while the AI answered.
         val below = (positionOf(storyStepId) ?: position) + 1
+        val lines = code.getOrNull()?.lines() ?: listOf("")
 
-        log("inserting a code block of ${code.getOrNull()?.lines()?.size ?: 0} lines below $storyStepId")
+        log("inserting ${lines.size} code block lines below $storyStepId")
         manager.trackState()
-        manager.addAtPosition(StoryStep(type = StoryTypes.CODE_BLOCK.type, text = code.getOrDefault("")), below)
+        lines.reversed().forEach { line ->
+            manager.addAtPosition(StoryStep(type = StoryTypes.CODE_BLOCK.type, text = line), below)
+        }
 
         return code.map { }
     }
