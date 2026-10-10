@@ -47,6 +47,23 @@ class SuggestionSelectorTest {
     }
 
     @Test
+    fun `the threshold comes from the environment, within 0 and 1`() {
+        assertEquals(0.65, SuggestionSelector.thresholdFromEnv("0.65"))
+        assertEquals(0.9, SuggestionSelector.thresholdFromEnv(" 0.9 "))
+        assertEquals(SuggestionSelector.DEFAULT_THRESHOLD, SuggestionSelector.thresholdFromEnv(null))
+        assertEquals(SuggestionSelector.DEFAULT_THRESHOLD, SuggestionSelector.thresholdFromEnv("eighty"))
+        assertEquals(SuggestionSelector.DEFAULT_THRESHOLD, SuggestionSelector.thresholdFromEnv("80"))
+    }
+
+    @Test
+    fun `the limit comes from the environment, above zero`() {
+        assertEquals(5, SuggestionSelector.limitFromEnv("5"))
+        assertEquals(SuggestionSelector.DEFAULT_LIMIT, SuggestionSelector.limitFromEnv(null))
+        assertEquals(SuggestionSelector.DEFAULT_LIMIT, SuggestionSelector.limitFromEnv("0"))
+        assertEquals(SuggestionSelector.DEFAULT_LIMIT, SuggestionSelector.limitFromEnv("many"))
+    }
+
+    @Test
     fun `it answers nothing when nothing is confident enough`() {
         val selected = SuggestionSelector.select(
             mapOf(

@@ -11,14 +11,18 @@ import io.writeopia.connection.logger
 
 /**
  * The writing agent: asks Jev which of the editor's actions the writer wants, and keeps only the
- * confident ones. The threshold and the limit live here, in code, so they can change without
- * touching the questions.
+ * confident ones. The threshold and the limit come from the WRITING_SUGGESTIONS_THRESHOLD and
+ * WRITING_SUGGESTIONS_LIMIT environment variables, so they can change without a new image.
  */
 class WritingSuggestionsService(
     private val client: TypeSafeClient = TypeSafeClient(),
-    private val threshold: Double = SuggestionSelector.DEFAULT_THRESHOLD,
-    private val limit: Int = SuggestionSelector.DEFAULT_LIMIT,
+    private val threshold: Double = SuggestionSelector.thresholdFromEnv(),
+    private val limit: Int = SuggestionSelector.limitFromEnv(),
 ) {
+
+    init {
+        logger.info("Writing agent configured with threshold {} and limit {}", threshold, limit)
+    }
 
     fun isAvailable(): Boolean = client.isAvailable()
 
