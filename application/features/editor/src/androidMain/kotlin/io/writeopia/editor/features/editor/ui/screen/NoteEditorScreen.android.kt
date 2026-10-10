@@ -354,7 +354,7 @@ internal fun NoteEditorScreen(
                     ui = agentUi,
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
-                        .padding(end = 12.dp, bottom = if (isWideLayout) 16.dp else 72.dp)
+                        .padding(end = 8.dp, bottom = if (isWideLayout) 16.dp else 72.dp)
                 )
             }
 

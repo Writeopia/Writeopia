@@ -372,7 +372,7 @@ fun DesktopNoteEditorScreen(
             WritingSuggestionsBox(
                 controller = agent,
                 ui = agentUi,
-                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 72.dp, bottom = 16.dp)
+                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 8.dp, bottom = 16.dp)
             )
         }
     }

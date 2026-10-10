@@ -48,7 +48,10 @@ enum class WritingSuggestionAction {
     CONCLUSION;
 
     companion object {
-        /** The actions offered while the user writes a paragraph. */
+        /**
+         * The actions offered while the user writes a paragraph. The TL;DR and the conclusion
+         * are here too, for a paragraph that announces them ("Next, we conclude").
+         */
         fun whileWriting(): List<WritingSuggestionAction> = listOf(
             CODE_BLOCK,
             LIST,
@@ -59,6 +62,8 @@ enum class WritingSuggestionAction {
             SPREADSHEET,
             SECTION_HEADING,
             CALLOUT,
+            TLDR,
+            CONCLUSION,
         )
 
         /** The actions offered when the user opens a document. */

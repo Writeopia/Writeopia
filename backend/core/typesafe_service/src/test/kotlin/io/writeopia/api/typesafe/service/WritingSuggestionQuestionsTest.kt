@@ -24,6 +24,16 @@ class WritingSuggestionQuestionsTest {
     }
 
     @Test
+    fun `the conclusion is asked about the paragraph while writing and about the document when it opens`() {
+        val writing = WritingSuggestionQuestions.questionFor(WritingSuggestionAction.CONCLUSION, WritingSuggestionScope.WRITING)
+        val opened = WritingSuggestionQuestions.questionFor(WritingSuggestionAction.CONCLUSION, WritingSuggestionScope.DOCUMENT_OPENED)
+
+        assertTrue(writing.instructions.jsonPrimitive.content.contains("`paragraph`"))
+        assertFalse(opened.instructions.jsonPrimitive.content.contains("`paragraph`"))
+        assertTrue(WritingSuggestionQuestions.questionsFor(WritingSuggestionScope.WRITING).containsKey("CONCLUSION"))
+    }
+
+    @Test
     fun `the document title is decided by the app and never asked`() {
         val asked = WritingSuggestionQuestions.questionsFor(WritingSuggestionScope.WRITING).keys +
             WritingSuggestionQuestions.questionsFor(WritingSuggestionScope.DOCUMENT_OPENED).keys

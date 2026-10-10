@@ -35,10 +35,17 @@ object WritingSuggestionQuestions {
 
     fun questionsFor(scope: WritingSuggestionScope): Map<String, SystemOneQuestion> =
         WritingSuggestionAction.forScope(scope).associate { action ->
-            action.name to questionFor(action)
+            action.name to questionFor(action, scope)
         }
 
-    fun questionFor(action: WritingSuggestionAction): SystemOneQuestion =
+    /**
+     * The question for [action]. The TL;DR and the conclusion are asked differently while writing
+     * (does this paragraph call for one?) and when a document opens (does the document need one?).
+     */
+    fun questionFor(
+        action: WritingSuggestionAction,
+        scope: WritingSuggestionScope = WritingSuggestionScope.WRITING,
+    ): SystemOneQuestion =
         when (action) {
             WritingSuggestionAction.CODE_BLOCK -> SystemOneQuestion.noul(
                 "The writer of `paragraph` is about to show source code, a terminal command, a " +
@@ -130,22 +137,47 @@ object WritingSuggestionQuestions {
                 whenFalse = "The paragraph is regular body text.",
             )
 
-            WritingSuggestionAction.TLDR -> SystemOneQuestion.noul(
-                "`document` is long or dense enough that readers would benefit from a short " +
-                    "TL;DR summary at the top, and it does not have one yet.",
-                whenTrue = "The document has several paragraphs or sections, covers more than " +
-                    "one idea, and has no summary, abstract or TL;DR at the top.",
-                whenFalse = "The document is short, empty, a simple list, or already starts with " +
-                    "a summary.",
-            )
+            WritingSuggestionAction.TLDR -> when (scope) {
+                WritingSuggestionScope.WRITING -> SystemOneQuestion.noul(
+                    "`paragraph` announces or asks for a summary, overview or TL;DR of " +
+                        "`document`, so writing a TL;DR at the top of the document would help.",
+                    whenTrue = "The paragraph says things like 'in summary', 'to sum up', 'here is " +
+                        "the short version', 'TL;DR', 'let's recap', or asks for the document to " +
+                        "be summarized.",
+                    whenFalse = "The paragraph is regular content that does not call for a " +
+                        "summary of the document.",
+                )
 
-            WritingSuggestionAction.CONCLUSION -> SystemOneQuestion.noul(
-                "`document` develops an argument, analysis or report that currently ends " +
-                    "abruptly, so a conclusion or wrap-up at the end would help.",
-                whenTrue = "The document is an essay, report, proposal, analysis or article " +
-                    "whose last paragraph does not close the discussion.",
-                whenFalse = "The document is a short note, a list, a log, or it already ends " +
-                    "with a conclusion, summary or next steps.",
-            )
+                WritingSuggestionScope.DOCUMENT_OPENED -> SystemOneQuestion.noul(
+                    "`document` is long or dense enough that readers would benefit from a short " +
+                        "TL;DR summary at the top, and it does not have one yet.",
+                    whenTrue = "The document has several paragraphs or sections, covers more than " +
+                        "one idea, and has no summary, abstract or TL;DR at the top.",
+                    whenFalse = "The document is short, empty, a simple list, or already starts " +
+                        "with a summary.",
+                )
+            }
+
+            WritingSuggestionAction.CONCLUSION -> when (scope) {
+                WritingSuggestionScope.WRITING -> SystemOneQuestion.noul(
+                    "`paragraph` announces that `document` is about to conclude, or asks for a " +
+                        "conclusion or wrap-up, so writing the conclusion of the document would " +
+                        "help.",
+                    whenTrue = "The paragraph says things like 'in conclusion', 'to conclude', " +
+                        "'next, we conclude', 'finally', 'to wrap up', 'closing thoughts', or " +
+                        "asks for a conclusion to be written.",
+                    whenFalse = "The paragraph is regular content that does not announce or ask " +
+                        "for the end of the document.",
+                )
+
+                WritingSuggestionScope.DOCUMENT_OPENED -> SystemOneQuestion.noul(
+                    "`document` develops an argument, analysis or report that currently ends " +
+                        "abruptly, so a conclusion or wrap-up at the end would help.",
+                    whenTrue = "The document is an essay, report, proposal, analysis or article " +
+                        "whose last paragraph does not close the discussion.",
+                    whenFalse = "The document is a short note, a list, a log, or it already ends " +
+                        "with a conclusion, summary or next steps.",
+                )
+            }
         }
 }
