@@ -31,6 +31,7 @@ dependencies {
     implementation(project(":backend:core:database"))
     implementation(project(":backend:core:connection"))
     implementation(project(":backend:core:genai_service"))
+    implementation(project(":backend:core:typesafe_service"))
 
     testImplementation(libs.ktor.server.tests)
     testImplementation(libs.ktor.server.content.negotiation)

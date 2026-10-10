@@ -81,7 +81,11 @@ object AiService {
         }
     }
 
-    private fun checkAuthorization(
+    /**
+     * Null when [userId] may use the cloud AI right now; otherwise the result that explains why
+     * not: no premium account, or the monthly quota is spent.
+     */
+    fun checkAuthorization(
         userId: String,
         endpointName: String,
         writeopiaDb: WriteopiaDbBackend
@@ -192,6 +196,28 @@ object AiService {
         } else {
             AiRequestResult.Success(response, tokenUsage)
         }
+    }
+
+    /** Records a request made with a model that reports its tokens separately, like Jev. */
+    suspend fun saveUsage(
+        userId: String?,
+        endpointName: String,
+        modelName: String,
+        inputTokens: Int,
+        outputTokens: Int,
+        writeopiaDb: WriteopiaDbBackend?
+    ) {
+        saveUsage(
+            userId = userId,
+            endpointName = endpointName,
+            modelName = modelName,
+            tokenUsage = TokenUsage(
+                inputTokens = inputTokens,
+                outputTokens = outputTokens,
+                totalTokens = inputTokens + outputTokens
+            ),
+            writeopiaDb = writeopiaDb
+        )
     }
 
     private suspend fun saveUsage(

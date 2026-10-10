@@ -269,4 +269,17 @@
   <string name="comments_count">Comments (%1$d)</string>
   <string name="delete_thread">Delete thread</string>
   <string name="reply">Reply</string>
+  <string name="writing_suggestions">Suggestions</string>
+  <string name="writing_suggestion_apply">Apply</string>
+  <string name="writing_suggestion_code_block">Add a code block</string>
+  <string name="writing_suggestion_list">Add a bullet list</string>
+  <string name="writing_suggestion_check_list">Add a checklist</string>
+  <string name="writing_suggestion_new_document_link">Create a linked document</string>
+  <string name="writing_suggestion_image">Add an image</string>
+  <string name="writing_suggestion_drawing">Add a drawing</string>
+  <string name="writing_suggestion_spreadsheet">Turn into a table</string>
+  <string name="writing_suggestion_title">Add a heading</string>
+  <string name="writing_suggestion_callout">Highlight as a callout</string>
+  <string name="writing_suggestion_tldr">Add a TL;DR at the top</string>
+  <string name="writing_suggestion_conclusion">Write a conclusion</string>
 </resources>

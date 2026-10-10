@@ -4,6 +4,19 @@ import androidx.compose.runtime.Composable
 import org.jetbrains.compose.resources.stringResource
 import writeopia.application.core.resources.generated.resources.Res
 import writeopia.application.core.resources.generated.resources.accent_color
+import writeopia.application.core.resources.generated.resources.writing_suggestions
+import writeopia.application.core.resources.generated.resources.writing_suggestion_apply
+import writeopia.application.core.resources.generated.resources.writing_suggestion_code_block
+import writeopia.application.core.resources.generated.resources.writing_suggestion_list
+import writeopia.application.core.resources.generated.resources.writing_suggestion_check_list
+import writeopia.application.core.resources.generated.resources.writing_suggestion_new_document_link
+import writeopia.application.core.resources.generated.resources.writing_suggestion_image
+import writeopia.application.core.resources.generated.resources.writing_suggestion_drawing
+import writeopia.application.core.resources.generated.resources.writing_suggestion_spreadsheet
+import writeopia.application.core.resources.generated.resources.writing_suggestion_title
+import writeopia.application.core.resources.generated.resources.writing_suggestion_callout
+import writeopia.application.core.resources.generated.resources.writing_suggestion_tldr
+import writeopia.application.core.resources.generated.resources.writing_suggestion_conclusion
 import writeopia.application.core.resources.generated.resources.account
 import writeopia.application.core.resources.generated.resources.account_deletion_started_description
 import writeopia.application.core.resources.generated.resources.account_deletion_started_title
@@ -994,4 +1007,44 @@ object WrStrings {
 
     @Composable
     fun reply() = stringResource(Res.string.reply)
+
+    // Writing agent
+    @Composable
+    fun writingSuggestions() = stringResource(Res.string.writing_suggestions)
+
+    @Composable
+    fun writingSuggestionApply() = stringResource(Res.string.writing_suggestion_apply)
+
+    @Composable
+    fun writingSuggestionCodeBlock() = stringResource(Res.string.writing_suggestion_code_block)
+
+    @Composable
+    fun writingSuggestionList() = stringResource(Res.string.writing_suggestion_list)
+
+    @Composable
+    fun writingSuggestionCheckList() = stringResource(Res.string.writing_suggestion_check_list)
+
+    @Composable
+    fun writingSuggestionNewDocumentLink() = stringResource(Res.string.writing_suggestion_new_document_link)
+
+    @Composable
+    fun writingSuggestionImage() = stringResource(Res.string.writing_suggestion_image)
+
+    @Composable
+    fun writingSuggestionDrawing() = stringResource(Res.string.writing_suggestion_drawing)
+
+    @Composable
+    fun writingSuggestionSpreadsheet() = stringResource(Res.string.writing_suggestion_spreadsheet)
+
+    @Composable
+    fun writingSuggestionTitle() = stringResource(Res.string.writing_suggestion_title)
+
+    @Composable
+    fun writingSuggestionCallout() = stringResource(Res.string.writing_suggestion_callout)
+
+    @Composable
+    fun writingSuggestionTldr() = stringResource(Res.string.writing_suggestion_tldr)
+
+    @Composable
+    fun writingSuggestionConclusion() = stringResource(Res.string.writing_suggestion_conclusion)
 }

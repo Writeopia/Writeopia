@@ -84,6 +84,8 @@ import io.writeopia.theme.WriteopiaTheme
 import io.writeopia.ui.components.EditionScreen
 import io.writeopia.ui.drawer.factory.DefaultDrawersAndroid
 import io.writeopia.ui.model.SelectionMetadata
+import io.writeopia.writingagent.actions.WritingAgentUi
+import io.writeopia.writingagent.ui.WritingSuggestionsBox
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -118,9 +120,15 @@ internal fun NoteEditorScreen(
 
     val context = LocalContext.current
 
+    // Set by the writing agent when it asks for an image, so the picked one lands at its paragraph.
+    var onAgentImagePicked by remember { mutableStateOf<((String) -> Unit)?>(null) }
+
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri: Uri? ->
+        val agentCallback = onAgentImagePicked
+        onAgentImagePicked = null
+
         uri?.let {
             // Copy the image to app storage for persistence
             val fileName = "image_${System.currentTimeMillis()}.jpg"
@@ -130,7 +138,12 @@ internal fun NoteEditorScreen(
                     inputStream.copyTo(outputStream)
                 }
             }
-            noteEditorViewModel.addImage(destinationFile.absolutePath)
+
+            if (agentCallback != null) {
+                agentCallback(destinationFile.absolutePath)
+            } else {
+                noteEditorViewModel.addImage(destinationFile.absolutePath)
+            }
         }
     }
 
@@ -320,6 +333,29 @@ internal fun NoteEditorScreen(
                         onDismissRequest = { showFolderSelection = false }
                     )
                 }
+            }
+
+            noteEditorViewModel.writingAgent?.let { agent ->
+                val agentUi = remember(onNewDrawingClick) {
+                    object : WritingAgentUi {
+                        override fun pickImage(onPicked: (String) -> Unit) {
+                            onAgentImagePicked = onPicked
+                            imagePickerLauncher.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            )
+                        }
+
+                        override fun openDrawing() = onNewDrawingClick()
+                    }
+                }
+
+                WritingSuggestionsBox(
+                    controller = agent,
+                    ui = agentUi,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(end = 12.dp, bottom = if (isWideLayout) 16.dp else 72.dp)
+                )
             }
 
             val headerEdition by noteEditorViewModel.editHeader.collectAsState()

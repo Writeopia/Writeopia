@@ -32,6 +32,9 @@ object EndPoints {
 
     fun aiUsage() = "api/ai/usage"
 
+    /** POST the paragraph being written; the writing agent answers with the actions to offer. */
+    fun aiWritingSuggestions() = "api/ai/writing-suggestions"
+
     // Public, CDN-cacheable configuration for auto-configuring Local AI (Ollama / llmman)
     fun aiLocalConfig() = "api/ai/local-config"
 

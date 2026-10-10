@@ -74,6 +74,7 @@ kotlin {
                 implementation(project(":application:core:connection"))
                 implementation(project(":application:core:configuration"))
                 implementation(project(":application:features:drawing"))
+                implementation(project(":application:features:writing_agent"))
 
                 implementation(libs.kotlinx.serialization.json)
                 //

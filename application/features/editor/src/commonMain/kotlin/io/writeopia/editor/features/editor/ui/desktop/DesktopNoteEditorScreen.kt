@@ -43,6 +43,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.writeopia.ai.task.AiTaskManager
 import io.writeopia.ai.task.ui.AiTaskIndicator
+import io.writeopia.common.utils.file.fileChooserLoad
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.dialogs.confirmation.DeleteConfirmationDialog
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.SideEditorOptions
@@ -56,6 +57,8 @@ import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.theme.WriteopiaTheme
 import io.writeopia.ui.drawer.factory.DrawersFactory
 import io.writeopia.ui.drawer.factory.isEnterKey
+import io.writeopia.writingagent.actions.WritingAgentUi
+import io.writeopia.writingagent.ui.WritingSuggestionsBox
 
 @Composable
 fun DesktopNoteEditorScreen(
@@ -354,5 +357,23 @@ fun DesktopNoteEditorScreen(
             onCancelTask = aiTaskManager::cancelTask,
             modifier = Modifier.align(Alignment.BottomStart).padding(start = 16.dp, bottom = 16.dp)
         )
+
+        noteEditorViewModel.writingAgent?.let { agent ->
+            val agentUi = remember(onNewDrawingClick) {
+                object : WritingAgentUi {
+                    override fun pickImage(onPicked: (String) -> Unit) {
+                        fileChooserLoad("")?.let(onPicked)
+                    }
+
+                    override fun openDrawing() = onNewDrawingClick()
+                }
+            }
+
+            WritingSuggestionsBox(
+                controller = agent,
+                ui = agentUi,
+                modifier = Modifier.align(Alignment.BottomEnd).padding(end = 72.dp, bottom = 16.dp)
+            )
+        }
     }
 }

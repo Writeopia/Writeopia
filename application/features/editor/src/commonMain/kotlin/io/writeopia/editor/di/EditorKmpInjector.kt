@@ -31,6 +31,7 @@ import io.writeopia.sdk.sharededition.SharedEditionManager
 import io.writeopia.ui.image.ImageUploader
 import io.writeopia.ui.keyboard.KeyboardEvent
 import io.writeopia.ui.manager.WriteopiaStateManager
+import io.writeopia.writingagent.di.WritingAgentInjection
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -69,6 +70,7 @@ class EditorKmpInjector private constructor(
         WorkspaceInjection.singleton(),
     private val imageUploader: ImageUploader? = null,
     val textSelectionActiveState: MutableStateFlow<Boolean> = MutableStateFlow(false),
+    private val writingAgentInjection: WritingAgentInjection? = WritingAgentInjection.singleton(),
 ) : TextEditorInjector {
 
     // SharedFlow for drawing save events - ViewModel subscribes to this
@@ -127,7 +129,8 @@ class EditorKmpInjector private constructor(
             presentationsApi = workspaceInjection.providePresentationsApi(),
             presentationsStore = WriteopiaDbInjector.singleton()?.database?.let { db ->
                 PresentationSqlStore(db.presentationEntityQueries, db.presentationStepEntityQueries)
-            }
+            },
+            writingAgentApi = writingAgentInjection?.provideApi(),
         )
 
     @Composable

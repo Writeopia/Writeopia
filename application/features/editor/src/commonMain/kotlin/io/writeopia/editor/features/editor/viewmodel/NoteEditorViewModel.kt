@@ -15,6 +15,7 @@ import io.writeopia.ui.backstack.BackstackInform
 import io.writeopia.ui.manager.WriteopiaStateManager
 import io.writeopia.ui.model.DrawState
 import io.writeopia.ui.model.SelectionMetadata
+import io.writeopia.writingagent.controller.WritingAgentController
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -24,6 +25,9 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 
     /** The presentations of the document; null when nothing can make them. */
     val presentations: PresentationsController?
+
+    /** The writing agent that suggests what to add while the user writes; null when the app has none. */
+    val writingAgent: WritingAgentController?
 
     val isEditable: StateFlow<Boolean>
 
@@ -147,7 +151,8 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 
     fun changeFontFamily(font: Font)
 
-    fun addImage(imagePath: String)
+    /** Adds the image at [position], or at the cursor without one. */
+    fun addImage(imagePath: String, position: Double? = null)
 
     fun exportMarkdown(path: String)
 
