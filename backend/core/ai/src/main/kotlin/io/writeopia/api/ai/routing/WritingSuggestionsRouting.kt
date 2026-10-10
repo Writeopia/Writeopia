@@ -66,7 +66,26 @@ fun Routing.writingSuggestionsRoute(
                 return@post
             }
 
+            logger.info(
+                "Writing suggestions {} request - user: {}, paragraph: {} chars, document: {} chars, block: {}",
+                request.scope,
+                effectiveUserId,
+                request.text.length,
+                request.documentText?.length ?: 0,
+                request.blockType
+            )
+
             val (response, usage) = service.suggest(request)
+
+            logger.info(
+                "Writing suggestions {} answer - user: {}, suggestions: {}, tokens: {} in / {} out",
+                request.scope,
+                effectiveUserId,
+                response.suggestions.joinToString { "${it.action}=${(it.probability * 100).toInt()}%" }
+                    .ifEmpty { "none" },
+                usage.inputTokens,
+                usage.outputTokens
+            )
 
             if (response.error != null) {
                 logger.warn("Writing suggestions failed for user {}: {}", effectiveUserId, response.error)

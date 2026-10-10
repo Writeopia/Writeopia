@@ -64,6 +64,7 @@ kotlin {
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.kotlinx.serialization.json)
                 implementation(libs.ktor.client.core)
+                implementation(libs.ktor.client.logging)
 
                 implementation(compose.runtime)
                 implementation(compose.foundation)

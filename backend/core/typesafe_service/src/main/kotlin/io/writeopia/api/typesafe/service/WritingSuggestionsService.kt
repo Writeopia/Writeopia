@@ -40,6 +40,9 @@ class WritingSuggestionsService(
         val state = WritingSuggestionQuestions.stateFor(request)
         val questions = WritingSuggestionQuestions.questionsFor(request.scope)
 
+        logger.info("Writing agent asking Jev {} questions for {}", questions.size, request.scope)
+        val started = System.currentTimeMillis()
+
         return when (val result = client.ask(state, questions)) {
             is TypeSafeResult.Success -> {
                 val probabilities = result.response.answers.mapNotNull { (id, answer) ->
@@ -49,8 +52,9 @@ class WritingSuggestionsService(
                 }.toMap()
 
                 logger.info(
-                    "Writing agent answers for {}: {}",
+                    "Writing agent answers for {} in {} ms: {}",
                     request.scope,
+                    System.currentTimeMillis() - started,
                     probabilities.entries.joinToString { (action, p) -> "$action=${(p * 100).toInt()}%" }
                 )
 
@@ -59,6 +63,12 @@ class WritingSuggestionsService(
             }
 
             is TypeSafeResult.Failure -> {
+                logger.warn(
+                    "Writing agent failed for {} in {} ms: {}",
+                    request.scope,
+                    System.currentTimeMillis() - started,
+                    result.message
+                )
                 WritingSuggestionsResponse(error = result.message) to SystemOneUsage()
             }
         }

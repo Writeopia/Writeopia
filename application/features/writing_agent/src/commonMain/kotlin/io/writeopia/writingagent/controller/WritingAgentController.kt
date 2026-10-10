@@ -3,6 +3,7 @@ package io.writeopia.writingagent.controller
 import io.writeopia.app.dto.writingagent.WritingSuggestionAction
 import io.writeopia.app.dto.writingagent.WritingSuggestionScope
 import io.writeopia.app.dto.writingagent.WritingSuggestionsRequest
+import io.writeopia.di.ApiLogger
 import io.writeopia.sdk.model.story.StoryState
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
@@ -23,6 +24,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.time.TimeSource
 
 /**
  * The writing agent of a document. It watches what the user writes and, each time the number of
@@ -44,6 +46,8 @@ class WritingAgentController(
     private val debounceMillis: Long = DEBOUNCE_MILLIS,
     private val minimumDocumentLength: Int = MINIMUM_DOCUMENT_LENGTH,
     private val documentTextLimit: Int = DOCUMENT_TEXT_LIMIT,
+    /** Where the agent tells what it asks and what came back. */
+    private val log: (String) -> Unit = { message -> ApiLogger.log("$LOG_TAG $message") },
 ) {
     private val _state = MutableStateFlow(WritingSuggestionsState.empty())
     val state: StateFlow<WritingSuggestionsState> = _state.asStateFlow()
@@ -91,6 +95,7 @@ class WritingAgentController(
             state.copy(suggestions = state.suggestions.filterNot { it.action == action })
         }
 
+        log("applying $action to ${current.storyStepId}")
         executing = scope.launch {
             executor.execute(action, current.storyStepId, ui)
         }
@@ -104,7 +109,12 @@ class WritingAgentController(
         _state.value = WritingSuggestionsState.empty()
 
         val text = documentText(story)
-        if (text.length < minimumDocumentLength) return
+        if (text.length < minimumDocumentLength) {
+            log("document $id opened with ${text.length} chars, under the $minimumDocumentLength minimum: not asking")
+            return
+        }
+
+        log("document $id opened with ${text.length} chars: asking about the whole document")
 
         val anchor = story.stories.entries
             .firstOrNull { (_, step) -> step.type == StoryTypes.TITLE.type }
@@ -137,6 +147,7 @@ class WritingAgentController(
         // The first sight of a paragraph only records its sentences; a change asks.
         if (previous == null || previous == count || text.isBlank()) return
 
+        log("paragraph ${step.id} went from $previous to $count sentence ends: asking in ${debounceMillis}ms")
         scheduleAsk(step.id)
 
         // The paragraph of the current suggestions may be gone (deleted, or merged).
@@ -152,8 +163,16 @@ class WritingAgentController(
             delay(debounceMillis)
 
             val story = storyFlow.value
-            val step = story.stories.values.firstOrNull { it.id == storyStepId } ?: return@launch
-            val text = step.text?.takeIf { it.isNotBlank() } ?: return@launch
+            val step = story.stories.values.firstOrNull { it.id == storyStepId }
+            if (step == null) {
+                log("paragraph $storyStepId is gone: not asking")
+                return@launch
+            }
+            val text = step.text?.takeIf { it.isNotBlank() }
+            if (text == null) {
+                log("paragraph $storyStepId is blank now: not asking")
+                return@launch
+            }
 
             ask(
                 storyStepId = storyStepId,
@@ -169,20 +188,47 @@ class WritingAgentController(
     }
 
     private suspend fun ask(storyStepId: String?, request: WritingSuggestionsRequest) {
-        if (!isEnabled()) return
+        if (!isEnabled()) {
+            log("${request.scope} request for $storyStepId skipped: the agent is disabled (offline, signed out or locked)")
+            return
+        }
 
+        log(
+            "${request.scope} request for $storyStepId: paragraph of ${request.text.length} chars, " +
+                "document of ${request.documentText?.length ?: 0} chars, block ${request.blockType}"
+        )
         _state.update { it.copy(isLoading = true) }
+        val started = TimeSource.Monotonic.markNow()
 
         when (val result = api.suggestions(request)) {
             is ResultData.Complete -> {
+                val suggestions = result.data.suggestions.map { dto ->
+                    WritingSuggestion(dto.action, dto.probability)
+                }
+
+                log(
+                    "${request.scope} answer for $storyStepId in ${started.elapsedNow().inWholeMilliseconds}ms: " +
+                        if (suggestions.isEmpty()) {
+                            "nothing passed the threshold"
+                        } else {
+                            suggestions.joinToString { "${it.action} ${(it.probability * 100).toInt()}%" }
+                        }
+                )
+
                 _state.value = WritingSuggestionsState(
                     storyStepId = storyStepId,
                     scope = request.scope,
-                    suggestions = result.data.suggestions.map { dto ->
-                        WritingSuggestion(dto.action, dto.probability)
-                    },
+                    suggestions = suggestions,
                     isLoading = false,
                 )
+            }
+
+            is ResultData.Error -> {
+                log(
+                    "${request.scope} request for $storyStepId failed in " +
+                        "${started.elapsedNow().inWholeMilliseconds}ms: ${result.exception?.message}"
+                )
+                _state.update { it.copy(isLoading = false) }
             }
 
             else -> _state.update { it.copy(isLoading = false) }
@@ -197,6 +243,7 @@ class WritingAgentController(
             .take(documentTextLimit)
 
     companion object {
+        const val LOG_TAG = "[WritingAgent]"
         const val DEBOUNCE_MILLIS = 600L
         const val MINIMUM_DOCUMENT_LENGTH = 200
         const val DOCUMENT_TEXT_LIMIT = 6_000
