@@ -9,6 +9,7 @@ import io.writeopia.di.ApiLogger
 import io.writeopia.sdk.model.action.Action
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.story.StoryStep
+import io.writeopia.sdk.models.story.StoryType
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
 import io.writeopia.sdk.models.story.TagInfo
@@ -44,7 +45,9 @@ class WriteopiaActionExecutor(
         log("executing $action for $storyStepId at position $position")
 
         when (action) {
-            WritingSuggestionAction.CODE_BLOCK -> insert(StoryTypes.CODE_BLOCK, below)
+            WritingSuggestionAction.CODE_BLOCK -> aiTask("Writing the code snippet...") {
+                codeSnippet(storyStepId, position)
+            }
 
             WritingSuggestionAction.LIST -> aiTask("Writing the list...") {
                 listItems(storyStepId, position, StoryTypes.UNORDERED_LIST_ITEM, LIST_PROMPT)
@@ -81,7 +84,14 @@ class WriteopiaActionExecutor(
             WritingSuggestionAction.CALLOUT -> manager.toggleTagForPosition(position, TagInfo(Tag.HIGH_LIGHT_BLOCK))
 
             WritingSuggestionAction.TLDR -> aiTask("Writing a TL;DR...") {
-                generateAt(afterTitle(), TLDR_PROMPT)
+                // A card under the title, starting with "TLDR: ", like a hand-written one.
+                generateAt(
+                    position = afterTitle(),
+                    instructions = TLDR_PROMPT,
+                    type = StoryTypes.TEXT.type,
+                    tags = setOf(TagInfo(Tag.CARD_BLOCK)),
+                    prefix = TLDR_PREFIX,
+                )
             }
 
             WritingSuggestionAction.CONCLUSION -> aiTask("Writing a conclusion...") {
@@ -134,14 +144,27 @@ class WriteopiaActionExecutor(
         manager.addAtPosition(StoryStep(type = type.type, text = ""), position)
     }
 
-    private suspend fun generateAt(position: Double, instructions: String): Result<Unit> {
+    private suspend fun generateAt(
+        position: Double,
+        instructions: String,
+        type: StoryType = StoryTypes.AI_ANSWER.type,
+        tags: Set<TagInfo> = emptySet(),
+        prefix: String = "",
+    ): Result<Unit> {
         val ai = aiOrFailure().getOrElse { failure ->
             AiTextWriter.noAiAt(manager, position)
             return Result.failure(failure)
         }
 
         val prompt = "$instructions\n```\n${manager.getDocumentText()}\n```"
-        AiTextWriter.streamAt(manager, position, ai.stream(AiCommand.PROMPT, prompt))
+        AiTextWriter.streamAt(
+            manager = manager,
+            position = position,
+            answers = ai.stream(AiCommand.PROMPT, prompt),
+            type = type,
+            tags = tags,
+            prefix = prefix,
+        )
         return Result.success(Unit)
     }
 
@@ -190,6 +213,32 @@ class WriteopiaActionExecutor(
         }
 
         return items.map { }
+    }
+
+    /**
+     * Asks the AI for the code the paragraph calls for and inserts it as one code block below
+     * the paragraph. Without an AI an empty code block is inserted, and the failure says why.
+     */
+    private suspend fun codeSnippet(storyStepId: String?, position: Double): Result<Unit> {
+        val paragraph = manager.getStory(position)?.text ?: ""
+        val context = "Title: ${manager.getDocument().title}\nParagraph: $paragraph\n\nDocument:\n${manager.getDocumentText()}"
+
+        val code = aiOrFailure().mapCatching { ai ->
+            ai.stream(AiCommand.PROMPT, "$CODE_PROMPT\n```\n$context\n```")
+                .finalTextOrError()
+                .getOrThrow()
+                .let(MarkdownCode::parse)
+                .ifBlank { throw Exception("The AI answered no code") }
+        }
+
+        // The document may have changed while the AI answered.
+        val below = (positionOf(storyStepId) ?: position) + 1
+
+        log("inserting a code block of ${code.getOrNull()?.lines()?.size ?: 0} lines below $storyStepId")
+        manager.trackState()
+        manager.addAtPosition(StoryStep(type = StoryTypes.CODE_BLOCK.type, text = code.getOrDefault("")), below)
+
+        return code.map { }
     }
 
     private suspend fun heading(storyStepId: String?, position: Double): Result<Unit> {
@@ -262,6 +311,14 @@ class WriteopiaActionExecutor(
         private const val DEFAULT_ROWS = 3
         private const val MAX_LIST_ITEMS = 10
 
+        const val CODE_PROMPT =
+            "The paragraph below introduces or describes a piece of code, a command or a " +
+                "configuration snippet. Write that snippet, complete and ready to use, in the " +
+                "language or tool the paragraph implies (use the rest of the document to " +
+                "decide when the paragraph doesn't say). Answer only with the code, inside one " +
+                "fenced code block, with no explanation before or after it. Comments in the " +
+                "code should use the language of the text."
+
         const val LIST_PROMPT =
             "The paragraph below introduces or enumerates several items. Write those items as a " +
                 "bullet list, completing the list with the items the paragraph implies. Answer " +
@@ -274,9 +331,12 @@ class WriteopiaActionExecutor(
                 "done. Answer only with the tasks. At most ten, each a short phrase starting " +
                 "with a verb. Use the language of the text."
 
+        const val TLDR_PREFIX = "TLDR: "
+
         const val TLDR_PROMPT =
             "Write a TL;DR for the following document: at most three sentences with its key " +
-                "points. Answer only with the TL;DR, without a title. Use the language of the text."
+                "points. Answer only with the sentences: no title, no \"TL;DR\" label, no " +
+                "Markdown. Use the language of the text."
 
         const val CONCLUSION_PROMPT =
             "Write a conclusion for the following document: one or two paragraphs that wrap up " +

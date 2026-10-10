@@ -2,7 +2,9 @@ package io.writeopia.writingagent.actions
 
 import io.writeopia.sdk.model.action.Action
 import io.writeopia.sdk.models.story.StoryStep
+import io.writeopia.sdk.models.story.StoryType
 import io.writeopia.sdk.models.story.StoryTypes
+import io.writeopia.sdk.models.story.TagInfo
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.ui.manager.WriteopiaStateManager
 import kotlinx.coroutines.flow.Flow
@@ -15,11 +17,17 @@ object AiTextWriter {
 
     const val NO_AI_MESSAGE = "No AI is available. Pick one in the settings, or sign in to use the cloud AI."
 
-    /** Streams [answers] into a new block inserted at [position]. */
+    /**
+     * Streams [answers] into a new block inserted at [position]. The block is an AI answer unless
+     * another [type] is asked for; [prefix] goes before the text and [tags] decorate the block.
+     */
     suspend fun streamAt(
         manager: WriteopiaStateManager,
         position: Double,
         answers: Flow<ResultData<String>>,
+        type: StoryType = StoryTypes.AI_ANSWER.type,
+        tags: Set<TagInfo> = emptySet(),
+        prefix: String = "",
     ) {
         answers.onStart {
             manager.loadingAtPosition(position)
@@ -36,7 +44,7 @@ object AiTextWriter {
         }.collect { text ->
             manager.changeStoryState(
                 Action.StoryStateChange(
-                    storyStep = StoryStep(type = StoryTypes.AI_ANSWER.type, text = text),
+                    storyStep = StoryStep(type = type, text = prefix + text.trim(), tags = tags),
                     position = position,
                 ),
                 trackIt = false

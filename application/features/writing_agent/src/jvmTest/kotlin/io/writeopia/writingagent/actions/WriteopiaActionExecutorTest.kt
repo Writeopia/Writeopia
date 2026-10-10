@@ -61,7 +61,24 @@ class WriteopiaActionExecutorTest {
         currentStory.value.stories.toSortedMap().values.map { it.text }
 
     @Test
-    fun `a code block goes right below the paragraph`() = runTest {
+    fun `a code snippet written by the AI goes right below the paragraph, without the fence`() = runTest {
+        val manager = manager()
+        val executor = WriteopiaActionExecutor(
+            manager,
+            resolveAi = { ai("Here it is:\n```kotlin\nfun main() {\n    println(\"hi\")\n}\n```\nDone.") }
+        )
+
+        executor.execute(WritingSuggestionAction.CODE_BLOCK, "p1", WritingAgentUi.None)
+
+        assertEquals(
+            listOf(StoryTypes.TITLE, StoryTypes.TEXT, StoryTypes.CODE_BLOCK, StoryTypes.TEXT),
+            manager.typesInOrder()
+        )
+        assertEquals("fun main() {\n    println(\"hi\")\n}", manager.currentStory.value.stories[2.0]?.text)
+    }
+
+    @Test
+    fun `without an AI the code block is empty, right below the paragraph`() = runTest {
         val manager = manager()
         val executor = WriteopiaActionExecutor(manager, resolveAi = { null })
 
@@ -71,6 +88,7 @@ class WriteopiaActionExecutorTest {
             listOf(StoryTypes.TITLE, StoryTypes.TEXT, StoryTypes.CODE_BLOCK, StoryTypes.TEXT),
             manager.typesInOrder()
         )
+        assertEquals("", manager.currentStory.value.stories[2.0]?.text)
     }
 
     @Test
@@ -196,10 +214,15 @@ class WriteopiaActionExecutorTest {
         executor.execute(WritingSuggestionAction.CONCLUSION, "title", WritingAgentUi.None)
 
         assertEquals(
-            listOf("Groceries", "Short version.", "We need milk.", "And eggs.", "Short version."),
+            listOf("Groceries", "TLDR: Short version.", "We need milk.", "And eggs.", "Short version."),
             manager.textsInOrder()
         )
-        assertEquals(StoryTypes.AI_ANSWER, manager.typesInOrder()[1])
+        // The TL;DR is a card under the title; the conclusion is a plain AI answer.
+        val tldr = manager.currentStory.value.stories[1.0]
+        assertNotNull(tldr)
+        assertEquals(StoryTypes.TEXT.type, tldr.type)
+        assertTrue(tldr.tags.any { it.tag == Tag.CARD_BLOCK })
+        assertEquals(StoryTypes.AI_ANSWER, manager.typesInOrder().last())
     }
 
     @Test
