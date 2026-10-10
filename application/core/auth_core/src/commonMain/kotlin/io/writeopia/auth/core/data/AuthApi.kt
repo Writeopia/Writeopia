@@ -6,6 +6,7 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.header
+import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
@@ -29,6 +30,7 @@ import io.writeopia.sdk.serialization.data.auth.RegisterRequest
 import io.writeopia.sdk.serialization.data.auth.RefreshTokenRequest
 import io.writeopia.sdk.serialization.data.auth.RegisterResponse
 import io.writeopia.sdk.serialization.data.auth.TokenRefreshResponse
+import io.writeopia.sdk.serialization.data.auth.UsernameAvailabilityResponse
 import io.writeopia.sdk.serialization.data.WriteopiaUserApi
 import io.writeopia.sdk.serialization.data.auth.ResetPasswordRequest
 
@@ -119,6 +121,24 @@ class AuthApi(
     } catch (e: Exception) {
         println("verifyRegisterCode error: ${e.message}")
         e.printStackTrace()
+        ResultData.Error(e)
+    }
+
+    /**
+     * Whether a new account can use [username]. Complete(false) means it is taken.
+     */
+    suspend fun isUsernameAvailable(username: String): ResultData<Boolean> = try {
+        val response = client.get("$baseUrl/api/auth/username/available") {
+            parameter("username", username)
+        }
+
+        if (response.status.isSuccess()) {
+            ResultData.Complete(response.body<UsernameAvailabilityResponse>().available)
+        } else {
+            ResultData.Error(Exception(response.bodyAsText().ifBlank { "Invalid username" }))
+        }
+    } catch (e: Exception) {
+        println("isUsernameAvailable error: ${e.message}")
         ResultData.Error(e)
     }
 

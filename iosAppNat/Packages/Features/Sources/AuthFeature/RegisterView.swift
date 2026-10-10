@@ -13,6 +13,15 @@ enum RegisterStep: Hashable {
     case details
 }
 
+/// Whether the username typed in the sign-up form can be used, as far as the app knows.
+enum UsernameAvailability: Equatable {
+    /// Not checked: empty, not a valid username yet, or the check failed.
+    case unknown
+    case checking
+    case available
+    case taken
+}
+
 @Observable
 final class RegisterViewModel {
     var name = ""
@@ -24,6 +33,7 @@ final class RegisterViewModel {
     private(set) var isLoading = false
     private(set) var errorMessage: String?
     private(set) var resendCooldown = 0
+    private(set) var usernameAvailability = UsernameAvailability.unknown
 
     private let session: AppSession
     private var cooldownTask: Task<Void, Never>?
@@ -35,8 +45,35 @@ final class RegisterViewModel {
     var passwordValidation: PasswordValidation { PasswordValidator.validate(password) }
 
     var usernameHint: String? {
+        if usernameAvailability == .taken {
+            return String(localized: "This username is already taken.")
+        }
         guard !username.isEmpty, !FieldValidator.isValidUsername(username) else { return nil }
         return String(localized: "3 to 30 letters, numbers, - or _")
+    }
+
+    /// Asks the backend whether the username is free, once the user stops typing for a moment.
+    /// Run from `.task(id:)`, so a newer keystroke cancels it. A failed check leaves it unknown:
+    /// registering still catches a taken username.
+    func checkUsernameAvailability() async {
+        let candidate = username
+
+        guard FieldValidator.isValidUsername(candidate) else {
+            usernameAvailability = .unknown
+            return
+        }
+
+        usernameAvailability = .checking
+        try? await Task.sleep(for: .milliseconds(400))
+        if Task.isCancelled { return }
+
+        do {
+            let available = try await session.authAPI.isUsernameAvailable(candidate)
+            if Task.isCancelled || candidate != username { return }
+            usernameAvailability = available ? .available : .taken
+        } catch {
+            if candidate == username { usernameAvailability = .unknown }
+        }
     }
 
     var workspaceHint: String? {
@@ -50,6 +87,8 @@ final class RegisterViewModel {
     var canRegister: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty &&
             FieldValidator.isValidUsername(username) &&
+            usernameAvailability != .taken &&
+            usernameAvailability != .checking &&
             FieldValidator.isValidWorkspaceName(workspaceName) &&
             passwordValidation.isValid &&
             !isLoading
@@ -215,6 +254,16 @@ struct RegisterView: View {
                 VStack(spacing: 4) {
                     WrTextField("Username", text: $viewModel.username, systemImage: "at", kind: .email)
                         .accessibilityIdentifier("register.username")
+                        .overlay(alignment: .trailing) {
+                            if viewModel.usernameAvailability == .checking {
+                                ProgressView()
+                                    .controlSize(.small)
+                                    .padding(.trailing, 12)
+                            }
+                        }
+                        .task(id: viewModel.username) {
+                            await viewModel.checkUsernameAvailability()
+                        }
                     hint(viewModel.usernameHint)
                 }
 

@@ -376,6 +376,7 @@ fun NavGraphBuilder.authNavigation(
                     emailState = registerViewModel.email,
                     passwordState = registerViewModel.password,
                     registerState = registerViewModel.register,
+                    usernameAvailabilityState = registerViewModel.usernameAvailability,
                     passwordValidationState = registerViewModel.passwordValidation,
                     canRegisterState = registerViewModel.canRegister,
                     nameChanged = registerViewModel::nameChanged,

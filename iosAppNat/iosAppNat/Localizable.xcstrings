@@ -4555,6 +4555,17 @@
           }
         }
       }
+    },
+    "This username is already taken." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este nome de usuário já está em uso."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

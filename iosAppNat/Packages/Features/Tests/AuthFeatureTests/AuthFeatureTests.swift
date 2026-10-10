@@ -207,6 +207,53 @@ private func makeSession(
         #expect(session.phase == .chooseWorkspace)
     }
 
+    @Test func takenUsernameIsFlaggedAndBlocksRegistering() async {
+        let (session, transport) = makeSession([
+            "/api/auth/username/available": (200, #"{"available":false}"#),
+        ])
+
+        let viewModel = RegisterViewModel(session: session)
+        viewModel.name = "Ana"
+        viewModel.username = "ana"
+        viewModel.workspaceName = "Ana's team"
+        viewModel.password = "abcdefg!"
+
+        await viewModel.checkUsernameAvailability()
+
+        #expect(transport.paths == ["/api/auth/username/available"])
+        #expect(viewModel.usernameAvailability == .taken)
+        #expect(viewModel.usernameHint == "This username is already taken.")
+        #expect(!viewModel.canRegister)
+    }
+
+    @Test func freeUsernameCanBeRegistered() async {
+        let (session, _) = makeSession([
+            "/api/auth/username/available": (200, #"{"available":true}"#),
+        ])
+
+        let viewModel = RegisterViewModel(session: session)
+        viewModel.name = "Ana"
+        viewModel.username = "ana"
+        viewModel.workspaceName = "Ana's team"
+        viewModel.password = "abcdefg!"
+
+        await viewModel.checkUsernameAvailability()
+
+        #expect(viewModel.usernameAvailability == .available)
+        #expect(viewModel.canRegister)
+    }
+
+    @Test func invalidUsernameIsNotChecked() async {
+        let (session, transport) = makeSession()
+        let viewModel = RegisterViewModel(session: session)
+        viewModel.username = "ab"
+
+        await viewModel.checkUsernameAvailability()
+
+        #expect(transport.paths.isEmpty)
+        #expect(viewModel.usernameAvailability == .unknown)
+    }
+
     @Test func wrongRegisterCodeShowsErrorAndCreatesNothing() async {
         let (session, transport) = makeSession([
             "/api/auth/register/email/verify": (400, #"{"success":false,"message":"Invalid or expired verification code"}"#),

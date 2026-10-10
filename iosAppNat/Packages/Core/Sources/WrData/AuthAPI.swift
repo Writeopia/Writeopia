@@ -130,6 +130,18 @@ public final class AuthAPI {
         }
     }
 
+    /// Whether a new account can use `username`. False means it is taken.
+    public func isUsernameAvailable(_ username: String) async throws -> Bool {
+        struct Response: Decodable { let available: Bool }
+
+        let response: Response = try await client.get(
+            "api/auth/username/available",
+            query: [URLQueryItem(name: "username", value: username)],
+            authenticated: false
+        )
+        return response.available
+    }
+
     /// Last step of sign-up: creates the account for the verified email and signs in.
     public func register(
         name: String,
