@@ -11,6 +11,7 @@ import io.writeopia.sdk.serialization.data.WriteopiaUserApi
 import io.writeopia.sdk.serialization.data.auth.RegisterResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -20,7 +21,9 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class RegisterViewModelTest {
@@ -45,6 +48,7 @@ class RegisterViewModelTest {
         Dispatchers.setMain(testDispatcher)
         authRepository = mockk(relaxed = true)
         authApi = mockk(relaxed = true)
+        coEvery { authApi.isUsernameAvailable(any()) } returns ResultData.Complete(true)
     }
 
     @AfterTest
@@ -121,5 +125,64 @@ class RegisterViewModelTest {
         advanceUntilIdle()
 
         assertIs<ResultData.Error<*>>(viewModel.register.value)
+    }
+
+    @Test
+    fun `a taken username is flagged and blocks registering`() = runTest {
+        coEvery { authApi.isUsernameAvailable("taken") } returns ResultData.Complete(false)
+
+        val viewModel = filledViewModel()
+        viewModel.canRegister.launchIn(backgroundScope)
+        viewModel.usernameChanged("taken")
+        advanceUntilIdle()
+
+        assertEquals(UsernameAvailability.TAKEN, viewModel.usernameAvailability.value)
+        assertFalse(viewModel.canRegister.value)
+    }
+
+    @Test
+    fun `a free username can be registered`() = runTest {
+        val viewModel = filledViewModel()
+        viewModel.passwordChanged("password123!")
+        viewModel.canRegister.launchIn(backgroundScope)
+        advanceUntilIdle()
+
+        assertEquals(UsernameAvailability.AVAILABLE, viewModel.usernameAvailability.value)
+        assertTrue(viewModel.canRegister.value)
+    }
+
+    @Test
+    fun `only the username typed last is checked`() = runTest {
+        val viewModel = RegisterViewModel(authRepository, authApi)
+        viewModel.usernameChanged("ana")
+        viewModel.usernameChanged("ana_b")
+        viewModel.usernameChanged("ana_bo")
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { authApi.isUsernameAvailable(any()) }
+        coVerify { authApi.isUsernameAvailable("ana_bo") }
+    }
+
+    @Test
+    fun `an invalid username is not checked`() = runTest {
+        val viewModel = RegisterViewModel(authRepository, authApi)
+        viewModel.usernameChanged("ab")
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { authApi.isUsernameAvailable(any()) }
+        assertEquals(UsernameAvailability.UNKNOWN, viewModel.usernameAvailability.value)
+    }
+
+    @Test
+    fun `a failed check does not block registering`() = runTest {
+        coEvery { authApi.isUsernameAvailable(any()) } returns ResultData.Error(Exception("offline"))
+
+        val viewModel = filledViewModel()
+        viewModel.passwordChanged("password123!")
+        viewModel.canRegister.launchIn(backgroundScope)
+        advanceUntilIdle()
+
+        assertEquals(UsernameAvailability.UNKNOWN, viewModel.usernameAvailability.value)
+        assertTrue(viewModel.canRegister.value)
     }
 }

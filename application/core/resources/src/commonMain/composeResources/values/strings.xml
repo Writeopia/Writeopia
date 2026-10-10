@@ -165,6 +165,7 @@
   <string name="new_drawing">New Drawing</string>
   <string name="login_failed">Login failed. Please check your credentials.</string>
   <string name="registration_failed">Registration failed. Please try again.</string>
+  <string name="username_taken">This username is already taken</string>
   <string name="register_enter_email">Enter your email to receive a verification code</string>
   <string name="send_verification_code">Send Verification Code</string>
   <string name="verify_your_email">Verify Your Email</string>

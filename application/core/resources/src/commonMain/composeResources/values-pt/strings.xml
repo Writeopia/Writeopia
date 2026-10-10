@@ -151,6 +151,7 @@
   <string name="teams">Times</string>
   <string name="login_failed">Falha no login. Por favor, verifique suas credenciais.</string>
   <string name="registration_failed">Falha no registro. Por favor, tente novamente.</string>
+  <string name="username_taken">Este nome de usuário já está em uso</string>
   <string name="register_enter_email">Digite seu e-mail para receber um código de verificação</string>
   <string name="send_verification_code">Enviar código de verificação</string>
   <string name="verify_your_email">Verifique seu e-mail</string>

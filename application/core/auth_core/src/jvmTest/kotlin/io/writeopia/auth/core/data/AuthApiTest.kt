@@ -222,4 +222,28 @@ class AuthApiTest {
         assertIs<ResultData.Error<*>>(result)
         assertEquals("Workspace name must be 3-30 characters", (result as ResultData.Error).exception?.message)
     }
+
+    @Test
+    fun `isUsernameAvailable should read the availability`() = runTest {
+        var capturedUrl: String? = null
+        val mockEngine = MockEngine { request ->
+            capturedUrl = request.url.toString()
+            respond(
+                content = """{"available": false}""",
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+
+        val client = HttpClient(mockEngine) {
+            install(ContentNegotiation) {
+                json(testJson)
+            }
+        }
+
+        val result = AuthApi(client, "https://api.example.com").isUsernameAvailable("ana")
+
+        assertEquals(ResultData.Complete(false), result)
+        assertEquals("https://api.example.com/api/auth/username/available?username=ana", capturedUrl)
+    }
 }

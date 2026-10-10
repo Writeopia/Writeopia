@@ -13,6 +13,7 @@ import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.utils.map
 import io.writeopia.sdk.serialization.data.auth.RegisterResponse
 import io.writeopia.sdk.serialization.data.toModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -25,6 +26,17 @@ import kotlinx.coroutines.launch
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
+/**
+ * Whether the username typed in the sign-up form can be used, as far as the app knows.
+ */
+enum class UsernameAvailability {
+    /** Not checked: empty, not a valid username yet, or the check failed. */
+    UNKNOWN,
+    CHECKING,
+    AVAILABLE,
+    TAKEN,
+}
+
 // The NavigationActivity won't leak because it is the single activity of the whole project
 internal class RegisterViewModel(
     private val authRepository: AuthRepository,
@@ -36,6 +48,11 @@ internal class RegisterViewModel(
 
     private val _username = MutableStateFlow("")
     val username = _username.asStateFlow()
+
+    private val _usernameAvailability = MutableStateFlow(UsernameAvailability.UNKNOWN)
+    val usernameAvailability = _usernameAvailability.asStateFlow()
+
+    private var usernameCheckJob: Job? = null
 
     private val _workspace = MutableStateFlow("")
     val company = _workspace.asStateFlow()
@@ -72,6 +89,10 @@ internal class RegisterViewModel(
             email.isNotBlank() &&
             workspace.isNotBlank() &&
             validation.strength == PasswordStrength.STRONG
+    }.combine(_usernameAvailability) { filled, availability ->
+        filled &&
+            availability != UsernameAvailability.TAKEN &&
+            availability != UsernameAvailability.CHECKING
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -83,7 +104,39 @@ internal class RegisterViewModel(
     }
 
     fun usernameChanged(username: String) {
+        if (username == _username.value) return
+
         _username.value = username
+        checkUsernameAvailability(username)
+    }
+
+    /**
+     * Asks the backend whether [username] is free, once the user stops typing for a moment.
+     * A failed check leaves it UNKNOWN: registering still catches a taken username.
+     */
+    private fun checkUsernameAvailability(username: String) {
+        usernameCheckJob?.cancel()
+
+        if (!isValidUsername(username)) {
+            _usernameAvailability.value = UsernameAvailability.UNKNOWN
+            return
+        }
+
+        _usernameAvailability.value = UsernameAvailability.CHECKING
+
+        usernameCheckJob = viewModelScope.launch {
+            delay(USERNAME_CHECK_DELAY_MS)
+
+            _usernameAvailability.value = when (val result = authApi.isUsernameAvailable(username)) {
+                is ResultData.Complete -> if (result.data) {
+                    UsernameAvailability.AVAILABLE
+                } else {
+                    UsernameAvailability.TAKEN
+                }
+
+                else -> UsernameAvailability.UNKNOWN
+            }
+        }
     }
 
     fun workspaceChanged(company: String) {
@@ -161,5 +214,13 @@ internal class RegisterViewModel(
             // 14 minutes from now, as a buffer before the access token expires.
             expiresAt = Clock.System.now().toEpochMilliseconds() + 14 * 60 * 1000L
         )
+    }
+
+    companion object {
+        private const val USERNAME_CHECK_DELAY_MS = 400L
+
+        // Same rules as the backend: 3 to 30 letters, digits, '-' or '_'.
+        private fun isValidUsername(username: String): Boolean =
+            username.length in 3..30 && username.all { it.isLetterOrDigit() || it == '-' || it == '_' }
     }
 }

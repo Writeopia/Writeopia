@@ -17,6 +17,7 @@ import io.writeopia.api.core.auth.models.LoginResult
 import io.writeopia.api.core.auth.models.UserStatus
 import io.writeopia.api.core.auth.models.toApi
 import io.writeopia.api.core.auth.repository.userExistsByUsernameOrEmail
+import io.writeopia.api.core.auth.repository.usernameExists
 import io.writeopia.api.core.auth.repository.getUserById
 import io.writeopia.api.core.auth.repository.deleteEmailVerification
 import io.writeopia.api.core.auth.service.AccountDeletionService
@@ -35,6 +36,7 @@ import io.writeopia.sdk.serialization.data.auth.RefreshTokenRequest
 import io.writeopia.sdk.serialization.data.auth.RegisterResponse
 import io.writeopia.sdk.serialization.data.auth.ResetPasswordRequest
 import io.writeopia.sdk.serialization.data.auth.TokenRefreshResponse
+import io.writeopia.sdk.serialization.data.auth.UsernameAvailabilityResponse
 import io.writeopia.sdk.serialization.data.toApi
 import io.writeopia.sql.WriteopiaDbBackend
 import java.sql.SQLException
@@ -252,6 +254,29 @@ fun Routing.authRoute(
         }
     }
 
+    // Lets the sign-up form tell the user a username is taken while they type, instead of only
+    // when they submit. Usernames are case-sensitive, like the unique constraint behind them.
+    get("/api/auth/username/available") {
+        val username = call.request.queryParameters["username"]
+
+        if (username == null) {
+            call.respond(HttpStatusCode.BadRequest, "Missing username")
+            return@get
+        }
+
+        try {
+            validateUsername(username)
+        } catch (e: IllegalArgumentException) {
+            call.respond(HttpStatusCode.BadRequest, e.message ?: "Invalid username")
+            return@get
+        }
+
+        call.respond(
+            HttpStatusCode.OK,
+            UsernameAvailabilityResponse(available = !writeopiaDb.usernameExists(username))
+        )
+    }
+
     delete("/api/auth/account") {
         val userId = call.getUserIdFromApiGateway(debugMode) ?: run {
             call.respond(HttpStatusCode.Unauthorized, "Token is not valid or has expired")
@@ -352,14 +377,18 @@ private fun RegisterRequest.validate() {
         "Workspace name must be 3-30 characters"
     }
 
+    validateUsername(username)
+
+    require(password.length >= 8) { "Password must be at least 8 characters" }
+
+    require(EMAIL_REGEX.matches(email)) { "Invalid email address format" }
+}
+
+private fun validateUsername(username: String) {
     require(username.length in 3..30) {
         "Username must be 3-30 characters"
     }
     require(username.all { it.isLetterOrDigit() || it == '-' || it == '_' }) {
         "Username can only contain letters, numbers, '-' and '_'"
     }
-
-    require(password.length >= 8) { "Password must be at least 8 characters" }
-
-    require(EMAIL_REGEX.matches(email)) { "Invalid email address format" }
 }
