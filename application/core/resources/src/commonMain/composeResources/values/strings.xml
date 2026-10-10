@@ -278,7 +278,8 @@
   <string name="writing_suggestion_image">Add an image</string>
   <string name="writing_suggestion_drawing">Add a drawing</string>
   <string name="writing_suggestion_spreadsheet">Turn into a table</string>
-  <string name="writing_suggestion_title">Add a heading</string>
+  <string name="writing_suggestion_section_heading">Add a section heading</string>
+  <string name="writing_suggestion_document_title">Give the document a title</string>
   <string name="writing_suggestion_callout">Highlight as a callout</string>
   <string name="writing_suggestion_tldr">Add a TL;DR at the top</string>
   <string name="writing_suggestion_conclusion">Write a conclusion</string>

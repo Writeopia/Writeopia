@@ -103,14 +103,22 @@ object WritingSuggestionQuestions {
                 whenFalse = "The paragraph has no tabular data.",
             )
 
-            WritingSuggestionAction.TITLE -> SystemOneQuestion.noul(
-                "`paragraph` starts a new section of `document` and would benefit from a heading " +
-                    "placed right above it. Do not suggest it when `paragraph_type` says the " +
-                    "paragraph is already a title.",
-                whenTrue = "The paragraph opens a new topic that is distinct from the text before " +
-                    "it in `document`, and there is no heading above it.",
+            WritingSuggestionAction.SECTION_HEADING -> SystemOneQuestion.noul(
+                "`paragraph` opens a new section of `document` and would read better with a " +
+                    "section heading (a Markdown `#`, `##` or `###` line) placed right above it. " +
+                    "This is about a heading inside the document, not about the title of the " +
+                    "whole document, which is `document_title`.",
+                whenTrue = "The paragraph opens a topic distinct from the text before it in " +
+                    "`document`, the document is long enough to have sections, and no section " +
+                    "heading precedes the paragraph.",
                 whenFalse = "The paragraph continues the current section, the document is a " +
                     "short note, or the paragraph is itself a heading.",
+            )
+
+            WritingSuggestionAction.DOCUMENT_TITLE -> SystemOneQuestion.noul(
+                // Never sent: the app decides this one from the document itself. It is here so
+                // the mapping stays exhaustive.
+                "`document` has no title and would benefit from one.",
             )
 
             WritingSuggestionAction.CALLOUT -> SystemOneQuestion.noul(

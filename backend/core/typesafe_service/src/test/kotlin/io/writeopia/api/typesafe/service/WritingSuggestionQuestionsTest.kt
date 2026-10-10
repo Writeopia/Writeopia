@@ -24,6 +24,14 @@ class WritingSuggestionQuestionsTest {
     }
 
     @Test
+    fun `the document title is decided by the app and never asked`() {
+        val asked = WritingSuggestionQuestions.questionsFor(WritingSuggestionScope.WRITING).keys +
+            WritingSuggestionQuestions.questionsFor(WritingSuggestionScope.DOCUMENT_OPENED).keys
+
+        assertFalse(asked.contains(WritingSuggestionAction.DOCUMENT_TITLE.name))
+    }
+
+    @Test
     fun `when a document opens, only the document actions are asked`() {
         val questions = WritingSuggestionQuestions.questionsFor(WritingSuggestionScope.DOCUMENT_OPENED)
 

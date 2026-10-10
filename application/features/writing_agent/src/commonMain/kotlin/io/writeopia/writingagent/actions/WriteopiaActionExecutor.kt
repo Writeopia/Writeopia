@@ -2,6 +2,7 @@ package io.writeopia.writingagent.actions
 
 import io.writeopia.ai.AiCommand
 import io.writeopia.ai.AiStreaming
+import io.writeopia.sdk.model.action.Action
 import io.writeopia.app.dto.writingagent.WritingSuggestionAction
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
@@ -12,8 +13,9 @@ import io.writeopia.writingagent.actions.AiTextWriter.finalText
 
 /**
  * Applies the suggestions to the document through the [WriteopiaStateManager]. Blocks are
- * inserted right below the paragraph the suggestion is about, except the heading, which goes
- * above it, the TL;DR, which goes under the title, and the conclusion, which goes at the end.
+ * inserted right below the paragraph the suggestion is about, except the section heading, which
+ * goes above it, the TL;DR, which goes under the title, and the conclusion, which goes at the
+ * end. The document title is written into the title block itself.
  *
  * The actions that need text, like the TL;DR, use the AI the user picked, through [resolveAi].
  * Without one, they say so in the document, like the editor's AI menu does.
@@ -51,7 +53,9 @@ class WriteopiaActionExecutor(
 
             WritingSuggestionAction.SPREADSHEET -> spreadsheet(storyStepId, below)
 
-            WritingSuggestionAction.TITLE -> heading(storyStepId, position)
+            WritingSuggestionAction.SECTION_HEADING -> heading(storyStepId, position)
+
+            WritingSuggestionAction.DOCUMENT_TITLE -> documentTitle()
 
             WritingSuggestionAction.CALLOUT -> manager.toggleTagForPosition(position, TagInfo(Tag.HIGH_LIGHT_BLOCK))
 
@@ -109,6 +113,34 @@ class WriteopiaActionExecutor(
         )
     }
 
+    /**
+     * Asks the AI for a title and writes it into the title block, the one drawn in the header.
+     * A document without a title block gets one at the top. Without an AI there is nothing to
+     * write, so the block is only made sure to exist.
+     */
+    private suspend fun documentTitle() {
+        val title = resolveAi()
+            ?.stream(AiCommand.PROMPT, "$DOCUMENT_TITLE_PROMPT\n```\n${manager.getDocumentText()}\n```")
+            ?.finalText()
+            ?.lines()
+            ?.firstOrNull()
+            ?.trim('#', ' ', '"', '*', '.')
+            ?: ""
+
+        val titleEntry = manager.currentStory.value.stories.entries
+            .firstOrNull { (_, step) -> step.type == StoryTypes.TITLE.type }
+
+        manager.trackState()
+
+        if (titleEntry == null) {
+            manager.addAtPosition(StoryStep(type = StoryTypes.TITLE.type, text = title), 0.0)
+        } else if (title.isNotEmpty()) {
+            manager.changeStoryState(
+                Action.StoryStateChange(titleEntry.value.copy(text = title), titleEntry.key)
+            )
+        }
+    }
+
     private suspend fun spreadsheet(storyStepId: String?, position: Double) {
         val paragraph = manager.getStory(position - 1)?.text ?: ""
         val rows = resolveAi()
@@ -149,6 +181,11 @@ class WriteopiaActionExecutor(
             "Write a short heading, of at most eight words, for the following paragraph. Answer " +
                 "only with the heading: no quotes, no Markdown, no punctuation at the end. Use " +
                 "the language of the text."
+
+        const val DOCUMENT_TITLE_PROMPT =
+            "Write a title for the following document, of at most eight words. Answer only with " +
+                "the title: no quotes, no Markdown, no punctuation at the end. Use the language " +
+                "of the text."
 
         const val TABLE_PROMPT =
             "Turn the information of the following paragraph into a table. Answer only with a " +

@@ -14,7 +14,7 @@ class SuggestionSelectorTest {
                 WritingSuggestionAction.LIST to 0.95,
                 WritingSuggestionAction.CODE_BLOCK to 0.8,
                 WritingSuggestionAction.IMAGE to 0.79,
-                WritingSuggestionAction.TITLE to 0.1,
+                WritingSuggestionAction.SECTION_HEADING to 0.1,
             )
         )
 
@@ -31,7 +31,7 @@ class SuggestionSelectorTest {
                 WritingSuggestionAction.LIST to 0.85,
                 WritingSuggestionAction.CODE_BLOCK to 0.99,
                 WritingSuggestionAction.IMAGE to 0.9,
-                WritingSuggestionAction.TITLE to 0.81,
+                WritingSuggestionAction.SECTION_HEADING to 0.81,
                 WritingSuggestionAction.CALLOUT to 0.95,
             )
         )

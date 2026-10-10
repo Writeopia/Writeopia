@@ -13,7 +13,8 @@ import writeopia.application.core.resources.generated.resources.writing_suggesti
 import writeopia.application.core.resources.generated.resources.writing_suggestion_image
 import writeopia.application.core.resources.generated.resources.writing_suggestion_drawing
 import writeopia.application.core.resources.generated.resources.writing_suggestion_spreadsheet
-import writeopia.application.core.resources.generated.resources.writing_suggestion_title
+import writeopia.application.core.resources.generated.resources.writing_suggestion_section_heading
+import writeopia.application.core.resources.generated.resources.writing_suggestion_document_title
 import writeopia.application.core.resources.generated.resources.writing_suggestion_callout
 import writeopia.application.core.resources.generated.resources.writing_suggestion_tldr
 import writeopia.application.core.resources.generated.resources.writing_suggestion_conclusion
@@ -1037,7 +1038,10 @@ object WrStrings {
     fun writingSuggestionSpreadsheet() = stringResource(Res.string.writing_suggestion_spreadsheet)
 
     @Composable
-    fun writingSuggestionTitle() = stringResource(Res.string.writing_suggestion_title)
+    fun writingSuggestionSectionHeading() = stringResource(Res.string.writing_suggestion_section_heading)
+
+    @Composable
+    fun writingSuggestionDocumentTitle() = stringResource(Res.string.writing_suggestion_document_title)
 
     @Composable
     fun writingSuggestionCallout() = stringResource(Res.string.writing_suggestion_callout)

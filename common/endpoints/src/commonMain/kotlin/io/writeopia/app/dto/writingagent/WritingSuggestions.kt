@@ -29,8 +29,14 @@ enum class WritingSuggestionAction {
     /** A table filled with the data of the paragraph. */
     SPREADSHEET,
 
-    /** A heading above the paragraph. */
-    TITLE,
+    /** A section heading (like a Markdown `#`, `##` or `###` line) above the paragraph. */
+    SECTION_HEADING,
+
+    /**
+     * A title for the whole document: the title block drawn in the header. Decided by the app,
+     * never asked to Jev: it is offered whenever the document has text but no title.
+     */
+    DOCUMENT_TITLE,
 
     /** The paragraph highlighted as a callout or a quote. */
     CALLOUT,
@@ -51,12 +57,15 @@ enum class WritingSuggestionAction {
             IMAGE,
             DRAWING,
             SPREADSHEET,
-            TITLE,
+            SECTION_HEADING,
             CALLOUT,
         )
 
         /** The actions offered when the user opens a document. */
         fun onDocumentOpened(): List<WritingSuggestionAction> = listOf(TLDR, CONCLUSION)
+
+        /** The actions the app decides on its own, from the state of the document. */
+        fun decidedLocally(): List<WritingSuggestionAction> = listOf(DOCUMENT_TITLE)
 
         fun forScope(scope: WritingSuggestionScope): List<WritingSuggestionAction> =
             when (scope) {

@@ -22,7 +22,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.time.TimeSource
 
@@ -33,6 +32,9 @@ import kotlin.time.TimeSource
  *
  * Only confident suggestions come back; nothing is shown otherwise. The suggestions remember the
  * ID of the paragraph they are about, so an action finds it again after other blocks move.
+ *
+ * One suggestion is decided here, without the backend: a document with text but no title is
+ * offered a title, until the user writes one, applies it, or dismisses the box.
  */
 class WritingAgentController(
     private val scope: CoroutineScope,
@@ -46,11 +48,22 @@ class WritingAgentController(
     private val debounceMillis: Long = DEBOUNCE_MILLIS,
     private val minimumDocumentLength: Int = MINIMUM_DOCUMENT_LENGTH,
     private val documentTextLimit: Int = DOCUMENT_TEXT_LIMIT,
+    /** How much text an untitled document needs before a title is offered. */
+    private val untitledDocumentMinimumLength: Int = UNTITLED_DOCUMENT_MINIMUM_LENGTH,
     /** Where the agent tells what it asks and what came back. */
     private val log: (String) -> Unit = { message -> ApiLogger.log("$LOG_TAG $message") },
 ) {
     private val _state = MutableStateFlow(WritingSuggestionsState.empty())
     val state: StateFlow<WritingSuggestionsState> = _state.asStateFlow()
+
+    /** What the backend answered last. [state] is this plus what is decided locally. */
+    private var fetched = WritingSuggestionsState.empty()
+
+    /** True while the document has text but no title, and the offer wasn't declined. */
+    private var offerDocumentTitle = false
+
+    /** The document whose title offer the user declined, by dismissing or applying it. */
+    private var documentTitleDeclinedFor: String? = null
 
     private val sentenceEnds = mutableMapOf<String, Int>()
     private var openedDocumentId: String? = null
@@ -83,7 +96,9 @@ class WritingAgentController(
     /** Hides the suggestions. They come back with the next sentence. */
     fun dismiss() {
         request?.cancel()
-        _state.value = WritingSuggestionsState.empty()
+        declineDocumentTitle()
+        fetched = WritingSuggestionsState.empty()
+        publish()
     }
 
     /** Applies [action] to the paragraph the suggestions are about and drops it from the box. */
@@ -91,13 +106,51 @@ class WritingAgentController(
         val current = _state.value
         if (current.suggestions.none { it.action == action }) return
 
-        _state.update { state ->
-            state.copy(suggestions = state.suggestions.filterNot { it.action == action })
+        if (action == WritingSuggestionAction.DOCUMENT_TITLE) {
+            declineDocumentTitle()
+        } else {
+            fetched = fetched.copy(suggestions = fetched.suggestions.filterNot { it.action == action })
         }
+        publish()
 
         log("applying $action to ${current.storyStepId}")
         executing = scope.launch {
             executor.execute(action, current.storyStepId, ui)
+        }
+    }
+
+    private fun declineDocumentTitle() {
+        offerDocumentTitle = false
+        documentTitleDeclinedFor = openedDocumentId
+    }
+
+    /** Shows what the backend answered, with the title offer first when the document needs one. */
+    private fun publish() {
+        val local = if (offerDocumentTitle) {
+            listOf(WritingSuggestion(WritingSuggestionAction.DOCUMENT_TITLE, probability = 1.0))
+        } else {
+            emptyList()
+        }
+
+        _state.value = fetched.copy(suggestions = local + fetched.suggestions)
+    }
+
+    /**
+     * Offers a title when the document has enough text and its title block is missing or empty.
+     * The offer is decided here, not by Jev: the document itself says whether it has a title.
+     */
+    private fun refreshDocumentTitleOffer(story: StoryState) {
+        val titleStep = story.stories.values.firstOrNull { it.type == StoryTypes.TITLE.type }
+        val hasTitle = !titleStep?.text.isNullOrBlank()
+        val declined = documentTitleDeclinedFor == openedDocumentId
+        val longEnough = documentText(story).length >= untitledDocumentMinimumLength
+
+        val offer = !hasTitle && !declined && longEnough
+
+        if (offer != offerDocumentTitle) {
+            offerDocumentTitle = offer
+            log(if (offer) "document $openedDocumentId has no title: offering one" else "document title offer withdrawn")
+            publish()
         }
     }
 
@@ -106,7 +159,9 @@ class WritingAgentController(
 
         openedDocumentId = id
         request?.cancel()
-        _state.value = WritingSuggestionsState.empty()
+        fetched = WritingSuggestionsState.empty()
+        refreshDocumentTitleOffer(story)
+        publish()
 
         val text = documentText(story)
         if (text.length < minimumDocumentLength) {
@@ -134,6 +189,8 @@ class WritingAgentController(
     }
 
     private fun onStoryChanged(story: StoryState) {
+        refreshDocumentTitleOffer(story)
+
         val focus = story.focus ?: return
         val step = story.stories[focus] ?: return
 
@@ -151,9 +208,10 @@ class WritingAgentController(
         scheduleAsk(step.id)
 
         // The paragraph of the current suggestions may be gone (deleted, or merged).
-        val shownId = _state.value.storyStepId
+        val shownId = fetched.storyStepId
         if (shownId != null && story.stories.values.none { it.id == shownId }) {
-            _state.value = WritingSuggestionsState.empty()
+            fetched = WritingSuggestionsState.empty()
+            publish()
         }
     }
 
@@ -197,7 +255,8 @@ class WritingAgentController(
             "${request.scope} request for $storyStepId: paragraph of ${request.text.length} chars, " +
                 "document of ${request.documentText?.length ?: 0} chars, block ${request.blockType}"
         )
-        _state.update { it.copy(isLoading = true) }
+        fetched = fetched.copy(isLoading = true)
+        publish()
         val started = TimeSource.Monotonic.markNow()
 
         when (val result = api.suggestions(request)) {
@@ -215,12 +274,13 @@ class WritingAgentController(
                         }
                 )
 
-                _state.value = WritingSuggestionsState(
+                fetched = WritingSuggestionsState(
                     storyStepId = storyStepId,
                     scope = request.scope,
                     suggestions = suggestions,
                     isLoading = false,
                 )
+                publish()
             }
 
             is ResultData.Error -> {
@@ -228,10 +288,14 @@ class WritingAgentController(
                     "${request.scope} request for $storyStepId failed in " +
                         "${started.elapsedNow().inWholeMilliseconds}ms: ${result.exception?.message}"
                 )
-                _state.update { it.copy(isLoading = false) }
+                fetched = fetched.copy(isLoading = false)
+                publish()
             }
 
-            else -> _state.update { it.copy(isLoading = false) }
+            else -> {
+                fetched = fetched.copy(isLoading = false)
+                publish()
+            }
         }
     }
 
@@ -246,6 +310,7 @@ class WritingAgentController(
         const val LOG_TAG = "[WritingAgent]"
         const val DEBOUNCE_MILLIS = 600L
         const val MINIMUM_DOCUMENT_LENGTH = 200
+        const val UNTITLED_DOCUMENT_MINIMUM_LENGTH = 80
         const val DOCUMENT_TEXT_LIMIT = 6_000
     }
 }

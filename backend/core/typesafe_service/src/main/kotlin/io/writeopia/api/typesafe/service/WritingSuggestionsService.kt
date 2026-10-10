@@ -63,7 +63,8 @@ class WritingSuggestionsService(
                 )
 
                 val suggestions = SuggestionSelector.select(probabilities, threshold, limit)
-                WritingSuggestionsResponse(suggestions = suggestions) to (result.response.usage ?: SystemOneUsage())
+                WritingSuggestionsResponse(suggestions = suggestions) to (result.response.usage
+                    ?: SystemOneUsage())
             }
 
             is TypeSafeResult.Failure -> {

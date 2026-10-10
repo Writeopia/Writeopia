@@ -67,6 +67,7 @@ class WritingAgentControllerTest {
         isEnabled = { enabled },
         debounceMillis = 100,
         minimumDocumentLength = 40,
+        untitledDocumentMinimumLength = 30,
     ).also { it.start() }
 
     @Test
@@ -207,6 +208,85 @@ class WritingAgentControllerTest {
 
         assertEquals(listOf<Pair<WritingSuggestionAction, String?>>(WritingSuggestionAction.CHECK_LIST to "p1"), executor.executed)
         assertEquals(listOf(WritingSuggestionAction.LIST), controller.state.value.suggestions.map { it.action })
+        controller.stop()
+    }
+
+    @Test
+    fun `an untitled document with text is offered a title without asking the backend`() = runTest(StandardTestDispatcher()) {
+        val api = FakeApi()
+        val untitled = title.copy(text = "")
+        val body = paragraph.copy(text = "We need milk and eggs for the week")
+        val story = MutableStateFlow(state(untitled, body))
+        val controller = controller(api, story)
+        advanceUntilIdle()
+
+        assertEquals(listOf(WritingSuggestionAction.DOCUMENT_TITLE), controller.state.value.suggestions.map { it.action })
+        assertTrue(api.requests.isEmpty())
+        controller.stop()
+    }
+
+    @Test
+    fun `a short untitled document is not offered a title yet`() = runTest(StandardTestDispatcher()) {
+        val api = FakeApi()
+        val story = MutableStateFlow(state(title.copy(text = ""), paragraph))
+        val controller = controller(api, story)
+        advanceUntilIdle()
+
+        assertTrue(controller.state.value.suggestions.isEmpty())
+        controller.stop()
+    }
+
+    @Test
+    fun `the title offer goes away once the user writes a title`() = runTest(StandardTestDispatcher()) {
+        val api = FakeApi()
+        val body = paragraph.copy(text = "We need milk and eggs for the week")
+        val story = MutableStateFlow(state(title.copy(text = ""), body))
+        val controller = controller(api, story)
+        advanceUntilIdle()
+        assertTrue(controller.state.value.hasSuggestions)
+
+        story.value = state(title.copy(text = "Groceries"), body)
+        advanceUntilIdle()
+
+        assertTrue(controller.state.value.suggestions.isEmpty())
+        controller.stop()
+    }
+
+    @Test
+    fun `applying the title offer runs it and does not offer again for this document`() = runTest(StandardTestDispatcher()) {
+        val api = FakeApi()
+        val executor = FakeExecutor()
+        val body = paragraph.copy(text = "We need milk and eggs for the week")
+        val story = MutableStateFlow(state(title.copy(text = ""), body))
+        val controller = controller(api, story, executor = executor)
+        advanceUntilIdle()
+
+        controller.execute(WritingSuggestionAction.DOCUMENT_TITLE, WritingAgentUi.None)
+        advanceUntilIdle()
+        story.value = state(title.copy(text = ""), body.copy(text = "We need milk and eggs for the week."))
+        advanceUntilIdle()
+
+        assertEquals(listOf(WritingSuggestionAction.DOCUMENT_TITLE), executor.executed.map { it.first })
+        assertTrue(controller.state.value.suggestions.none { it.action == WritingSuggestionAction.DOCUMENT_TITLE })
+        controller.stop()
+    }
+
+    @Test
+    fun `the title offer comes first, before what the backend answered`() = runTest(StandardTestDispatcher()) {
+        val api = FakeApi(answer = listOf(WritingSuggestionDto(WritingSuggestionAction.LIST, 0.9)))
+        val body = paragraph.copy(text = "We need milk and eggs for the week")
+        val story = MutableStateFlow(state(title.copy(text = ""), body))
+        val controller = controller(api, story)
+        advanceUntilIdle()
+
+        story.value = state(title.copy(text = ""), body.copy(text = "We need milk and eggs for the week."))
+        advanceTimeBy(101)
+        advanceUntilIdle()
+
+        assertEquals(
+            listOf(WritingSuggestionAction.DOCUMENT_TITLE, WritingSuggestionAction.LIST),
+            controller.state.value.suggestions.map { it.action }
+        )
         controller.stop()
     }
 

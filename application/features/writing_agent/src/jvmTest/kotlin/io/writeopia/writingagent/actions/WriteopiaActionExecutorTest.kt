@@ -103,12 +103,52 @@ class WriteopiaActionExecutorTest {
         val manager = manager()
         val executor = WriteopiaActionExecutor(manager, resolveAi = { ai("## Shopping list\n") })
 
-        executor.execute(WritingSuggestionAction.TITLE, "p2", WritingAgentUi.None)
+        executor.execute(WritingSuggestionAction.SECTION_HEADING, "p2", WritingAgentUi.None)
 
         assertEquals(listOf("Groceries", "We need milk.", "Shopping list", "And eggs."), manager.textsInOrder())
         val heading = manager.currentStory.value.stories[2.0]
         assertNotNull(heading)
         assertTrue(heading.tags.any { it.tag == Tag.H2 })
+    }
+
+    @Test
+    fun `the document title is written into the title block`() = runTest {
+        val manager = manager()
+        val executor = WriteopiaActionExecutor(manager, resolveAi = { ai("\"Weekly groceries.\"\n") })
+
+        executor.execute(WritingSuggestionAction.DOCUMENT_TITLE, null, WritingAgentUi.None)
+
+        val titleStep = manager.currentStory.value.stories[0.0]
+        assertNotNull(titleStep)
+        assertEquals(StoryTypes.TITLE.type, titleStep.type)
+        assertEquals("Weekly groceries", titleStep.text)
+        assertEquals(3, manager.currentStory.value.stories.size)
+    }
+
+    @Test
+    fun `a document without a title block gets one at the top`() = runTest {
+        val now = Clock.System.now()
+        val manager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(),
+        ).apply {
+            loadDocument(
+                Document(
+                    content = mapOf(0.0 to first, 1.0 to second),
+                    workspaceId = "",
+                    createdAt = now,
+                    lastUpdatedAt = now,
+                    parentId = "root",
+                    lastSyncedAt = null,
+                )
+            )
+        }
+        val executor = WriteopiaActionExecutor(manager, resolveAi = { ai("Groceries") })
+
+        executor.execute(WritingSuggestionAction.DOCUMENT_TITLE, null, WritingAgentUi.None)
+
+        assertEquals(listOf(StoryTypes.TITLE, StoryTypes.TEXT, StoryTypes.TEXT), manager.typesInOrder())
+        assertEquals("Groceries", manager.currentStory.value.stories[0.0]?.text)
     }
 
     @Test
