@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -71,12 +72,12 @@ fun RegisterScreen(
     companyState: StateFlow<String>,
     passwordState: StateFlow<String>,
     registerState: StateFlow<ResultData<Boolean>>,
+    usernameAvailabilityState: StateFlow<UsernameAvailability>,
     passwordValidationState: StateFlow<PasswordValidationResult>,
     canRegisterState: StateFlow<Boolean>,
     nameChanged: (String) -> Unit,
     usernameChanged: (String) -> Unit,
     companyChanged: (String) -> Unit,
-    emailChanged: (String) -> Unit,
     passwordChanged: (String) -> Unit,
     onRegisterRequest: () -> Unit,
     onRegisterSuccess: () -> Unit,
@@ -102,6 +103,7 @@ fun RegisterScreen(
             RegisterContent(
                 nameState,
                 usernameState,
+                usernameAvailabilityState,
                 emailState,
                 companyState,
                 passwordState,
@@ -109,7 +111,6 @@ fun RegisterScreen(
                 canRegisterState,
                 nameChanged,
                 usernameChanged,
-                emailChanged,
                 companyChanged,
                 passwordChanged,
                 onRegisterRequest,
@@ -170,6 +171,7 @@ fun RegisterScreen(
 private fun BoxScope.RegisterContent(
     nameState: StateFlow<String>,
     usernameState: StateFlow<String>,
+    usernameAvailabilityState: StateFlow<UsernameAvailability>,
     emailState: StateFlow<String>,
     companyState: StateFlow<String>,
     passwordState: StateFlow<String>,
@@ -177,7 +179,6 @@ private fun BoxScope.RegisterContent(
     canRegisterState: StateFlow<Boolean>,
     nameChanged: (String) -> Unit,
     usernameChanged: (String) -> Unit,
-    emailChanged: (String) -> Unit,
     companyChanged: (String) -> Unit,
     passwordChanged: (String) -> Unit,
     onRegisterRequest: () -> Unit,
@@ -185,6 +186,8 @@ private fun BoxScope.RegisterContent(
 ) {
     val name by nameState.collectAsState()
     val username by usernameState.collectAsState()
+    val usernameAvailability by usernameAvailabilityState.collectAsState()
+    val usernameTaken = usernameAvailability == UsernameAvailability.TAKEN
     val company by companyState.collectAsState()
     val email by emailState.collectAsState()
     val password by passwordState.collectAsState()
@@ -244,6 +247,22 @@ private fun BoxScope.RegisterContent(
             label = {
                 Text(WrStrings.username())
             },
+            isError = usernameTaken,
+            supportingText = if (usernameTaken) {
+                { Text(WrStrings.usernameTaken()) }
+            } else {
+                null
+            },
+            trailingIcon = if (usernameAvailability == UsernameAvailability.CHECKING) {
+                {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp
+                    )
+                }
+            } else {
+                null
+            },
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
         )
 
@@ -251,9 +270,11 @@ private fun BoxScope.RegisterContent(
 
         OutlinedTextField(
             email,
-            onValueChange = emailChanged,
+            onValueChange = {},
             shape = shape,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp),
+            // Verified in the previous step, so it can't change here.
+            enabled = false,
             singleLine = true,
             label = {
                 Text(WrStrings.email())
@@ -379,12 +400,12 @@ fun AuthScreenPreview() {
         companyState = MutableStateFlow(""),
         passwordState = MutableStateFlow(""),
         registerState = MutableStateFlow(ResultData.Idle()),
+        usernameAvailabilityState = MutableStateFlow(UsernameAvailability.UNKNOWN),
         passwordValidationState = MutableStateFlow(PasswordValidator.validate("")),
         canRegisterState = MutableStateFlow(false),
         nameChanged = {},
         usernameChanged = {},
         companyChanged = {},
-        emailChanged = {},
         passwordChanged = {},
         onRegisterRequest = {},
         onRegisterSuccess = {},

@@ -12,6 +12,7 @@ import io.writeopia.api.core.auth.repository.getUserByEmail
 import io.writeopia.api.core.auth.repository.isCodeValid
 import io.writeopia.api.core.auth.repository.updateConfirmationCode
 import io.writeopia.api.core.auth.service.EmailService
+import io.writeopia.api.core.auth.service.EmailVerificationService
 import io.writeopia.api.core.auth.service.RefreshTokenService
 import io.writeopia.connection.logger
 import io.writeopia.sdk.serialization.data.auth.AuthResponse
@@ -21,6 +22,88 @@ import io.writeopia.sdk.serialization.data.auth.EmailResendRequest
 import io.writeopia.sql.WriteopiaDbBackend
 
 fun Routing.emailRoute(writeopiaDb: WriteopiaDbBackend) {
+    // Step 1 of sign-up: email a code to prove ownership of the address. No account exists yet.
+    post("/api/auth/register/email/send") {
+        try {
+            val request = call.receive<EmailResendRequest>()
+            val email = request.email.trim().lowercase()
+
+            if (!REGISTER_EMAIL_REGEX.matches(email)) {
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    EmailConfirmResponse(success = false, message = "Invalid email address format")
+                )
+                return@post
+            }
+
+            // Every outcome but a mail failure gets the same response, so this endpoint can't
+            // be used to find out which emails already have an account.
+            when (EmailVerificationService.requestCode(writeopiaDb, email)) {
+                EmailVerificationService.RequestOutcome.Sent -> {
+                    logger.info("Registration code sent to: $email")
+                    call.respond(HttpStatusCode.OK, registerCodeGenericResponse)
+                }
+
+                EmailVerificationService.RequestOutcome.AlreadyRegistered -> {
+                    logger.info("Registration code skipped, email already registered: $email")
+                    call.respond(HttpStatusCode.OK, registerCodeGenericResponse)
+                }
+
+                EmailVerificationService.RequestOutcome.Throttled -> {
+                    logger.info("Registration code skipped, one was sent moments ago: $email")
+                    call.respond(HttpStatusCode.OK, registerCodeGenericResponse)
+                }
+
+                EmailVerificationService.RequestOutcome.SendFailed -> {
+                    logger.error("Failed to send registration code to: $email")
+                    call.respond(
+                        HttpStatusCode.InternalServerError,
+                        EmailConfirmResponse(success = false, message = "Failed to send email")
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            logger.error("Error sending registration code: ${e.message}")
+            e.printStackTrace()
+            call.respond(
+                HttpStatusCode.InternalServerError,
+                EmailConfirmResponse(success = false, message = "An error occurred")
+            )
+        }
+    }
+
+    // Step 2 of sign-up: check the code so the client can move on to the account details form.
+    // The code is not consumed here; /api/auth/register checks it again and consumes it.
+    post("/api/auth/register/email/verify") {
+        try {
+            val request = call.receive<EmailConfirmRequest>()
+            val email = request.email.trim().lowercase()
+
+            if (EmailVerificationService.checkCode(writeopiaDb, email, request.code)) {
+                logger.info("Registration code verified for: $email")
+                call.respond(
+                    HttpStatusCode.OK,
+                    EmailConfirmResponse(success = true, message = "Email verified")
+                )
+            } else {
+                logger.warn("Invalid or expired registration code for: $email")
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    EmailConfirmResponse(success = false, message = "Invalid or expired verification code")
+                )
+            }
+        } catch (e: Exception) {
+            logger.error("Error verifying registration code: ${e.message}")
+            e.printStackTrace()
+            call.respond(
+                HttpStatusCode.InternalServerError,
+                EmailConfirmResponse(success = false, message = "An error occurred")
+            )
+        }
+    }
+
+    // Legacy: confirms accounts created before sign-up required a verified email. Those are the
+    // only accounts that can still be EMAIL_CONFIRMATION_PENDING.
     post("/api/auth/email/confirm") {
         try {
             val request = call.receive<EmailConfirmRequest>()
@@ -154,3 +237,15 @@ internal val resendGenericResponse = EmailConfirmResponse(
     success = true,
     message = "If an account with this email needs confirmation, a confirmation email has been sent"
 )
+
+
+/**
+ * Response returned by `/api/auth/register/email/send` whether or not the email already has an
+ * account, so the endpoint can't be used for account enumeration (CWE-203).
+ */
+internal val registerCodeGenericResponse = EmailConfirmResponse(
+    success = true,
+    message = "If this email can be used to register, a verification code has been sent"
+)
+
+private val REGISTER_EMAIL_REGEX = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")

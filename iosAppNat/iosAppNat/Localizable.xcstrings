@@ -4500,6 +4500,72 @@
           }
         }
       }
+    },
+    "First, verify your email. We'll send you a code." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Primeiro, verifique seu email. Vamos enviar um código para você."
+          }
+        }
+      }
+    },
+    "Verify your email" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verifique seu email"
+          }
+        }
+      }
+    },
+    "If %@ can be used to register, we sent a code to it." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se %@ puder ser usado para criar uma conta, enviamos um código para esse email."
+          }
+        }
+      }
+    },
+    "Your account for %@ comes with a team workspace you can invite people to." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sua conta para %@ vem com uma área de trabalho de time para a qual você pode convidar pessoas."
+          }
+        }
+      }
+    },
+    "Could not send the verification code." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível enviar o código de verificação."
+          }
+        }
+      }
+    },
+    "This username is already taken." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este nome de usuário já está em uso."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

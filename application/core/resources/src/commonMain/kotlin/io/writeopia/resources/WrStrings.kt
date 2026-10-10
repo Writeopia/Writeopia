@@ -164,6 +164,12 @@ import writeopia.application.core.resources.generated.resources.drawing
 import writeopia.application.core.resources.generated.resources.login_failed
 import writeopia.application.core.resources.generated.resources.new_drawing
 import writeopia.application.core.resources.generated.resources.registration_failed
+import writeopia.application.core.resources.generated.resources.username_taken
+import writeopia.application.core.resources.generated.resources.register_enter_email
+import writeopia.application.core.resources.generated.resources.send_verification_code
+import writeopia.application.core.resources.generated.resources.verify_your_email
+import writeopia.application.core.resources.generated.resources.we_sent_verification_code_to
+import writeopia.application.core.resources.generated.resources.verification_code_failed
 import writeopia.application.core.resources.generated.resources.confirm_your_email
 import writeopia.application.core.resources.generated.resources.we_sent_code_to
 import writeopia.application.core.resources.generated.resources.enter_code
@@ -681,6 +687,25 @@ object WrStrings {
 
     @Composable
     fun registrationFailed() = stringResource(Res.string.registration_failed)
+
+    @Composable
+    fun registerEnterEmail() = stringResource(Res.string.register_enter_email)
+
+    @Composable
+    fun sendVerificationCode() = stringResource(Res.string.send_verification_code)
+
+    @Composable
+    fun verifyYourEmail() = stringResource(Res.string.verify_your_email)
+
+    @Composable
+    fun weSentVerificationCodeTo(email: String) =
+        stringResource(Res.string.we_sent_verification_code_to, email)
+
+    @Composable
+    fun verificationCodeFailed() = stringResource(Res.string.verification_code_failed)
+
+    @Composable
+    fun usernameTaken() = stringResource(Res.string.username_taken)
 
     @Composable
     fun confirmYourEmail() = stringResource(Res.string.confirm_your_email)

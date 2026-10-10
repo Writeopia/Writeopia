@@ -112,8 +112,9 @@ final class SmokeUITests: XCTestCase {
         XCTAssertTrue(app.buttons["login.submit"].isEnabled)
 
         app.buttons["Create an account"].tap()
-        XCTAssertTrue(app.textFields["register.username"].waitForExistence(timeout: 3))
-        XCTAssertFalse(app.buttons["register.submit"].isEnabled)
+        // Sign-up starts by verifying the email, before any account details are asked for.
+        XCTAssertTrue(app.textFields["register.email"].waitForExistence(timeout: 3))
+        XCTAssertFalse(app.buttons["register.sendCode"].isEnabled)
         goBack()
 
         let forgot = app.buttons["Forgot password?"]

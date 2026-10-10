@@ -120,6 +120,92 @@ object EmailService {
         """.trimIndent()
     }
 
+    /**
+     * Sent before an account exists, to prove the person signing up owns [toEmail]. There is no
+     * name to greet yet, since the account details are only collected after verification.
+     */
+    suspend fun sendRegistrationCodeEmail(toEmail: String, code: String): Boolean {
+        val apiKey = mailgunApiKey
+        val domain = mailgunDomain
+
+        if (apiKey == null || domain == null) {
+            logger.warn("Mailgun not configured. MAILGUN_API_KEY or MAILGUN_DOMAIN missing.")
+            logger.info("Registration code for $toEmail: $code")
+            return true
+        }
+
+        return try {
+            val response = client.submitForm(
+                url = "https://api.eu.mailgun.net/v3/$domain/messages",
+                formParameters = Parameters.build {
+                    append("from", "Writeopia <$mailgunFromEmail>")
+                    append("to", toEmail)
+                    append("subject", "Your Writeopia verification code")
+                    append("text", buildRegistrationCodeEmailText(code))
+                    append("html", buildRegistrationCodeEmailHtml(code))
+                }
+            ) {
+                header("Authorization", "Basic ${java.util.Base64.getEncoder().encodeToString("api:$apiKey".toByteArray())}")
+            }
+
+            if (response.status == HttpStatusCode.OK) {
+                logger.info("Registration code email sent to $toEmail")
+                true
+            } else {
+                logger.error("Failed to send registration code email to $toEmail: ${response.status}")
+                false
+            }
+        } catch (e: Exception) {
+            logger.error("Error sending registration code email to $toEmail: ${e.message}")
+            e.printStackTrace()
+            false
+        }
+    }
+
+    private fun buildRegistrationCodeEmailText(code: String): String {
+        return """
+            Hi,
+
+            Welcome to Writeopia! Enter the following code to verify your email address and continue creating your account:
+
+            $code
+
+            This code will expire in 15 minutes.
+
+            If you didn't try to create a Writeopia account, you can safely ignore this email.
+
+            Best regards,
+            The Writeopia Team
+        """.trimIndent()
+    }
+
+    private fun buildRegistrationCodeEmailHtml(code: String): String {
+        return """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="utf-8">
+                <style>
+                    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                    .code { font-size: 32px; font-weight: bold; letter-spacing: 8px; text-align: center; background: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0; }
+                    .footer { color: #666; font-size: 14px; margin-top: 30px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <h1>Welcome to Writeopia!</h1>
+                    <p>Enter the following code to verify your email address and continue creating your account:</p>
+                    <div class="code">$code</div>
+                    <p>This code will expire in 15 minutes.</p>
+                    <p class="footer">If you didn't try to create a Writeopia account, you can safely ignore this email.</p>
+                    <p class="footer">Best regards,<br>The Writeopia Team</p>
+                </div>
+            </body>
+            </html>
+        """.trimIndent()
+    }
+
     suspend fun sendPasswordResetEmail(
         toEmail: String,
         code: String,

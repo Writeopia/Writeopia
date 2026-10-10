@@ -33,7 +33,6 @@ import io.writeopia.sdk.serialization.data.auth.AuthResponse
 import io.writeopia.sdk.serialization.data.auth.EmailConfirmResponse
 import io.writeopia.sdk.serialization.data.auth.EmailResendRequest
 import io.writeopia.sdk.serialization.data.auth.LoginRequest
-import io.writeopia.sdk.serialization.data.auth.RegisterRequest
 import io.writeopia.sdk.serialization.data.auth.RegisterResponse
 import io.writeopia.sdk.serialization.data.auth.ResetPasswordRequest
 import io.writeopia.sdk.serialization.json.writeopiaJson
@@ -73,7 +72,7 @@ class AuthIntegrationTest {
         val response = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = "workspace name",
                     name = "Name",
                     email = "email@gmail.com",
@@ -98,7 +97,7 @@ class AuthIntegrationTest {
         val response = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = "workspace name",
                     name = "Name",
                     email = email,
@@ -111,7 +110,7 @@ class AuthIntegrationTest {
         val response1 = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = "workspace name",
                     name = "Name",
                     email = email,
@@ -139,7 +138,7 @@ class AuthIntegrationTest {
         val response1 = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = "workspace name",
                     name = "Name",
                     email = email1,
@@ -152,7 +151,7 @@ class AuthIntegrationTest {
         val response2 = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = "workspace name 2",
                     name = "Name",
                     email = email2,
@@ -181,7 +180,7 @@ class AuthIntegrationTest {
         val response = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = "workspace name",
                     name = "Name",
                     email = emailRegistered,
@@ -212,7 +211,7 @@ class AuthIntegrationTest {
         val response1 = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = "workspace name",
                     name = "Name 1",
                     email = "user1_${Random.nextInt(100000)}@gmail.com",
@@ -225,7 +224,7 @@ class AuthIntegrationTest {
         val response2 = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = "workspace name",
                     name = "Name 2",
                     email = "user2_${Random.nextInt(100000)}@gmail.com",
@@ -250,7 +249,7 @@ class AuthIntegrationTest {
         val response = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = "workspace name",
                     name = "Name",
                     email = "valid_${Random.nextInt(100000)}@gmail.com",
@@ -309,7 +308,7 @@ class AuthIntegrationTest {
         val response = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = "workspace name",
                     name = "Name",
                     email = "email@gmail.com",
@@ -354,7 +353,7 @@ class AuthIntegrationTest {
         val response = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = "workspace name",
                     name = "Name",
                     email = "email@gmail.com",
@@ -412,7 +411,7 @@ class AuthIntegrationTest {
         val response = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = "workspace name",
                     name = "Name",
                     email = "email@gmail.com",
@@ -502,7 +501,7 @@ class AuthIntegrationTest {
         val response = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = "workspace name",
                     name = "Name",
                     email = "email@gmail.com",
@@ -527,7 +526,7 @@ class AuthIntegrationTest {
         val response = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = "workspace name",
                     name = "Name",
                     email = "email@gmail.com",
@@ -562,7 +561,7 @@ class AuthIntegrationTest {
         val response1 = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = "workspace name",
                     name = "User 1",
                     email = email1,
@@ -579,7 +578,7 @@ class AuthIntegrationTest {
         val response2 = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = "workspace name",
                     name = "User 2",
                     email = email2,
@@ -632,7 +631,7 @@ class AuthIntegrationTest {
         val response1 = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = "workspace name",
                     name = "User 1",
                     email = email1,
@@ -649,7 +648,7 @@ class AuthIntegrationTest {
         val response2 = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = "workspace name",
                     name = "User 2",
                     email = email2,
@@ -709,7 +708,7 @@ class AuthIntegrationTest {
         val response1 = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = "workspace name",
                     name = "User 1",
                     email = email1,
@@ -726,7 +725,7 @@ class AuthIntegrationTest {
         val response2 = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = "workspace name",
                     name = "User 2",
                     email = email2,

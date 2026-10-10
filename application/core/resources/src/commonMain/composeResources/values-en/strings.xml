@@ -165,6 +165,12 @@
   <string name="new_drawing">New Drawing</string>
   <string name="login_failed">Login failed. Please check your credentials.</string>
   <string name="registration_failed">Registration failed. Please try again.</string>
+  <string name="username_taken">This username is already taken</string>
+  <string name="register_enter_email">Enter your email to receive a verification code</string>
+  <string name="send_verification_code">Send Verification Code</string>
+  <string name="verify_your_email">Verify Your Email</string>
+  <string name="we_sent_verification_code_to">We sent a verification code to %s</string>
+  <string name="verification_code_failed">Could not send the verification code. Please try again.</string>
   <string name="create_workspace">Create workspace</string>
   <string name="create">Create</string>
   <string name="create_workspace_failed">Failed to create workspace</string>

@@ -6,6 +6,7 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.header
+import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
@@ -29,6 +30,7 @@ import io.writeopia.sdk.serialization.data.auth.RegisterRequest
 import io.writeopia.sdk.serialization.data.auth.RefreshTokenRequest
 import io.writeopia.sdk.serialization.data.auth.RegisterResponse
 import io.writeopia.sdk.serialization.data.auth.TokenRefreshResponse
+import io.writeopia.sdk.serialization.data.auth.UsernameAvailabilityResponse
 import io.writeopia.sdk.serialization.data.WriteopiaUserApi
 import io.writeopia.sdk.serialization.data.auth.ResetPasswordRequest
 
@@ -78,12 +80,75 @@ class AuthApi(
         ResultData.Error(e)
     }
 
+    /**
+     * First step of sign-up: emails a verification code to [email]. The response is the same
+     * whether or not the email is already registered.
+     */
+    suspend fun sendRegisterCode(email: String): ResultData<Boolean> = try {
+        val response = client.post("$baseUrl/api/auth/register/email/send") {
+            contentType(ContentType.Application.Json)
+            setBody(EmailResendRequest(email))
+        }
+
+        if (response.status.isSuccess()) {
+            ResultData.Complete(true)
+        } else {
+            val errorResponse = response.body<EmailConfirmResponse>()
+            ResultData.Error(Exception(errorResponse.message ?: "Failed to send verification code"))
+        }
+    } catch (e: Exception) {
+        println("sendRegisterCode error: ${e.message}")
+        e.printStackTrace()
+        ResultData.Error(e)
+    }
+
+    /**
+     * Second step of sign-up: checks the code sent by [sendRegisterCode]. The code is not
+     * consumed, it must be sent again with [register].
+     */
+    suspend fun verifyRegisterCode(email: String, code: String): ResultData<Boolean> = try {
+        val response = client.post("$baseUrl/api/auth/register/email/verify") {
+            contentType(ContentType.Application.Json)
+            setBody(EmailConfirmRequest(email, code))
+        }
+
+        if (response.status.isSuccess()) {
+            ResultData.Complete(true)
+        } else {
+            val errorResponse = response.body<EmailConfirmResponse>()
+            ResultData.Error(Exception(errorResponse.message ?: "Invalid code"))
+        }
+    } catch (e: Exception) {
+        println("verifyRegisterCode error: ${e.message}")
+        e.printStackTrace()
+        ResultData.Error(e)
+    }
+
+    /**
+     * Whether a new account can use [username]. Complete(false) means it is taken.
+     */
+    suspend fun isUsernameAvailable(username: String): ResultData<Boolean> = try {
+        val response = client.get("$baseUrl/api/auth/username/available") {
+            parameter("username", username)
+        }
+
+        if (response.status.isSuccess()) {
+            ResultData.Complete(response.body<UsernameAvailabilityResponse>().available)
+        } else {
+            ResultData.Error(Exception(response.bodyAsText().ifBlank { "Invalid username" }))
+        }
+    } catch (e: Exception) {
+        println("isUsernameAvailable error: ${e.message}")
+        ResultData.Error(e)
+    }
+
     suspend fun register(
         name: String,
         email: String,
         workspaceName: String,
         password: String,
-        username: String
+        username: String,
+        verificationCode: String,
     ): ResultData<RegisterResponse> = try {
         val response = client.post("$baseUrl/api/auth/register") {
             contentType(ContentType.Application.Json)
@@ -94,6 +159,7 @@ class AuthApi(
                     username = username,
                     workspaceName = workspaceName,
                     password = password,
+                    verificationCode = verificationCode,
                 )
             )
         }

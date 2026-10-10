@@ -110,6 +110,11 @@ fun WriteopiaDbBackend.insertUser(
     )
 }
 
+fun WriteopiaDbBackend.usernameExists(username: String): Boolean =
+    this.userEntityQueries
+        .usernameExists(username)
+        .executeAsOne()
+
 fun WriteopiaDbBackend.userExistsByUsernameOrEmail(username: String, email: String): Boolean =
     this.userEntityQueries
         .userExistsByUsernameOrEmail(username, email)

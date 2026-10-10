@@ -1,0 +1,38 @@
+-- Email ownership proofs for sign-up. A row is created when someone asks for a registration
+-- code and is deleted when the account is created, so a user_entity row only ever exists for
+-- an email that was already verified. Keyed by email: asking again replaces the pending code.
+CREATE TABLE email_verification (
+  email TEXT PRIMARY KEY,
+  code TEXT NOT NULL,
+  code_expiry BIGINT NOT NULL,
+  -- Failed code checks against the current code. Reset whenever a new code is issued.
+  attempts BIGINT NOT NULL DEFAULT 0,
+  created_at BIGINT NOT NULL
+);
+
+upsertEmailVerification:
+INSERT INTO email_verification(email, code, code_expiry, attempts, created_at)
+VALUES (?, ?, ?, 0, ?)
+ON CONFLICT(email) DO
+UPDATE SET code = excluded.code, code_expiry = excluded.code_expiry, attempts = 0, created_at = excluded.created_at;
+
+selectEmailVerification:
+SELECT *
+FROM email_verification
+WHERE email = ?
+LIMIT 1;
+
+incrementEmailVerificationAttempts:
+UPDATE email_verification
+SET attempts = attempts + 1
+WHERE email = ?;
+
+deleteEmailVerification:
+DELETE
+FROM email_verification
+WHERE email = ?;
+
+deleteExpiredEmailVerifications:
+DELETE
+FROM email_verification
+WHERE code_expiry < ?;

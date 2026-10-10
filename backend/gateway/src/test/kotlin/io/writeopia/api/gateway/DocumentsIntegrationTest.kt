@@ -1348,7 +1348,7 @@ class DocumentationIntegrationTests {
             val registerResponse = client.post("/api/auth/register") {
                 contentType(ContentType.Application.Json)
                 setBody(
-                    io.writeopia.sdk.serialization.data.auth.RegisterRequest(
+                    db.verifiedRegisterRequest(
                         workspaceName = "Test Workspace",
                         name = "Test User",
                         email = email,

@@ -1,10 +1,12 @@
 package io.writeopia.auth.di
 
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.auth.core.di.AuthCoreInjectionNeo
 import io.writeopia.auth.core.manager.AuthRepository
+import io.writeopia.auth.email.EmailConfirmationPurpose
 import io.writeopia.auth.email.EmailConfirmationViewModel
 import io.writeopia.auth.forgotpassword.ForgotPasswordViewModel
 import io.writeopia.auth.menu.AuthMenuViewModel
@@ -52,6 +54,19 @@ class AuthInjection private constructor(
         authRepository: AuthRepository = authCoreInjection.provideAuthRepository(),
         authApi: AuthApi = authCoreInjection.provideAuthApi()
     ): EmailConfirmationViewModel = viewModel { EmailConfirmationViewModel(authRepository, authApi) }
+
+    /**
+     * Sign-up's email verification. Scoped to [owner], the auth navigation graph, so the email
+     * screen, the code screen and the register screen share the verified email and code.
+     */
+    @Composable
+    internal fun provideRegistrationEmailViewModel(
+        owner: ViewModelStoreOwner,
+        authRepository: AuthRepository = authCoreInjection.provideAuthRepository(),
+        authApi: AuthApi = authCoreInjection.provideAuthApi()
+    ): EmailConfirmationViewModel = viewModel(viewModelStoreOwner = owner, key = REGISTRATION_EMAIL_KEY) {
+        EmailConfirmationViewModel(authRepository, authApi, EmailConfirmationPurpose.REGISTRATION)
+    }
 
     @Composable
     internal fun provideResetPasswordViewModel(
@@ -113,6 +128,8 @@ class AuthInjection private constructor(
         repositoryInjection.provideDocumentRepository()
 
     companion object {
+        private const val REGISTRATION_EMAIL_KEY = "registration_email"
+
         private var instance: AuthInjection? = null
 
         fun singleton() = instance ?: AuthInjection().also {
