@@ -2,14 +2,18 @@ package io.writeopia.writingagent.actions
 
 import io.writeopia.ai.AiCommand
 import io.writeopia.ai.AiStreaming
-import io.writeopia.sdk.model.action.Action
+import io.writeopia.ai.task.AiTaskManager
+import io.writeopia.ai.task.AiTaskType
 import io.writeopia.app.dto.writingagent.WritingSuggestionAction
+import io.writeopia.di.ApiLogger
+import io.writeopia.sdk.model.action.Action
+import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
 import io.writeopia.sdk.models.story.TagInfo
 import io.writeopia.ui.manager.WriteopiaStateManager
-import io.writeopia.writingagent.actions.AiTextWriter.finalText
+import io.writeopia.writingagent.actions.AiTextWriter.finalTextOrError
 
 /**
  * Applies the suggestions to the document through the [WriteopiaStateManager]. Blocks are
@@ -18,7 +22,8 @@ import io.writeopia.writingagent.actions.AiTextWriter.finalText
  * end. The document title is written into the title block itself.
  *
  * The actions that need text, like the TL;DR, use the AI the user picked, through [resolveAi].
- * Without one, they say so in the document, like the editor's AI menu does.
+ * They run as tasks of [aiTaskManager], so the editor's task indicator shows their progress and
+ * why they failed, like the editor's AI menu does. Without a task manager they run inline.
  */
 class WriteopiaActionExecutor(
     private val manager: WriteopiaStateManager,
@@ -26,18 +31,28 @@ class WriteopiaActionExecutor(
     private val addImage: (path: String, position: Double) -> Unit = { path, position ->
         manager.addImage(path, position)
     },
+    private val aiTaskManager: AiTaskManager? = null,
+    /** The prefix of the task IDs, so the editor can cancel them with its own. */
+    private val taskIdPrefix: () -> String = { "writing-agent" },
+    private val log: (String) -> Unit = { message -> ApiLogger.log("[WritingAgent] $message") },
 ) : WritingActionExecutor {
 
     override suspend fun execute(action: WritingSuggestionAction, storyStepId: String?, ui: WritingAgentUi) {
         val position = positionOf(storyStepId) ?: manager.lastPosition()
         val below = position + 1
 
+        log("executing $action for $storyStepId at position $position")
+
         when (action) {
             WritingSuggestionAction.CODE_BLOCK -> insert(StoryTypes.CODE_BLOCK, below)
 
-            WritingSuggestionAction.LIST -> insert(StoryTypes.UNORDERED_LIST_ITEM, below)
+            WritingSuggestionAction.LIST -> aiTask("Writing the list...") {
+                listItems(storyStepId, position, StoryTypes.UNORDERED_LIST_ITEM, LIST_PROMPT)
+            }
 
-            WritingSuggestionAction.CHECK_LIST -> insert(StoryTypes.CHECK_ITEM, below)
+            WritingSuggestionAction.CHECK_LIST -> aiTask("Writing the checklist...") {
+                listItems(storyStepId, position, StoryTypes.CHECK_ITEM, CHECKLIST_PROMPT)
+            }
 
             WritingSuggestionAction.NEW_DOCUMENT_LINK -> {
                 insert(StoryTypes.TEXT, below)
@@ -51,19 +66,57 @@ class WriteopiaActionExecutor(
 
             WritingSuggestionAction.DRAWING -> ui.openDrawing()
 
-            WritingSuggestionAction.SPREADSHEET -> spreadsheet(storyStepId, below)
+            WritingSuggestionAction.SPREADSHEET -> aiTask("Filling the table...") {
+                spreadsheet(storyStepId, below)
+            }
 
-            WritingSuggestionAction.SECTION_HEADING -> heading(storyStepId, position)
+            WritingSuggestionAction.SECTION_HEADING -> aiTask("Writing a section heading...") {
+                heading(storyStepId, position)
+            }
 
-            WritingSuggestionAction.DOCUMENT_TITLE -> documentTitle()
+            WritingSuggestionAction.DOCUMENT_TITLE -> aiTask("Writing the document title...") {
+                documentTitle()
+            }
 
             WritingSuggestionAction.CALLOUT -> manager.toggleTagForPosition(position, TagInfo(Tag.HIGH_LIGHT_BLOCK))
 
-            WritingSuggestionAction.TLDR -> generateAt(afterTitle(), TLDR_PROMPT)
+            WritingSuggestionAction.TLDR -> aiTask("Writing a TL;DR...") {
+                generateAt(afterTitle(), TLDR_PROMPT)
+            }
 
-            WritingSuggestionAction.CONCLUSION -> generateAt(manager.lastPosition() + 1, CONCLUSION_PROMPT)
+            WritingSuggestionAction.CONCLUSION -> aiTask("Writing a conclusion...") {
+                generateAt(manager.lastPosition() + 1, CONCLUSION_PROMPT)
+            }
         }
     }
+
+    /**
+     * Runs [block] as a task the editor shows, or inline without a task manager. A failure shows
+     * its message in the task indicator, so the user learns why nothing changed.
+     */
+    private suspend fun aiTask(description: String, block: suspend () -> Result<Unit>) {
+        val taskManager = aiTaskManager
+
+        if (taskManager == null) {
+            block().onFailure { log("$description failed: ${it.message}") }
+            return
+        }
+
+        taskManager.enqueueTask(
+            id = "${taskIdPrefix()}-${GenerateId.generate()}",
+            type = AiTaskType.TEXT_GENERATION,
+            description = description
+        ) {
+            block().onFailure { log("$description failed: ${it.message}") }
+        }
+    }
+
+    /** The AI the user picked, or the failure that explains there is none. */
+    private suspend fun aiOrFailure(): Result<AiStreaming> =
+        resolveAi()?.let { Result.success(it) }
+            ?: Result.failure(NoAiException())
+
+    class NoAiException : Exception(AiTextWriter.NO_AI_MESSAGE)
 
     private fun positionOf(storyStepId: String?): Double? {
         if (storyStepId == null) return null
@@ -81,79 +134,117 @@ class WriteopiaActionExecutor(
         manager.addAtPosition(StoryStep(type = type.type, text = ""), position)
     }
 
-    private suspend fun generateAt(position: Double, instructions: String) {
-        val ai = resolveAi()
-
-        if (ai == null) {
+    private suspend fun generateAt(position: Double, instructions: String): Result<Unit> {
+        val ai = aiOrFailure().getOrElse { failure ->
             AiTextWriter.noAiAt(manager, position)
-            return
+            return Result.failure(failure)
         }
 
         val prompt = "$instructions\n```\n${manager.getDocumentText()}\n```"
         AiTextWriter.streamAt(manager, position, ai.stream(AiCommand.PROMPT, prompt))
+        return Result.success(Unit)
     }
 
-    private suspend fun heading(storyStepId: String?, position: Double) {
-        val paragraph = manager.getStory(position)?.text ?: ""
-        val ai = resolveAi()
-        val title = ai
-            ?.stream(AiCommand.PROMPT, "$HEADING_PROMPT\n```\n$paragraph\n```")
-            ?.finalText()
-            ?.lines()
-            ?.firstOrNull()
-            ?.trim('#', ' ', '"', '*')
-            ?: ""
-
-        // The document may have changed while the AI answered.
-        val current = positionOf(storyStepId) ?: position
-        manager.trackState()
-        manager.addAtPosition(
-            StoryStep(type = StoryTypes.TEXT.type, text = title, tags = setOf(TagInfo(Tag.H2))),
-            current
-        )
-    }
+    /** One line of text from the AI, cleaned of the Markdown and quotes it tends to add. */
+    private suspend fun askOneLine(instructions: String, text: String): Result<String> =
+        aiOrFailure().mapCatching { ai ->
+            ai.stream(AiCommand.PROMPT, "$instructions\n```\n$text\n```")
+                .finalTextOrError()
+                .getOrThrow()
+                .lines()
+                .first { it.isNotBlank() }
+                .trim('#', ' ', '"', '*', '.')
+        }
 
     /**
-     * Asks the AI for a title and writes it into the title block, the one drawn in the header.
-     * A document without a title block gets one at the top. Without an AI there is nothing to
-     * write, so the block is only made sure to exist.
+     * Asks the AI for the items the paragraph calls for and inserts them below it, one block
+     * each, as [type]. Without an AI, one empty item is inserted so the click still does
+     * something, and the failure says why there is no content.
      */
-    private suspend fun documentTitle() {
-        val title = resolveAi()
-            ?.stream(AiCommand.PROMPT, "$DOCUMENT_TITLE_PROMPT\n```\n${manager.getDocumentText()}\n```")
-            ?.finalText()
-            ?.lines()
-            ?.firstOrNull()
-            ?.trim('#', ' ', '"', '*', '.')
-            ?: ""
+    private suspend fun listItems(
+        storyStepId: String?,
+        position: Double,
+        type: StoryTypes,
+        instructions: String,
+    ): Result<Unit> {
+        val paragraph = manager.getStory(position)?.text ?: ""
+        val context = "Title: ${manager.getDocument().title}\nParagraph: $paragraph"
 
-        val titleEntry = manager.currentStory.value.stories.entries
-            .firstOrNull { (_, step) -> step.type == StoryTypes.TITLE.type }
+        val items = aiOrFailure().mapCatching { ai ->
+            ai.stream(AiCommand.PROMPT, "$instructions\n```\n$context\n```")
+                .finalTextOrError()
+                .getOrThrow()
+                .let(MarkdownList::parse)
+                .take(MAX_LIST_ITEMS)
+                .ifEmpty { throw Exception("The AI answered no items") }
+        }
 
+        // The document may have changed while the AI answered.
+        val below = (positionOf(storyStepId) ?: position) + 1
+        val texts = items.getOrDefault(listOf(""))
+
+        log("inserting ${texts.size} ${type.name} items below $storyStepId")
         manager.trackState()
+        texts.reversed().forEach { text ->
+            manager.addAtPosition(StoryStep(type = type.type, text = text), below)
+        }
 
-        if (titleEntry == null) {
-            manager.addAtPosition(StoryStep(type = StoryTypes.TITLE.type, text = title), 0.0)
-        } else if (title.isNotEmpty()) {
-            manager.changeStoryState(
-                Action.StoryStateChange(titleEntry.value.copy(text = title), titleEntry.key)
+        return items.map { }
+    }
+
+    private suspend fun heading(storyStepId: String?, position: Double): Result<Unit> {
+        val paragraph = manager.getStory(position)?.text ?: ""
+
+        return askOneLine(HEADING_PROMPT, paragraph).map { title ->
+            // The document may have changed while the AI answered.
+            val current = positionOf(storyStepId) ?: position
+            manager.trackState()
+            manager.addAtPosition(
+                StoryStep(type = StoryTypes.TEXT.type, text = title, tags = setOf(TagInfo(Tag.H2))),
+                current
             )
         }
     }
 
-    private suspend fun spreadsheet(storyStepId: String?, position: Double) {
+    /**
+     * Asks the AI for a title and writes it into the title block, the one drawn in the header.
+     * A document without a title block gets one at the top.
+     */
+    private suspend fun documentTitle(): Result<Unit> =
+        askOneLine(DOCUMENT_TITLE_PROMPT, manager.getDocumentText()).map { title ->
+            log("the AI titled the document \"$title\"")
+            val titleEntry = manager.currentStory.value.stories.entries
+                .firstOrNull { (_, step) -> step.type == StoryTypes.TITLE.type }
+
+            manager.trackState()
+
+            if (titleEntry == null) {
+                manager.addAtPosition(StoryStep(type = StoryTypes.TITLE.type, text = title), 0.0)
+            } else {
+                // The drawers reload their text when the localId changes, like undo does.
+                manager.changeStoryState(
+                    Action.StoryStateChange(
+                        titleEntry.value.copy(text = title, localId = GenerateId.generate()),
+                        titleEntry.key
+                    )
+                )
+            }
+        }
+
+    private suspend fun spreadsheet(storyStepId: String?, position: Double): Result<Unit> {
         val paragraph = manager.getStory(position - 1)?.text ?: ""
-        val rows = resolveAi()
-            ?.stream(AiCommand.PROMPT, "$TABLE_PROMPT\n```\n$paragraph\n```")
-            ?.finalText()
-            ?.let(MarkdownTable::parse)
-            .orEmpty()
+        val answer = aiOrFailure().mapCatching { ai ->
+            ai.stream(AiCommand.PROMPT, "$TABLE_PROMPT\n```\n$paragraph\n```").finalTextOrError().getOrThrow()
+        }
+        val rows = answer.getOrNull()?.let(MarkdownTable::parse).orEmpty()
 
         val columnCount = rows.maxOfOrNull { it.size } ?: DEFAULT_COLUMNS
         val rowCount = rows.size.takeIf { it > 0 } ?: DEFAULT_ROWS
 
+        // Even without an AI the table is made, empty, so the click does something.
         val current = positionOf(storyStepId)?.let { it + 1 } ?: position
-        val spreadsheetId = manager.insertSpreadsheet(current, columnCount, rowCount) ?: return
+        val spreadsheetId = manager.insertSpreadsheet(current, columnCount, rowCount)
+            ?: return Result.failure(Exception("The document can't be edited"))
 
         rows.forEachIndexed { rowIndex, cells ->
             cells.forEachIndexed { cellIndex, text ->
@@ -162,11 +253,26 @@ class WriteopiaActionExecutor(
                 }
             }
         }
+
+        return answer.map { }
     }
 
     companion object {
         private const val DEFAULT_COLUMNS = 3
         private const val DEFAULT_ROWS = 3
+        private const val MAX_LIST_ITEMS = 10
+
+        const val LIST_PROMPT =
+            "The paragraph below introduces or enumerates several items. Write those items as a " +
+                "bullet list, completing the list with the items the paragraph implies. Answer " +
+                "only with the items, one per line, each starting with \"- \". At most ten " +
+                "items, each a short phrase. Use the language of the text."
+
+        const val CHECKLIST_PROMPT =
+            "The paragraph below describes tasks or steps to complete. Write them as a checklist, " +
+                "one task per line, each starting with \"- \", in the order they should be " +
+                "done. Answer only with the tasks. At most ten, each a short phrase starting " +
+                "with a verb. Use the language of the text."
 
         const val TLDR_PROMPT =
             "Write a TL;DR for the following document: at most three sentences with its key " +

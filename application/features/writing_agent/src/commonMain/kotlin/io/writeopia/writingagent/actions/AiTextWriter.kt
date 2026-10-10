@@ -6,8 +6,6 @@ import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.ui.manager.WriteopiaStateManager
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.filterIsInstance
-import kotlinx.coroutines.flow.lastOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onStart
@@ -54,11 +52,30 @@ object AiTextWriter {
         )
     }
 
-    /** The whole answer, once the stream ends. Each emission carries the answer so far. */
-    suspend fun Flow<ResultData<String>>.finalText(): String? =
-        filterIsInstance<ResultData.Complete<String>>()
-            .map { it.data }
-            .lastOrNull()
-            ?.trim()
-            ?.takeIf { it.isNotEmpty() }
+    /**
+     * The whole answer, once the stream ends. Each emission carries the answer so far. An error
+     * in the stream, or an empty answer, is a failure with the reason.
+     */
+    suspend fun Flow<ResultData<String>>.finalTextOrError(): Result<String> {
+        var text: String? = null
+        var error: Exception? = null
+
+        collect { result ->
+            when (result) {
+                is ResultData.Complete -> text = result.data
+                is ResultData.Error -> error = result.exception ?: Exception("The AI failed to answer")
+                is ResultData.Loading,
+                is ResultData.Idle,
+                is ResultData.InProgress -> {}
+            }
+        }
+
+        val answer = text?.trim()?.takeIf { it.isNotEmpty() }
+
+        return when {
+            error != null -> Result.failure(error)
+            answer == null -> Result.failure(Exception("The AI answered nothing"))
+            else -> Result.success(answer)
+        }
+    }
 }

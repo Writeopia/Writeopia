@@ -48,8 +48,8 @@ class WritingAgentController(
     private val debounceMillis: Long = DEBOUNCE_MILLIS,
     private val minimumDocumentLength: Int = MINIMUM_DOCUMENT_LENGTH,
     private val documentTextLimit: Int = DOCUMENT_TEXT_LIMIT,
-    /** How much text an untitled document needs before a title is offered. */
-    private val untitledDocumentMinimumLength: Int = UNTITLED_DOCUMENT_MINIMUM_LENGTH,
+    /** How many finished sentences an untitled document needs before a title is offered. */
+    private val untitledDocumentMinimumSentences: Int = UNTITLED_DOCUMENT_MINIMUM_SENTENCES,
     /** Where the agent tells what it asks and what came back. */
     private val log: (String) -> Unit = { message -> ApiLogger.log("$LOG_TAG $message") },
 ) {
@@ -136,16 +136,21 @@ class WritingAgentController(
     }
 
     /**
-     * Offers a title when the document has enough text and its title block is missing or empty.
-     * The offer is decided here, not by Jev: the document itself says whether it has a title.
+     * Offers a title once the document has a finished sentence and its title block is missing or
+     * empty. The offer is decided here, not by Jev: the document itself says whether it has a
+     * title.
      */
     private fun refreshDocumentTitleOffer(story: StoryState) {
         val titleStep = story.stories.values.firstOrNull { it.type == StoryTypes.TITLE.type }
         val hasTitle = !titleStep?.text.isNullOrBlank()
-        val declined = documentTitleDeclinedFor == openedDocumentId
-        val longEnough = documentText(story).length >= untitledDocumentMinimumLength
+        val declined = documentTitleDeclinedFor != null && documentTitleDeclinedFor == openedDocumentId
+        val bodyText = story.stories.values
+            .filter { it.type != StoryTypes.TITLE.type }
+            .mapNotNull(StoryStep::text)
+            .joinToString(separator = "\n")
+        val enoughSentences = SentenceEnds.count(bodyText) >= untitledDocumentMinimumSentences
 
-        val offer = !hasTitle && !declined && longEnough
+        val offer = !hasTitle && !declined && enoughSentences
 
         if (offer != offerDocumentTitle) {
             offerDocumentTitle = offer
@@ -310,7 +315,7 @@ class WritingAgentController(
         const val LOG_TAG = "[WritingAgent]"
         const val DEBOUNCE_MILLIS = 600L
         const val MINIMUM_DOCUMENT_LENGTH = 200
-        const val UNTITLED_DOCUMENT_MINIMUM_LENGTH = 80
+        const val UNTITLED_DOCUMENT_MINIMUM_SENTENCES = 1
         const val DOCUMENT_TEXT_LIMIT = 6_000
     }
 }

@@ -189,6 +189,9 @@ class NoteEditorKmpViewModel(
                 manager = writeopiaManager,
                 resolveAi = { aiClients.resolve(authRepository.getUser().id) },
                 addImage = { path, position -> addImage(path, position) },
+                aiTaskManager = aiTaskManager,
+                // The same prefix as the editor's own AI tasks, so Escape cancels these too.
+                taskIdPrefix = { "editor-${writeopiaManager.documentInfo.value.id}" },
             ),
             isEnabled = { !writeopiaManager.documentInfo.value.isLocked && aiClients.isCloudAiReady() },
         ).also { it.start() }

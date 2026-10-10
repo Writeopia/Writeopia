@@ -17,6 +17,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.time.Clock
@@ -73,7 +74,27 @@ class WriteopiaActionExecutorTest {
     }
 
     @Test
-    fun `a checklist goes right below the paragraph, found by its id after a move`() = runTest {
+    fun `a list is written from the paragraph, one block per item, right below it`() = runTest {
+        val manager = manager()
+        val executor = WriteopiaActionExecutor(
+            manager,
+            resolveAi = { ai("Here you go:\n- Milk\n- Eggs\n- Bread\n") }
+        )
+
+        executor.execute(WritingSuggestionAction.LIST, "p1", WritingAgentUi.None)
+
+        assertEquals(
+            listOf("Groceries", "We need milk.", "Milk", "Eggs", "Bread", "And eggs."),
+            manager.textsInOrder()
+        )
+        assertEquals(
+            listOf(StoryTypes.UNORDERED_LIST_ITEM, StoryTypes.UNORDERED_LIST_ITEM, StoryTypes.UNORDERED_LIST_ITEM),
+            manager.typesInOrder().subList(2, 5)
+        )
+    }
+
+    @Test
+    fun `a checklist without an AI is a single empty item below the paragraph, found by its id after a move`() = runTest {
         val manager = manager()
         val executor = WriteopiaActionExecutor(manager, resolveAi = { null })
 
@@ -116,12 +137,17 @@ class WriteopiaActionExecutorTest {
         val manager = manager()
         val executor = WriteopiaActionExecutor(manager, resolveAi = { ai("\"Weekly groceries.\"\n") })
 
+        val localIdBefore = manager.currentStory.value.stories[0.0]?.localId
+
         executor.execute(WritingSuggestionAction.DOCUMENT_TITLE, null, WritingAgentUi.None)
 
         val titleStep = manager.currentStory.value.stories[0.0]
         assertNotNull(titleStep)
         assertEquals(StoryTypes.TITLE.type, titleStep.type)
         assertEquals("Weekly groceries", titleStep.text)
+        assertEquals("title", titleStep.id)
+        // A new localId is what makes the screen reload the text of the block.
+        assertNotEquals(localIdBefore, titleStep.localId)
         assertEquals(3, manager.currentStory.value.stories.size)
     }
 
@@ -148,6 +174,16 @@ class WriteopiaActionExecutorTest {
         executor.execute(WritingSuggestionAction.DOCUMENT_TITLE, null, WritingAgentUi.None)
 
         assertEquals(listOf(StoryTypes.TITLE, StoryTypes.TEXT, StoryTypes.TEXT), manager.typesInOrder())
+        assertEquals("Groceries", manager.currentStory.value.stories[0.0]?.text)
+    }
+
+    @Test
+    fun `without an AI the document title stays as it was`() = runTest {
+        val manager = manager()
+        val executor = WriteopiaActionExecutor(manager, resolveAi = { null })
+
+        executor.execute(WritingSuggestionAction.DOCUMENT_TITLE, null, WritingAgentUi.None)
+
         assertEquals("Groceries", manager.currentStory.value.stories[0.0]?.text)
     }
 

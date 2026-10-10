@@ -233,6 +233,8 @@ class EditorKmpInjector private constructor(
             selectionState: StateFlow<Boolean>,
             keyboardEventFlow: Flow<KeyboardEvent>,
             localAiInjection: LocalAiInjection = LocalAiInjection.singleton(),
+            // The cloud AI answers on the desktop too, when the user picks it or has no local model.
+            genAiInjection: GenAiInjection? = GenAiInjection.singleton(),
             imageUploader: ImageUploader? = null,
         ) = EditorKmpInjector(
             authCoreInjection,
@@ -241,6 +243,7 @@ class EditorKmpInjector private constructor(
             selectionState,
             keyboardEventFlow,
             localAiInjection = localAiInjection,
+            genAiInjection = genAiInjection,
             imageUploader = imageUploader,
         )
 
