@@ -805,22 +805,10 @@ private fun AddUserToWorkspace(
 
     when (val usersResult = usersInSelectedWorkspace.collectAsState(ResultData.Idle()).value) {
         is ResultData.Complete -> {
-            val users = usersResult.data
-
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                if (users.isNotEmpty()) {
-                    users.forEach { userName ->
-                        BasicText(
-                            text = userName,
-                            style = MaterialTheme
-                                .typography
-                                .bodySmall
-                                .copy(MaterialTheme.colorScheme.onBackground)
-                        )
-                    }
-                } else {
+                usersResult.data.forEach { userName ->
                     BasicText(
-                        text = "No users in this team",
+                        text = userName,
                         style = MaterialTheme
                             .typography
                             .bodySmall
