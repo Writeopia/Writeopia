@@ -244,7 +244,7 @@ private fun SuggestionRow(
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
             .clickable(onClick = onApply)
-            .padding(start = 8.dp, top = 2.dp, bottom = 2.dp),
+            .padding(start = 8.dp, top = 6.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(

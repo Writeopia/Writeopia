@@ -307,13 +307,12 @@ final class FolderContentsViewModel {
         await load()
     }
 
-    func createDocument(title: String) async -> WrDocument? {
+    /// A new, untitled document in this folder. The title is typed in the editor, like the
+    /// Compose app does, so there is nothing to ask before opening it.
+    func createDocument() async -> WrDocument? {
         var created: WrDocument?
         await perform {
-            created = try await self.repository.createDocument(
-                title: self.normalized(title, fallback: "Untitled"),
-                parentId: self.folderId
-            )
+            created = try await self.repository.createDocument(title: "", parentId: self.folderId)
         }
         return created
     }
@@ -513,10 +512,9 @@ private struct DocumentsNavigation: View {
 struct FolderContentsView: View {
     @State private var viewModel: FolderContentsViewModel
     @Binding private var path: NavigationPath
-    @State private var newItem: NewItem?
+    /// New folders use `FolderEditSheet`, to pick an icon; new documents open right away.
     @State private var showsNewFolder = false
     @State private var showsMoveSelection = false
-    @State private var newItemTitle = ""
     /// Folder currently under a drag, highlighted as the drop target.
     @State private var dropTargetId: String?
     @State private var movedCount = 0
@@ -544,13 +542,6 @@ struct FolderContentsView: View {
     private static let gridSpacing: CGFloat = 12
     private let columns = [GridItem(.adaptive(minimum: FolderContentsView.minCardWidth), spacing: FolderContentsView.gridSpacing)]
     @State private var contentWidth: CGFloat = 0
-
-    /// New documents are named in an alert; new folders use `FolderEditSheet`, to pick an icon.
-    private enum NewItem: String, Identifiable {
-        case document = "New document"
-
-        var id: String { rawValue }
-    }
 
     init(
         folderId: String,
@@ -714,7 +705,7 @@ struct FolderContentsView: View {
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
                         Button {
-                            present(.document)
+                            createDocument()
                         } label: {
                             Label("New document", systemImage: "doc.badge.plus")
                         }
@@ -733,15 +724,6 @@ struct FolderContentsView: View {
         .task { await viewModel.load() }
         // Something outside the list, like the side menu, changed the folders.
         .onChange(of: contentsVersion) { Task { await viewModel.loadLocal() } }
-        .alert(
-            newItem?.rawValue ?? "",
-            isPresented: Binding(get: { newItem != nil }, set: { if !$0 { newItem = nil } }),
-            presenting: newItem
-        ) { item in
-            TextField("Title", text: $newItemTitle)
-            Button("Cancel", role: .cancel) {}
-            Button("Create") { create(item) }
-        }
         .sheet(isPresented: $showsMoveSelection) {
             FolderPickerSheet(
                 excludedFolderIds: viewModel.selectedFolderIds,
@@ -937,19 +919,11 @@ struct FolderContentsView: View {
         path = NavigationPath(viewModel.ancestors.prefix(through: index).map(DocumentsRoute.folder))
     }
 
-    private func present(_ item: NewItem) {
-        newItemTitle = ""
-        newItem = item
-    }
-
-    private func create(_ item: NewItem) {
-        let title = newItemTitle
+    /// Creates an untitled document and opens it, straight into the editor.
+    private func createDocument() {
         Task {
-            switch item {
-            case .document:
-                if let document = await viewModel.createDocument(title: title) {
-                    path.append(DocumentsRoute.document(id: document.id, title: document.displayTitle))
-                }
+            if let document = await viewModel.createDocument() {
+                path.append(DocumentsRoute.document(id: document.id, title: document.displayTitle))
             }
         }
     }

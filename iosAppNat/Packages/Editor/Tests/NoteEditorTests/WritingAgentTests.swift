@@ -451,6 +451,7 @@ private func type(_ manager: WriteopiaStateManager, _ id: String, _ text: String
 @Suite struct WritingAgentHelpersTests {
     @Test func sentenceEndsCountsPeriodsExclamationsAndQuestions() {
         #expect(SentenceEnds.count("Hi. Really?! Yes") == 3)
+        #expect(SentenceEnds.count("The ingredients are:") == 1)
         #expect(SentenceEnds.count("") == 0)
     }
 

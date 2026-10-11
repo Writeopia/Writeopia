@@ -132,6 +132,7 @@ private struct SuggestionRow: View {
                 .buttonStyle(.borderless)
                 .accessibilityIdentifier(identifier)
         }
+        .padding(.vertical, 6)
         .contentShape(Rectangle())
         .onTapGesture(perform: onApply)
     }

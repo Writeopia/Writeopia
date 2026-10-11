@@ -560,6 +560,10 @@ public struct NoteEditorView: View {
                 }
             }
             await viewModel.loadDocument()
+            // A document that was just created has nothing yet: the title is ready to be typed.
+            if viewModel.hasLoaded, viewModel.title.isEmpty, viewModel.writeopiaManager.documentContent.count <= 1 {
+                viewModel.writeopiaManager.focusTitle()
+            }
             await viewModel.mergeFromBackend()
             await viewModel.loadPublishState()
         }

@@ -89,6 +89,12 @@ public final class WriteopiaStateManager {
         apply(writeopiaManager.newDocument())
     }
 
+    /// Puts the cursor in the title, like a document that was just created.
+    public func focusTitle() {
+        guard isEditable, let title = currentStory.sortedStories.first(where: \.isTitle) else { return }
+        focusRequest = FocusRequest(stepId: title.id, cursor: (title.text ?? "").utf16.count)
+    }
+
     // MARK: - Text edition
 
     /// Called by the text view of a step on every edit. Line breaks split the step.

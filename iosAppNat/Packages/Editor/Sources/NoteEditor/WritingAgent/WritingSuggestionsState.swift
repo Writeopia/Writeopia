@@ -85,11 +85,13 @@ public struct WritingSuggestionsState: Equatable, Sendable {
     public var count: Int { suggestions.count + (offerFolder ? 1 : 0) }
 }
 
-/// Counts the finished sentences of a text: the agent asks again when the count changes.
+/// Counts the sentence ends of a text (".", "!", "?" and ":"): the agent asks again when the
+/// count changes. The colon counts because it announces what comes next (a list, a snippet, a
+/// quote), which is exactly when a suggestion helps.
 public enum SentenceEnds {
     public static func count(_ text: String) -> Int {
         text.reduce(into: 0) { count, character in
-            if character == "." || character == "!" || character == "?" { count += 1 }
+            if character == "." || character == "!" || character == "?" || character == ":" { count += 1 }
         }
     }
 }

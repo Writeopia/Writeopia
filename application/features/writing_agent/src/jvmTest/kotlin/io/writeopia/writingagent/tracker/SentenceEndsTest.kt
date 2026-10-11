@@ -12,7 +12,12 @@ class SentenceEndsTest {
 
     @Test
     fun `it ignores other punctuation`() {
-        assertEquals(0, SentenceEnds.count("one, two; three: four"))
+        assertEquals(0, SentenceEnds.count("one, two; three four"))
+    }
+
+    @Test
+    fun `a colon counts, since it announces what comes next`() {
+        assertEquals(1, SentenceEnds.count("The ingredients are:"))
     }
 
     @Test
