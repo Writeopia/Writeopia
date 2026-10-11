@@ -11,6 +11,8 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.readUTF8Line
+import io.writeopia.app.dto.ai.AiImageRequest
+import io.writeopia.app.dto.ai.AiImageResponse
 import io.writeopia.app.endpoints.EndPoints
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.serialization.response.AiUsageResponse
@@ -145,6 +147,25 @@ class GenAiApi(
 
     fun streamTags(prompt: String, model: String? = null): Flow<ResultData<String>> =
         streamFromEndpoint(EndPoints.aiTags(), prompt, model)
+
+    /** Asks the backend to draw a picture for a paragraph. The answer carries its URL. */
+    suspend fun generateImage(request: AiImageRequest): ResultData<AiImageResponse> = try {
+        val response = client.post("$baseUrl/${EndPoints.aiImage()}") {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
+        val body = response.body<AiImageResponse>()
+
+        if (body.imageUrl != null) {
+            ResultData.Complete(body)
+        } else {
+            ResultData.Error(GenAiException(body.error ?: "The AI drew no picture (${response.status})"))
+        }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        ResultData.Error(e)
+    }
 
     /**
      * Shared streaming implementation that delivers results incrementally as they arrive.

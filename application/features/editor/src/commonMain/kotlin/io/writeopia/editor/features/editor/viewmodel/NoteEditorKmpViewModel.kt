@@ -72,6 +72,10 @@ import io.writeopia.ui.manager.WriteopiaStateManager
 import io.writeopia.ui.model.DrawState
 import io.writeopia.ui.model.SelectionMetadata
 import io.writeopia.ui.utils.Spans
+import io.writeopia.writingagent.actions.WriteopiaActionExecutor
+import io.writeopia.writingagent.folders.WriteopiaDocumentFolders
+import io.writeopia.writingagent.api.WritingAgentApi
+import io.writeopia.writingagent.controller.WritingAgentController
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -125,7 +129,8 @@ class NoteEditorKmpViewModel(
         providerStore = UiConfigurationAiProviderStore(uiConfigurationRepository),
     ),
     presentationsApi: PresentationsApi? = null,
-    presentationsStore: PresentationsStore? = null
+    presentationsStore: PresentationsStore? = null,
+    writingAgentApi: WritingAgentApi? = null,
 ) : NoteEditorViewModel,
     ViewModel(),
     BackstackInform by writeopiaManager,
@@ -169,6 +174,42 @@ class NoteEditorKmpViewModel(
         } else {
             null
         }
+
+    /**
+     * The writing agent, which only asks the backend with a session in an online workspace. The
+     * text it generates comes from the AI the user picked, like the other AI commands.
+     */
+    override val writingAgent: WritingAgentController? = writingAgentApi?.let { api ->
+        WritingAgentController(
+            scope = viewModelScope,
+            api = api,
+            storyFlow = writeopiaManager.currentStory,
+            documentIdFlow = writeopiaManager.documentInfo.map { info -> info.id },
+            documentTitle = { writeopiaManager.documentInfo.value.title },
+            executor = WriteopiaActionExecutor(
+                manager = writeopiaManager,
+                resolveAi = { aiClients.resolve(authRepository.getUser().id) },
+                // Only the cloud draws; without it the picker opens.
+                resolveImageAi = { aiClients.imageGenerator() },
+                addImage = { path, position -> addImage(path, position) },
+                aiTaskManager = aiTaskManager,
+                // The same prefix as the editor's own AI tasks, so Escape cancels these too.
+                taskIdPrefix = { "editor-${writeopiaManager.documentInfo.value.id}" },
+            ),
+            // A document created in the root folder is offered a folder when it opens.
+            folders = WriteopiaDocumentFolders(
+                documentId = { writeopiaManager.documentInfo.value.id },
+                documentParentId = { writeopiaManager.getDocument().parentId },
+                workspaceId = { (authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()).id },
+                folderRepository = folderRepository,
+                moveDocument = { id, folderId -> documentRepository.moveToFolder(documentId = id, parentId = folderId) },
+                resolveAi = { aiClients.resolve(authRepository.getUser().id) },
+                aiTaskManager = aiTaskManager,
+                taskIdPrefix = { "editor-${writeopiaManager.documentInfo.value.id}" },
+            ),
+            isEnabled = { !writeopiaManager.documentInfo.value.isLocked && aiClients.isCloudAiReady() },
+        ).also { it.start() }
+    }
 
     init {
         viewModelScope.launch(Dispatchers.Default) {
@@ -748,6 +789,7 @@ class NoteEditorKmpViewModel(
             aiTaskManager.cancelTasksByPrefix("editor-$docId")
         }
         aiJob?.cancel()
+        writingAgent?.stop()
         writeopiaManager.onClear()
     }
 
@@ -812,7 +854,7 @@ class NoteEditorKmpViewModel(
         }
     }
 
-    override fun addImage(imagePath: String) {
+    override fun addImage(imagePath: String, position: Double?) {
         viewModelScope.launch(Dispatchers.Default) {
             val path = workspaceConfigRepository
                 .loadWorkspacePath(authRepository.getUser().id)
@@ -823,7 +865,7 @@ class NoteEditorKmpViewModel(
                     )
                 } ?: imagePath
 
-            writeopiaManager.addImage(path)
+            writeopiaManager.addImage(path, position)
         }
     }
 

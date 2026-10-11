@@ -382,12 +382,14 @@ class WriteopiaManager(
         storyState: StoryState,
         position: Double,
         columnCount: Int,
+        rowCount: Int = 3,
         insertMode: Boolean = false
     ): StoryState {
         val newStories = contentHandler.createSpreadsheet(
             storyState.stories,
             position,
             columnCount,
+            rowCount = rowCount,
             insertMode = insertMode
         )
         val spreadsheet = newStories[position]

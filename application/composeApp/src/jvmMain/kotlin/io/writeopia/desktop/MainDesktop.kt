@@ -53,6 +53,7 @@ import io.writeopia.common.utils.configuration.PlatformType
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.sqldelight.di.SqlDelightDaoInjector
 import io.writeopia.genai.di.GenAiInjection
+import io.writeopia.writingagent.di.WritingAgentInjection
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -239,6 +240,7 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                 GenAiInjection.initialize(
                     baseUrl = "https://writeopia.io"
                 )
+                WritingAgentInjection.initialize(baseUrl = "https://writeopia.io")
 
                 val uiConfigurationInjector = UiConfigurationInjector.singleton()
 

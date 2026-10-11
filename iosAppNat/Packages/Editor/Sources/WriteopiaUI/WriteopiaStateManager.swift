@@ -25,7 +25,7 @@ public struct StepSelection: Equatable {
 public final class WriteopiaStateManager {
     public static let dragPayloadPrefix = "writeopia-step:"
 
-    public private(set) var currentStory: StoryState = .empty
+    public internal(set) var currentStory: StoryState = .empty
     /// False while the document is locked: text, checkboxes, dragging and selection are disabled.
     public var isEditable = true
     public var fontFamily: EditorFont = .system
@@ -41,7 +41,7 @@ public final class WriteopiaStateManager {
     /// it (the Mac). The formatting popup floats above it.
     public private(set) var textSelectionRect: CGRect?
     /// Increases on every change of the document, handy to observe edits.
-    public private(set) var changeCount = 0
+    public internal(set) var changeCount = 0
 
     @ObservationIgnored public var onDocumentLinkClick: ((DocumentLink) -> Void)?
     /// Asks the AI to write the content of the heading with this step id, like the AI wand of
@@ -50,7 +50,7 @@ public final class WriteopiaStateManager {
     /// Called with the id of the last line that just became a list item or a checkbox, so the AI
     /// can suggest the next items, like `generateSuggestionsList` of the SDK.
     @ObservationIgnored public var onListStarted: ((String) -> Void)?
-    @ObservationIgnored private let writeopiaManager: WriteopiaManager
+    @ObservationIgnored let writeopiaManager: WriteopiaManager
     @ObservationIgnored private let focusHandler = FocusHandler()
     /// Copy and Cut of the selected lines, when the app has a clipboard for them. Called from
     /// the text views on the Mac, where the Edit menu sends Copy and Cut to the focused text.
@@ -87,6 +87,12 @@ public final class WriteopiaStateManager {
 
     public func newDocument() {
         apply(writeopiaManager.newDocument())
+    }
+
+    /// Puts the cursor in the title, like a document that was just created.
+    public func focusTitle() {
+        guard isEditable, let title = currentStory.sortedStories.first(where: \.isTitle) else { return }
+        focusRequest = FocusRequest(stepId: title.id, cursor: (title.text ?? "").utf16.count)
     }
 
     // MARK: - Text edition

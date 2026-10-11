@@ -23,6 +23,7 @@ import androidx.navigation.compose.rememberNavController
 import io.writeopia.BuildConfig
 import io.writeopia.auth.core.di.setupBearerTokenHandler
 import io.writeopia.genai.di.GenAiInjection
+import io.writeopia.writingagent.di.WritingAgentInjection
 import io.writeopia.common.utils.di.SharedPreferencesInjector
 import io.writeopia.core.folders.di.WorkspaceInjection
 import io.writeopia.editor.di.EditorKmpInjector
@@ -92,6 +93,7 @@ fun NavigationGraph(
         WriteopiaConnectionInjector.setBaseUrl(BuildConfig.BASE_URL)
         setupBearerTokenHandler()
         GenAiInjection.initialize(baseUrl = BuildConfig.BASE_URL)
+        WritingAgentInjection.initialize(baseUrl = BuildConfig.BASE_URL)
     }
 
     val uiConfigViewModel = uiConfigInjection.provideUiConfigurationViewModel()

@@ -91,6 +91,12 @@ public final class NoteEditorViewModel {
     /// The presentations of the document; nil when the AI in use can't make them (only the cloud
     /// AI and Ollama do).
     public private(set) var presentations: PresentationsViewModel?
+    /// The writing agent, which suggests actions while the user writes; nil outside an online
+    /// workspace, since only the backend answers it. The text it generates comes from the AI the
+    /// user picked, like the other AI commands.
+    public private(set) var writingAgent: WritingAgentController?
+    /// What only the screen can do for the agent (the image picker, the drawing editor).
+    @ObservationIgnored public var writingAgentUI: WritingAgentUI?
     /// Set once the document is deleted: nothing is saved or sent anymore.
     public private(set) var isDeleted = false
     public var deleteError: String?
@@ -112,6 +118,8 @@ public final class NoteEditorViewModel {
         imageUploader: ImageUploading? = nil,
         isPremium: Bool = false,
         presentations: PresentationsSource? = nil,
+        writingAgent: WritingAgentServing? = nil,
+        imageGenerator: AiImageGenerating? = nil,
         defaults: UserDefaults = .standard,
         writeopiaManager: WriteopiaStateManager = WriteopiaStateManager()
     ) {
@@ -155,9 +163,51 @@ public final class NoteEditorViewModel {
         case nil:
             break
         }
+
+        if let writingAgent {
+            let executor = WritingActionExecutor(
+                manager: writeopiaManager,
+                resolveAi: { aiClient },
+                resolveImageAi: { imageGenerator },
+                createDocument: { [weak self] title in
+                    guard let self else { throw CancellationError() }
+                    let page = try await self.repository.createDocument(
+                        title: title,
+                        parentId: self.loadedDocument?.parentId ?? Folder.rootId
+                    )
+                    return (page.id, page.displayTitle)
+                }
+            )
+            self.writingAgent = WritingAgentController(
+                api: writingAgent,
+                manager: writeopiaManager,
+                executor: executor,
+                folders: RepositoryDocumentFolders(
+                    documentId: documentId,
+                    parentId: { [weak self] in self?.loadedDocument?.parentId ?? Folder.rootId },
+                    repository: repository,
+                    resolveAi: { aiClient },
+                    onMoved: { [weak self] folderId in self?.documentMoved(to: folderId) }
+                ),
+                ui: { [weak self] in self?.writingAgentUI ?? NoWritingAgentUI() },
+                isEnabled: { [weak self] in self?.isLocked == false }
+            )
+        }
     }
 
     public var showsPresentations: Bool { presentations != nil }
+
+    /// The document moved to another folder (by the writing agent), so what's saved next keeps
+    /// the new folder.
+    func documentMoved(to folderId: String) {
+        loadedDocument?.parentId = folderId
+    }
+
+    /// The editor is closing: nothing is asked or applied anymore.
+    public func editorClosed() {
+        cancelAi()
+        writingAgent?.stop()
+    }
 
     // MARK: - Selected lines
 
@@ -484,6 +534,7 @@ public final class NoteEditorViewModel {
     public func cancelAi() {
         aiTask?.cancel()
         suggestionTask?.cancel()
+        writingAgent?.executor.cancel()
     }
 
     // MARK: - Persistence and sync
@@ -523,6 +574,7 @@ public final class NoteEditorViewModel {
     public func documentChanged() {
         guard hasLoaded else { return }
 
+        writingAgent?.storyChanged()
         saveNow()
 
         guard syncing != nil else { return }
@@ -645,6 +697,7 @@ public final class NoteEditorViewModel {
             errorMessage = nil
             lastSyncTimestamp = document.lastSyncedAt ?? 0
             pushedSteps = savedSteps
+            writingAgent?.documentOpened(id: documentId)
         } catch is CancellationError {
             return
         } catch {

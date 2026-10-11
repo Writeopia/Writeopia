@@ -1723,11 +1723,15 @@ class WriteopiaStateManager(
 
     fun lastPosition(): Double = getStories().keys.maxOrNull() ?: 0.0
 
-    suspend fun addLinkToDocument() {
+    /**
+     * Creates a new document and replaces the story at [position] with a link to it. Without a
+     * position, the last selected story is used.
+     */
+    suspend fun addLinkToDocument(position: Double? = null) {
         if (!isEditable) return
         if (documentRepository == null) return
 
-        val lastSelection = _onEditPositions.value.maxOrNull() ?: return
+        val lastSelection = position ?: _onEditPositions.value.maxOrNull() ?: return
 
         val text = getStories()[lastSelection]?.text?.let {
             it.take(max(it.length, 30))
@@ -2060,6 +2064,27 @@ class WriteopiaStateManager(
             columnCount,
             insertMode = insertMode
         )
+    }
+
+    /**
+     * Inserts an empty spreadsheet at [position], pushing the stories from there down.
+     *
+     * @return The ID of the new spreadsheet, or null when the document can't be edited.
+     */
+    fun insertSpreadsheet(position: Double, columnCount: Int, rowCount: Int = 3): String? {
+        if (!isEditable) return null
+
+        backStackManager.addState(_currentStory.value)
+        val newState = writeopiaManager.createSpreadsheet(
+            _currentStory.value,
+            position,
+            columnCount,
+            rowCount = rowCount,
+            insertMode = true
+        )
+        _currentStory.value = newState
+
+        return newState.stories[position]?.takeIf { it.type == StoryTypes.SPREADSHEET.type }?.id
     }
 
     /**

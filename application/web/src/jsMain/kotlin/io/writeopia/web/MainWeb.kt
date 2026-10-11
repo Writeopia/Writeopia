@@ -38,6 +38,7 @@ import io.writeopia.notemenu.di.NotesMenuWebInjection
 import io.writeopia.notemenu.di.UiConfigurationInjector
 import io.writeopia.notes.desktop.components.DesktopApp
 import io.writeopia.genai.di.GenAiInjection
+import io.writeopia.writingagent.di.WritingAgentInjection
 import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.sqldelight.di.SqlDelightDaoInjector
@@ -137,6 +138,7 @@ fun CreateAppInMemory() {
     GenAiInjection.initialize(
         baseUrl = baseUrl
     )
+    WritingAgentInjection.initialize(baseUrl = baseUrl)
 
     val uiConfigurationViewModel = UiConfigurationInjector.singleton()
         .provideUiConfigurationViewModel()

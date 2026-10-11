@@ -76,6 +76,7 @@ public struct SearchRootView: View {
             imageUploader: session.imageUploader,
             isPremium: session.user?.isPremium ?? false,
             presentations: session.presentationsSource,
+            writingAgent: session.writingAgent,
             loadPresentation: { id in await session.presentation(id: id) }
         )
             .id("\(session.workspace?.id ?? "")-\(session.documentsVersion)")
@@ -91,6 +92,7 @@ struct SearchView: View {
     private let imageUploader: ImageUploading?
     private let isPremium: Bool
     private let presentations: PresentationsSource?
+    private let writingAgent: WritingAgentAPI?
     private let loadPresentation: (String) async -> Presentation?
     /// The presentation shown full screen (the phones; the Mac opens a window).
     @State private var presentationShown: Presentation?
@@ -103,6 +105,7 @@ struct SearchView: View {
         imageUploader: ImageUploading?,
         isPremium: Bool,
         presentations: PresentationsSource? = nil,
+        writingAgent: WritingAgentAPI? = nil,
         loadPresentation: @escaping (String) async -> Presentation? = { _ in nil }
     ) {
         self.repository = repository
@@ -111,6 +114,7 @@ struct SearchView: View {
         self.imageUploader = imageUploader
         self.isPremium = isPremium
         self.presentations = presentations
+        self.writingAgent = writingAgent
         self.loadPresentation = loadPresentation
         _viewModel = State(initialValue: SearchViewModel(repository: repository))
     }
@@ -157,7 +161,9 @@ struct SearchView: View {
                         publishing: publishing,
                         imageUploader: imageUploader,
                         isPremium: isPremium,
-                        presentations: presentations
+                        presentations: presentations,
+                        writingAgent: writingAgent,
+                        imageGenerator: writingAgent
                     ) { link in
                         path.append(.document(id: link.id, title: link.title ?? "Untitled"))
                     }

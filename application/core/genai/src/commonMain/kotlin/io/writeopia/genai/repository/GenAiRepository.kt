@@ -1,5 +1,6 @@
 package io.writeopia.genai.repository
 
+import io.writeopia.app.dto.ai.AiImageRequest
 import io.writeopia.sdk.ai.AiClient
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.genai.api.GenAiApi
@@ -103,4 +104,26 @@ class GenAiRepository(
 
     fun streamTags(prompt: String, model: String? = null): Flow<ResultData<String>> =
         genAiApi.streamTags(prompt, model ?: defaultModel)
+
+    /**
+     * A picture for [paragraph], drawn by the backend with the whole document as context. The
+     * result is the URL of the picture, already stored with the user's media.
+     */
+    suspend fun generateImage(
+        paragraph: String,
+        documentTitle: String,
+        documentText: String
+    ): ResultData<String> =
+        when (val result = genAiApi.generateImage(AiImageRequest(paragraph, documentTitle, documentText))) {
+            is ResultData.Complete -> {
+                val url = result.data.imageUrl
+                if (url != null) {
+                    ResultData.Complete(url)
+                } else {
+                    ResultData.Error(Exception(result.data.error ?: "The AI drew no picture"))
+                }
+            }
+            is ResultData.Error -> ResultData.Error(result.exception)
+            else -> ResultData.Error()
+        }
 }
