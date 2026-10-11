@@ -306,6 +306,7 @@ fun DesktopApp(
                                     exportWorkspaceState = globalShellViewModel.exportWorkspaceState,
                                     onExportWorkspace = globalShellViewModel::exportWorkspace,
                                     onResetExportState = globalShellViewModel::resetExportState,
+                                    searchUsers = globalShellViewModel::searchUsers,
                                 )
                             }
 

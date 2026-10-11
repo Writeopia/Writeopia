@@ -30,6 +30,8 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -37,6 +39,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,6 +54,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.PopupProperties
+import io.writeopia.app.dto.SearchUserApi
 import io.writeopia.common.utils.configuration.LocalPlatform
 import io.writeopia.common.utils.configuration.PlatformType
 import io.writeopia.common.utils.date.formatCompactNumber
@@ -68,6 +73,7 @@ import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.theme.WriteopiaTheme
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -110,6 +116,7 @@ fun SettingsDialog(
     exportWorkspaceState: StateFlow<ResultData<Unit>>,
     onExportWorkspace: (String) -> Unit,
     onResetExportState: () -> Unit,
+    searchUsers: suspend (workspaceId: String, query: String) -> List<SearchUserApi> = { _, _ -> emptyList() },
 ) {
     Dialog(
         onDismissRequest = onDismissRequest,
@@ -185,7 +192,8 @@ fun SettingsDialog(
                         workspaceToEdit,
                         selectWorkspaceToManage,
                         addUserToTeam,
-                        usersInSelectedWorkspace
+                        usersInSelectedWorkspace,
+                        searchUsers,
                     )
                 }
             )
@@ -668,7 +676,8 @@ private fun TeamsSection(
     selectedWorkspaceState: Flow<Workspace?>,
     selectWorkspace: (String) -> Unit,
     addUserToTeam: (String) -> Unit,
-    usersInSelectedWorkspace: Flow<ResultData<List<String>>>
+    usersInSelectedWorkspace: Flow<ResultData<List<String>>>,
+    searchUsers: suspend (workspaceId: String, query: String) -> List<SearchUserApi> = { _, _ -> emptyList() },
 ) {
     Column {
         val titleStyle = MaterialTheme.typography.titleLarge
@@ -706,7 +715,12 @@ private fun TeamsSection(
                 AnimatedVisibility(selected != null) {
                     if (selected != null) {
                         Column {
-                            AddUserToWorkspace(selected, usersInSelectedWorkspace, addUserToTeam)
+                            AddUserToWorkspace(
+                                selected = selected,
+                                usersInSelectedWorkspace = usersInSelectedWorkspace,
+                                addUserToTeam = addUserToTeam,
+                                searchUsers = searchUsers,
+                            )
                         }
                     }
                 }
@@ -731,7 +745,8 @@ private fun TeamsSection(
 private fun AddUserToWorkspace(
     selected: Workspace,
     usersInSelectedWorkspace: Flow<ResultData<List<String>>>,
-    addUserToTeam: (String) -> Unit
+    addUserToTeam: (String) -> Unit,
+    searchUsers: suspend (workspaceId: String, query: String) -> List<SearchUserApi> = { _, _ -> emptyList() },
 ) {
     if (selected.role == "ADMIN") {
         BasicText(
@@ -742,37 +757,120 @@ private fun AddUserToWorkspace(
                 .copy(color = MaterialTheme.colorScheme.onBackground)
         )
 
-        var userEmail by remember {
+        var usernameInput by remember {
             mutableStateOf("")
+        }
+        var searchResults by remember {
+            mutableStateOf<List<SearchUserApi>>(emptyList())
+        }
+        var isSearching by remember {
+            mutableStateOf(false)
+        }
+        var isDropdownExpanded by remember {
+            mutableStateOf(false)
+        }
+        var shouldSearch by remember {
+            mutableStateOf(true)
+        }
+
+        LaunchedEffect(usernameInput, selected.id) {
+            if (!shouldSearch) {
+                return@LaunchedEffect
+            }
+            val query = usernameInput.trim().removePrefix("@")
+            if (query.length >= 2) {
+                delay(300)
+                isSearching = true
+                try {
+                    searchResults = searchUsers(selected.id, query)
+                    isDropdownExpanded = searchResults.isNotEmpty()
+                } finally {
+                    isSearching = false
+                }
+            } else {
+                searchResults = emptyList()
+                isDropdownExpanded = false
+            }
         }
 
         Spacer(modifier = Modifier.height(6.dp))
 
         Row(verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(
-                value = userEmail,
-                onValueChange = { userEmail = it },
-                shape = MaterialTheme.shapes.large,
-                singleLine = true,
-                placeholder = {
-                    BasicText(
-                        WrStrings.userEmail(),
-                        style = MaterialTheme
-                            .typography
-                            .titleSmall
-                            .copy(color = WriteopiaTheme.colorScheme.textLighter)
-                    )
-                },
-                textStyle = MaterialTheme
-                    .typography
-                    .titleSmall
-                    .copy(color = MaterialTheme.colorScheme.onBackground)
-            )
+            Box {
+                OutlinedTextField(
+                    value = usernameInput,
+                    onValueChange = {
+                        usernameInput = it
+                        shouldSearch = true
+                    },
+                    shape = MaterialTheme.shapes.large,
+                    singleLine = true,
+                    placeholder = {
+                        BasicText(
+                            WrStrings.username(),
+                            style = MaterialTheme
+                                .typography
+                                .titleSmall
+                                .copy(color = WriteopiaTheme.colorScheme.textLighter)
+                        )
+                    },
+                    trailingIcon = {
+                        if (isSearching) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp
+                            )
+                        }
+                    },
+                    textStyle = MaterialTheme
+                        .typography
+                        .titleSmall
+                        .copy(color = MaterialTheme.colorScheme.onBackground)
+                )
+
+                DropdownMenu(
+                    expanded = isDropdownExpanded && searchResults.isNotEmpty(),
+                    onDismissRequest = { isDropdownExpanded = false },
+                    properties = PopupProperties(focusable = false)
+                ) {
+                    searchResults.forEach { user ->
+                        DropdownMenuItem(
+                            text = {
+                                Column {
+                                    Text(
+                                        text = user.name,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = "@${user.username}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            },
+                            onClick = {
+                                usernameInput = user.username
+                                isDropdownExpanded = false
+                                shouldSearch = false
+                            }
+                        )
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.width(8.dp))
 
             CommonButton(text = WrStrings.add()) {
-                addUserToTeam(userEmail)
+                val username = usernameInput.trim().removePrefix("@")
+                if (username.isNotBlank()) {
+                    addUserToTeam(username)
+                    usernameInput = ""
+                    searchResults = emptyList()
+                    isDropdownExpanded = false
+                    shouldSearch = false
+                }
             }
         }
 

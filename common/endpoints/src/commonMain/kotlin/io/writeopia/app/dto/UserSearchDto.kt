@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 data class SearchUserApi(
     val id: String,
     val name: String,
-    val email: String,
+    val username: String,
 )
 
 @Serializable

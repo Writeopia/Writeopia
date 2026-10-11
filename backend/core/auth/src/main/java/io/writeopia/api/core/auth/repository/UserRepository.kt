@@ -198,3 +198,22 @@ fun WriteopiaDbBackend.searchUsersByEmail(
                 email = result.email
             )
         }
+
+data class UsernameSearchResult(val id: String, val name: String, val username: String)
+
+fun WriteopiaDbBackend.searchUsersByUsernameNotInWorkspace(
+    workspaceId: String,
+    usernameQuery: String,
+    limit: Long,
+    offset: Long,
+): List<UsernameSearchResult> =
+    this.userEntityQueries
+        .searchUsersByUsernameNotInWorkspace(workspaceId, usernameQuery, limit, offset)
+        .executeAsList()
+        .map { result ->
+            UsernameSearchResult(
+                id = result.id,
+                name = result.name,
+                username = result.username,
+            )
+        }
