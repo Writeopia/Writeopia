@@ -10,13 +10,14 @@ import WrModels
 /// Shown while the AI writes into the document, with a button to stop it, like the AI task
 /// indicator of the desktop app.
 struct AiRunningChip: View {
+    var label: String = String(localized: "AI is writing…")
     let onStop: () -> Void
 
     var body: some View {
         HStack(spacing: 10) {
             ProgressView()
                 .controlSize(.small)
-            Text("AI is writing…")
+            Text(label)
                 .font(.footnote.weight(.medium))
             Button("Stop", action: onStop)
                 .font(.footnote.weight(.semibold))
@@ -47,6 +48,9 @@ public struct NoteEditorView: View {
     @State private var showPublish = false
     @State private var showPremium = false
     @State private var drawingTarget: DrawingTarget?
+    /// The image picker opened by the writing agent when the cloud can't draw.
+    @State private var showAgentImagePicker = false
+    @State private var agentImageItem: PhotosPickerItem?
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dismiss) private var dismiss
     /// Landscape: no navigation bar nor bottom menu, the side options instead.
@@ -68,6 +72,8 @@ public struct NoteEditorView: View {
         imageUploader: ImageUploading? = nil,
         isPremium: Bool = false,
         presentations: PresentationsSource? = nil,
+        writingAgent: WritingAgentServing? = nil,
+        imageGenerator: AiImageGenerating? = nil,
         openDocumentLink: @escaping (DocumentLink) -> Void = { _ in }
     ) {
         _viewModel = State(initialValue: NoteEditorViewModel(
@@ -77,7 +83,9 @@ public struct NoteEditorView: View {
             publishing: publishing,
             imageUploader: imageUploader,
             isPremium: isPremium,
-            presentations: presentations
+            presentations: presentations,
+            writingAgent: writingAgent,
+            imageGenerator: imageGenerator
         ))
         fallbackTitle = title
         self.openDocumentLink = openDocumentLink
@@ -254,11 +262,25 @@ public struct NoteEditorView: View {
         }
     }
 
+    /// The box of the writing agent, at the bottom right of the text, like the Kotlin apps. In
+    /// the wide layout it stays clear of the column of side options.
+    @ViewBuilder
+    private var writingSuggestions: some View {
+        if let agent = viewModel.writingAgent {
+            WritingSuggestionsBox(controller: agent)
+                .padding(.trailing, isWideLayout ? 56 : 8)
+                .padding(.bottom, 16)
+                .animation(.snappy, value: agent.state.hasSuggestions)
+                .animation(.snappy, value: agent.collapsed)
+        }
+    }
+
     public var body: some View {
         Group {
             if viewModel.hasLoaded {
                 WriteopiaEditor(manager: viewModel.writeopiaManager, customDrawers: customDrawers)
                     .dropDestination(for: URL.self) { urls, _ in dropImages(urls) }
+                    .overlay(alignment: .bottomTrailing) { writingSuggestions }
                     .safeAreaInset(edge: .bottom, spacing: 0) {
                         // A locked document can't be edited, so its menu is hidden. While lines are
                         // selected, the selection menu takes the place of the regular one.
@@ -335,9 +357,43 @@ public struct NoteEditorView: View {
                 AiRunningChip { viewModel.cancelAi() }
                     .padding(.top, 8)
                     .transition(.move(edge: .top).combined(with: .opacity))
+            } else if let activity = viewModel.writingAgent?.executor.activity {
+                AiRunningChip(label: activity) { viewModel.writingAgent?.executor.cancel() }
+                    .padding(.top, 8)
+                    .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
         .animation(.snappy, value: viewModel.isAiRunning)
+        .animation(.snappy, value: viewModel.writingAgent?.executor.activity)
+        .sheet(
+            isPresented: Binding(
+                get: { viewModel.writingAgent?.state.folderDialog != nil },
+                set: { if !$0 { viewModel.writingAgent?.dismissFolderDialog() } }
+            )
+        ) {
+            if let agent = viewModel.writingAgent, let dialog = agent.state.folderDialog {
+                FolderSuggestionDialog(controller: agent, dialog: dialog)
+                    .wrSheetSize(width: 420, height: 380)
+            }
+        }
+        .photosPicker(isPresented: $showAgentImagePicker, selection: $agentImageItem, matching: .images)
+        .onChange(of: agentImageItem) {
+            if let item = agentImageItem {
+                addImage(item)
+                agentImageItem = nil
+            }
+        }
+        .alert(
+            "Could not apply the suggestion",
+            isPresented: Binding(
+                get: { viewModel.writingAgent?.executor.error != nil },
+                set: { if !$0 { viewModel.writingAgent?.executor.error = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(viewModel.writingAgent?.executor.error ?? "")
+        }
         .background { keyboardShortcuts }
         .navigationTitle(viewModel.hasLoaded ? viewModel.title : fallbackTitle)
         .toolbarTitleDisplayMode(.inline)
@@ -480,11 +536,15 @@ public struct NoteEditorView: View {
         .onAppear { openEditors?.opened() }
         .onDisappear {
             openEditors?.closed()
-            viewModel.cancelAi()
+            viewModel.editorClosed()
             // Save and send what's pending before leaving.
             Task { await viewModel.flush() }
         }
         .task {
+            viewModel.writingAgentUI = EditorWritingAgentUI(
+                pickImage: { showAgentImagePicker = true },
+                openDrawing: { drawingTarget = DrawingTarget(stepId: nil, drawing: nil) }
+            )
             viewModel.writeopiaManager.onDocumentLinkClick = openDocumentLink
             viewModel.writeopiaManager.onCopySelectedLines = { viewModel.copySelectedLines(to: SystemLinePasteboard()) }
             viewModel.writeopiaManager.onCutSelectedLines = {
@@ -508,6 +568,20 @@ public struct NoteEditorView: View {
         }
     }
 }
+/// The screen's side of the writing agent: the image picker and the drawing editor.
+private final class EditorWritingAgentUI: WritingAgentUI {
+    private let onPickImage: () -> Void
+    private let onOpenDrawing: () -> Void
+
+    init(pickImage: @escaping () -> Void, openDrawing: @escaping () -> Void) {
+        onPickImage = pickImage
+        onOpenDrawing = openDrawing
+    }
+
+    func pickImage() { onPickImage() }
+    func openDrawing() { onOpenDrawing() }
+}
+
 /// A drawing being created (`stepId == nil`) or edited.
 private struct DrawingTarget: Identifiable {
     let id = UUID()

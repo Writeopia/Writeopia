@@ -89,6 +89,10 @@ Documents open in an editable editor. Supported step types: `TITLE`, `TEXT`, `CO
   - **Export as Json / Markdown**: writes `{"data": <document>}` or the SDK's Markdown to a file and opens the share sheet.
   - **Publish to Web**: for premium users in the open space, publish/unpublish (`/document/{id}/publish`, `/unpublish`, `/published`) and copy the `https://app.writeopia.io/site/<id>` link. Others see the "Premium Feature" dialog, as in the Compose app. The backend doesn't send the user tier yet, so everyone currently counts as free.
 
+## Writing agent
+
+In an online workspace the editor has the writing agent of the Kotlin apps (`Packages/Editor/Sources/NoteEditor/WritingAgent`). Each time the number of sentences of the line with the cursor changes, the backend (`/api/ai/writing-suggestions`, Jev through TypeSafe) is asked which actions the writer wants, and the confident ones show in a box at the bottom right: code block (one code block step per line), bullet list, checklist, linked document, image, drawing, section heading, callout, TL;DR and conclusion. Opening a document asks once about the whole document. Spreadsheets aren't drawn by this editor, so that suggestion is never shown. Two offers are decided on the device: a document with text but no title is offered a title, and a document in the root folder is offered **Move to a folder**, which opens a dialog where the backend (`/api/ai/folder-suggestions`) ranks the first ten root folders and the user picks one, or lets the AI name and create a new folder. The text the actions write comes from the AI in use (Apple Intelligence, the cloud or Ollama); the image is drawn by the cloud (`/api/ai/image`), with a loading block where it will go, or the image picker opens when the cloud can't answer. The box folds into an "AI suggestions" badge with a count, to focus on the text, and its X hides the suggestions until the next sentence.
+
 ## Persistence and sync
 
 Mirrors the Compose app (`DocumentLoadUseCase`, `DocumentMerger`, `FolderSync`, the conflict handlers and `OnUpdateStoryStepSyncTracker`).

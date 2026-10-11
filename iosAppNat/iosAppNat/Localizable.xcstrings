@@ -4500,6 +4500,424 @@
           }
         }
       }
+    },
+    "Suggestions" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sugestões"
+          }
+        }
+      }
+    },
+    "Apply" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aplicar"
+          }
+        }
+      }
+    },
+    "Show the suggestions" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar as sugestões"
+          }
+        }
+      }
+    },
+    "Hide the suggestions" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar as sugestões"
+          }
+        }
+      }
+    },
+    "Move to a folder" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mover para uma pasta"
+          }
+        }
+      }
+    },
+    "Add a code block" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar um bloco de código"
+          }
+        }
+      }
+    },
+    "Add a bullet list" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar uma lista"
+          }
+        }
+      }
+    },
+    "Add a checklist" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar uma lista de tarefas"
+          }
+        }
+      }
+    },
+    "Create a linked document" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Criar um documento vinculado"
+          }
+        }
+      }
+    },
+    "Draw an image" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desenhar uma imagem"
+          }
+        }
+      }
+    },
+    "Add a drawing" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar um desenho"
+          }
+        }
+      }
+    },
+    "Turn into a table" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transformar em tabela"
+          }
+        }
+      }
+    },
+    "Add a section heading" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar um título de seção"
+          }
+        }
+      }
+    },
+    "Give the document a title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dar um título ao documento"
+          }
+        }
+      }
+    },
+    "Highlight as a callout" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Destacar como um aviso"
+          }
+        }
+      }
+    },
+    "Add a TL;DR at the top" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar um TL;DR no topo"
+          }
+        }
+      }
+    },
+    "Write a conclusion" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escrever uma conclusão"
+          }
+        }
+      }
+    },
+    "Where should this document live?" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Onde este documento deve ficar?"
+          }
+        }
+      }
+    },
+    "This document is in the root folder. Pick a folder for it, or let the AI create one." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este documento está na pasta raiz. Escolha uma pasta para ele, ou deixe a IA criar uma."
+          }
+        }
+      }
+    },
+    "Looking at your folders…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Analisando suas pastas…"
+          }
+        }
+      }
+    },
+    "Creating a folder…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Criando uma pasta…"
+          }
+        }
+      }
+    },
+    "None of your folders seems to fit this document." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nenhuma das suas pastas parece servir para este documento."
+          }
+        }
+      }
+    },
+    "Create a new folder" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Criar uma nova pasta"
+          }
+        }
+      }
+    },
+    "Not now" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agora não"
+          }
+        }
+      }
+    },
+    "Could not apply the suggestion" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível aplicar a sugestão"
+          }
+        }
+      }
+    },
+    "Writing the code snippet…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escrevendo o trecho de código…"
+          }
+        }
+      }
+    },
+    "Writing the list…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escrevendo a lista…"
+          }
+        }
+      }
+    },
+    "Writing the checklist…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escrevendo a lista de tarefas…"
+          }
+        }
+      }
+    },
+    "Drawing the image…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desenhando a imagem…"
+          }
+        }
+      }
+    },
+    "Writing a section heading…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escrevendo um título de seção…"
+          }
+        }
+      }
+    },
+    "Writing the document title…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escrevendo o título do documento…"
+          }
+        }
+      }
+    },
+    "Writing a TL;DR…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escrevendo um TL;DR…"
+          }
+        }
+      }
+    },
+    "Writing a conclusion…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escrevendo uma conclusão…"
+          }
+        }
+      }
+    },
+    "Applying the suggestion…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aplicando a sugestão…"
+          }
+        }
+      }
+    },
+    "No AI is available. Pick one in the settings, or sign in to use the cloud AI." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nenhuma IA está disponível. Escolha uma nos ajustes, ou entre para usar a IA na nuvem."
+          }
+        }
+      }
+    },
+    "The AI answered nothing." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A IA não respondeu nada."
+          }
+        }
+      }
+    },
+    "There is no paragraph to illustrate." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não há parágrafo para ilustrar."
+          }
+        }
+      }
+    },
+    "The AI drew no picture" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A IA não desenhou nenhuma imagem"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

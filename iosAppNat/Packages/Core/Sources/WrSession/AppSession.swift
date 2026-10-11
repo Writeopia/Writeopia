@@ -237,6 +237,14 @@ public final class AppSession {
         isOnline ? MediaAPI(client: client) : nil
     }
 
+    /// The writing agent of the editor (suggestions while writing, folders for a root document,
+    /// pictures drawn by the cloud); nil outside an online workspace, since only the backend
+    /// answers it.
+    public var writingAgent: WritingAgentAPI? {
+        guard isOnline, let workspace, workspace.id != Workspace.localId else { return nil }
+        return WritingAgentAPI(client: client)
+    }
+
     /// Publishing for documents of the current workspace; nil outside the open space.
     public var publishing: DocumentPublishing? {
         guard isOnline, let workspace, workspace.id != Workspace.localId else { return nil }
