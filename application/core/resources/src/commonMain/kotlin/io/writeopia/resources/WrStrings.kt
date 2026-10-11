@@ -11,8 +11,17 @@ import writeopia.application.core.resources.generated.resources.writing_suggesti
 import writeopia.application.core.resources.generated.resources.writing_suggestion_check_list
 import writeopia.application.core.resources.generated.resources.writing_suggestion_new_document_link
 import writeopia.application.core.resources.generated.resources.writing_suggestion_image
-import writeopia.application.core.resources.generated.resources.writing_suggestion_move_to_folder
-import writeopia.application.core.resources.generated.resources.writing_suggestion_new_folder
+import writeopia.application.core.resources.generated.resources.writing_suggestions_badge
+import writeopia.application.core.resources.generated.resources.writing_suggestions_hide
+import writeopia.application.core.resources.generated.resources.writing_suggestions_show
+import writeopia.application.core.resources.generated.resources.writing_folder_dialog_body
+import writeopia.application.core.resources.generated.resources.writing_suggestion_folder
+import writeopia.application.core.resources.generated.resources.writing_folder_dialog_creating
+import writeopia.application.core.resources.generated.resources.writing_folder_dialog_loading
+import writeopia.application.core.resources.generated.resources.writing_folder_dialog_new_folder
+import writeopia.application.core.resources.generated.resources.writing_folder_dialog_none
+import writeopia.application.core.resources.generated.resources.writing_folder_dialog_not_now
+import writeopia.application.core.resources.generated.resources.writing_folder_dialog_title
 import writeopia.application.core.resources.generated.resources.writing_suggestion_drawing
 import writeopia.application.core.resources.generated.resources.writing_suggestion_spreadsheet
 import writeopia.application.core.resources.generated.resources.writing_suggestion_section_heading
@@ -1019,6 +1028,15 @@ object WrStrings {
     fun writingSuggestionApply() = stringResource(Res.string.writing_suggestion_apply)
 
     @Composable
+    fun writingSuggestionsBadge() = stringResource(Res.string.writing_suggestions_badge)
+
+    @Composable
+    fun writingSuggestionsHide() = stringResource(Res.string.writing_suggestions_hide)
+
+    @Composable
+    fun writingSuggestionsShow() = stringResource(Res.string.writing_suggestions_show)
+
+    @Composable
     fun writingSuggestionCodeBlock() = stringResource(Res.string.writing_suggestion_code_block)
 
     @Composable
@@ -1055,9 +1073,26 @@ object WrStrings {
     fun writingSuggestionConclusion() = stringResource(Res.string.writing_suggestion_conclusion)
 
     @Composable
-    fun writingSuggestionMoveToFolder(folderName: String) =
-        stringResource(Res.string.writing_suggestion_move_to_folder, folderName)
+    fun writingSuggestionFolder() = stringResource(Res.string.writing_suggestion_folder)
 
     @Composable
-    fun writingSuggestionNewFolder() = stringResource(Res.string.writing_suggestion_new_folder)
+    fun writingFolderDialogTitle() = stringResource(Res.string.writing_folder_dialog_title)
+
+    @Composable
+    fun writingFolderDialogBody() = stringResource(Res.string.writing_folder_dialog_body)
+
+    @Composable
+    fun writingFolderDialogLoading() = stringResource(Res.string.writing_folder_dialog_loading)
+
+    @Composable
+    fun writingFolderDialogNone() = stringResource(Res.string.writing_folder_dialog_none)
+
+    @Composable
+    fun writingFolderDialogNewFolder() = stringResource(Res.string.writing_folder_dialog_new_folder)
+
+    @Composable
+    fun writingFolderDialogCreating() = stringResource(Res.string.writing_folder_dialog_creating)
+
+    @Composable
+    fun writingFolderDialogNotNow() = stringResource(Res.string.writing_folder_dialog_not_now)
 }

@@ -14,6 +14,7 @@ import io.writeopia.writingagent.actions.WritingActionExecutor
 import io.writeopia.writingagent.actions.WritingAgentUi
 import io.writeopia.writingagent.api.WritingAgentApi
 import io.writeopia.writingagent.folders.DocumentFolders
+import io.writeopia.writingagent.model.FolderDialogState
 import io.writeopia.writingagent.model.FolderSuggestion
 import io.writeopia.writingagent.model.WritingSuggestion
 import io.writeopia.writingagent.model.WritingSuggestionsState
@@ -40,9 +41,10 @@ import kotlin.time.TimeSource
  * One suggestion is decided here, without the backend: a document with text but no title is
  * offered a title, until the user writes one, applies it, or dismisses the box.
  *
- * A document that opens in the root folder is also offered a home: the backend is asked which of
- * the first workspace folders it belongs to, and the box shows those, plus making a new folder
- * named by the AI. Nothing of this is offered to a document that already sits in a folder.
+ * A document that sits in the root folder is also offered a home. The box offers it, decided
+ * here like the title; only when the user takes the offer does a dialog open and the backend
+ * judge the first workspace folders. The dialog shows the ones that fit, and a new folder named
+ * by the AI. Nothing of this is offered to a document that already sits in a folder.
  */
 class WritingAgentController(
     private val scope: CoroutineScope,
@@ -70,6 +72,20 @@ class WritingAgentController(
     private val _state = MutableStateFlow(WritingSuggestionsState.empty())
     val state: StateFlow<WritingSuggestionsState> = _state.asStateFlow()
 
+    private val _collapsed = MutableStateFlow(false)
+
+    /**
+     * True when the user folded the box down to a small "AI suggestions" badge with a count, to
+     * focus on the text. The suggestions keep coming; only the list is hidden. The choice lasts
+     * the session, across documents.
+     */
+    val collapsed: StateFlow<Boolean> = _collapsed.asStateFlow()
+
+    fun toggleCollapsed() {
+        _collapsed.value = !_collapsed.value
+        log(if (_collapsed.value) "suggestions box collapsed" else "suggestions box expanded")
+    }
+
     /** What the backend answered last. [state] is this plus what is decided locally. */
     private var fetched = WritingSuggestionsState.empty()
 
@@ -79,15 +95,17 @@ class WritingAgentController(
     /** The document whose title offer the user declined, by dismissing or applying it. */
     private var documentTitleDeclinedFor: String? = null
 
-    /** The folders offered to the open document, and whether a new one is offered too. */
-    private var folderOffers: List<FolderSuggestion> = emptyList()
-    private var offerNewFolder = false
+    /** True while the box offers to file the document: it sits in the root and wasn't declined. */
+    private var offerFolder = false
 
-    /** The document whose folder offers the user declined, by dismissing, moving or filing it. */
+    /** The dialog filing the open document, while it is shown. */
+    private var folderDialog: FolderDialogState? = null
+
+    /** The document whose folder offer the user declined, by dismissing the box, moving or filing it. */
     private var foldersDeclinedFor: String? = null
 
-    /** The document already asked about folders, so a growing document is asked only once. */
-    private var foldersAskedFor: String? = null
+    /** The document already checked for the folder offer, so a growing document is checked once. */
+    private var foldersCheckedFor: String? = null
     private var folderRequest: Job? = null
 
     private val sentenceEnds = mutableMapOf<String, Int>()
@@ -120,34 +138,64 @@ class WritingAgentController(
         folderRequest = null
     }
 
-    /** Hides the suggestions. They come back with the next sentence. */
+    /** Hides the suggestions, the folder offer included. They come back with the next sentence. */
     fun dismiss() {
         request?.cancel()
         folderRequest?.cancel()
         declineDocumentTitle()
-        declineFolders()
+        declineFolder()
         fetched = WritingSuggestionsState.empty()
         publish()
     }
 
-    /** Moves the document to [folderId], one of the folders offered, and withdraws the offers. */
+    /**
+     * Takes the folder offer: opens the dialog with a spinner and asks the backend which of the
+     * first workspace folders the document belongs to.
+     */
+    fun openFolderDialog() {
+        val documentFolders = folders ?: return
+        val documentId = openedDocumentId ?: return
+        if (!offerFolder || folderDialog != null) return
+
+        folderDialog = FolderDialogState(isLoading = true)
+        publish()
+
+        folderRequest?.cancel()
+        folderRequest = scope.launch {
+            askFolders(documentFolders, documentId, documentText(storyFlow.value))
+        }
+    }
+
+    /** Closes the folder dialog without moving the document. The box keeps offering it. */
+    fun dismissFolderDialog() {
+        folderRequest?.cancel()
+        folderDialog = null
+        publish()
+    }
+
+    /** Moves the document to [folderId], one of the folders the dialog offers, and closes it. */
     fun moveToFolder(folderId: String) {
         val documentFolders = folders ?: return
-        if (folderOffers.none { it.folderId == folderId }) return
+        val dialog = folderDialog ?: return
+        if (dialog.isCreating || dialog.options.none { it.folderId == folderId }) return
 
-        declineFolders()
+        declineFolder()
         publish()
 
         log("moving document $openedDocumentId to folder $folderId")
         executing = scope.launch { documentFolders.moveTo(folderId) }
     }
 
-    /** Makes a folder named by the AI, moves the document there, and withdraws the offers. */
+    /**
+     * Makes a folder named by the AI and moves the document there. The dialog shows a spinner
+     * meanwhile and closes once the document moved, or when the AI failed.
+     */
     fun createFolder() {
         val documentFolders = folders ?: return
-        if (!offerNewFolder) return
+        val dialog = folderDialog ?: return
+        if (dialog.isLoading || dialog.isCreating) return
 
-        declineFolders()
+        folderDialog = dialog.copy(isCreating = true)
         publish()
 
         log("creating a folder for document $openedDocumentId")
@@ -155,12 +203,16 @@ class WritingAgentController(
             documentFolders.createFolderAndMove(documentTitle(), documentText(storyFlow.value))
                 .onSuccess { name -> log("document $openedDocumentId moved to the new folder \"$name\"") }
                 .onFailure { log("creating a folder for $openedDocumentId failed: ${it.message}") }
+
+            declineFolder()
+            publish()
         }
     }
 
-    private fun declineFolders() {
-        folderOffers = emptyList()
-        offerNewFolder = false
+    /** Withdraws the folder offer and its dialog for this document. */
+    private fun declineFolder() {
+        offerFolder = false
+        folderDialog = null
         foldersDeclinedFor = openedDocumentId
     }
 
@@ -197,8 +249,8 @@ class WritingAgentController(
 
         _state.value = fetched.copy(
             suggestions = local + fetched.suggestions,
-            folderSuggestions = folderOffers,
-            offerNewFolder = offerNewFolder,
+            offerFolder = offerFolder,
+            folderDialog = folderDialog,
         )
     }
 
@@ -233,8 +285,8 @@ class WritingAgentController(
         request?.cancel()
         folderRequest?.cancel()
         fetched = WritingSuggestionsState.empty()
-        folderOffers = emptyList()
-        offerNewFolder = false
+        offerFolder = false
+        folderDialog = null
         refreshDocumentTitleOffer(story)
         publish()
 
@@ -266,80 +318,91 @@ class WritingAgentController(
     }
 
     /**
-     * Asks about folders once per document, as soon as it has enough text: when it opens, or
-     * later while the user writes a document that opened empty.
+     * Offers a folder once per document, as soon as it has enough text: when it opens, or later
+     * while the user writes a document that opened empty. Only a document in the root is
+     * offered; the backend is not asked until the user takes the offer.
      */
     private fun considerFolders(documentId: String, text: String) {
-        if (folders == null) return
-        if (foldersAskedFor == documentId || foldersDeclinedFor == documentId) return
+        val documentFolders = folders ?: return
+        if (foldersCheckedFor == documentId || foldersDeclinedFor == documentId) return
         if (text.length < folderMinimumDocumentLength) return
 
-        foldersAskedFor = documentId
-        folderRequest = scope.launch { offerFolders(documentId, text) }
+        foldersCheckedFor = documentId
+        folderRequest = scope.launch {
+            val currentFolder = documentFolders.currentFolderId()
+            if (currentFolder != Folder.ROOT_PATH) {
+                log("document $documentId is in folder $currentFolder, not the root: no folder offered")
+                return@launch
+            }
+            if (openedDocumentId != documentId) return@launch
+
+            log("document $documentId is in the root: offering a folder")
+            offerFolder = true
+            publish()
+        }
     }
 
     /**
-     * Offers a home to a document that sits in the root folder: the folders the backend says it
-     * belongs to, and a new one. A document already in a folder, or one the user declined to
-     * move, is left alone. The new folder is offered even when the backend can't answer, since
-     * making it needs no backend.
+     * Fills the open dialog: the folders the backend says the document belongs to, among the
+     * first workspace folders. Without folders, offline, or when the backend fails, the dialog
+     * only offers a new folder, since making one needs no backend.
      */
-    private suspend fun offerFolders(documentId: String, text: String) {
-        val documentFolders = folders ?: return
-        if (foldersDeclinedFor == documentId) return
-
-        val currentFolder = documentFolders.currentFolderId()
-        if (currentFolder != Folder.ROOT_PATH) {
-            log("document $documentId is in folder $currentFolder, not the root: no folder offered")
-            return
-        }
-        if (!isEnabled()) {
-            log("folder offers for $documentId skipped: the agent is disabled (offline, signed out or locked)")
-            return
-        }
-
+    private suspend fun askFolders(documentFolders: DocumentFolders, documentId: String, text: String) {
         val candidates = documentFolders.candidates(folderCandidateLimit)
-        log("document $documentId is in the root with ${text.length} chars: asking about ${candidates.size} folders")
         val started = TimeSource.Monotonic.markNow()
 
-        val matches = if (candidates.isEmpty()) {
-            emptyList()
-        } else {
-            val request = FolderSuggestionsRequest(
-                documentTitle = documentTitle(),
-                documentText = text,
-                folders = candidates,
-            )
+        val matches = when {
+            candidates.isEmpty() -> {
+                log("document $documentId has no folder to go to: the dialog offers only a new folder")
+                emptyList()
+            }
 
-            when (val result = api.folderSuggestions(request)) {
-                is ResultData.Complete -> result.data.suggestions.mapNotNull { dto ->
-                    candidates.firstOrNull { it.id == dto.folderId }
-                        ?.let { folder -> FolderSuggestion(folder.id, folder.name, dto.probability) }
+            !isEnabled() -> {
+                log("folder request for $documentId skipped: the agent is disabled (offline, signed out or locked)")
+                emptyList()
+            }
+
+            else -> {
+                log(
+                    "asking about ${candidates.size} folders for document $documentId with ${text.length} chars: " +
+                        candidates.joinToString { it.name }
+                )
+                val request = FolderSuggestionsRequest(
+                    documentTitle = documentTitle(),
+                    documentText = text,
+                    folders = candidates,
+                )
+
+                when (val result = api.folderSuggestions(request)) {
+                    is ResultData.Complete -> result.data.suggestions.mapNotNull { dto ->
+                        candidates.firstOrNull { it.id == dto.folderId }
+                            ?.let { folder -> FolderSuggestion(folder.id, folder.name, dto.probability) }
+                    }.also { matches ->
+                        log(
+                            "folder answer for $documentId in ${started.elapsedNow().inWholeMilliseconds}ms: " +
+                                matches.joinToString { "${it.name} ${(it.probability * 100).toInt()}%" }
+                                    .ifEmpty { "no folder passed the threshold" }
+                        )
+                    }
+
+                    is ResultData.Error -> {
+                        log(
+                            "folder request for $documentId failed in " +
+                                "${started.elapsedNow().inWholeMilliseconds}ms: ${result.exception?.message}; " +
+                                "the dialog offers only a new folder"
+                        )
+                        emptyList()
+                    }
+
+                    else -> emptyList()
                 }
-
-                is ResultData.Error -> {
-                    log(
-                        "folder request for $documentId failed in " +
-                            "${started.elapsedNow().inWholeMilliseconds}ms: ${result.exception?.message}; " +
-                            "offering only a new folder"
-                    )
-                    emptyList()
-                }
-
-                else -> emptyList()
             }
         }
 
-        log(
-            "folder answer for $documentId in ${started.elapsedNow().inWholeMilliseconds}ms: " +
-                matches.joinToString { "${it.name} ${(it.probability * 100).toInt()}%" }.ifEmpty { "no folder fits" }
-        )
+        // The dialog may have been closed, or the document, while the backend answered.
+        if (openedDocumentId != documentId || folderDialog == null) return
 
-        // The document may have been closed, or filed, while the backend answered.
-        if (openedDocumentId != documentId || foldersDeclinedFor == documentId) return
-
-        folderOffers = matches
-        offerNewFolder = true
+        folderDialog = FolderDialogState(isLoading = false, options = matches)
         publish()
     }
 

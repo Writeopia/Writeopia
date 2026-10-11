@@ -38,12 +38,15 @@ import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.resources.WrStrings
 import io.writeopia.writingagent.actions.WritingAgentUi
 import io.writeopia.writingagent.controller.WritingAgentController
+import io.writeopia.writingagent.model.WritingSuggestionsState
 
 const val WRITING_SUGGESTIONS_BOX_TAG = "WritingSuggestionsBox"
 
 /**
  * The box at the bottom right with what the writing agent suggests. Each suggestion has a button
- * that applies it. The box is hidden while there is nothing to suggest.
+ * that applies it. The box is hidden while there is nothing to suggest. The user can fold it
+ * down to a small "AI suggestions" badge with the count, to focus on the text, and open it again
+ * from the badge.
  */
 @Composable
 fun WritingSuggestionsBox(
@@ -52,6 +55,7 @@ fun WritingSuggestionsBox(
     modifier: Modifier = Modifier,
 ) {
     val state by controller.state.collectAsState()
+    val collapsed by controller.collapsed.collectAsState()
 
     AnimatedVisibility(
         visible = state.hasSuggestions,
@@ -59,44 +63,138 @@ fun WritingSuggestionsBox(
         exit = slideOutVertically(targetOffsetY = { it / 2 }) + fadeOut(),
         modifier = modifier.testTag(WRITING_SUGGESTIONS_BOX_TAG)
     ) {
-        Surface(
-            modifier = Modifier
-                .widthIn(min = 220.dp, max = 320.dp)
-                .clip(RoundedCornerShape(12.dp)),
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            shadowElevation = 4.dp,
-            shape = RoundedCornerShape(12.dp)
+        if (collapsed) {
+            CollapsedBadge(
+                count = state.count,
+                isLoading = state.isLoading,
+                onExpand = controller::toggleCollapsed
+            )
+        } else {
+            ExpandedBox(state = state, controller = controller, ui = ui)
+        }
+    }
+}
+
+/** The folded box: the AI icon, "AI suggestions" and how many there are. A click unfolds it. */
+@Composable
+private fun CollapsedBadge(
+    count: Int,
+    isLoading: Boolean,
+    onExpand: () -> Unit,
+) {
+    // The same corners as the open box, so folding only changes the size.
+    Surface(
+        modifier = Modifier
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onExpand)
+            .testTag("$WRITING_SUGGESTIONS_BOX_TAG.badge"),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shadowElevation = 4.dp,
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(start = 12.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.padding(12.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (state.isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
-                                strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        } else {
-                            Icon(
-                                imageVector = WrIcons.ai,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(16.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            } else {
+                Icon(
+                    imageVector = WrIcons.ai,
+                    contentDescription = WrStrings.writingSuggestionsShow(),
+                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
 
-                        Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(8.dp))
 
-                        Text(
-                            text = WrStrings.writingSuggestions(),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurface
+            Text(
+                text = WrStrings.writingSuggestionsBadge(),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Surface(
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.primary
+            ) {
+                Text(
+                    text = count.toString(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ExpandedBox(
+    state: WritingSuggestionsState,
+    controller: WritingAgentController,
+    ui: WritingAgentUi,
+) {
+    Surface(
+        modifier = Modifier
+            .widthIn(min = 220.dp, max = 320.dp)
+            .clip(RoundedCornerShape(12.dp)),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shadowElevation = 4.dp,
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (state.isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    } else {
+                        Icon(
+                            imageVector = WrIcons.ai,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Text(
+                        text = WrStrings.writingSuggestions(),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = WrIcons.smallArrowDown,
+                        contentDescription = WrStrings.writingSuggestionsHide(),
+                        modifier = Modifier
+                            .size(20.dp)
+                            .clip(CircleShape)
+                            .clickable(onClick = controller::toggleCollapsed)
+                            .padding(2.dp)
+                            .testTag("$WRITING_SUGGESTIONS_BOX_TAG.collapse"),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(modifier = Modifier.width(4.dp))
 
                     Icon(
                         imageVector = WrIcons.close,
@@ -109,35 +207,26 @@ fun WritingSuggestionsBox(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+            }
 
-                Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-                state.suggestions.forEach { suggestion ->
-                    SuggestionRow(
-                        label = suggestion.action.label(),
-                        testTag = "$WRITING_SUGGESTIONS_BOX_TAG.${suggestion.action}",
-                        onApply = { controller.execute(suggestion.action, ui) }
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                }
+            state.suggestions.forEach { suggestion ->
+                SuggestionRow(
+                    label = suggestion.action.label(),
+                    testTag = "$WRITING_SUGGESTIONS_BOX_TAG.${suggestion.action}",
+                    onApply = { controller.execute(suggestion.action, ui) }
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+            }
 
-                state.folderSuggestions.forEach { folder ->
-                    SuggestionRow(
-                        label = WrStrings.writingSuggestionMoveToFolder(folder.name),
-                        testTag = "$WRITING_SUGGESTIONS_BOX_TAG.folder.${folder.folderId}",
-                        onApply = { controller.moveToFolder(folder.folderId) }
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                }
-
-                if (state.offerNewFolder) {
-                    SuggestionRow(
-                        label = WrStrings.writingSuggestionNewFolder(),
-                        testTag = "$WRITING_SUGGESTIONS_BOX_TAG.newFolder",
-                        onApply = controller::createFolder
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                }
+            if (state.offerFolder) {
+                SuggestionRow(
+                    label = WrStrings.writingSuggestionFolder(),
+                    testTag = "$WRITING_SUGGESTIONS_BOX_TAG.folder",
+                    onApply = controller::openFolderDialog
+                )
+                Spacer(modifier = Modifier.height(4.dp))
             }
         }
     }

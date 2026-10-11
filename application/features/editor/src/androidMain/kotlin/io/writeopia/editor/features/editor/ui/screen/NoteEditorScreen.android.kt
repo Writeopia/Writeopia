@@ -85,6 +85,7 @@ import io.writeopia.ui.components.EditionScreen
 import io.writeopia.ui.drawer.factory.DefaultDrawersAndroid
 import io.writeopia.ui.model.SelectionMetadata
 import io.writeopia.writingagent.actions.WritingAgentUi
+import io.writeopia.writingagent.ui.FolderSuggestionDialog
 import io.writeopia.writingagent.ui.WritingSuggestionsBox
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -356,6 +357,8 @@ internal fun NoteEditorScreen(
                         .align(Alignment.BottomEnd)
                         .padding(end = 8.dp, bottom = if (isWideLayout) 16.dp else 72.dp)
                 )
+
+                FolderSuggestionDialog(controller = agent)
             }
 
             val headerEdition by noteEditorViewModel.editHeader.collectAsState()

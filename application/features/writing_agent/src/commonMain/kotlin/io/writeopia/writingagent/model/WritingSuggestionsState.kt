@@ -16,6 +16,20 @@ data class FolderSuggestion(
 )
 
 /**
+ * The dialog that files a document sitting in the root folder, opened from the box. It shows a
+ * spinner while the backend judges the folders, then the ones that fit to pick from, and the
+ * option of a new folder named by the AI.
+ */
+data class FolderDialogState(
+    /** True while the backend ranks the folders. */
+    val isLoading: Boolean = false,
+    /** The folders above the threshold, best first. Empty when none fits, the workspace has none, or the backend failed. */
+    val options: List<FolderSuggestion> = emptyList(),
+    /** True while the AI names and creates the new folder. */
+    val isCreating: Boolean = false,
+)
+
+/**
  * What the writing agent offers right now. [storyStepId] is the block the suggestions are about:
  * the paragraph being written, or the title when they are about the whole document. The ID is
  * kept instead of the position because the actions insert blocks, which moves every position.
@@ -25,13 +39,16 @@ data class WritingSuggestionsState(
     val scope: WritingSuggestionScope? = null,
     val suggestions: List<WritingSuggestion> = emptyList(),
     val isLoading: Boolean = false,
-    /** The folders a document created in the root could move to. */
-    val folderSuggestions: List<FolderSuggestion> = emptyList(),
-    /** True when the agent offers to make a new folder, named by the AI, and move the document there. */
-    val offerNewFolder: Boolean = false,
+    /** True when the box offers to move the document, which sits in the root, into a folder. */
+    val offerFolder: Boolean = false,
+    /** The dialog filing the document, open after the user took the folder offer; null otherwise. */
+    val folderDialog: FolderDialogState? = null,
 ) {
-    val hasSuggestions: Boolean
-        get() = suggestions.isNotEmpty() || folderSuggestions.isNotEmpty() || offerNewFolder
+    /** True when the box has something to show. The folder dialog is shown apart from the box. */
+    val hasSuggestions: Boolean get() = suggestions.isNotEmpty() || offerFolder
+
+    /** How many rows the box offers: the badge of the collapsed box shows this. */
+    val count: Int get() = suggestions.size + if (offerFolder) 1 else 0
 
     companion object {
         fun empty() = WritingSuggestionsState()

@@ -17,6 +17,7 @@ import io.writeopia.writingagent.actions.WritingActionExecutor
 import io.writeopia.writingagent.actions.WritingAgentUi
 import io.writeopia.writingagent.api.WritingAgentApi
 import io.writeopia.writingagent.folders.DocumentFolders
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -25,6 +26,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -32,6 +34,7 @@ private class FakeApi(
     var answer: List<WritingSuggestionDto> = emptyList(),
     var folderAnswer: List<FolderSuggestionDto> = emptyList(),
     var folderFailure: Exception? = null,
+    var folderDelayMillis: Long = 0,
 ) : WritingAgentApi {
     val requests = mutableListOf<WritingSuggestionsRequest>()
     val folderRequests = mutableListOf<FolderSuggestionsRequest>()
@@ -43,6 +46,7 @@ private class FakeApi(
 
     override suspend fun folderSuggestions(request: FolderSuggestionsRequest): ResultData<FolderSuggestionsResponse> {
         folderRequests.add(request)
+        if (folderDelayMillis > 0) delay(folderDelayMillis)
         folderFailure?.let { return ResultData.Error(it) }
         return ResultData.Complete(FolderSuggestionsResponse(folderAnswer))
     }
@@ -355,128 +359,201 @@ class WritingAgentControllerTest {
     )
 
     @Test
-    fun `a document opened in the root is offered the folders that fit and a new folder`() = runTest(StandardTestDispatcher()) {
-        val api = FakeApi(folderAnswer = listOf(FolderSuggestionDto("f2", 0.95), FolderSuggestionDto("f1", 0.9)))
-        val folders = FakeFolders()
+    fun `a document opened in the root is offered a folder in the box, without asking the backend`() = runTest(StandardTestDispatcher()) {
+        val api = FakeApi(folderAnswer = listOf(FolderSuggestionDto("f2", 0.95)))
         val story = MutableStateFlow(state(title, longParagraph))
-        val controller = controller(api, story, folders = folders)
+        val controller = controller(api, story, folders = FakeFolders())
         advanceUntilIdle()
 
-        // Only the first ten folders are asked about.
-        assertEquals(1, api.folderRequests.size)
-        assertEquals(10, api.folderRequests.single().folders.size)
-        assertEquals("Groceries", api.folderRequests.single().documentTitle)
-
-        val state = controller.state.value
-        assertEquals(listOf("Folder 2", "Folder 1"), state.folderSuggestions.map { it.name })
-        assertTrue(state.offerNewFolder)
-        assertTrue(state.hasSuggestions)
+        assertTrue(api.folderRequests.isEmpty())
+        assertTrue(controller.state.value.offerFolder)
+        assertTrue(controller.state.value.hasSuggestions)
+        assertNull(controller.state.value.folderDialog)
         controller.stop()
     }
 
     @Test
-    fun `a document that already sits in a folder is not offered to move`() = runTest(StandardTestDispatcher()) {
+    fun `a document that already sits in a folder is not offered one`() = runTest(StandardTestDispatcher()) {
         val api = FakeApi(folderAnswer = listOf(FolderSuggestionDto("f2", 0.95)))
         val story = MutableStateFlow(state(title, longParagraph))
         val controller = controller(api, story, folders = FakeFolders(currentFolder = "f3"))
         advanceUntilIdle()
 
         assertTrue(api.folderRequests.isEmpty())
-        assertTrue(controller.state.value.folderSuggestions.isEmpty())
-        assertEquals(false, controller.state.value.offerNewFolder)
+        assertEquals(false, controller.state.value.offerFolder)
         controller.stop()
     }
 
     @Test
-    fun `a root document in a workspace without folders is only offered a new folder`() = runTest(StandardTestDispatcher()) {
+    fun `taking the offer opens a dialog that spins, asks about ten folders and lists the fits`() = runTest(StandardTestDispatcher()) {
+        val api = FakeApi(
+            folderAnswer = listOf(FolderSuggestionDto("f2", 0.95), FolderSuggestionDto("f1", 0.9)),
+            folderDelayMillis = 50,
+        )
+        val story = MutableStateFlow(state(title, longParagraph))
+        val controller = controller(api, story, folders = FakeFolders())
+        advanceUntilIdle()
+
+        controller.openFolderDialog()
+        assertEquals(true, controller.state.value.folderDialog?.isLoading)
+        advanceUntilIdle()
+
+        assertEquals(1, api.folderRequests.size)
+        assertEquals(10, api.folderRequests.single().folders.size)
+        assertEquals("Groceries", api.folderRequests.single().documentTitle)
+
+        val dialog = controller.state.value.folderDialog
+        assertNotNull(dialog)
+        assertEquals(false, dialog.isLoading)
+        assertEquals(listOf("Folder 2", "Folder 1"), dialog.options.map { it.name })
+        controller.stop()
+    }
+
+    @Test
+    fun `in a workspace without folders the dialog only offers a new folder`() = runTest(StandardTestDispatcher()) {
         val api = FakeApi()
         val story = MutableStateFlow(state(title, longParagraph))
         val controller = controller(api, story, folders = FakeFolders(folders = emptyList()))
         advanceUntilIdle()
 
+        controller.openFolderDialog()
+        advanceUntilIdle()
+
         assertTrue(api.folderRequests.isEmpty())
-        assertTrue(controller.state.value.folderSuggestions.isEmpty())
-        assertTrue(controller.state.value.offerNewFolder)
+        val dialog = controller.state.value.folderDialog
+        assertNotNull(dialog)
+        assertEquals(false, dialog.isLoading)
+        assertTrue(dialog.options.isEmpty())
         controller.stop()
     }
 
     @Test
-    fun `moving to an offered folder files the document and withdraws the offers`() = runTest(StandardTestDispatcher()) {
+    fun `picking a folder in the dialog files the document, closes it and withdraws the offer`() = runTest(StandardTestDispatcher()) {
         val api = FakeApi(folderAnswer = listOf(FolderSuggestionDto("f2", 0.95)))
         val folders = FakeFolders()
         val story = MutableStateFlow(state(title, longParagraph))
         val controller = controller(api, story, folders = folders)
+        advanceUntilIdle()
+        controller.openFolderDialog()
         advanceUntilIdle()
 
         controller.moveToFolder("f2")
         advanceUntilIdle()
 
         assertEquals(listOf("f2"), folders.movedTo)
-        assertTrue(controller.state.value.folderSuggestions.isEmpty())
-        assertEquals(false, controller.state.value.offerNewFolder)
+        assertNull(controller.state.value.folderDialog)
+        assertEquals(false, controller.state.value.offerFolder)
         controller.stop()
     }
 
     @Test
-    fun `creating a folder hands the document to the AI and withdraws the offers`() = runTest(StandardTestDispatcher()) {
+    fun `creating a folder spins in the dialog, uses the AI and withdraws the offer`() = runTest(StandardTestDispatcher()) {
         val api = FakeApi()
         val folders = FakeFolders()
         val story = MutableStateFlow(state(title, longParagraph))
         val controller = controller(api, story, folders = folders)
         advanceUntilIdle()
+        controller.openFolderDialog()
+        advanceUntilIdle()
 
         controller.createFolder()
+        assertEquals(true, controller.state.value.folderDialog?.isCreating)
         advanceUntilIdle()
 
         assertEquals(1, folders.created.size)
         assertEquals("Groceries", folders.created.single().first)
         assertTrue(folders.created.single().second.contains("We need milk"))
-        assertEquals(false, controller.state.value.offerNewFolder)
+        assertNull(controller.state.value.folderDialog)
+        assertEquals(false, controller.state.value.offerFolder)
         controller.stop()
     }
 
     @Test
-    fun `dismissing withdraws the folder offers for this document`() = runTest(StandardTestDispatcher()) {
+    fun `closing the dialog with not now keeps the offer in the box`() = runTest(StandardTestDispatcher()) {
         val api = FakeApi(folderAnswer = listOf(FolderSuggestionDto("f2", 0.95)))
+        val story = MutableStateFlow(state(title, longParagraph))
+        val controller = controller(api, story, folders = FakeFolders())
+        advanceUntilIdle()
+        controller.openFolderDialog()
+        advanceUntilIdle()
+
+        controller.dismissFolderDialog()
+
+        assertNull(controller.state.value.folderDialog)
+        assertTrue(controller.state.value.offerFolder)
+        controller.stop()
+    }
+
+    @Test
+    fun `dismissing the box withdraws the folder offer for this document`() = runTest(StandardTestDispatcher()) {
+        val api = FakeApi()
         val story = MutableStateFlow(state(title, longParagraph))
         val controller = controller(api, story, folders = FakeFolders())
         advanceUntilIdle()
 
         controller.dismiss()
+        story.value = state(title, longParagraph.copy(text = longParagraph.text + " More."))
+        advanceUntilIdle()
 
+        assertEquals(false, controller.state.value.offerFolder)
         assertEquals(false, controller.state.value.hasSuggestions)
         controller.stop()
     }
 
     @Test
-    fun `when the backend cannot answer, a new folder is still offered`() = runTest(StandardTestDispatcher()) {
+    fun `when the backend cannot answer, the dialog still offers a new folder`() = runTest(StandardTestDispatcher()) {
         val api = FakeApi(folderFailure = Exception("404"))
         val story = MutableStateFlow(state(title, longParagraph))
         val controller = controller(api, story, folders = FakeFolders())
         advanceUntilIdle()
 
+        controller.openFolderDialog()
+        advanceUntilIdle()
+
         assertEquals(1, api.folderRequests.size)
-        assertTrue(controller.state.value.folderSuggestions.isEmpty())
-        assertTrue(controller.state.value.offerNewFolder)
+        val dialog = controller.state.value.folderDialog
+        assertNotNull(dialog)
+        assertEquals(false, dialog.isLoading)
+        assertTrue(dialog.options.isEmpty())
         controller.stop()
     }
 
     @Test
-    fun `a document that opens empty is offered folders once it has text`() = runTest(StandardTestDispatcher()) {
-        val api = FakeApi(folderAnswer = listOf(FolderSuggestionDto("f2", 0.95)))
+    fun `a document that opens empty is offered a folder once it has text`() = runTest(StandardTestDispatcher()) {
+        val api = FakeApi()
         val story = MutableStateFlow(state(title, paragraph.copy(text = "")))
         val controller = controller(api, story, folders = FakeFolders())
         advanceUntilIdle()
-        assertTrue(api.folderRequests.isEmpty())
+        assertEquals(false, controller.state.value.offerFolder)
 
         story.value = state(title, longParagraph)
         advanceUntilIdle()
-        story.value = state(title, longParagraph.copy(text = longParagraph.text + " More."))
+
+        assertTrue(controller.state.value.offerFolder)
+        controller.stop()
+    }
+
+    @Test
+    fun `the box folds to a badge that counts the rows, and the suggestions keep coming`() = runTest(StandardTestDispatcher()) {
+        val api = FakeApi(answer = listOf(WritingSuggestionDto(WritingSuggestionAction.LIST, 0.9)))
+        val story = MutableStateFlow(state(title, longParagraph))
+        val controller = controller(api, story, folders = FakeFolders())
         advanceUntilIdle()
 
-        assertEquals(1, api.folderRequests.size)
-        assertEquals(listOf("Folder 2"), controller.state.value.folderSuggestions.map { it.name })
-        assertTrue(controller.state.value.offerNewFolder)
+        assertEquals(false, controller.collapsed.value)
+        controller.toggleCollapsed()
+        assertTrue(controller.collapsed.value)
+
+        story.value = state(title, longParagraph.copy(text = longParagraph.text + " Also:"))
+        advanceUntilIdle()
+        story.value = state(title, longParagraph.copy(text = longParagraph.text + " Also: milk, eggs."))
+        advanceUntilIdle()
+
+        // The list and the folder offer: two rows behind the badge.
+        assertEquals(2, controller.state.value.count)
+        assertTrue(controller.collapsed.value)
+        controller.toggleCollapsed()
+        assertEquals(false, controller.collapsed.value)
         controller.stop()
     }
 }

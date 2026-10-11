@@ -10,6 +10,7 @@ import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.writingagent.actions.AiTextWriter
 import io.writeopia.writingagent.actions.AiTextWriter.askOneLine
+import kotlinx.coroutines.CompletableDeferred
 
 /**
  * Files the open document with the app's folder repository. The new folder is created at the
@@ -44,16 +45,18 @@ class WriteopiaDocumentFolders(
         val taskManager = aiTaskManager
         if (taskManager == null) return createAndMove(documentTitle, documentText)
 
-        var result: Result<String> = Result.failure(Exception("The folder task did not run"))
+        // The task runs on the manager's own scope; the dialog waits here for its outcome.
+        val outcome = CompletableDeferred<Result<String>>()
         taskManager.enqueueTask(
             id = "${taskIdPrefix()}-${GenerateId.generate()}",
             type = AiTaskType.TEXT_GENERATION,
             description = "Creating a folder for the document..."
         ) {
-            result = createAndMove(documentTitle, documentText)
+            val result = runCatching { createAndMove(documentTitle, documentText).getOrThrow() }
+            outcome.complete(result)
             result.map { }
         }
-        return result
+        return outcome.await()
     }
 
     private suspend fun createAndMove(documentTitle: String, documentText: String): Result<String> {

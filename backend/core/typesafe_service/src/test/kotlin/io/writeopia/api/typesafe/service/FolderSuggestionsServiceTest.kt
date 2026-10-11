@@ -57,7 +57,7 @@ class FolderSuggestionsServiceTest {
     }
 
     @Test
-    fun `the confident folders come back by id, best first`() = runTest {
+    fun `the folders above the threshold come back by id, best first`() = runTest {
         val service = service(
             """
             {"model":"jev","answers":{
@@ -74,7 +74,28 @@ class FolderSuggestionsServiceTest {
         )
 
         assertEquals(listOf("f-cooking", "f-travel"), response.suggestions.map { it.folderId })
+        assertEquals(0.97, response.suggestions.first().probability)
         assertEquals(80, usage.inputTokens)
+    }
+
+    @Test
+    fun `when no folder passes the threshold the answer is empty`() = runTest {
+        val service = service(
+            """
+            {"model":"jev","answers":{
+              "folder_0":{"type":"noul","noul":0.4},
+              "folder_1":{"type":"noul","noul":0.6},
+              "folder_2":{"type":"noul","noul":0.79}
+            },"usage":{"input_tokens":80,"output_tokens":3}}
+            """.trimIndent()
+        )
+
+        val (response, _) = service.suggest(
+            FolderSuggestionsRequest(documentTitle = "Pasta", documentText = "Boil water.", folders = folders)
+        )
+
+        assertTrue(response.suggestions.isEmpty())
+        assertEquals(null, response.error)
     }
 
     @Test

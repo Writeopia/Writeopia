@@ -58,6 +58,7 @@ import io.writeopia.theme.WriteopiaTheme
 import io.writeopia.ui.drawer.factory.DrawersFactory
 import io.writeopia.ui.drawer.factory.isEnterKey
 import io.writeopia.writingagent.actions.WritingAgentUi
+import io.writeopia.writingagent.ui.FolderSuggestionDialog
 import io.writeopia.writingagent.ui.WritingSuggestionsBox
 
 @Composable
@@ -374,6 +375,8 @@ fun DesktopNoteEditorScreen(
                 ui = agentUi,
                 modifier = Modifier.align(Alignment.BottomEnd).padding(end = 8.dp, bottom = 16.dp)
             )
+
+            FolderSuggestionDialog(controller = agent)
         }
     }
 }

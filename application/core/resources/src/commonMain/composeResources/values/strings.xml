@@ -271,6 +271,9 @@
   <string name="reply">Reply</string>
   <string name="writing_suggestions">Suggestions</string>
   <string name="writing_suggestion_apply">Apply</string>
+  <string name="writing_suggestions_badge">AI suggestions</string>
+  <string name="writing_suggestions_hide">Hide the suggestions</string>
+  <string name="writing_suggestions_show">Show the suggestions</string>
   <string name="writing_suggestion_code_block">Add a code block</string>
   <string name="writing_suggestion_list">Add a bullet list</string>
   <string name="writing_suggestion_check_list">Add a checklist</string>
@@ -283,6 +286,12 @@
   <string name="writing_suggestion_callout">Highlight as a callout</string>
   <string name="writing_suggestion_tldr">Add a TL;DR at the top</string>
   <string name="writing_suggestion_conclusion">Write a conclusion</string>
-  <string name="writing_suggestion_move_to_folder">Move to "%1$s"</string>
-  <string name="writing_suggestion_new_folder">Create a folder for this document</string>
+  <string name="writing_suggestion_folder">Move to a folder</string>
+  <string name="writing_folder_dialog_title">Where should this document live?</string>
+  <string name="writing_folder_dialog_body">This document is in the root folder. Pick a folder for it, or let the AI create one.</string>
+  <string name="writing_folder_dialog_loading">Looking at your folders…</string>
+  <string name="writing_folder_dialog_none">None of your folders seems to fit this document.</string>
+  <string name="writing_folder_dialog_new_folder">Create a new folder</string>
+  <string name="writing_folder_dialog_creating">Creating a folder…</string>
+  <string name="writing_folder_dialog_not_now">Not now</string>
 </resources>

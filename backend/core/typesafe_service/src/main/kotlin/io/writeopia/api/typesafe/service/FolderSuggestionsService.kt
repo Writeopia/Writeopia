@@ -9,9 +9,10 @@ import io.writeopia.app.dto.writingagent.FolderSuggestionsResponse
 import io.writeopia.connection.logger
 
 /**
- * Files a document that sits in the root folder: asks Jev which of the workspace folders it
- * belongs to and keeps the confident ones, best first. It shares the threshold and the limit of
- * the writing suggestions.
+ * Files a document that sits in the root folder: asks Jev how likely the document belongs to
+ * each workspace folder and answers with the ones at or above [threshold], best first, at most
+ * [limit]. When none passes, the answer is empty and the app only offers a new folder. The
+ * threshold and the limit are the ones of the writing suggestions.
  */
 class FolderSuggestionsService(
     private val client: TypeSafeClient = TypeSafeClient(),
