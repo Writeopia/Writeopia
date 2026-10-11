@@ -183,21 +183,12 @@ fun WriteopiaDbBackend.isCodeValid(email: String, code: String): Boolean {
 
 data class UserSearchResult(val id: String, val name: String, val email: String)
 
-fun WriteopiaDbBackend.searchUsersByEmail(
-    emailQuery: String,
-    limit: Long,
-    offset: Long
-): List<UserSearchResult> =
-    this.userEntityQueries
-        .searchUsersByEmail(emailQuery, limit, offset)
-        .executeAsList()
-        .map { result ->
-            UserSearchResult(
-                id = result.id,
-                name = result.name,
-                email = result.email
-            )
-        }
+fun escapeLikeWildcards(query: String): String =
+    query
+        .replace("\\", "\\\\")
+        .replace("%", "\\%")
+        .replace("_", "\\_")
+
 
 data class UsernameSearchResult(val id: String, val name: String, val username: String)
 
@@ -208,7 +199,12 @@ fun WriteopiaDbBackend.searchUsersByUsernameNotInWorkspace(
     offset: Long,
 ): List<UsernameSearchResult> =
     this.userEntityQueries
-        .searchUsersByUsernameNotInWorkspace(workspaceId, usernameQuery, limit, offset)
+        .searchUsersByUsernameNotInWorkspace(
+            workspaceId,
+            escapeLikeWildcards(usernameQuery),
+            limit,
+            offset
+        )
         .executeAsList()
         .map { result ->
             UsernameSearchResult(

@@ -8,7 +8,6 @@ import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.put
-import io.writeopia.api.core.auth.repository.searchUsersByEmail
 import io.writeopia.api.core.auth.repository.searchUsersByUsernameNotInWorkspace
 import io.writeopia.api.core.auth.routing.adminUserFn
 import io.writeopia.api.core.auth.utils.getUserIdFromApiGateway
@@ -36,6 +35,9 @@ import io.writeopia.sql.WriteopiaDbBackend
 import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("WorkspaceRouting")
+private const val DEFAULT_PAGE_SIZE = 20
+private const val DEFAULT_SEARCH_PAGE_SIZE = 5
+private const val MAX_PAGE_SIZE = 100
 
 fun Routing.workspaceRoute(
     apiKey: String?,
@@ -176,8 +178,9 @@ fun Routing.workspaceRoute(
         }
         val workspaceId = call.pathParameters["workspaceId"]
             ?: throw IllegalArgumentException("Workspace id is required")
-        val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
-        val pageSize = call.request.queryParameters["pageSize"]?.toIntOrNull() ?: 20
+        val page = (call.request.queryParameters["page"]?.toIntOrNull() ?: 1).coerceAtLeast(1)
+        val pageSize = (call.request.queryParameters["pageSize"]?.toIntOrNull() ?: DEFAULT_PAGE_SIZE)
+            .coerceIn(1, MAX_PAGE_SIZE)
 
         runIfAdmin(currentUserId, workspaceId, writeopiaDb, debugMode) {
             val paginatedUsers = WorkspaceService
@@ -207,8 +210,9 @@ fun Routing.workspaceRoute(
             ?: call.request.queryParameters["query"]
             ?: call.request.queryParameters["email"]
             ?: ""
-        val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
-        val pageSize = call.request.queryParameters["pageSize"]?.toIntOrNull() ?: 5
+        val page = (call.request.queryParameters["page"]?.toIntOrNull() ?: 1).coerceAtLeast(1)
+        val pageSize = (call.request.queryParameters["pageSize"]?.toIntOrNull() ?: DEFAULT_SEARCH_PAGE_SIZE)
+            .coerceIn(1, MAX_PAGE_SIZE)
 
         if (usernameQuery.length < 2) {
             call.respond(HttpStatusCode.BadRequest, ServerResponse("Username query must be at least 2 characters"))
