@@ -283,4 +283,6 @@
   <string name="writing_suggestion_callout">Highlight as a callout</string>
   <string name="writing_suggestion_tldr">Add a TL;DR at the top</string>
   <string name="writing_suggestion_conclusion">Write a conclusion</string>
+  <string name="writing_suggestion_move_to_folder">Move to "%1$s"</string>
+  <string name="writing_suggestion_new_folder">Create a folder for this document</string>
 </resources>

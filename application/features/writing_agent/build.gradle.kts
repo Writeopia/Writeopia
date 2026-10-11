@@ -55,6 +55,7 @@ kotlin {
                 implementation(project(":plugins:writeopia_network"))
 
                 implementation(project(":application:core:ai"))
+                implementation(project(":application:core:documents"))
                 implementation(project(":application:core:connection"))
                 implementation(project(":application:core:utils"))
                 implementation(project(":application:core:common_ui"))

@@ -73,6 +73,7 @@ import io.writeopia.ui.model.DrawState
 import io.writeopia.ui.model.SelectionMetadata
 import io.writeopia.ui.utils.Spans
 import io.writeopia.writingagent.actions.WriteopiaActionExecutor
+import io.writeopia.writingagent.folders.WriteopiaDocumentFolders
 import io.writeopia.writingagent.api.WritingAgentApi
 import io.writeopia.writingagent.controller.WritingAgentController
 import kotlinx.coroutines.Dispatchers
@@ -193,6 +194,17 @@ class NoteEditorKmpViewModel(
                 addImage = { path, position -> addImage(path, position) },
                 aiTaskManager = aiTaskManager,
                 // The same prefix as the editor's own AI tasks, so Escape cancels these too.
+                taskIdPrefix = { "editor-${writeopiaManager.documentInfo.value.id}" },
+            ),
+            // A document created in the root folder is offered a folder when it opens.
+            folders = WriteopiaDocumentFolders(
+                documentId = { writeopiaManager.documentInfo.value.id },
+                documentParentId = { writeopiaManager.getDocument().parentId },
+                workspaceId = { (authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()).id },
+                folderRepository = folderRepository,
+                moveDocument = { id, folderId -> documentRepository.moveToFolder(documentId = id, parentId = folderId) },
+                resolveAi = { aiClients.resolve(authRepository.getUser().id) },
+                aiTaskManager = aiTaskManager,
                 taskIdPrefix = { "editor-${writeopiaManager.documentInfo.value.id}" },
             ),
             isEnabled = { !writeopiaManager.documentInfo.value.isLocked && aiClients.isCloudAiReady() },

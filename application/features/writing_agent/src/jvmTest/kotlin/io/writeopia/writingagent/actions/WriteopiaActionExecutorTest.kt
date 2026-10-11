@@ -269,9 +269,12 @@ class WriteopiaActionExecutorTest {
     fun `an image drawn by the cloud goes right below the paragraph with its URL`() = runTest {
         val manager = manager()
         val requests = mutableListOf<Triple<String, String, String>>()
+        var loadingShownWhileDrawing = false
         val generator = object : AiImageGenerator {
             override suspend fun generateImage(paragraph: String, documentTitle: String, documentText: String): ResultData<String> {
                 requests.add(Triple(paragraph, documentTitle, documentText))
+                loadingShownWhileDrawing = manager.typesInOrder() ==
+                    listOf(StoryTypes.TITLE, StoryTypes.TEXT, StoryTypes.LOADING, StoryTypes.TEXT)
                 return ResultData.Complete("https://images.test/milk.png")
             }
         }
@@ -293,6 +296,7 @@ class WriteopiaActionExecutorTest {
         assertEquals("Groceries", requests.single().second)
         assertTrue(requests.single().third.contains("And eggs."))
 
+        assertTrue(loadingShownWhileDrawing, "a loading block should stand where the image will go")
         assertEquals(
             listOf(StoryTypes.TITLE, StoryTypes.TEXT, StoryTypes.IMAGE, StoryTypes.TEXT),
             manager.typesInOrder()
@@ -304,7 +308,7 @@ class WriteopiaActionExecutorTest {
     }
 
     @Test
-    fun `when the cloud fails to draw nothing is inserted`() = runTest {
+    fun `when the cloud fails to draw the loading block goes away and nothing is inserted`() = runTest {
         val manager = manager()
         val generator = object : AiImageGenerator {
             override suspend fun generateImage(paragraph: String, documentTitle: String, documentText: String): ResultData<String> =

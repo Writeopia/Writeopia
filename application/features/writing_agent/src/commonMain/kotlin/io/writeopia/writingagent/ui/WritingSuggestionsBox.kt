@@ -38,7 +38,6 @@ import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.resources.WrStrings
 import io.writeopia.writingagent.actions.WritingAgentUi
 import io.writeopia.writingagent.controller.WritingAgentController
-import io.writeopia.writingagent.model.WritingSuggestion
 
 const val WRITING_SUGGESTIONS_BOX_TAG = "WritingSuggestionsBox"
 
@@ -115,8 +114,27 @@ fun WritingSuggestionsBox(
 
                 state.suggestions.forEach { suggestion ->
                     SuggestionRow(
-                        suggestion = suggestion,
+                        label = suggestion.action.label(),
+                        testTag = "$WRITING_SUGGESTIONS_BOX_TAG.${suggestion.action}",
                         onApply = { controller.execute(suggestion.action, ui) }
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                }
+
+                state.folderSuggestions.forEach { folder ->
+                    SuggestionRow(
+                        label = WrStrings.writingSuggestionMoveToFolder(folder.name),
+                        testTag = "$WRITING_SUGGESTIONS_BOX_TAG.folder.${folder.folderId}",
+                        onApply = { controller.moveToFolder(folder.folderId) }
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                }
+
+                if (state.offerNewFolder) {
+                    SuggestionRow(
+                        label = WrStrings.writingSuggestionNewFolder(),
+                        testTag = "$WRITING_SUGGESTIONS_BOX_TAG.newFolder",
+                        onApply = controller::createFolder
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                 }
@@ -127,7 +145,8 @@ fun WritingSuggestionsBox(
 
 @Composable
 private fun SuggestionRow(
-    suggestion: WritingSuggestion,
+    label: String,
+    testTag: String,
     onApply: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -140,7 +159,7 @@ private fun SuggestionRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = suggestion.action.label(),
+            text = label,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 2,
@@ -148,7 +167,7 @@ private fun SuggestionRow(
             modifier = Modifier.weight(1f)
         )
 
-        TextButton(onClick = onApply, modifier = Modifier.testTag("$WRITING_SUGGESTIONS_BOX_TAG.${suggestion.action}")) {
+        TextButton(onClick = onApply, modifier = Modifier.testTag(testTag)) {
             Text(
                 text = WrStrings.writingSuggestionApply(),
                 style = MaterialTheme.typography.labelMedium,

@@ -1,5 +1,9 @@
 package io.writeopia.writingagent.controller
 
+import io.writeopia.app.dto.writingagent.FolderCandidate
+import io.writeopia.app.dto.writingagent.FolderSuggestionDto
+import io.writeopia.app.dto.writingagent.FolderSuggestionsRequest
+import io.writeopia.app.dto.writingagent.FolderSuggestionsResponse
 import io.writeopia.app.dto.writingagent.WritingSuggestionAction
 import io.writeopia.app.dto.writingagent.WritingSuggestionDto
 import io.writeopia.app.dto.writingagent.WritingSuggestionScope
@@ -12,6 +16,7 @@ import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.writingagent.actions.WritingActionExecutor
 import io.writeopia.writingagent.actions.WritingAgentUi
 import io.writeopia.writingagent.api.WritingAgentApi
+import io.writeopia.writingagent.folders.DocumentFolders
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -23,12 +28,42 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-private class FakeApi(var answer: List<WritingSuggestionDto> = emptyList()) : WritingAgentApi {
+private class FakeApi(
+    var answer: List<WritingSuggestionDto> = emptyList(),
+    var folderAnswer: List<FolderSuggestionDto> = emptyList(),
+) : WritingAgentApi {
     val requests = mutableListOf<WritingSuggestionsRequest>()
+    val folderRequests = mutableListOf<FolderSuggestionsRequest>()
 
     override suspend fun suggestions(request: WritingSuggestionsRequest): ResultData<WritingSuggestionsResponse> {
         requests.add(request)
         return ResultData.Complete(WritingSuggestionsResponse(answer))
+    }
+
+    override suspend fun folderSuggestions(request: FolderSuggestionsRequest): ResultData<FolderSuggestionsResponse> {
+        folderRequests.add(request)
+        return ResultData.Complete(FolderSuggestionsResponse(folderAnswer))
+    }
+}
+
+private class FakeFolders(
+    var currentFolder: String = "root",
+    val folders: List<FolderCandidate> = (1..12).map { FolderCandidate("f$it", "Folder $it") },
+) : DocumentFolders {
+    val movedTo = mutableListOf<String>()
+    val created = mutableListOf<Pair<String, String>>()
+
+    override suspend fun currentFolderId(): String = currentFolder
+
+    override suspend fun candidates(limit: Int): List<FolderCandidate> = folders.take(limit)
+
+    override suspend fun moveTo(folderId: String) {
+        movedTo.add(folderId)
+    }
+
+    override suspend fun createFolderAndMove(documentTitle: String, documentText: String): Result<String> {
+        created.add(documentTitle to documentText)
+        return Result.success("New folder")
     }
 }
 
@@ -57,6 +92,7 @@ class WritingAgentControllerTest {
         documentId: MutableStateFlow<String> = MutableStateFlow("doc"),
         executor: FakeExecutor = FakeExecutor(),
         enabled: Boolean = true,
+        folders: FakeFolders? = null,
     ) = WritingAgentController(
         scope = this,
         api = api,
@@ -64,6 +100,7 @@ class WritingAgentControllerTest {
         documentIdFlow = documentId,
         documentTitle = { "Groceries" },
         executor = executor,
+        folders = folders,
         isEnabled = { enabled },
         debounceMillis = 100,
         minimumDocumentLength = 40,
@@ -305,6 +342,106 @@ class WritingAgentControllerTest {
 
         assertTrue(controller.state.value.suggestions.isEmpty())
         assertNull(controller.state.value.storyStepId)
+        controller.stop()
+    }
+
+    private val longParagraph = StoryStep(
+        id = "p1",
+        type = StoryTypes.TEXT.type,
+        text = "We need milk, eggs, bread and butter for the whole week ahead of us."
+    )
+
+    @Test
+    fun `a document opened in the root is offered the folders that fit and a new folder`() = runTest(StandardTestDispatcher()) {
+        val api = FakeApi(folderAnswer = listOf(FolderSuggestionDto("f2", 0.95), FolderSuggestionDto("f1", 0.9)))
+        val folders = FakeFolders()
+        val story = MutableStateFlow(state(title, longParagraph))
+        val controller = controller(api, story, folders = folders)
+        advanceUntilIdle()
+
+        // Only the first ten folders are asked about.
+        assertEquals(1, api.folderRequests.size)
+        assertEquals(10, api.folderRequests.single().folders.size)
+        assertEquals("Groceries", api.folderRequests.single().documentTitle)
+
+        val state = controller.state.value
+        assertEquals(listOf("Folder 2", "Folder 1"), state.folderSuggestions.map { it.name })
+        assertTrue(state.offerNewFolder)
+        assertTrue(state.hasSuggestions)
+        controller.stop()
+    }
+
+    @Test
+    fun `a document that already sits in a folder is not offered to move`() = runTest(StandardTestDispatcher()) {
+        val api = FakeApi(folderAnswer = listOf(FolderSuggestionDto("f2", 0.95)))
+        val story = MutableStateFlow(state(title, longParagraph))
+        val controller = controller(api, story, folders = FakeFolders(currentFolder = "f3"))
+        advanceUntilIdle()
+
+        assertTrue(api.folderRequests.isEmpty())
+        assertTrue(controller.state.value.folderSuggestions.isEmpty())
+        assertEquals(false, controller.state.value.offerNewFolder)
+        controller.stop()
+    }
+
+    @Test
+    fun `a root document in a workspace without folders is only offered a new folder`() = runTest(StandardTestDispatcher()) {
+        val api = FakeApi()
+        val story = MutableStateFlow(state(title, longParagraph))
+        val controller = controller(api, story, folders = FakeFolders(folders = emptyList()))
+        advanceUntilIdle()
+
+        assertTrue(api.folderRequests.isEmpty())
+        assertTrue(controller.state.value.folderSuggestions.isEmpty())
+        assertTrue(controller.state.value.offerNewFolder)
+        controller.stop()
+    }
+
+    @Test
+    fun `moving to an offered folder files the document and withdraws the offers`() = runTest(StandardTestDispatcher()) {
+        val api = FakeApi(folderAnswer = listOf(FolderSuggestionDto("f2", 0.95)))
+        val folders = FakeFolders()
+        val story = MutableStateFlow(state(title, longParagraph))
+        val controller = controller(api, story, folders = folders)
+        advanceUntilIdle()
+
+        controller.moveToFolder("f2")
+        advanceUntilIdle()
+
+        assertEquals(listOf("f2"), folders.movedTo)
+        assertTrue(controller.state.value.folderSuggestions.isEmpty())
+        assertEquals(false, controller.state.value.offerNewFolder)
+        controller.stop()
+    }
+
+    @Test
+    fun `creating a folder hands the document to the AI and withdraws the offers`() = runTest(StandardTestDispatcher()) {
+        val api = FakeApi()
+        val folders = FakeFolders()
+        val story = MutableStateFlow(state(title, longParagraph))
+        val controller = controller(api, story, folders = folders)
+        advanceUntilIdle()
+
+        controller.createFolder()
+        advanceUntilIdle()
+
+        assertEquals(1, folders.created.size)
+        assertEquals("Groceries", folders.created.single().first)
+        assertTrue(folders.created.single().second.contains("We need milk"))
+        assertEquals(false, controller.state.value.offerNewFolder)
+        controller.stop()
+    }
+
+    @Test
+    fun `dismissing withdraws the folder offers for this document`() = runTest(StandardTestDispatcher()) {
+        val api = FakeApi(folderAnswer = listOf(FolderSuggestionDto("f2", 0.95)))
+        val story = MutableStateFlow(state(title, longParagraph))
+        val controller = controller(api, story, folders = FakeFolders())
+        advanceUntilIdle()
+
+        controller.dismiss()
+
+        assertEquals(false, controller.state.value.hasSuggestions)
         controller.stop()
     }
 }

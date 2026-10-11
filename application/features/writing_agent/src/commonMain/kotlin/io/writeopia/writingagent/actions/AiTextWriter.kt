@@ -1,5 +1,7 @@
 package io.writeopia.writingagent.actions
 
+import io.writeopia.ai.AiCommand
+import io.writeopia.ai.AiStreaming
 import io.writeopia.sdk.model.action.Action
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryType
@@ -59,6 +61,17 @@ object AiTextWriter {
             position
         )
     }
+
+    /** One line of text from the AI, cleaned of the Markdown and quotes it tends to add. */
+    suspend fun AiStreaming.askOneLine(instructions: String, text: String): Result<String> =
+        runCatching {
+            stream(AiCommand.PROMPT, "$instructions\n```\n$text\n```")
+                .finalTextOrError()
+                .getOrThrow()
+                .lines()
+                .first { it.isNotBlank() }
+                .trim('#', ' ', '"', '*', '.')
+        }
 
     /**
      * The whole answer, once the stream ends. Each emission carries the answer so far. An error

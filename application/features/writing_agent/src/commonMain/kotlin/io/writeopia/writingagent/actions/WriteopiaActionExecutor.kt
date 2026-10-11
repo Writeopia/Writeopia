@@ -16,6 +16,7 @@ import io.writeopia.sdk.models.story.Tag
 import io.writeopia.sdk.models.story.TagInfo
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.ui.manager.WriteopiaStateManager
+import io.writeopia.writingagent.actions.AiTextWriter.askOneLine
 import io.writeopia.writingagent.actions.AiTextWriter.finalTextOrError
 
 /**
@@ -184,16 +185,8 @@ class WriteopiaActionExecutor(
         return Result.success(Unit)
     }
 
-    /** One line of text from the AI, cleaned of the Markdown and quotes it tends to add. */
     private suspend fun askOneLine(instructions: String, text: String): Result<String> =
-        aiOrFailure().mapCatching { ai ->
-            ai.stream(AiCommand.PROMPT, "$instructions\n```\n$text\n```")
-                .finalTextOrError()
-                .getOrThrow()
-                .lines()
-                .first { it.isNotBlank() }
-                .trim('#', ' ', '"', '*', '.')
-        }
+        aiOrFailure().mapCatching { ai -> ai.askOneLine(instructions, text).getOrThrow() }
 
     /**
      * Asks the AI for the items the paragraph calls for and inserts them below it, one block
@@ -275,24 +268,38 @@ class WriteopiaActionExecutor(
             ?: return Result.failure(Exception("There is no paragraph to illustrate"))
         val document = manager.getDocument()
 
+        // A loading block where the picture will go, like the text actions show while they wait.
+        val loading = StoryStep(type = StoryTypes.LOADING.type, ephemeral = true)
+        manager.addAtPosition(loading, position + 1)
+
         log("asking the cloud for an image of \"${paragraph.take(60)}\"")
-        val url = when (
-            val result = generator.generateImage(
-                paragraph = paragraph,
-                documentTitle = document.title,
-                documentText = manager.getDocumentText().take(IMAGE_CONTEXT_LIMIT),
-            )
-        ) {
-            is ResultData.Complete -> result.data
-            is ResultData.Error -> return Result.failure(result.exception ?: Exception("The AI drew no picture"))
-            else -> return Result.failure(Exception("The AI drew no picture"))
+        val answer = generator.generateImage(
+            paragraph = paragraph,
+            documentTitle = document.title,
+            documentText = manager.getDocumentText().take(IMAGE_CONTEXT_LIMIT),
+        )
+
+        // The document may have changed while the AI drew, so the loading block is found again.
+        val target = positionOf(loading.id) ?: ((positionOf(storyStepId) ?: position) + 1)
+        val loadingStillThere = positionOf(loading.id) != null
+
+        val url = when (answer) {
+            is ResultData.Complete -> answer.data
+            else -> {
+                if (loadingStillThere) manager.removeAtPosition(target)
+                val reason = (answer as? ResultData.Error)?.exception ?: Exception("The AI drew no picture")
+                return Result.failure(reason)
+            }
         }
 
-        // The document may have changed while the AI drew.
-        val below = (positionOf(storyStepId) ?: position) + 1
         log("inserting the image below $storyStepId")
         manager.trackState()
-        manager.addAtPosition(StoryStep(type = StoryTypes.IMAGE.type, url = url), below)
+        val image = StoryStep(type = StoryTypes.IMAGE.type, url = url)
+        if (loadingStillThere) {
+            manager.changeStoryState(Action.StoryStateChange(image, target))
+        } else {
+            manager.addAtPosition(image, target)
+        }
 
         return Result.success(Unit)
     }

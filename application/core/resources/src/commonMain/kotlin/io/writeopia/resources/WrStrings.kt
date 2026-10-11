@@ -11,6 +11,8 @@ import writeopia.application.core.resources.generated.resources.writing_suggesti
 import writeopia.application.core.resources.generated.resources.writing_suggestion_check_list
 import writeopia.application.core.resources.generated.resources.writing_suggestion_new_document_link
 import writeopia.application.core.resources.generated.resources.writing_suggestion_image
+import writeopia.application.core.resources.generated.resources.writing_suggestion_move_to_folder
+import writeopia.application.core.resources.generated.resources.writing_suggestion_new_folder
 import writeopia.application.core.resources.generated.resources.writing_suggestion_drawing
 import writeopia.application.core.resources.generated.resources.writing_suggestion_spreadsheet
 import writeopia.application.core.resources.generated.resources.writing_suggestion_section_heading
@@ -1051,4 +1053,11 @@ object WrStrings {
 
     @Composable
     fun writingSuggestionConclusion() = stringResource(Res.string.writing_suggestion_conclusion)
+
+    @Composable
+    fun writingSuggestionMoveToFolder(folderName: String) =
+        stringResource(Res.string.writing_suggestion_move_to_folder, folderName)
+
+    @Composable
+    fun writingSuggestionNewFolder() = stringResource(Res.string.writing_suggestion_new_folder)
 }
