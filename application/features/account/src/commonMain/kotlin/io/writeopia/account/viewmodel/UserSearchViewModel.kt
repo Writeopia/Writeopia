@@ -70,7 +70,7 @@ class UserSearchViewModel(
 
         val result = workspaceApi.searchUsers(
             workspaceId = workspaceId,
-            emailQuery = query,
+            usernameQuery = query,
             page = currentPage,
             pageSize = pageSize
         )
@@ -99,7 +99,7 @@ class UserSearchViewModel(
 
             val result = workspaceApi.searchUsers(
                 workspaceId = workspaceId,
-                emailQuery = query,
+                usernameQuery = query,
                 page = currentPage,
                 pageSize = pageSize
             )

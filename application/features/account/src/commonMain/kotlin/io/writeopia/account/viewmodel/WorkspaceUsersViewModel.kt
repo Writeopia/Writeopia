@@ -90,13 +90,13 @@ class WorkspaceUsersViewModel(
         }
     }
 
-    fun addUser(email: String) {
+    fun addUser(username: String) {
         viewModelScope.launch {
             _addUserState.value = ResultData.Loading()
 
             val result = workspaceApi.addUserToWorkspace(
                 workspaceId = workspaceId,
-                userEmail = email
+                username = username
             )
 
             _addUserState.value = result

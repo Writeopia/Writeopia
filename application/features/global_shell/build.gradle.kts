@@ -72,6 +72,7 @@ kotlin {
                 implementation(project(":application:features:account"))
                 implementation(project(":application:core:genai"))
                 implementation(project(":application:core:ai"))
+                implementation(project(":common:endpoints"))
 
                 implementation(libs.kotlinx.serialization.json)
                 //

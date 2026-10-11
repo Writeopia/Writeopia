@@ -16,7 +16,7 @@ class UserAddViewModel(
     private val workspaceName: String,
     private val userId: String,
     private val userName: String,
-    private val userEmail: String,
+    private val username: String,
     private val workspaceApi: WorkspaceApi,
     private val authRepository: AuthRepository,
 ) : ViewModel() {
@@ -33,7 +33,7 @@ class UserAddViewModel(
 
     fun getUserName(): String = userName
 
-    fun getUserEmail(): String = userEmail
+    fun getUsername(): String = username
 
     fun selectRole(role: Role) {
         _selectedRole.value = role
@@ -45,7 +45,7 @@ class UserAddViewModel(
 
             val result = workspaceApi.addUserToWorkspaceWithRole(
                 workspaceId = workspaceId,
-                userEmail = userEmail,
+                username = username,
                 role = _selectedRole.value
             )
 

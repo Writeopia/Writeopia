@@ -46,14 +46,14 @@ class WorkspaceApi(
 
     suspend fun addUserToWorkspace(
         workspaceId: String,
-        userEmail: String
+        username: String
     ): ResultData<Unit> {
         val cache = workspaceUsersCache.value
         workspaceUsersCache.value = ResultData.Loading()
 
         val response = client.post("$baseUrl/api/workspace/user") {
             contentType(ContentType.Application.Json)
-            setBody(AddUserToWorkspaceRequest(userEmail, workspaceId, Role.EDITOR.value))
+            setBody(AddUserToWorkspaceRequest(username, workspaceId, Role.EDITOR.value))
         }
 
         workspaceUsersCache.value = cache
@@ -167,13 +167,13 @@ class WorkspaceApi(
 
     suspend fun searchUsers(
         workspaceId: String,
-        emailQuery: String,
-        page: Int,
-        pageSize: Int
+        usernameQuery: String,
+        page: Int = 1,
+        pageSize: Int = 5
     ): ResultData<PaginatedUserSearchResponse> = try {
         val response = client.get("$baseUrl/api/workspace/$workspaceId/users/search") {
             url {
-                parameters.append("email", emailQuery)
+                parameters.append("username", usernameQuery)
                 parameters.append("page", page.toString())
                 parameters.append("pageSize", pageSize.toString())
             }
@@ -191,7 +191,7 @@ class WorkspaceApi(
 
     suspend fun addUserToWorkspaceWithRole(
         workspaceId: String,
-        userEmail: String,
+        username: String,
         role: Role
     ): ResultData<Unit> {
         val cache = workspaceUsersCache.value
@@ -199,7 +199,7 @@ class WorkspaceApi(
 
         val response = client.post("$baseUrl/api/workspace/user") {
             contentType(ContentType.Application.Json)
-            setBody(AddUserToWorkspaceRequest(userEmail, workspaceId, role.value))
+            setBody(AddUserToWorkspaceRequest(username, workspaceId, role.value))
         }
 
         workspaceUsersCache.value = cache

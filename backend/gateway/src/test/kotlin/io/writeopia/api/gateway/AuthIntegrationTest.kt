@@ -575,6 +575,7 @@ class AuthIntegrationTest {
         assertTrue { response1.status.isSuccess() }
 
         val email2 = "add2_${Random.nextInt(100000)}@gmail.com"
+        val username2 = "user2_${Random.nextInt(100000)}"
 
         val response2 = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
@@ -583,7 +584,7 @@ class AuthIntegrationTest {
                     workspaceName = "workspace name",
                     name = "User 2",
                     email = email2,
-                    username = "user2_${Random.nextInt(100000)}",
+                    username = username2,
                     password = "lasjbdalsdq08w9y&",
                 )
             )
@@ -601,7 +602,7 @@ class AuthIntegrationTest {
             contentType(ContentType.Application.Json)
             setBody(
                 AddUserToWorkspaceRequest(
-                    email = email2,
+                    username = username2,
                     workspaceId = workspaceOfUser1.id,
                     role = "user"
                 )
@@ -645,6 +646,7 @@ class AuthIntegrationTest {
         assertTrue { response1.status.isSuccess() }
 
         val email2 = "dupws2_${Random.nextInt(100000)}@gmail.com"
+        val username2 = "user2_${Random.nextInt(100000)}"
 
         val response2 = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
@@ -653,7 +655,7 @@ class AuthIntegrationTest {
                     workspaceName = "workspace name",
                     name = "User 2",
                     email = email2,
-                    username = "user2_${Random.nextInt(100000)}",
+                    username = username2,
                     password = "lasjbdalsdq08w9y&",
                 )
             )
@@ -672,7 +674,7 @@ class AuthIntegrationTest {
             contentType(ContentType.Application.Json)
             setBody(
                 AddUserToWorkspaceRequest(
-                    email = email2,
+                    username = username2,
                     workspaceId = workspaceOfUser1.id,
                     role = "user"
                 )
@@ -686,7 +688,7 @@ class AuthIntegrationTest {
             contentType(ContentType.Application.Json)
             setBody(
                 AddUserToWorkspaceRequest(
-                    email = email2,
+                    username = username2,
                     workspaceId = workspaceOfUser1.id,
                     role = "user"
                 )
@@ -722,6 +724,7 @@ class AuthIntegrationTest {
         assertTrue { response1.status.isSuccess() }
 
         val email2 = "rmws2_${Random.nextInt(100000)}@gmail.com"
+        val username2 = "user2_${Random.nextInt(100000)}"
 
         val response2 = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
@@ -730,7 +733,7 @@ class AuthIntegrationTest {
                     workspaceName = "workspace name",
                     name = "User 2",
                     email = email2,
-                    username = "user2_${Random.nextInt(100000)}",
+                    username = username2,
                     password = "lasjbdalsdq08w9y&",
                 )
             )
@@ -748,7 +751,7 @@ class AuthIntegrationTest {
             contentType(ContentType.Application.Json)
             setBody(
                 AddUserToWorkspaceRequest(
-                    email = email2,
+                    username = username2,
                     workspaceId = workspaceOfUser1.id,
                     role = "user"
                 )

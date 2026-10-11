@@ -14,6 +14,7 @@ import io.writeopia.api.core.auth.repository.deleteUserByEmail
 import io.writeopia.api.documents.documents.repository.deleteDocumentById
 import io.writeopia.api.geteway.configurePersistence
 import io.writeopia.api.geteway.module
+import io.writeopia.app.dto.PaginatedUserSearchResponse
 import io.writeopia.app.dto.WorkspaceUserApi
 import io.writeopia.app.requests.AddUserToWorkspaceRequest
 import io.writeopia.sdk.serialization.data.DocumentApi
@@ -151,7 +152,7 @@ class WorkspacesTest {
             contentType(ContentType.Application.Json)
             setBody(
                 AddUserToWorkspaceRequest(
-                    email = email2,
+                    username = email2.substringBefore("@"),
                     workspaceId = workspace1.id,
                     role = "ADMIN"
                 )
@@ -161,7 +162,7 @@ class WorkspacesTest {
         assertTrue(addUserResponse.status.isSuccess())
 
         val getUserInWorkspace = client.get(
-            "/api/workspace/${workspace1.id}/user/$email1"
+            "/api/workspace/${workspace1.id}/user/${email1.substringBefore("@")}"
         ) {
             contentType(ContentType.Application.Json)
         }.body<WorkspaceUserApi>()
@@ -181,7 +182,7 @@ class WorkspacesTest {
 
         assertTrue { nameChangeResponse.status.isSuccess() }
         val getUserInWorkspace2 = client.get(
-            "/api/workspace/${workspace1.id}/user/$email1"
+            "/api/workspace/${workspace1.id}/user/${email1.substringBefore("@")}"
         ) {
             contentType(ContentType.Application.Json)
         }.body<WorkspaceUserApi>()
@@ -331,7 +332,7 @@ class WorkspacesTest {
 
         // Get user in workspace to get user ID
         val getUserInWorkspace = client.get(
-            "/api/workspace/${workspace.id}/user/$email"
+            "/api/workspace/${workspace.id}/user/${email.substringBefore("@")}"
         ) {
             contentType(ContentType.Application.Json)
         }.body<WorkspaceUserApi>()
@@ -356,7 +357,7 @@ class WorkspacesTest {
 
         // Verify user is still ADMIN
         val getUserInWorkspace2 = client.get(
-            "/api/workspace/${workspace.id}/user/$email"
+            "/api/workspace/${workspace.id}/user/${email.substringBefore("@")}"
         ) {
             contentType(ContentType.Application.Json)
         }.body<WorkspaceUserApi>()
@@ -423,7 +424,7 @@ class WorkspacesTest {
                 contentType(ContentType.Application.Json)
                 setBody(
                     AddUserToWorkspaceRequest(
-                        email = email2,
+                        username = email2.substringBefore("@"),
                         workspaceId = workspace.id,
                         role = "ADMIN"
                     )
@@ -434,7 +435,7 @@ class WorkspacesTest {
 
             // Get first user in workspace to get user ID
             val getUser1InWorkspace = client.get(
-                "/api/workspace/${workspace.id}/user/$email1"
+                "/api/workspace/${workspace.id}/user/${email1.substringBefore("@")}"
             ) {
                 contentType(ContentType.Application.Json)
             }.body<WorkspaceUserApi>()
@@ -459,7 +460,7 @@ class WorkspacesTest {
 
             // Verify user1 is now EDITOR
             val getUser1InWorkspace2 = client.get(
-                "/api/workspace/${workspace.id}/user/$email1"
+                "/api/workspace/${workspace.id}/user/${email1.substringBefore("@")}"
             ) {
                 contentType(ContentType.Application.Json)
             }.body<WorkspaceUserApi>()
@@ -526,7 +527,7 @@ class WorkspacesTest {
             contentType(ContentType.Application.Json)
             setBody(
                 AddUserToWorkspaceRequest(
-                    email = email2,
+                    username = email2.substringBefore("@"),
                     workspaceId = workspace.id,
                     role = "EDITOR"
                 )
@@ -537,7 +538,7 @@ class WorkspacesTest {
 
         // Get second user in workspace to get user ID
         val getUser2InWorkspace = client.get(
-            "/api/workspace/${workspace.id}/user/$email2"
+            "/api/workspace/${workspace.id}/user/${email2.substringBefore("@")}"
         ) {
             contentType(ContentType.Application.Json)
         }.body<WorkspaceUserApi>()
@@ -562,7 +563,7 @@ class WorkspacesTest {
 
         // Verify user2 is now ADMIN
         val getUser2InWorkspace2 = client.get(
-            "/api/workspace/${workspace.id}/user/$email2"
+            "/api/workspace/${workspace.id}/user/${email2.substringBefore("@")}"
         ) {
             contentType(ContentType.Application.Json)
         }.body<WorkspaceUserApi>()
@@ -609,7 +610,7 @@ class WorkspacesTest {
 
         // Get user in workspace to get user ID
         val getUserInWorkspace = client.get(
-            "/api/workspace/${workspace.id}/user/$email"
+            "/api/workspace/${workspace.id}/user/${email.substringBefore("@")}"
         ) {
             contentType(ContentType.Application.Json)
         }.body<WorkspaceUserApi>()
@@ -634,7 +635,7 @@ class WorkspacesTest {
 
         // Verify user is still ADMIN
         val getUserInWorkspace2 = client.get(
-            "/api/workspace/${workspace.id}/user/$email"
+            "/api/workspace/${workspace.id}/user/${email.substringBefore("@")}"
         ) {
             contentType(ContentType.Application.Json)
         }.body<WorkspaceUserApi>()
@@ -643,5 +644,106 @@ class WorkspacesTest {
 
         // Clean up
         db.deleteUserByEmail(email)
+    }
+
+    @Test
+    fun `it should search users by username and add them to workspace`() = testApplication {
+        application {
+            module(db, debugMode = true, adminKey = "somekey")
+        }
+
+        val client = defaultClient()
+
+        val email1 = "search_owner_${Random.nextInt(100000)}@gmail.com"
+        val username1 = "owner_${Random.nextInt(100000)}"
+        val workspaceName = "search_test_workspace"
+
+        // Register workspace owner
+        val response1 = client.post("/api/auth/register") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                RegisterRequest(
+                    workspaceName = workspaceName,
+                    name = "Owner User",
+                    email = email1,
+                    username = username1,
+                    password = "testpassword123&",
+                )
+            )
+        }
+        assertEquals(HttpStatusCode.Created, response1.status)
+
+        val uniqueSuffix = Random.nextInt(100000)
+        val targetUsername = "target_member_$uniqueSuffix"
+        val email2 = "target_member_$uniqueSuffix@gmail.com"
+
+        // Register candidate user
+        val response2 = client.post("/api/auth/register") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                RegisterRequest(
+                    workspaceName = "Target Workspace",
+                    name = "Target Member",
+                    email = email2,
+                    username = targetUsername,
+                    password = "testpassword123&",
+                )
+            )
+        }
+        assertEquals(HttpStatusCode.Created, response2.status)
+
+        val workspace = client.get("/api/workspace/user/email/$email1") {
+            contentType(ContentType.Application.Json)
+        }.body<List<WorkspaceApi>>().first()
+
+        // 1. Search candidate by username prefix/substring
+        val searchResponse = client.get("/api/workspace/${workspace.id}/users/search?username=target_member") {
+            contentType(ContentType.Application.Json)
+        }
+        assertEquals(HttpStatusCode.OK, searchResponse.status)
+        val searchResults = searchResponse.body<PaginatedUserSearchResponse>()
+        assertTrue(searchResults.users.any { it.username == targetUsername })
+
+        // 2. Add candidate to workspace using username
+        val addResponse = client.post("/api/workspace/user") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                AddUserToWorkspaceRequest(
+                    username = targetUsername,
+                    workspaceId = workspace.id,
+                    role = "EDITOR"
+                )
+            )
+        }
+        assertTrue(addResponse.status.isSuccess())
+
+        // 3. Candidate should now be in the workspace
+        val userInWorkspace = client.get("/api/workspace/${workspace.id}/user/$targetUsername") {
+            contentType(ContentType.Application.Json)
+        }.body<WorkspaceUserApi>()
+        assertEquals("EDITOR", userInWorkspace.role)
+
+        // 4. Searching again should exclude candidate since they are already a member
+        val searchAgainResponse = client.get("/api/workspace/${workspace.id}/users/search?username=target_member") {
+            contentType(ContentType.Application.Json)
+        }.body<PaginatedUserSearchResponse>()
+        assertTrue(searchAgainResponse.users.none { it.username == targetUsername })
+
+        // 5. Adding the candidate again should return 409 Conflict
+        val addAgainResponse = client.post("/api/workspace/user") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                AddUserToWorkspaceRequest(
+                    username = targetUsername,
+                    workspaceId = workspace.id,
+                    role = "EDITOR"
+                )
+            )
+        }
+        assertEquals(HttpStatusCode.Conflict, addAgainResponse.status)
+
+        // Clean up
+        db.deleteUserByEmail(email1)
+        db.deleteUserByEmail(email2)
     }
 }

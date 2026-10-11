@@ -54,7 +54,7 @@ JOIN workspace_to_user
   ON workspace_entity.id = workspace_to_user.workspace_id
 JOIN user_entity
   ON user_entity.id = workspace_to_user.user_id
-WHERE workspace_to_user.workspace_id = ? AND user_entity.email = ?
+WHERE workspace_to_user.workspace_id = ? AND user_entity.username = ?
 LIMIT 1;
 
 insertWorkspaceToUser:

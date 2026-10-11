@@ -82,12 +82,12 @@ fun NavController.navigateToUserAdd(
     workspaceName: String,
     userId: String,
     userName: String,
-    userEmail: String
+    username: String
 ) {
     val safeName = workspaceName.replace("/", "_").replace("?", "_").replace("#", "_")
     val safeUserName = userName.replace("/", "_").replace("?", "_").replace("#", "_")
-    val safeEmail = userEmail.replace("/", "_").replace("?", "_").replace("#", "_")
-    navigate("${Destinations.SETTINGS_USER_ADD.id}/$workspaceId/$safeName/$userId/$safeUserName/$safeEmail")
+    val safeUsername = username.replace("/", "_").replace("?", "_").replace("#", "_")
+    navigate("${Destinations.SETTINGS_USER_ADD.id}/$workspaceId/$safeName/$userId/$safeUserName/$safeUsername")
 }
 
 fun NavController.navigateToUserEdit(
@@ -396,7 +396,7 @@ fun NavGraphBuilder.accountMenuNavigation(
                 onSearchQueryChange = viewModel::updateSearchQuery,
                 onLoadMore = viewModel::loadMoreResults,
                 onUserClick = { user ->
-                    navigateToUserAdd(workspaceId, workspaceName, user.id, user.name, user.email)
+                    navigateToUserAdd(workspaceId, workspaceName, user.id, user.name, user.username)
                 }
             )
         }
@@ -404,13 +404,13 @@ fun NavGraphBuilder.accountMenuNavigation(
 
     // User Add Screen
     composable(
-        route = "${Destinations.SETTINGS_USER_ADD.id}/{workspaceId}/{workspaceName}/{userId}/{userName}/{userEmail}",
+        route = "${Destinations.SETTINGS_USER_ADD.id}/{workspaceId}/{workspaceName}/{userId}/{userName}/{username}",
         arguments = listOf(
             navArgument("workspaceId") { type = NavType.StringType },
             navArgument("workspaceName") { type = NavType.StringType },
             navArgument("userId") { type = NavType.StringType },
             navArgument("userName") { type = NavType.StringType },
-            navArgument("userEmail") { type = NavType.StringType }
+            navArgument("username") { type = NavType.StringType }
         ),
         enterTransition = {
             slideInHorizontally(
@@ -427,10 +427,10 @@ fun NavGraphBuilder.accountMenuNavigation(
         val workspaceName = backStackEntry.savedStateHandle.get<String?>("workspaceName") ?: ""
         val userId = backStackEntry.savedStateHandle.get<String?>("userId") ?: ""
         val userName = backStackEntry.savedStateHandle.get<String?>("userName") ?: ""
-        val userEmail = backStackEntry.savedStateHandle.get<String?>("userEmail") ?: ""
+        val username = backStackEntry.savedStateHandle.get<String?>("username") ?: ""
 
         val viewModel = AccountMenuKmpInjector.singleton()
-            .provideUserAddViewModel(workspaceId, workspaceName, userId, userName, userEmail)
+            .provideUserAddViewModel(workspaceId, workspaceName, userId, userName, username)
 
         Scaffold(
             topBar = {
@@ -471,7 +471,7 @@ fun NavGraphBuilder.accountMenuNavigation(
                     .padding(paddingValues),
                 workspaceName = viewModel.getWorkspaceName(),
                 userName = viewModel.getUserName(),
-                userEmail = viewModel.getUserEmail(),
+                username = viewModel.getUsername(),
                 selectedRole = viewModel.selectedRole,
                 addUserState = viewModel.addUserState,
                 onRoleSelect = viewModel::selectRole,
