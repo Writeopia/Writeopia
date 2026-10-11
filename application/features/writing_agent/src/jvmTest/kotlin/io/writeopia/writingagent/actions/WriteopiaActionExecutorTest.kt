@@ -1,6 +1,7 @@
 package io.writeopia.writingagent.actions
 
 import io.writeopia.ai.AiCommand
+import io.writeopia.ai.AiImageGenerator
 import io.writeopia.ai.AiStreaming
 import io.writeopia.app.dto.writingagent.WritingSuggestionAction
 import io.writeopia.sdk.manager.WriteopiaManager
@@ -265,7 +266,59 @@ class WriteopiaActionExecutorTest {
     }
 
     @Test
-    fun `an image is picked and added below the paragraph`() = runTest {
+    fun `an image drawn by the cloud goes right below the paragraph with its URL`() = runTest {
+        val manager = manager()
+        val requests = mutableListOf<Triple<String, String, String>>()
+        val generator = object : AiImageGenerator {
+            override suspend fun generateImage(paragraph: String, documentTitle: String, documentText: String): ResultData<String> {
+                requests.add(Triple(paragraph, documentTitle, documentText))
+                return ResultData.Complete("https://images.test/milk.png")
+            }
+        }
+        val picked = mutableListOf<String>()
+        val ui = object : WritingAgentUi {
+            override fun pickImage(onPicked: (String) -> Unit) {
+                picked.add("opened")
+            }
+
+            override fun openDrawing() {}
+        }
+        val executor = WriteopiaActionExecutor(manager, resolveAi = { null }, resolveImageAi = { generator })
+
+        executor.execute(WritingSuggestionAction.IMAGE, "p1", ui)
+
+        // The whole document went as context, not only the paragraph.
+        assertEquals(1, requests.size)
+        assertEquals("We need milk.", requests.single().first)
+        assertEquals("Groceries", requests.single().second)
+        assertTrue(requests.single().third.contains("And eggs."))
+
+        assertEquals(
+            listOf(StoryTypes.TITLE, StoryTypes.TEXT, StoryTypes.IMAGE, StoryTypes.TEXT),
+            manager.typesInOrder()
+        )
+        val image = manager.currentStory.value.stories[2.0]
+        assertNotNull(image)
+        assertEquals("https://images.test/milk.png", image.url)
+        assertTrue(picked.isEmpty(), "the picker should not open when the cloud draws")
+    }
+
+    @Test
+    fun `when the cloud fails to draw nothing is inserted`() = runTest {
+        val manager = manager()
+        val generator = object : AiImageGenerator {
+            override suspend fun generateImage(paragraph: String, documentTitle: String, documentText: String): ResultData<String> =
+                ResultData.Error(Exception("quota"))
+        }
+        val executor = WriteopiaActionExecutor(manager, resolveAi = { null }, resolveImageAi = { generator })
+
+        executor.execute(WritingSuggestionAction.IMAGE, "p1", WritingAgentUi.None)
+
+        assertEquals(listOf(StoryTypes.TITLE, StoryTypes.TEXT, StoryTypes.TEXT), manager.typesInOrder())
+    }
+
+    @Test
+    fun `without the cloud an image is picked and added below the paragraph`() = runTest {
         val manager = manager()
         val added = mutableListOf<Pair<String, Double>>()
         val executor = WriteopiaActionExecutor(manager, resolveAi = { null }, addImage = { path, pos -> added.add(path to pos) })

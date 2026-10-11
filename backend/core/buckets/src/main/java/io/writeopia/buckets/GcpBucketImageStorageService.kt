@@ -37,22 +37,12 @@ object GcpBucketImageStorageService : ImageStorageService {
                         val fileName =
                             "uploads/$userId/${System.currentTimeMillis()}-${part.originalFileName}"
 
-                        val blobInfo =
-                            BlobInfo.newBuilder(bucketName, fileName)
-                                .setContentType(part.contentType?.toString())
-                                .build()
-
-                        val bytes = part.streamProvider().readBytes()
-                        storage.create(blobInfo, bytes)
-
-                        val blobId = BlobId.of(bucketName, fileName)
-                        val signedUrl = storage.signUrl(
-                            BlobInfo.newBuilder(blobId).build(),
-                            SIGNED_URL_EXPIRATION_DAYS,
-                            TimeUnit.DAYS
+                        uploadedUrl = store(
+                            bucketName = bucketName,
+                            fileName = fileName,
+                            contentType = part.contentType?.toString(),
+                            bytes = part.streamProvider().readBytes()
                         )
-
-                        uploadedUrl = signedUrl.toString()
                     }
                 }
                 part.dispose()
@@ -60,6 +50,48 @@ object GcpBucketImageStorageService : ImageStorageService {
 
             uploadedUrl
         }
+
+    /**
+     * Stores [bytes] under the uploads folder of [userId], like [uploadImage] does with a file
+     * the user sent, so the account deletion finds it with the rest of the user's media.
+     * @return A signed URL (valid for 7 days), or a placeholder in debug mode.
+     */
+    override suspend fun uploadImageBytes(
+        bytes: ByteArray,
+        contentType: String,
+        fileName: String,
+        userId: String,
+        debugMode: Boolean
+    ): String? = withContext(Dispatchers.IO) {
+        if (debugMode) {
+            "https://picsum.photos/200"
+        } else {
+            store(
+                bucketName = BucketConfig.imagesBucketName(debugMode),
+                fileName = "uploads/$userId/${System.currentTimeMillis()}-$fileName",
+                contentType = contentType,
+                bytes = bytes
+            )
+        }
+    }
+
+    /** Writes the object and signs a URL for it. */
+    private fun store(bucketName: String, fileName: String, contentType: String?, bytes: ByteArray): String {
+        val blobInfo = BlobInfo.newBuilder(bucketName, fileName)
+            .setContentType(contentType)
+            .build()
+
+        storage.create(blobInfo, bytes)
+
+        val blobId = BlobId.of(bucketName, fileName)
+        val signedUrl = storage.signUrl(
+            BlobInfo.newBuilder(blobId).build(),
+            SIGNED_URL_EXPIRATION_DAYS,
+            TimeUnit.DAYS
+        )
+
+        return signedUrl.toString()
+    }
 
     /**
      * Deletes every object under [prefix] in [bucketName] (e.g. "uploads/$userId/" - see

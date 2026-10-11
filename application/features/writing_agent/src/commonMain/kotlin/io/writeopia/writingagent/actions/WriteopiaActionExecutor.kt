@@ -1,6 +1,7 @@
 package io.writeopia.writingagent.actions
 
 import io.writeopia.ai.AiCommand
+import io.writeopia.ai.AiImageGenerator
 import io.writeopia.ai.AiStreaming
 import io.writeopia.ai.task.AiTaskManager
 import io.writeopia.ai.task.AiTaskType
@@ -13,6 +14,7 @@ import io.writeopia.sdk.models.story.StoryType
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
 import io.writeopia.sdk.models.story.TagInfo
+import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.ui.manager.WriteopiaStateManager
 import io.writeopia.writingagent.actions.AiTextWriter.finalTextOrError
 
@@ -23,12 +25,15 @@ import io.writeopia.writingagent.actions.AiTextWriter.finalTextOrError
  * end. The document title is written into the title block itself.
  *
  * The actions that need text, like the TL;DR, use the AI the user picked, through [resolveAi].
+ * The image is drawn by the cloud, through [resolveImageAi], with the whole document as context;
+ * when the cloud can't answer, the image picker opens instead, so the click still adds a picture.
  * They run as tasks of [aiTaskManager], so the editor's task indicator shows their progress and
  * why they failed, like the editor's AI menu does. Without a task manager they run inline.
  */
 class WriteopiaActionExecutor(
     private val manager: WriteopiaStateManager,
     private val resolveAi: suspend () -> AiStreaming?,
+    private val resolveImageAi: suspend () -> AiImageGenerator? = { null },
     private val addImage: (path: String, position: Double) -> Unit = { path, position ->
         manager.addImage(path, position)
     },
@@ -62,9 +67,20 @@ class WriteopiaActionExecutor(
                 manager.addLinkToDocument(below)
             }
 
-            WritingSuggestionAction.IMAGE -> ui.pickImage { path ->
-                val current = positionOf(storyStepId) ?: manager.lastPosition()
-                addImage(path, current + 1)
+            WritingSuggestionAction.IMAGE -> {
+                val generator = resolveImageAi()
+
+                if (generator == null) {
+                    log("the cloud AI can't draw right now, opening the image picker")
+                    ui.pickImage { path ->
+                        val current = positionOf(storyStepId) ?: manager.lastPosition()
+                        addImage(path, current + 1)
+                    }
+                } else {
+                    aiTask("Drawing the image...") {
+                        generatedImage(generator, storyStepId, position)
+                    }
+                }
             }
 
             WritingSuggestionAction.DRAWING -> ui.openDrawing()
@@ -245,6 +261,42 @@ class WriteopiaActionExecutor(
         return code.map { }
     }
 
+    /**
+     * Asks the cloud for a picture of the paragraph, with the title and the whole document as
+     * context, and puts it below the paragraph. The backend stores the picture, so the block
+     * only carries its URL, like an uploaded image.
+     */
+    private suspend fun generatedImage(
+        generator: AiImageGenerator,
+        storyStepId: String?,
+        position: Double,
+    ): Result<Unit> {
+        val paragraph = manager.getStory(position)?.text?.takeIf { it.isNotBlank() }
+            ?: return Result.failure(Exception("There is no paragraph to illustrate"))
+        val document = manager.getDocument()
+
+        log("asking the cloud for an image of \"${paragraph.take(60)}\"")
+        val url = when (
+            val result = generator.generateImage(
+                paragraph = paragraph,
+                documentTitle = document.title,
+                documentText = manager.getDocumentText().take(IMAGE_CONTEXT_LIMIT),
+            )
+        ) {
+            is ResultData.Complete -> result.data
+            is ResultData.Error -> return Result.failure(result.exception ?: Exception("The AI drew no picture"))
+            else -> return Result.failure(Exception("The AI drew no picture"))
+        }
+
+        // The document may have changed while the AI drew.
+        val below = (positionOf(storyStepId) ?: position) + 1
+        log("inserting the image below $storyStepId")
+        manager.trackState()
+        manager.addAtPosition(StoryStep(type = StoryTypes.IMAGE.type, url = url), below)
+
+        return Result.success(Unit)
+    }
+
     private suspend fun heading(storyStepId: String?, position: Double): Result<Unit> {
         val paragraph = manager.getStory(position)?.text ?: ""
 
@@ -314,6 +366,9 @@ class WriteopiaActionExecutor(
         private const val DEFAULT_COLUMNS = 3
         private const val DEFAULT_ROWS = 3
         private const val MAX_LIST_ITEMS = 10
+
+        /** How much of the document goes with the image request, so the picture fits the text. */
+        const val IMAGE_CONTEXT_LIMIT = 20_000
 
         const val CODE_PROMPT =
             "The paragraph below introduces or describes a piece of code, a command or a " +

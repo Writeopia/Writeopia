@@ -31,6 +31,8 @@ dependencies {
     implementation(project(":backend:core:database"))
     implementation(project(":backend:core:connection"))
     implementation(project(":backend:core:genai_service"))
+    // The pictures the AI draws are stored with the user's other media.
+    implementation(project(":backend:core:buckets"))
     implementation(project(":backend:core:typesafe_service"))
 
     testImplementation(libs.ktor.server.tests)

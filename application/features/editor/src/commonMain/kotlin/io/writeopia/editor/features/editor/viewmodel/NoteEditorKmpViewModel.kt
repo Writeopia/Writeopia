@@ -188,6 +188,8 @@ class NoteEditorKmpViewModel(
             executor = WriteopiaActionExecutor(
                 manager = writeopiaManager,
                 resolveAi = { aiClients.resolve(authRepository.getUser().id) },
+                // Only the cloud draws; without it the picker opens.
+                resolveImageAi = { aiClients.imageGenerator() },
                 addImage = { path, position -> addImage(path, position) },
                 aiTaskManager = aiTaskManager,
                 // The same prefix as the editor's own AI tasks, so Escape cancels these too.

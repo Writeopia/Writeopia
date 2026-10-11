@@ -2,7 +2,10 @@ package io.writeopia.api.genai.service
 
 import io.writeopia.sdk.models.presentation.PresentationPrompt
 import com.google.genai.Client
+import com.google.genai.types.GenerateContentConfig
 import io.writeopia.api.genai.model.AiGenerateResponse
+import io.writeopia.api.genai.model.GeneratedImage
+import io.writeopia.api.genai.model.ImageGeneration
 import io.writeopia.api.genai.model.TokenUsage
 import io.writeopia.connection.logger
 import kotlinx.coroutines.Dispatchers
@@ -31,7 +34,9 @@ private const val TAGS_PROMPT =
 class GenAiService(
     private val projectId: String = System.getenv("GOOGLE_CLOUD_PROJECT") ?: "",
     private val location: String = System.getenv("GOOGLE_CLOUD_LOCATION") ?: "us-central1",
-    private val defaultModel: String = System.getenv("GENAI_MODEL") ?: "gemini-2.0-flash"
+    private val defaultModel: String = System.getenv("GENAI_MODEL") ?: "gemini-2.0-flash",
+    /** The Gemini model that answers with pictures. Its usage metadata counts the image tokens. */
+    private val imageModel: String = System.getenv("GENAI_IMAGE_MODEL") ?: DEFAULT_IMAGE_MODEL
 ) {
     private var client: Client? = null
 
@@ -256,5 +261,68 @@ class GenAiService(
 
     fun streamGenerateBaseWithUsage(prompt: String, modelName: String? = null, onUsage: (TokenUsage) -> Unit): Flow<AiGenerateResponse> {
         return streamGenerateWithUsage(prompt, modelName, onUsage)
+    }
+
+    /**
+     * Asks [imageModel] for one picture of [prompt]. Gemini's image models answer through the
+     * same generateContent call as the text ones, with the picture as inline data, and report
+     * the tokens of the picture in the usage metadata, so the image counts in the quota like
+     * text does.
+     */
+    suspend fun generateImageWithUsage(prompt: String, modelName: String? = null): ImageGeneration =
+        withContext(Dispatchers.IO) {
+            try {
+                if (!isAvailable()) {
+                    return@withContext ImageGeneration(
+                        error = "GenAI is not configured. Please set GOOGLE_CLOUD_PROJECT environment variable."
+                    )
+                }
+
+                val targetModel = modelName?.takeIf { it.isNotBlank() } ?: imageModel
+                val config = GenerateContentConfig.builder()
+                    .responseModalities("TEXT", "IMAGE")
+                    .build()
+
+                val response = getClient().models.generateContent(targetModel, prompt, config)
+
+                val usage = response.usageMetadata().orElse(null)
+                val tokenUsage = TokenUsage(
+                    inputTokens = usage?.promptTokenCount()?.orElse(0) ?: 0,
+                    outputTokens = usage?.candidatesTokenCount()?.orElse(0) ?: 0,
+                    totalTokens = usage?.totalTokenCount()?.orElse(0) ?: 0
+                )
+
+                val image = response.parts().orEmpty()
+                    .mapNotNull { part -> part.inlineData().orElse(null) }
+                    .firstNotNullOfOrNull { blob ->
+                        blob.data().orElse(null)?.let { bytes ->
+                            GeneratedImage(
+                                bytes = bytes,
+                                mimeType = blob.mimeType().orElse(null) ?: "image/png"
+                            )
+                        }
+                    }
+
+                if (image == null) {
+                    logger.warn(
+                        "GenAI image model {} answered without a picture: {}",
+                        targetModel,
+                        response.text()?.take(200)
+                    )
+                }
+
+                ImageGeneration(
+                    image = image,
+                    error = if (image == null) "The model answered without a picture" else null,
+                    tokenUsage = tokenUsage
+                )
+            } catch (e: Exception) {
+                logger.error("Error generating an image with GenAI", e)
+                ImageGeneration(error = e.message ?: "Unknown error occurred")
+            }
+        }
+
+    companion object {
+        const val DEFAULT_IMAGE_MODEL = "gemini-2.5-flash-image"
     }
 }

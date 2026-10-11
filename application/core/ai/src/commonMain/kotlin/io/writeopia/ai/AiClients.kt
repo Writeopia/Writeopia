@@ -85,6 +85,15 @@ class AiClients(
         }
     }
 
+    /**
+     * The cloud, drawing pictures, when it can answer right now; null otherwise. The provider
+     * the user picked doesn't matter here, since only the cloud draws.
+     */
+    suspend fun imageGenerator(): AiImageGenerator? {
+        val repository = genAiRepository ?: return null
+        return if (isCloudAiReady()) CloudImageGenerator(repository) else null
+    }
+
     private suspend fun localAi(userId: String): ResolvedAi.Local? {
         val repository = localAiRepository ?: return null
         val url = repository.getConfiguredUrl(userId)?.trim()?.takeIf { it.isNotEmpty() } ?: return null

@@ -275,7 +275,7 @@
   <string name="writing_suggestion_list">Add a bullet list</string>
   <string name="writing_suggestion_check_list">Add a checklist</string>
   <string name="writing_suggestion_new_document_link">Create a linked document</string>
-  <string name="writing_suggestion_image">Add an image</string>
+  <string name="writing_suggestion_image">Draw an image</string>
   <string name="writing_suggestion_drawing">Add a drawing</string>
   <string name="writing_suggestion_spreadsheet">Turn into a table</string>
   <string name="writing_suggestion_section_heading">Add a section heading</string>
