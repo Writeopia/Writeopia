@@ -8,9 +8,9 @@ public extension WriteopiaStateManager {
     /// Adds `steps`, in order, right below the step with `stepId`, or at the end when it's gone.
     func addSteps(_ steps: [StoryStep], afterStepId stepId: String?) {
         guard isEditable, !steps.isEmpty else { return }
-        let position = stepId.flatMap { position(of: $0) } ?? lastPosition
-        if let position {
-            currentStory = writeopiaManager.addSteps(steps, after: position, state: currentStory)
+        let target = stepId.flatMap { id in self.position(of: id) } ?? lastPosition
+        if let target {
+            currentStory = writeopiaManager.addSteps(steps, after: target, state: currentStory)
         } else {
             for step in steps {
                 currentStory = writeopiaManager.addAtPosition(step, after: lastPosition, state: currentStory)
@@ -45,8 +45,8 @@ public extension WriteopiaStateManager {
 
     /// Adds or removes `tag` on the step with `stepId`, like the callout of the writing agent.
     func toggleTag(_ tag: BlockTag, stepId: String) {
-        guard isEditable, let position = position(of: stepId) else { return }
-        let newState = writeopiaManager.toggleTag(tag, positions: [position], state: currentStory)
+        guard isEditable, let target = self.position(of: stepId) else { return }
+        let newState = writeopiaManager.toggleTag(tag, positions: [target], state: currentStory)
         guard newState != currentStory else { return }
         currentStory = newState
         changeCount += 1
@@ -63,8 +63,8 @@ public extension WriteopiaStateManager {
     /// Adds a link to the document `documentId` right below the step with `stepId`.
     func addDocumentLink(afterStepId stepId: String?, documentId: String, title: String) {
         guard isEditable else { return }
-        guard let position = stepId.flatMap({ position(of: $0) }) ?? lastPosition else { return }
-        currentStory = writeopiaManager.addDocumentLink(after: position, documentId: documentId, title: title, state: currentStory)
+        guard let target = stepId.flatMap({ id in self.position(of: id) }) ?? lastPosition else { return }
+        currentStory = writeopiaManager.addDocumentLink(after: target, documentId: documentId, title: title, state: currentStory)
         changeCount += 1
     }
 
