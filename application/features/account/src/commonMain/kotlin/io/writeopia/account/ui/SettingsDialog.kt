@@ -30,8 +30,6 @@ import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -50,21 +48,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onPreviewKeyEvent
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.compose.ui.window.PopupProperties
 import io.writeopia.app.dto.SearchUserApi
 import io.writeopia.common.utils.configuration.LocalPlatform
 import io.writeopia.common.utils.configuration.PlatformType
 import io.writeopia.common.utils.date.formatCompactNumber
 import io.writeopia.common.utils.icons.WrIcons
+import io.writeopia.commonui.autocomplete.AutocompleteField
 import io.writeopia.commonui.SettingsPanel
 import io.writeopia.commonui.buttons.CommonButton
 import io.writeopia.commonui.workplace.WorkspacePathSelector
@@ -78,7 +71,6 @@ import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.theme.WriteopiaTheme
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -775,167 +767,28 @@ private fun AddUserToWorkspace(
     var usernameInput by remember {
         mutableStateOf("")
     }
-    var searchResults by remember {
-        mutableStateOf<List<SearchUserApi>>(emptyList())
-    }
-    var isSearching by remember {
-        mutableStateOf(false)
-    }
-    var isDropdownExpanded by remember {
-        mutableStateOf(false)
-    }
-    var shouldSearch by remember {
-        mutableStateOf(true)
-    }
-    var selectedIndex by remember {
-        mutableStateOf(-1)
-    }
-
-    LaunchedEffect(usernameInput, selected.id) {
-        if (!shouldSearch) {
-            return@LaunchedEffect
-        }
-        val query = usernameInput.trim().removePrefix("@")
-        if (query.length >= 2) {
-            delay(300)
-            isSearching = true
-            try {
-                searchResults = searchUsers(selected.id, query)
-                isDropdownExpanded = searchResults.isNotEmpty()
-                selectedIndex = -1
-            } finally {
-                isSearching = false
-            }
-            return@LaunchedEffect
-        }
-        searchResults = emptyList()
-        isDropdownExpanded = false
-        selectedIndex = -1
-    }
 
     Spacer(modifier = Modifier.height(6.dp))
 
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Box {
-            OutlinedTextField(
-                value = usernameInput,
-                onValueChange = {
-                    usernameInput = it
-                    selectedIndex = -1
-                    shouldSearch = true
-                },
-                modifier = Modifier.onPreviewKeyEvent { event ->
-                    if (event.type == KeyEventType.KeyDown && isDropdownExpanded && searchResults.isNotEmpty()) {
-                        when (event.key) {
-                            Key.DirectionDown -> {
-                                selectedIndex = if (selectedIndex < searchResults.lastIndex) {
-                                    selectedIndex + 1
-                                } else {
-                                    0
-                                }
-                                true
-                            }
-                            Key.DirectionUp -> {
-                                selectedIndex = if (selectedIndex > 0) {
-                                    selectedIndex - 1
-                                } else {
-                                    searchResults.lastIndex
-                                }
-                                true
-                            }
-                            Key.Enter, Key.NumPadEnter -> {
-                                if (selectedIndex in searchResults.indices) {
-                                    usernameInput = searchResults[selectedIndex].username
-                                    isDropdownExpanded = false
-                                    shouldSearch = false
-                                    selectedIndex = -1
-                                    true
-                                } else {
-                                    false
-                                }
-                            }
-                            Key.Escape -> {
-                                isDropdownExpanded = false
-                                selectedIndex = -1
-                                true
-                            }
-                            else -> false
-                        }
-                    } else if (event.type == KeyEventType.KeyDown && event.key == Key.Escape && isDropdownExpanded) {
-                        isDropdownExpanded = false
-                        selectedIndex = -1
-                        true
-                    } else {
-                        false
-                    }
-                },
-                shape = MaterialTheme.shapes.large,
-                singleLine = true,
-                placeholder = {
-                    BasicText(
-                        WrStrings.username(),
-                        style = MaterialTheme
-                            .typography
-                            .titleSmall
-                            .copy(color = WriteopiaTheme.colorScheme.textLighter)
-                    )
-                },
-                trailingIcon = {
-                    if (isSearching) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(16.dp),
-                            strokeWidth = 2.dp
-                        )
-                    }
-                },
-                textStyle = MaterialTheme
-                    .typography
-                    .titleSmall
-                    .copy(color = MaterialTheme.colorScheme.onBackground)
-            )
-
-            DropdownMenu(
-                expanded = isDropdownExpanded && searchResults.isNotEmpty(),
-                onDismissRequest = {
-                    isDropdownExpanded = false
-                    selectedIndex = -1
-                },
-                properties = PopupProperties(focusable = false)
-            ) {
-                searchResults.forEachIndexed { index, user ->
-                    DropdownMenuItem(
-                        modifier = Modifier.background(
-                            if (index == selectedIndex) {
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                            } else {
-                                Color.Transparent
-                            }
-                        ),
-                        text = {
-                            Column {
-                                Text(
-                                    text = user.name,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    text = "@${user.username}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        },
-                        onClick = {
-                            usernameInput = user.username
-                            isDropdownExpanded = false
-                            shouldSearch = false
-                            selectedIndex = -1
-                        }
-                    )
-                }
-            }
-        }
+        AutocompleteField<SearchUserApi>(
+            value = usernameInput,
+            onValueChange = { usernameInput = it },
+            search = { query -> searchUsers(selected.id, query) },
+            suggestionToText = { user -> user.username },
+            suggestionContent = { user -> UserSuggestionItem(user) },
+            searchKey = selected.id,
+            normalizeQuery = { it.trim().removePrefix("@") },
+            placeholder = {
+                BasicText(
+                    WrStrings.username(),
+                    style = MaterialTheme
+                        .typography
+                        .titleSmall
+                        .copy(color = WriteopiaTheme.colorScheme.textLighter)
+                )
+            },
+        )
 
         Spacer(modifier = Modifier.width(8.dp))
 
@@ -944,10 +797,6 @@ private fun AddUserToWorkspace(
             if (username.isNotBlank()) {
                 addUserToTeam(username)
                 usernameInput = ""
-                searchResults = emptyList()
-                isDropdownExpanded = false
-                shouldSearch = false
-                selectedIndex = -1
             }
         }
     }
@@ -994,6 +843,27 @@ private fun AddUserToWorkspace(
         else -> {
             CircularProgressIndicator()
         }
+    }
+}
+
+@Composable
+private fun UserSuggestionItem(user: SearchUserApi) {
+    Column {
+        Text(
+            text = user.name,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            softWrap = false
+        )
+        Text(
+            text = "@${user.username}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            softWrap = false
+        )
     }
 }
 
