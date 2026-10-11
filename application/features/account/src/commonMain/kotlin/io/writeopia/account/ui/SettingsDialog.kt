@@ -50,6 +50,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -748,176 +753,7 @@ private fun AddUserToWorkspace(
     addUserToTeam: (String) -> Unit,
     searchUsers: suspend (workspaceId: String, query: String) -> List<SearchUserApi> = { _, _ -> emptyList() },
 ) {
-    if (selected.role == "ADMIN") {
-        BasicText(
-            text = "${WrStrings.addToTeam()} ${selected.name}",
-            style = MaterialTheme
-                .typography
-                .titleSmall
-                .copy(color = MaterialTheme.colorScheme.onBackground)
-        )
-
-        var usernameInput by remember {
-            mutableStateOf("")
-        }
-        var searchResults by remember {
-            mutableStateOf<List<SearchUserApi>>(emptyList())
-        }
-        var isSearching by remember {
-            mutableStateOf(false)
-        }
-        var isDropdownExpanded by remember {
-            mutableStateOf(false)
-        }
-        var shouldSearch by remember {
-            mutableStateOf(true)
-        }
-
-        LaunchedEffect(usernameInput, selected.id) {
-            if (!shouldSearch) {
-                return@LaunchedEffect
-            }
-            val query = usernameInput.trim().removePrefix("@")
-            if (query.length >= 2) {
-                delay(300)
-                isSearching = true
-                try {
-                    searchResults = searchUsers(selected.id, query)
-                    isDropdownExpanded = searchResults.isNotEmpty()
-                } finally {
-                    isSearching = false
-                }
-            } else {
-                searchResults = emptyList()
-                isDropdownExpanded = false
-            }
-        }
-
-        Spacer(modifier = Modifier.height(6.dp))
-
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box {
-                OutlinedTextField(
-                    value = usernameInput,
-                    onValueChange = {
-                        usernameInput = it
-                        shouldSearch = true
-                    },
-                    shape = MaterialTheme.shapes.large,
-                    singleLine = true,
-                    placeholder = {
-                        BasicText(
-                            WrStrings.username(),
-                            style = MaterialTheme
-                                .typography
-                                .titleSmall
-                                .copy(color = WriteopiaTheme.colorScheme.textLighter)
-                        )
-                    },
-                    trailingIcon = {
-                        if (isSearching) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
-                                strokeWidth = 2.dp
-                            )
-                        }
-                    },
-                    textStyle = MaterialTheme
-                        .typography
-                        .titleSmall
-                        .copy(color = MaterialTheme.colorScheme.onBackground)
-                )
-
-                DropdownMenu(
-                    expanded = isDropdownExpanded && searchResults.isNotEmpty(),
-                    onDismissRequest = { isDropdownExpanded = false },
-                    properties = PopupProperties(focusable = false)
-                ) {
-                    searchResults.forEach { user ->
-                        DropdownMenuItem(
-                            text = {
-                                Column {
-                                    Text(
-                                        text = user.name,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        text = "@${user.username}",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            },
-                            onClick = {
-                                usernameInput = user.username
-                                isDropdownExpanded = false
-                                shouldSearch = false
-                            }
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            CommonButton(text = WrStrings.add()) {
-                val username = usernameInput.trim().removePrefix("@")
-                if (username.isNotBlank()) {
-                    addUserToTeam(username)
-                    usernameInput = ""
-                    searchResults = emptyList()
-                    isDropdownExpanded = false
-                    shouldSearch = false
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        when (val usersResult = usersInSelectedWorkspace.collectAsState(ResultData.Idle()).value) {
-            is ResultData.Complete -> {
-                val users = usersResult.data
-
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    if (users.isNotEmpty()) {
-                        users.forEach { userName ->
-                            BasicText(
-                                text = userName,
-                                style = MaterialTheme
-                                    .typography
-                                    .bodySmall
-                                    .copy(MaterialTheme.colorScheme.onBackground)
-                            )
-                        }
-                    } else {
-                        BasicText(
-                            text = "No users in this team",
-                            style = MaterialTheme
-                                .typography
-                                .bodySmall
-                                .copy(MaterialTheme.colorScheme.onBackground)
-                        )
-                    }
-                }
-            }
-
-            is ResultData.Error -> {
-                BasicText(
-                    text = "Error loading users",
-                    style = MaterialTheme
-                        .typography
-                        .bodySmall
-                        .copy(MaterialTheme.colorScheme.onBackground)
-                )
-            }
-
-            else -> {
-                CircularProgressIndicator()
-            }
-        }
-    } else {
+    if (selected.role != "ADMIN") {
         BasicText(
             text = "Only admins can add users",
             style = MaterialTheme
@@ -925,6 +761,239 @@ private fun AddUserToWorkspace(
                 .bodySmall
                 .copy(MaterialTheme.colorScheme.onBackground)
         )
+        return
+    }
+
+    BasicText(
+        text = "${WrStrings.addToTeam()} ${selected.name}",
+        style = MaterialTheme
+            .typography
+            .titleSmall
+            .copy(color = MaterialTheme.colorScheme.onBackground)
+    )
+
+    var usernameInput by remember {
+        mutableStateOf("")
+    }
+    var searchResults by remember {
+        mutableStateOf<List<SearchUserApi>>(emptyList())
+    }
+    var isSearching by remember {
+        mutableStateOf(false)
+    }
+    var isDropdownExpanded by remember {
+        mutableStateOf(false)
+    }
+    var shouldSearch by remember {
+        mutableStateOf(true)
+    }
+    var selectedIndex by remember {
+        mutableStateOf(-1)
+    }
+
+    LaunchedEffect(usernameInput, selected.id) {
+        if (!shouldSearch) {
+            return@LaunchedEffect
+        }
+        val query = usernameInput.trim().removePrefix("@")
+        if (query.length >= 2) {
+            delay(300)
+            isSearching = true
+            try {
+                searchResults = searchUsers(selected.id, query)
+                isDropdownExpanded = searchResults.isNotEmpty()
+                selectedIndex = -1
+            } finally {
+                isSearching = false
+            }
+            return@LaunchedEffect
+        }
+        searchResults = emptyList()
+        isDropdownExpanded = false
+        selectedIndex = -1
+    }
+
+    Spacer(modifier = Modifier.height(6.dp))
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box {
+            OutlinedTextField(
+                value = usernameInput,
+                onValueChange = {
+                    usernameInput = it
+                    selectedIndex = -1
+                    shouldSearch = true
+                },
+                modifier = Modifier.onPreviewKeyEvent { event ->
+                    if (event.type == KeyEventType.KeyDown && isDropdownExpanded && searchResults.isNotEmpty()) {
+                        when (event.key) {
+                            Key.DirectionDown -> {
+                                selectedIndex = if (selectedIndex < searchResults.lastIndex) {
+                                    selectedIndex + 1
+                                } else {
+                                    0
+                                }
+                                true
+                            }
+                            Key.DirectionUp -> {
+                                selectedIndex = if (selectedIndex > 0) {
+                                    selectedIndex - 1
+                                } else {
+                                    searchResults.lastIndex
+                                }
+                                true
+                            }
+                            Key.Enter, Key.NumPadEnter -> {
+                                if (selectedIndex in searchResults.indices) {
+                                    usernameInput = searchResults[selectedIndex].username
+                                    isDropdownExpanded = false
+                                    shouldSearch = false
+                                    selectedIndex = -1
+                                    true
+                                } else {
+                                    false
+                                }
+                            }
+                            Key.Escape -> {
+                                isDropdownExpanded = false
+                                selectedIndex = -1
+                                true
+                            }
+                            else -> false
+                        }
+                    } else if (event.type == KeyEventType.KeyDown && event.key == Key.Escape && isDropdownExpanded) {
+                        isDropdownExpanded = false
+                        selectedIndex = -1
+                        true
+                    } else {
+                        false
+                    }
+                },
+                shape = MaterialTheme.shapes.large,
+                singleLine = true,
+                placeholder = {
+                    BasicText(
+                        WrStrings.username(),
+                        style = MaterialTheme
+                            .typography
+                            .titleSmall
+                            .copy(color = WriteopiaTheme.colorScheme.textLighter)
+                    )
+                },
+                trailingIcon = {
+                    if (isSearching) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp
+                        )
+                    }
+                },
+                textStyle = MaterialTheme
+                    .typography
+                    .titleSmall
+                    .copy(color = MaterialTheme.colorScheme.onBackground)
+            )
+
+            DropdownMenu(
+                expanded = isDropdownExpanded && searchResults.isNotEmpty(),
+                onDismissRequest = {
+                    isDropdownExpanded = false
+                    selectedIndex = -1
+                },
+                properties = PopupProperties(focusable = false)
+            ) {
+                searchResults.forEachIndexed { index, user ->
+                    DropdownMenuItem(
+                        modifier = Modifier.background(
+                            if (index == selectedIndex) {
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                            } else {
+                                Color.Transparent
+                            }
+                        ),
+                        text = {
+                            Column {
+                                Text(
+                                    text = user.name,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "@${user.username}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        },
+                        onClick = {
+                            usernameInput = user.username
+                            isDropdownExpanded = false
+                            shouldSearch = false
+                            selectedIndex = -1
+                        }
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        CommonButton(text = WrStrings.add()) {
+            val username = usernameInput.trim().removePrefix("@")
+            if (username.isNotBlank()) {
+                addUserToTeam(username)
+                usernameInput = ""
+                searchResults = emptyList()
+                isDropdownExpanded = false
+                shouldSearch = false
+                selectedIndex = -1
+            }
+        }
+    }
+
+    Spacer(modifier = Modifier.height(8.dp))
+
+    when (val usersResult = usersInSelectedWorkspace.collectAsState(ResultData.Idle()).value) {
+        is ResultData.Complete -> {
+            val users = usersResult.data
+
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                if (users.isNotEmpty()) {
+                    users.forEach { userName ->
+                        BasicText(
+                            text = userName,
+                            style = MaterialTheme
+                                .typography
+                                .bodySmall
+                                .copy(MaterialTheme.colorScheme.onBackground)
+                        )
+                    }
+                } else {
+                    BasicText(
+                        text = "No users in this team",
+                        style = MaterialTheme
+                            .typography
+                            .bodySmall
+                            .copy(MaterialTheme.colorScheme.onBackground)
+                    )
+                }
+            }
+        }
+
+        is ResultData.Error -> {
+            BasicText(
+                text = "Error loading users",
+                style = MaterialTheme
+                    .typography
+                    .bodySmall
+                    .copy(MaterialTheme.colorScheme.onBackground)
+            )
+        }
+
+        else -> {
+            CircularProgressIndicator()
+        }
     }
 }
 
