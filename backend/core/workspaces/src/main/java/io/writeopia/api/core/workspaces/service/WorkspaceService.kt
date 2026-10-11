@@ -8,6 +8,7 @@ import com.google.cloud.run.v2.JobsClient
 import com.google.cloud.run.v2.RunJobRequest
 import io.writeopia.api.core.auth.repository.getUserByEmail
 import io.writeopia.api.core.auth.repository.getUserById
+import io.writeopia.api.core.auth.repository.getUserByUsernameOrEmail
 import io.writeopia.api.core.workspaces.models.AddUserResult
 import io.writeopia.api.core.workspaces.repository.countUsersInWorkspace
 import io.writeopia.api.core.workspaces.repository.getUserInWorkspace
@@ -75,9 +76,9 @@ object WorkspaceService {
 
     fun getUserInWorkspace(
         workspaceId: String,
-        userEmail: String,
+        username: String,
         writeopiaDb: WriteopiaDbBackend
-    ): WorkspaceUser? = writeopiaDb.getUserInWorkspace(workspaceId, userEmail)
+    ): WorkspaceUser? = writeopiaDb.getUserInWorkspace(workspaceId, username)
 
     /**
      * Creates a workspace and adds the user as admin in a single transaction.
@@ -108,12 +109,12 @@ object WorkspaceService {
     }
 
     fun addUserToWorkspaceAdmin(
-        userEmail: String,
+        username: String,
         workspaceId: String,
         role: String,
         writeopiaDb: WriteopiaDbBackend
     ): Boolean {
-        val user = writeopiaDb.getUserByEmail(userEmail)
+        val user = writeopiaDb.getUserByUsernameOrEmail(username)
         val workspace = writeopiaDb.getWorkspaceById(workspaceId)
 
         if (user != null && workspace != null) {
@@ -136,7 +137,7 @@ object WorkspaceService {
 
     fun addUserToWorkspaceSecure(
         workspaceOwnerId: String,
-        userEmail: String,
+        username: String,
         workspaceId: String,
         role: String,
         writeopiaDb: WriteopiaDbBackend
@@ -148,17 +149,17 @@ object WorkspaceService {
         }
 
         // Check if user already exists in the workspace
-        val existingUser = writeopiaDb.getUserInWorkspace(workspaceId, userEmail)
+        val existingUser = writeopiaDb.getUserInWorkspace(workspaceId, username)
         if (existingUser != null) {
-            println("User with email $userEmail is already in this workspace")
+            println("User with username $username is already in this workspace")
             return AddUserResult.USER_ALREADY_IN_WORKSPACE
         }
 
-        return writeopiaDb.getUserByEmail(userEmail)?.id?.let { userId ->
+        return writeopiaDb.getUserByUsernameOrEmail(username)?.id?.let { userId ->
             writeopiaDb.insertUserInWorkspace(workspaceId, userId, role)
             AddUserResult.SUCCESS
         } ?: run {
-            println("User with email $userEmail doesn't exist")
+            println("User with username $username doesn't exist")
             AddUserResult.USER_NOT_FOUND
         }
     }

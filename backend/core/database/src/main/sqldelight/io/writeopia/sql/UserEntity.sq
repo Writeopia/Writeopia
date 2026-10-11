@@ -107,6 +107,18 @@ ORDER BY email ASC
 LIMIT ?
 OFFSET ?;
 
+searchUsersByUsernameNotInWorkspace:
+SELECT user_entity.id, user_entity.name, user_entity.username
+FROM user_entity
+LEFT JOIN workspace_to_user
+  ON workspace_to_user.workspace_id = ? AND workspace_to_user.user_id = user_entity.id
+WHERE user_entity.username ILIKE '%' || ? || '%'
+  AND user_entity.status != 'DELETION_PENDING'
+  AND workspace_to_user.user_id IS NULL
+ORDER BY user_entity.username ASC
+LIMIT ?
+OFFSET ?;
+
 selectAccountTypeById:
 SELECT account_type
 FROM user_entity
