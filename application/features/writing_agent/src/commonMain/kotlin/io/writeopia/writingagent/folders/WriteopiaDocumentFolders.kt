@@ -2,6 +2,7 @@ package io.writeopia.writingagent.folders
 
 import io.writeopia.ai.AiStreaming
 import io.writeopia.ai.task.AiTaskManager
+import io.writeopia.ai.task.AiTaskStatus
 import io.writeopia.ai.task.AiTaskType
 import io.writeopia.app.dto.writingagent.FolderCandidate
 import io.writeopia.core.folders.repository.folder.FolderRepository
@@ -11,6 +12,9 @@ import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.writingagent.actions.AiTextWriter
 import io.writeopia.writingagent.actions.AiTextWriter.askOneLine
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 /**
  * Files the open document with the app's folder repository. The new folder is created at the
@@ -47,8 +51,9 @@ class WriteopiaDocumentFolders(
 
         // The task runs on the manager's own scope; the dialog waits here for its outcome.
         val outcome = CompletableDeferred<Result<String>>()
+        val taskId = "${taskIdPrefix()}-${GenerateId.generate()}"
         taskManager.enqueueTask(
-            id = "${taskIdPrefix()}-${GenerateId.generate()}",
+            id = taskId,
             type = AiTaskType.TEXT_GENERATION,
             description = "Creating a folder for the document..."
         ) {
@@ -56,7 +61,21 @@ class WriteopiaDocumentFolders(
             outcome.complete(result)
             result.map { }
         }
-        return outcome.await()
+
+        return coroutineScope {
+            // A task cancelled while still queued never runs, so nothing would complete the
+            // outcome: the task list says when that happens.
+            val watcher = launch {
+                taskManager.tasks.first { tasks ->
+                    val task = tasks.firstOrNull { it.id == taskId }
+                    task == null || task.status == AiTaskStatus.CANCELLED
+                }
+                outcome.complete(Result.failure(Exception("Creating the folder was cancelled")))
+            }
+            val result = outcome.await()
+            watcher.cancel()
+            result
+        }
     }
 
     private suspend fun createAndMove(documentTitle: String, documentText: String): Result<String> {

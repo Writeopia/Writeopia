@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalTime::class)
+@file:OptIn(ExperimentalTime::class, ExperimentalCoroutinesApi::class)
 
 package io.writeopia.writingagent.folders
 
@@ -10,6 +10,14 @@ import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.utils.ResultData
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
+import io.writeopia.ai.task.AiTaskManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -95,6 +103,55 @@ class WriteopiaDocumentFoldersTest {
         assertEquals("Recipes", repository.created.single().title)
         assertEquals(Folder.ROOT_PATH, repository.created.single().parentId)
         assertEquals(listOf("doc" to repository.created.single().id), moved)
+    }
+
+    @Test
+    fun `a task cancelled before it runs fails instead of waiting forever`() = runTest {
+        // The manager has its own scheduler, which is never advanced: the task stays queued.
+        val taskDispatcher = StandardTestDispatcher()
+        val taskManager = AiTaskManager(dispatcher = taskDispatcher, scope = CoroutineScope(SupervisorJob() + taskDispatcher))
+        val repository = FakeFolderRepository(emptyList())
+        val folders = WriteopiaDocumentFolders(
+            documentId = { "doc" },
+            documentParentId = { Folder.ROOT_PATH },
+            workspaceId = { "ws" },
+            folderRepository = repository,
+            moveDocument = { _, _ -> },
+            resolveAi = { ai("Recipes") },
+            aiTaskManager = taskManager,
+        )
+
+        val outcome = async { folders.createFolderAndMove("Pasta", "Boil water.") }
+        runCurrent()
+        // The task is queued but hasn't run yet: cancel it, like Escape in the editor does.
+        taskManager.cancelTask(taskManager.tasks.value.single().id)
+        advanceUntilIdle()
+
+        assertTrue(outcome.await().isFailure)
+        assertTrue(repository.created.isEmpty())
+    }
+
+    @Test
+    fun `a task that runs completes with the folder`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val taskManager = AiTaskManager(dispatcher = dispatcher, scope = CoroutineScope(SupervisorJob() + dispatcher))
+        val repository = FakeFolderRepository(emptyList())
+        val moved = mutableListOf<Pair<String, String>>()
+        val folders = WriteopiaDocumentFolders(
+            documentId = { "doc" },
+            documentParentId = { Folder.ROOT_PATH },
+            workspaceId = { "ws" },
+            folderRepository = repository,
+            moveDocument = { id, folderId -> moved.add(id to folderId) },
+            resolveAi = { ai("Recipes") },
+            aiTaskManager = taskManager,
+        )
+
+        val outcome = async { folders.createFolderAndMove("Pasta", "Boil water.") }
+        advanceUntilIdle()
+
+        assertEquals("Recipes", outcome.await().getOrNull())
+        assertEquals(1, moved.size)
     }
 
     @Test

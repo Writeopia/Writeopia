@@ -97,15 +97,36 @@ public enum SentenceEnds {
 }
 
 /// The code of the first fenced block of an AI answer, without the fence and the language, or
-/// the whole answer when it has no fence.
+/// the whole answer when it has no fence. A block closes only on a line that is a fence of the
+/// same character as the opener (backticks or tildes), at least as long, with nothing but
+/// whitespace after it, like Markdown says; backticks inside a line of code stay code.
 public enum MarkdownCode {
+    private struct Fence {
+        let character: Character
+        let length: Int
+
+        init?(opening line: String) {
+            let trimmed = line.drop { $0 == " " || $0 == "\t" }
+            guard let first = trimmed.first, first == "`" || first == "~" else { return nil }
+            let length = trimmed.prefix { $0 == first }.count
+            guard length >= 3 else { return nil }
+            character = first
+            self.length = length
+        }
+
+        func closes(_ line: String) -> Bool {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            return trimmed.count >= length && trimmed.allSatisfy { $0 == character }
+        }
+    }
+
     public static func parse(_ markdown: String) -> String {
         let lines = markdown.components(separatedBy: .newlines)
-        guard let open = lines.firstIndex(where: { $0.trimmingCharacters(in: .whitespaces).hasPrefix("```") }) else {
+        guard let open = lines.firstIndex(where: { Fence(opening: $0) != nil }), let fence = Fence(opening: lines[open]) else {
             return markdown.trimmingCharacters(in: .whitespacesAndNewlines)
         }
         let rest = lines[(open + 1)...]
-        let close = rest.firstIndex { $0.trimmingCharacters(in: .whitespaces).hasPrefix("```") } ?? rest.endIndex
+        let close = rest.firstIndex(where: fence.closes) ?? rest.endIndex
         return rest[..<close].joined(separator: "\n").trimmingCharacters(in: .newlines)
     }
 }

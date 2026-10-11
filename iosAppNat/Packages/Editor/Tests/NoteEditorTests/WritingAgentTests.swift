@@ -458,6 +458,10 @@ private func type(_ manager: WriteopiaStateManager, _ id: String, _ text: String
     @Test func markdownCodeTakesTheFirstFencedBlock() {
         #expect(MarkdownCode.parse("text\n```swift\nlet a = 1\n```\nmore") == "let a = 1")
         #expect(MarkdownCode.parse("plain code") == "plain code")
+        // Backticks inside the code, or a shorter fence, don't close the block; a longer one does.
+        #expect(MarkdownCode.parse("```sh\necho \"```x```\"\n```x\nstill\n````  \nafter") == "echo \"```x```\"\n```x\nstill")
+        #expect(MarkdownCode.parse("~~~python\nx = 1\n~~~") == "x = 1")
+        #expect(MarkdownCode.parse("```swift\nlet a = 1\n") == "let a = 1")
     }
 
     @Test func unknownActionsDecodeAsNil() throws {
