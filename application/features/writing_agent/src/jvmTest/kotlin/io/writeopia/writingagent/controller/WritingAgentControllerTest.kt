@@ -31,6 +31,7 @@ import kotlin.test.assertTrue
 private class FakeApi(
     var answer: List<WritingSuggestionDto> = emptyList(),
     var folderAnswer: List<FolderSuggestionDto> = emptyList(),
+    var folderFailure: Exception? = null,
 ) : WritingAgentApi {
     val requests = mutableListOf<WritingSuggestionsRequest>()
     val folderRequests = mutableListOf<FolderSuggestionsRequest>()
@@ -42,6 +43,7 @@ private class FakeApi(
 
     override suspend fun folderSuggestions(request: FolderSuggestionsRequest): ResultData<FolderSuggestionsResponse> {
         folderRequests.add(request)
+        folderFailure?.let { return ResultData.Error(it) }
         return ResultData.Complete(FolderSuggestionsResponse(folderAnswer))
     }
 }
@@ -104,6 +106,7 @@ class WritingAgentControllerTest {
         isEnabled = { enabled },
         debounceMillis = 100,
         minimumDocumentLength = 40,
+        folderMinimumDocumentLength = 30,
     ).also { it.start() }
 
     @Test
@@ -442,6 +445,38 @@ class WritingAgentControllerTest {
         controller.dismiss()
 
         assertEquals(false, controller.state.value.hasSuggestions)
+        controller.stop()
+    }
+
+    @Test
+    fun `when the backend cannot answer, a new folder is still offered`() = runTest(StandardTestDispatcher()) {
+        val api = FakeApi(folderFailure = Exception("404"))
+        val story = MutableStateFlow(state(title, longParagraph))
+        val controller = controller(api, story, folders = FakeFolders())
+        advanceUntilIdle()
+
+        assertEquals(1, api.folderRequests.size)
+        assertTrue(controller.state.value.folderSuggestions.isEmpty())
+        assertTrue(controller.state.value.offerNewFolder)
+        controller.stop()
+    }
+
+    @Test
+    fun `a document that opens empty is offered folders once it has text`() = runTest(StandardTestDispatcher()) {
+        val api = FakeApi(folderAnswer = listOf(FolderSuggestionDto("f2", 0.95)))
+        val story = MutableStateFlow(state(title, paragraph.copy(text = "")))
+        val controller = controller(api, story, folders = FakeFolders())
+        advanceUntilIdle()
+        assertTrue(api.folderRequests.isEmpty())
+
+        story.value = state(title, longParagraph)
+        advanceUntilIdle()
+        story.value = state(title, longParagraph.copy(text = longParagraph.text + " More."))
+        advanceUntilIdle()
+
+        assertEquals(1, api.folderRequests.size)
+        assertEquals(listOf("Folder 2"), controller.state.value.folderSuggestions.map { it.name })
+        assertTrue(controller.state.value.offerNewFolder)
         controller.stop()
     }
 }

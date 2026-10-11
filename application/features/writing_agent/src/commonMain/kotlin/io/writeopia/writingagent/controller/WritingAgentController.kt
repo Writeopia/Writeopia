@@ -62,6 +62,8 @@ class WritingAgentController(
     private val untitledDocumentMinimumSentences: Int = UNTITLED_DOCUMENT_MINIMUM_SENTENCES,
     /** How many folders are asked about when a root document opens. */
     private val folderCandidateLimit: Int = FolderSuggestionsRequest.MAX_FOLDERS,
+    /** How much text a root document needs before a folder is offered. Less than the TL;DR needs. */
+    private val folderMinimumDocumentLength: Int = FOLDER_MINIMUM_DOCUMENT_LENGTH,
     /** Where the agent tells what it asks and what came back. */
     private val log: (String) -> Unit = { message -> ApiLogger.log("$LOG_TAG $message") },
 ) {
@@ -83,6 +85,9 @@ class WritingAgentController(
 
     /** The document whose folder offers the user declined, by dismissing, moving or filing it. */
     private var foldersDeclinedFor: String? = null
+
+    /** The document already asked about folders, so a growing document is asked only once. */
+    private var foldersAskedFor: String? = null
     private var folderRequest: Job? = null
 
     private val sentenceEnds = mutableMapOf<String, Int>()
@@ -234,12 +239,12 @@ class WritingAgentController(
         publish()
 
         val text = documentText(story)
+        considerFolders(id, text)
+
         if (text.length < minimumDocumentLength) {
             log("document $id opened with ${text.length} chars, under the $minimumDocumentLength minimum: not asking")
             return
         }
-
-        folderRequest = scope.launch { offerFolders(id, text) }
 
         log("document $id opened with ${text.length} chars: asking about the whole document")
 
@@ -261,21 +266,40 @@ class WritingAgentController(
     }
 
     /**
+     * Asks about folders once per document, as soon as it has enough text: when it opens, or
+     * later while the user writes a document that opened empty.
+     */
+    private fun considerFolders(documentId: String, text: String) {
+        if (folders == null) return
+        if (foldersAskedFor == documentId || foldersDeclinedFor == documentId) return
+        if (text.length < folderMinimumDocumentLength) return
+
+        foldersAskedFor = documentId
+        folderRequest = scope.launch { offerFolders(documentId, text) }
+    }
+
+    /**
      * Offers a home to a document that sits in the root folder: the folders the backend says it
      * belongs to, and a new one. A document already in a folder, or one the user declined to
-     * move, is left alone.
+     * move, is left alone. The new folder is offered even when the backend can't answer, since
+     * making it needs no backend.
      */
     private suspend fun offerFolders(documentId: String, text: String) {
         val documentFolders = folders ?: return
         if (foldersDeclinedFor == documentId) return
-        if (documentFolders.currentFolderId() != Folder.ROOT_PATH) return
+
+        val currentFolder = documentFolders.currentFolderId()
+        if (currentFolder != Folder.ROOT_PATH) {
+            log("document $documentId is in folder $currentFolder, not the root: no folder offered")
+            return
+        }
         if (!isEnabled()) {
             log("folder offers for $documentId skipped: the agent is disabled (offline, signed out or locked)")
             return
         }
 
         val candidates = documentFolders.candidates(folderCandidateLimit)
-        log("document $documentId is in the root: asking about ${candidates.size} folders")
+        log("document $documentId is in the root with ${text.length} chars: asking about ${candidates.size} folders")
         val started = TimeSource.Monotonic.markNow()
 
         val matches = if (candidates.isEmpty()) {
@@ -296,12 +320,13 @@ class WritingAgentController(
                 is ResultData.Error -> {
                     log(
                         "folder request for $documentId failed in " +
-                            "${started.elapsedNow().inWholeMilliseconds}ms: ${result.exception?.message}"
+                            "${started.elapsedNow().inWholeMilliseconds}ms: ${result.exception?.message}; " +
+                            "offering only a new folder"
                     )
-                    return
+                    emptyList()
                 }
 
-                else -> return
+                else -> emptyList()
             }
         }
 
@@ -320,6 +345,7 @@ class WritingAgentController(
 
     private fun onStoryChanged(story: StoryState) {
         refreshDocumentTitleOffer(story)
+        openedDocumentId?.let { id -> considerFolders(id, documentText(story)) }
 
         val focus = story.focus ?: return
         val step = story.stories[focus] ?: return
@@ -442,5 +468,6 @@ class WritingAgentController(
         const val MINIMUM_DOCUMENT_LENGTH = 200
         const val UNTITLED_DOCUMENT_MINIMUM_SENTENCES = 1
         const val DOCUMENT_TEXT_LIMIT = 6_000
+        const val FOLDER_MINIMUM_DOCUMENT_LENGTH = 40
     }
 }
