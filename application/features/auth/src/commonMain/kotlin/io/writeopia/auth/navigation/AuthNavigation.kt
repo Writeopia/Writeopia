@@ -16,6 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptionsBuilder
@@ -24,6 +25,8 @@ import androidx.navigation.navigation
 import io.writeopia.auth.core.manager.LoginStatus
 import io.writeopia.auth.di.AuthInjection
 import io.writeopia.auth.email.EmailConfirmationScreen
+import io.writeopia.auth.email.EmailConfirmationViewModel
+import io.writeopia.auth.email.RegisterEmailScreen
 import io.writeopia.auth.forgotpassword.ForgotPasswordCodeScreen
 import io.writeopia.auth.forgotpassword.ForgotPasswordEmailScreen
 import io.writeopia.auth.forgotpassword.ForgotPasswordNewPasswordScreen
@@ -41,6 +44,7 @@ import io.writeopia.common.utils.configuration.PlatformType
 import io.writeopia.localaiconfig.di.LocalAiConfigKmpInjector
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.model.isDarkTheme
+import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.theme.WriteopiaTheme
 import kotlinx.coroutines.delay
@@ -301,9 +305,67 @@ fun NavGraphBuilder.authNavigation(
             }
         }
 
-        composable(Destinations.AUTH_REGISTER.id) {
+        // Sign-up verifies the email first (email, then code) and only then asks for the
+        // account details. One view model, scoped to this graph, carries the email and code.
+        composable(Destinations.AUTH_REGISTER_EMAIL.id) { backStackEntry ->
+            val emailViewModel = registrationEmailViewModel(navController, backStackEntry, authInjection)
+            val colorTheme by colorThemeOption.collectAsState()
+
+            WriteopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
+                RegisterEmailScreen(
+                    modifier = Modifier.background(WriteopiaTheme.colorScheme.globalBackground),
+                    emailState = emailViewModel.email,
+                    sendCodeState = emailViewModel.sendCodeState,
+                    canSendCodeState = emailViewModel.canSendCode,
+                    emailChanged = emailViewModel::emailChanged,
+                    onSendCode = {
+                        emailViewModel.onSendCode {
+                            navController.navigate(Destinations.AUTH_REGISTER_CODE.id)
+                        }
+                    },
+                    navigateBack = navController::navigateUp
+                )
+            }
+        }
+
+        composable(Destinations.AUTH_REGISTER_CODE.id) { backStackEntry ->
+            val emailViewModel = registrationEmailViewModel(navController, backStackEntry, authInjection)
+            val colorTheme by colorThemeOption.collectAsState()
+
+            WriteopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
+                EmailConfirmationScreen(
+                    modifier = Modifier.background(WriteopiaTheme.colorScheme.globalBackground),
+                    emailState = emailViewModel.email,
+                    codeState = emailViewModel.code,
+                    confirmState = emailViewModel.confirmState,
+                    resendState = emailViewModel.resendState,
+                    resendCooldownSeconds = emailViewModel.resendCooldownSeconds,
+                    codeChanged = emailViewModel::codeChanged,
+                    onConfirm = {
+                        emailViewModel.onConfirm {
+                            navController.navigate(Destinations.AUTH_REGISTER.id)
+                        }
+                    },
+                    onResend = emailViewModel::onResend,
+                    navigateBack = navController::navigateUp,
+                    title = { WrStrings.verifyYourEmail() },
+                    subtitle = { email -> WrStrings.weSentVerificationCodeTo(email) },
+                    confirmLabel = { WrStrings.verify() },
+                )
+            }
+        }
+
+        composable(Destinations.AUTH_REGISTER.id) { backStackEntry ->
+            val emailViewModel = registrationEmailViewModel(navController, backStackEntry, authInjection)
             val registerViewModel = authInjection.provideRegisterViewModel()
             val colorTheme by colorThemeOption.collectAsState()
+
+            LaunchedEffect(Unit) {
+                registerViewModel.setVerifiedEmail(
+                    email = emailViewModel.email.value,
+                    code = emailViewModel.code.value
+                )
+            }
 
             WriteopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
                 RegisterScreen(
@@ -314,15 +376,17 @@ fun NavGraphBuilder.authNavigation(
                     emailState = registerViewModel.email,
                     passwordState = registerViewModel.password,
                     registerState = registerViewModel.register,
+                    usernameAvailabilityState = registerViewModel.usernameAvailability,
                     passwordValidationState = registerViewModel.passwordValidation,
                     canRegisterState = registerViewModel.canRegister,
                     nameChanged = registerViewModel::nameChanged,
                     usernameChanged = registerViewModel::usernameChanged,
                     companyChanged = registerViewModel::workspaceChanged,
-                    emailChanged = registerViewModel::emailChanged,
                     passwordChanged = registerViewModel::passwordChanged,
                     onRegisterRequest = registerViewModel::onRegister,
-                    onRegisterSuccess = navController::navigateToEmailConfirm,
+                    // The email was verified before the account was created, so the new
+                    // account is already active and signed in.
+                    onRegisterSuccess = navController::navigateToWorkspaceChoice,
                     navigateBack = navController::navigateUp
                 )
             }
@@ -408,7 +472,20 @@ fun NavGraphBuilder.authNavigation(
 }
 
 fun NavController.navigateAuthRegister() {
-    navigate(Destinations.AUTH_REGISTER.id)
+    navigate(Destinations.AUTH_REGISTER_EMAIL.id)
+}
+
+@Composable
+private fun registrationEmailViewModel(
+    navController: NavController,
+    backStackEntry: NavBackStackEntry,
+    authInjection: AuthInjection,
+): EmailConfirmationViewModel {
+    val graphEntry = remember(backStackEntry) {
+        navController.getBackStackEntry(Destinations.AUTH_MENU_INNER_NAVIGATION.id)
+    }
+
+    return authInjection.provideRegistrationEmailViewModel(graphEntry)
 }
 
 fun NavController.navigateAndResetStack(

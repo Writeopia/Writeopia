@@ -18,7 +18,6 @@ import io.writeopia.app.requests.CreateWorkspaceRequest
 import io.writeopia.sdk.serialization.data.WorkspaceApi
 import io.writeopia.sdk.serialization.data.auth.AuthResponse
 import io.writeopia.sdk.serialization.data.auth.LoginRequest
-import io.writeopia.sdk.serialization.data.auth.RegisterRequest
 import kotlin.random.Random
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -58,7 +57,7 @@ class WorkspaceTutorialsTest {
         val registerResponse = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = "Initial Workspace",
                     name = "Test User",
                     email = email,
@@ -132,7 +131,7 @@ class WorkspaceTutorialsTest {
         val registerResponse = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = "Initial Workspace",
                     name = "Test User",
                     email = email,
@@ -222,7 +221,7 @@ class WorkspaceTutorialsTest {
         val registerResponse = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = "Initial Workspace",
                     name = "Test User",
                     email = email,

@@ -13,7 +13,6 @@ import io.writeopia.api.core.auth.repository.deleteUserByEmail
 import io.writeopia.api.core.auth.routing.SessionStatusResponse
 import io.writeopia.sdk.serialization.data.auth.AuthResponse
 import io.writeopia.sdk.serialization.data.auth.LoginRequest
-import io.writeopia.sdk.serialization.data.auth.RegisterRequest
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -42,7 +41,7 @@ class CookieAuthIntegrationTest {
         client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = "Test Workspace",
                     name = "Test User",
                     email = testEmail,

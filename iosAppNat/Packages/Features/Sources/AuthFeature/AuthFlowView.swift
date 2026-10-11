@@ -3,7 +3,8 @@ import WrDesign
 import WrSession
 
 enum AuthRoute: Hashable {
-    case register
+    /// The three sign-up steps share one view model, so the email and code carry over.
+    case register(RegisterStep, RegisterViewModel)
     /// The three recovery steps share one view model, so the email and code carry over.
     case forgotPassword(ForgotPasswordStep, ForgotPasswordViewModel)
 }
@@ -12,6 +13,16 @@ enum ForgotPasswordStep: Hashable {
     case email
     case code
     case newPassword
+}
+
+extension RegisterViewModel: Hashable {
+    nonisolated static func == (lhs: RegisterViewModel, rhs: RegisterViewModel) -> Bool {
+        lhs === rhs
+    }
+
+    nonisolated func hash(into hasher: inout Hasher) {
+        hasher.combine(ObjectIdentifier(self))
+    }
 }
 
 extension ForgotPasswordViewModel: Hashable {
@@ -44,7 +55,7 @@ public struct AuthFlowView: View {
     private func navigate(_ destination: LoginDestination) {
         switch destination {
         case .register:
-            path.append(.register)
+            path.append(.register(.email, RegisterViewModel(session: session)))
         case .forgotPassword:
             path.append(.forgotPassword(.email, ForgotPasswordViewModel(authAPI: session.authAPI)))
         }
@@ -53,8 +64,16 @@ public struct AuthFlowView: View {
     @ViewBuilder
     private func destination(_ route: AuthRoute) -> some View {
         switch route {
-        case .register:
-            RegisterView(session: session)
+        case .register(.email, let viewModel):
+            RegisterEmailView(viewModel: viewModel) {
+                path.append(.register(.code, viewModel))
+            }
+        case .register(.code, let viewModel):
+            RegisterCodeView(viewModel: viewModel) {
+                path.append(.register(.details, viewModel))
+            }
+        case .register(.details, let viewModel):
+            RegisterView(viewModel: viewModel)
         case .forgotPassword(.email, let viewModel):
             ForgotPasswordEmailView(viewModel: viewModel) {
                 path.append(.forgotPassword(.code, viewModel))

@@ -151,6 +151,12 @@
   <string name="teams">Times</string>
   <string name="login_failed">Falha no login. Por favor, verifique suas credenciais.</string>
   <string name="registration_failed">Falha no registro. Por favor, tente novamente.</string>
+  <string name="username_taken">Este nome de usuário já está em uso</string>
+  <string name="register_enter_email">Digite seu e-mail para receber um código de verificação</string>
+  <string name="send_verification_code">Enviar código de verificação</string>
+  <string name="verify_your_email">Verifique seu e-mail</string>
+  <string name="we_sent_verification_code_to">Enviamos um código de verificação para %s</string>
+  <string name="verification_code_failed">Não foi possível enviar o código de verificação. Tente novamente.</string>
   <string name="create_workspace">Criar área de trabalho</string>
   <string name="create">Criar</string>
   <string name="create_workspace_failed">Falha ao criar área de trabalho</string>

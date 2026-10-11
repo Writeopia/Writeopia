@@ -17,11 +17,12 @@ import io.writeopia.api.core.auth.models.LoginResult
 import io.writeopia.api.core.auth.models.UserStatus
 import io.writeopia.api.core.auth.models.toApi
 import io.writeopia.api.core.auth.repository.userExistsByUsernameOrEmail
+import io.writeopia.api.core.auth.repository.usernameExists
 import io.writeopia.api.core.auth.repository.getUserById
-import io.writeopia.api.core.auth.repository.updateConfirmationCode
+import io.writeopia.api.core.auth.repository.deleteEmailVerification
 import io.writeopia.api.core.auth.service.AccountDeletionService
 import io.writeopia.api.core.auth.service.AuthService
-import io.writeopia.api.core.auth.service.EmailService
+import io.writeopia.api.core.auth.service.EmailVerificationService
 import io.writeopia.api.core.auth.service.RefreshTokenService
 import io.writeopia.api.core.auth.utils.JwtConfig
 import io.writeopia.api.core.auth.utils.getUserIdFromApiGateway
@@ -35,6 +36,7 @@ import io.writeopia.sdk.serialization.data.auth.RefreshTokenRequest
 import io.writeopia.sdk.serialization.data.auth.RegisterResponse
 import io.writeopia.sdk.serialization.data.auth.ResetPasswordRequest
 import io.writeopia.sdk.serialization.data.auth.TokenRefreshResponse
+import io.writeopia.sdk.serialization.data.auth.UsernameAvailabilityResponse
 import io.writeopia.sdk.serialization.data.toApi
 import io.writeopia.sql.WriteopiaDbBackend
 import java.sql.SQLException
@@ -168,6 +170,22 @@ fun Routing.authRoute(
                 email = rawRequest.email.trim().lowercase()
             )
             request.validate()
+
+            // The email must be verified before an account exists for it - see
+            // EmailVerificationService. Older clients that don't send a code are rejected.
+            val verificationCode = request.verificationCode
+            if (verificationCode.isNullOrBlank()) {
+                logger.info("register request - missing email verification code")
+                call.respond(HttpStatusCode.BadRequest, "Email verification required")
+                return@post
+            }
+
+            if (!EmailVerificationService.checkCode(writeopiaDb, request.email, verificationCode)) {
+                logger.info("register request - invalid or expired email verification code")
+                call.respond(HttpStatusCode.BadRequest, "Invalid or expired verification code")
+                return@post
+            }
+
             // since we are not allowing email probing and we don't need user data in this case
             if (writeopiaDb.userExistsByUsernameOrEmail(username = request.username, email = request.email)) {
                 logger.info("register request - user or workspace already exist")
@@ -175,21 +193,18 @@ fun Routing.authRoute(
                 return@post
             }
 
-            val confirmationCode = EmailService.generateConfirmationCode()
-            val codeExpiry = EmailService.getCodeExpiry()
             val workspaceId = GenerateId.generate()
 
-            // Run user creation, confirmation code, workspace, membership, and tutorial seeding
-            // in one atomic transaction: a failure anywhere here rolls everything back, so a
-            // user can never end up with a workspace missing its owner or its tutorials.
+            // Run user creation, workspace, membership, tutorial seeding and consuming the
+            // verification code in one atomic transaction: a failure anywhere here rolls
+            // everything back, so a user can never end up with a workspace missing its owner
+            // or its tutorials, and the code stays usable for a retry.
             val wUser = writeopiaDb.transactionWithResult {
                 val user = AuthService.createUser(
                     writeopiaDb,
                     request,
-                    status = UserStatus.EMAIL_CONFIRMATION_PENDING
+                    status = UserStatus.ACTIVE
                 )
-
-                writeopiaDb.updateConfirmationCode(request.email, confirmationCode, codeExpiry)
 
                 provisionWorkspaceForNewUser(
                     writeopiaDb,
@@ -200,20 +215,22 @@ fun Routing.authRoute(
 
                 onWorkspaceProvisioned(user.id, workspaceId)
 
+                writeopiaDb.deleteEmailVerification(request.email)
+
                 user
             }
 
-            EmailService.sendConfirmationEmail(
-                toEmail = request.email,
-                code = confirmationCode,
-                userName = request.name
-            )
+            val tokenPair = with(RefreshTokenService) {
+                writeopiaDb.generateAndStoreTokens(wUser.id)
+            }
 
             call.respond(
                 HttpStatusCode.Created,
                 RegisterResponse(
                     writeopiaUser = wUser.toApi(),
-                    emailConfirmationRequired = true
+                    emailConfirmationRequired = false,
+                    accessToken = tokenPair.accessToken,
+                    refreshToken = tokenPair.refreshToken,
                 ),
             )
         } catch (e: IllegalArgumentException) {
@@ -235,6 +252,29 @@ fun Routing.authRoute(
             logger.info("register request error message: ${e.message}")
             call.respond(HttpStatusCode.InternalServerError, "Unknown error")
         }
+    }
+
+    // Lets the sign-up form tell the user a username is taken while they type, instead of only
+    // when they submit. Usernames are case-sensitive, like the unique constraint behind them.
+    get("/api/auth/username/available") {
+        val username = call.request.queryParameters["username"]
+
+        if (username == null) {
+            call.respond(HttpStatusCode.BadRequest, "Missing username")
+            return@get
+        }
+
+        try {
+            validateUsername(username)
+        } catch (e: IllegalArgumentException) {
+            call.respond(HttpStatusCode.BadRequest, e.message ?: "Invalid username")
+            return@get
+        }
+
+        call.respond(
+            HttpStatusCode.OK,
+            UsernameAvailabilityResponse(available = !writeopiaDb.usernameExists(username))
+        )
     }
 
     delete("/api/auth/account") {
@@ -337,14 +377,18 @@ private fun RegisterRequest.validate() {
         "Workspace name must be 3-30 characters"
     }
 
+    validateUsername(username)
+
+    require(password.length >= 8) { "Password must be at least 8 characters" }
+
+    require(EMAIL_REGEX.matches(email)) { "Invalid email address format" }
+}
+
+private fun validateUsername(username: String) {
     require(username.length in 3..30) {
         "Username must be 3-30 characters"
     }
     require(username.all { it.isLetterOrDigit() || it == '-' || it == '_' }) {
         "Username can only contain letters, numbers, '-' and '_'"
     }
-
-    require(password.length >= 8) { "Password must be at least 8 characters" }
-
-    require(EMAIL_REGEX.matches(email)) { "Invalid email address format" }
 }
