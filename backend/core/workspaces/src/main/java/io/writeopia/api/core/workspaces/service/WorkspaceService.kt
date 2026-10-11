@@ -55,22 +55,24 @@ object WorkspaceService {
         pageSize: Int,
         writeopiaDb: WriteopiaDbBackend
     ): PaginatedWorkspaceUsers {
-        val offset = (page - 1) * pageSize
+        val safePage = page.coerceAtLeast(1)
+        val safePageSize = pageSize.coerceIn(1, 100)
+        val offset = (safePage - 1) * safePageSize
         val users = writeopiaDb.getUsersInWorkspacePaginated(
             workspaceId,
-            pageSize.toLong(),
+            safePageSize.toLong(),
             offset.toLong()
         )
         val totalCount = writeopiaDb.countUsersInWorkspace(workspaceId)
-        val totalPages = ((totalCount + pageSize - 1) / pageSize).toInt()
+        val totalPages = ((totalCount + safePageSize - 1) / safePageSize).toInt()
 
         return PaginatedWorkspaceUsers(
             users = users,
-            page = page,
-            pageSize = pageSize,
+            page = safePage,
+            pageSize = safePageSize,
             totalCount = totalCount.toInt(),
             totalPages = totalPages,
-            hasNextPage = page < totalPages
+            hasNextPage = safePage < totalPages
         )
     }
 
