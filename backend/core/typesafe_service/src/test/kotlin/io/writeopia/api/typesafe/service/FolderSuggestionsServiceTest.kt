@@ -10,6 +10,7 @@ import io.writeopia.app.dto.writingagent.FolderCandidate
 import io.writeopia.app.dto.writingagent.FolderSuggestionsRequest
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -74,8 +75,40 @@ class FolderSuggestionsServiceTest {
         )
 
         assertEquals(listOf("f-cooking", "f-travel"), response.suggestions.map { it.folderId })
+        assertEquals(listOf("Cooking", "Travel"), response.suggestions.map { it.folderName })
         assertEquals(0.97, response.suggestions.first().probability)
         assertEquals(80, usage.inputTokens)
+    }
+
+    @Test
+    fun `the backend's candidates replace the app's and carry their profile`() = runTest {
+        val service = service(
+            """
+            {"model":"jev","answers":{"folder_0":{"type":"noul","noul":0.9}},"usage":{"input_tokens":1,"output_tokens":1}}
+            """.trimIndent()
+        )
+        val ranked = listOf(
+            FolderCandidate(
+                "f-pasta",
+                "Pasta",
+                path = "Cooking / Italian",
+                recentTitles = listOf("Carbonara", "Pesto"),
+                tags = listOf("recipes"),
+            ),
+            FolderCandidate("f-bare", "Bare"),
+        )
+        val request = FolderSuggestionsRequest(documentTitle = "Pasta", documentText = "Boil water.", folders = folders)
+
+        val state = FolderSuggestionQuestions.stateFor(request, ranked)
+        val profile = state.getValue("folders").jsonArray[0].jsonObject
+        assertEquals("Cooking / Italian", profile.getValue("path").jsonPrimitive.content)
+        assertEquals(2, profile.getValue("recent_documents").jsonArray.size)
+        assertEquals("recipes", profile.getValue("tags").jsonArray[0].jsonPrimitive.content)
+        assertEquals(setOf("name"), state.getValue("folders").jsonArray[1].jsonObject.keys)
+
+        val (response, _) = service.suggest(request, ranked)
+        assertEquals("f-pasta", response.suggestions.single().folderId)
+        assertEquals("Pasta", response.suggestions.single().folderName)
     }
 
     @Test

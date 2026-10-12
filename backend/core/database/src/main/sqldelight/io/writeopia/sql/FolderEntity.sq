@@ -60,6 +60,11 @@ SELECT *
 FROM folder_entity
 WHERE folder_entity.id = ? AND workspace_id = ? AND deleted = FALSE;
 
+selectByIds:
+SELECT *
+FROM folder_entity
+WHERE folder_entity.id IN ? AND workspace_id = ? AND deleted = FALSE;
+
 -- Tombstone lookup. Checked before accepting a folder from a client so a stale copy of
 -- a deleted folder is dropped instead of resurrecting it.
 isTombstoned:

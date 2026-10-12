@@ -238,3 +238,35 @@ CREATE INDEX idx_presentation_step_presentation_id ON presentation_step_entity(p
 CREATE INDEX idx_ai_usage_created_at ON ai_usage(created_at);
 CREATE INDEX idx_account_deletion_status ON account_deletion(status);
 CREATE INDEX idx_account_deletion_workspace_user_id ON account_deletion_workspace(user_id);
+
+-- Embeddings (pgvector). These two tables live outside the SQLDelight schema, since its
+-- PostgreSQL dialect has no `vector` type: they are mirrored in
+-- backend/core/embeddings/.../PgVectorEmbeddingStore.kt (ddl) and in
+-- WriteopiaScripts2/db-migrations/document_embeddings/1_schema.sql (production).
+CREATE EXTENSION IF NOT EXISTS vector;
+
+CREATE TABLE IF NOT EXISTS document_embedding (
+  document_id   TEXT PRIMARY KEY,
+  workspace_id  TEXT NOT NULL,
+  model         TEXT NOT NULL,
+  embedding     vector(768) NOT NULL,
+  source_title  TEXT NOT NULL,
+  source_text   TEXT NOT NULL,
+  embedded_at   BIGINT NOT NULL,
+  checked_at    BIGINT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_document_embedding_workspace_id ON document_embedding(workspace_id);
+
+CREATE TABLE IF NOT EXISTS folder_embedding (
+  folder_id       TEXT PRIMARY KEY,
+  workspace_id    TEXT NOT NULL,
+  model           TEXT NOT NULL,
+  embedding       vector(768) NOT NULL,
+  kind            TEXT NOT NULL,
+  document_count  INTEGER NOT NULL,
+  source_title    TEXT NOT NULL,
+  updated_at      BIGINT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_folder_embedding_workspace_id ON folder_embedding(workspace_id);

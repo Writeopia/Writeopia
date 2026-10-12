@@ -3,6 +3,7 @@ package io.writeopia.api.typesafe.service
 import io.writeopia.api.typesafe.client.TypeSafeClient
 import io.writeopia.api.typesafe.client.TypeSafeResult
 import io.writeopia.api.typesafe.model.SystemOneUsage
+import io.writeopia.app.dto.writingagent.FolderCandidate
 import io.writeopia.app.dto.writingagent.FolderSuggestionDto
 import io.writeopia.app.dto.writingagent.FolderSuggestionsRequest
 import io.writeopia.app.dto.writingagent.FolderSuggestionsResponse
@@ -10,8 +11,9 @@ import io.writeopia.connection.logger
 
 /**
  * Files a document that sits in the root folder: asks Jev how likely the document belongs to
- * each workspace folder and answers with the ones at or above [threshold], best first, at most
- * [limit]. When none passes, the answer is empty and the app only offers a new folder. The
+ * each candidate folder and answers with the ones at or above [threshold], best first, at most
+ * [limit]. The candidates are the ones the backend ranked for the document, else the ones the
+ * app sent. When none passes, the answer is empty and the app only offers a new folder. The
  * threshold and the limit are the ones of the writing suggestions.
  */
 class FolderSuggestionsService(
@@ -22,20 +24,23 @@ class FolderSuggestionsService(
 
     fun isAvailable(): Boolean = client.isAvailable()
 
-    suspend fun suggest(request: FolderSuggestionsRequest): Pair<FolderSuggestionsResponse, SystemOneUsage> {
+    suspend fun suggest(
+        request: FolderSuggestionsRequest,
+        folders: List<FolderCandidate> = request.folders,
+    ): Pair<FolderSuggestionsResponse, SystemOneUsage> {
         if (!isAvailable()) {
             return FolderSuggestionsResponse(
                 error = "The writing agent is not configured. Set TYPESAFE_API_KEY."
             ) to SystemOneUsage()
         }
 
-        val candidates = FolderSuggestionQuestions.candidates(request)
+        val candidates = FolderSuggestionQuestions.candidates(folders)
         if (candidates.isEmpty() || (request.documentText.isBlank() && request.documentTitle.isBlank())) {
             return FolderSuggestionsResponse() to SystemOneUsage()
         }
 
-        val state = FolderSuggestionQuestions.stateFor(request)
-        val questions = FolderSuggestionQuestions.questionsFor(request)
+        val state = FolderSuggestionQuestions.stateFor(request, candidates)
+        val questions = FolderSuggestionQuestions.questionsFor(request, candidates)
 
         logger.info("Folder agent asking Jev about {} folders", questions.size)
         val started = System.currentTimeMillis()
@@ -58,7 +63,7 @@ class FolderSuggestionsService(
                     .filter { (_, probability) -> probability >= threshold }
                     .sortedByDescending { (_, probability) -> probability }
                     .take(limit)
-                    .map { (folder, probability) -> FolderSuggestionDto(folder.id, probability) }
+                    .map { (folder, probability) -> FolderSuggestionDto(folder.id, probability, folderName = folder.name) }
 
                 FolderSuggestionsResponse(suggestions = suggestions) to (result.response.usage ?: SystemOneUsage())
             }
