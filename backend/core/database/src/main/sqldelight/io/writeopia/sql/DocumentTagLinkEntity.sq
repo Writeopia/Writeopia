@@ -1,0 +1,34 @@
+-- Which tags a document carries. Replaced whole when a document is saved, like its story steps.
+CREATE TABLE document_tag_link (
+  document_id TEXT NOT NULL,
+  tag_id TEXT NOT NULL,
+  workspace_id TEXT NOT NULL,
+  PRIMARY KEY (document_id, tag_id)
+);
+
+CREATE INDEX idx_document_tag_link_document_id ON document_tag_link(document_id);
+
+selectByDocumentIds:
+SELECT document_id, tag_id
+FROM document_tag_link
+WHERE document_id IN ?;
+
+insert:
+INSERT INTO document_tag_link(document_id, tag_id, workspace_id)
+VALUES (?, ?, ?)
+ON CONFLICT (document_id, tag_id) DO NOTHING;
+
+deleteByDocumentId:
+DELETE
+FROM document_tag_link
+WHERE document_id = ?;
+
+deleteByDocumentIds:
+DELETE
+FROM document_tag_link
+WHERE document_id IN ?;
+
+deleteByWorkspace:
+DELETE
+FROM document_tag_link
+WHERE workspace_id = ?;

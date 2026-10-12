@@ -1,6 +1,7 @@
 package io.writeopia.writingagent.controller
 
 import io.writeopia.app.dto.writingagent.FolderSuggestionsRequest
+import io.writeopia.app.dto.writingagent.TagSuggestionsRequest
 import io.writeopia.app.dto.writingagent.WritingSuggestionAction
 import io.writeopia.app.dto.writingagent.WritingSuggestionScope
 import io.writeopia.app.dto.writingagent.WritingSuggestionsRequest
@@ -16,8 +17,11 @@ import io.writeopia.writingagent.api.WritingAgentApi
 import io.writeopia.writingagent.folders.DocumentFolders
 import io.writeopia.writingagent.model.FolderDialogState
 import io.writeopia.writingagent.model.FolderSuggestion
+import io.writeopia.writingagent.model.TagDialogState
+import io.writeopia.writingagent.model.TagSuggestion
 import io.writeopia.writingagent.model.WritingSuggestion
 import io.writeopia.writingagent.model.WritingSuggestionsState
+import io.writeopia.writingagent.tags.DocumentTags
 import io.writeopia.writingagent.tracker.SentenceEnds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -45,6 +49,10 @@ import kotlin.time.TimeSource
  * here like the title; only when the user takes the offer does a dialog open and the backend
  * judge the first workspace folders. The dialog shows the ones that fit, and a new folder named
  * by the AI. Nothing of this is offered to a document that already sits in a folder.
+ *
+ * A document without tags is offered tags the same way: the box offers it, decided here; when
+ * the user takes the offer a dialog opens and the backend judges the workspace catalogue. The
+ * dialog shows the tags that fit, pre-selected, and a new tag made up by the AI.
  */
 class WritingAgentController(
     private val scope: CoroutineScope,
@@ -55,6 +63,8 @@ class WritingAgentController(
     private val executor: WritingActionExecutor,
     /** Files the document. Null where the app has no folders to offer. */
     private val folders: DocumentFolders? = null,
+    /** Tags the document. Null where the app has no tag catalogue. */
+    private val tags: DocumentTags? = null,
     /** False when nothing should be asked, like offline or signed out. */
     private val isEnabled: suspend () -> Boolean = { true },
     private val debounceMillis: Long = DEBOUNCE_MILLIS,
@@ -66,6 +76,10 @@ class WritingAgentController(
     private val folderCandidateLimit: Int = FolderSuggestionsRequest.MAX_FOLDERS,
     /** How much text a root document needs before a folder is offered. Less than the TL;DR needs. */
     private val folderMinimumDocumentLength: Int = FOLDER_MINIMUM_DOCUMENT_LENGTH,
+    /** How many tags of the catalogue are asked about when the user takes the tag offer. */
+    private val tagCandidateLimit: Int = TagSuggestionsRequest.MAX_TAGS,
+    /** How much text an untagged document needs before tags are offered. */
+    private val tagMinimumDocumentLength: Int = TAG_MINIMUM_DOCUMENT_LENGTH,
     /** Where the agent tells what it asks and what came back. */
     private val log: (String) -> Unit = { message -> ApiLogger.log("$LOG_TAG $message") },
 ) {
@@ -108,6 +122,19 @@ class WritingAgentController(
     private var foldersCheckedFor: String? = null
     private var folderRequest: Job? = null
 
+    /** True while the box offers to tag the document: it has no tags and the offer wasn't declined. */
+    private var offerTags = false
+
+    /** The dialog tagging the open document, while it is shown. */
+    private var tagDialog: TagDialogState? = null
+
+    /** The document whose tag offer the user declined, by dismissing the box or the dialog, or tagging it. */
+    private var tagsDeclinedFor: String? = null
+
+    /** The document already offered tags, so a growing document is offered once. */
+    private var tagsCheckedFor: String? = null
+    private var tagRequest: Job? = null
+
     private val sentenceEnds = mutableMapOf<String, Int>()
     private var openedDocumentId: String? = null
     private var watching: Job? = null
@@ -136,14 +163,18 @@ class WritingAgentController(
         request = null
         folderRequest?.cancel()
         folderRequest = null
+        tagRequest?.cancel()
+        tagRequest = null
     }
 
-    /** Hides the suggestions, the folder offer included. They come back with the next sentence. */
+    /** Hides the suggestions, the folder and tag offers included. They come back with the next sentence. */
     fun dismiss() {
         request?.cancel()
         folderRequest?.cancel()
+        tagRequest?.cancel()
         declineDocumentTitle()
         declineFolder()
+        declineTags()
         fetched = WritingSuggestionsState.empty()
         publish()
     }
@@ -216,6 +247,88 @@ class WritingAgentController(
         foldersDeclinedFor = openedDocumentId
     }
 
+    /**
+     * Takes the tag offer: opens the dialog with a spinner and asks the backend which tags of
+     * the catalogue the document should carry.
+     */
+    fun openTagDialog() {
+        val documentTags = tags ?: return
+        val documentId = openedDocumentId ?: return
+        if (!offerTags || tagDialog != null) return
+
+        tagDialog = TagDialogState(isLoading = true)
+        publish()
+
+        tagRequest?.cancel()
+        tagRequest = scope.launch {
+            askTags(documentTags, documentId, documentText(storyFlow.value))
+        }
+    }
+
+    /** Closes the tag dialog without tagging the document. The box keeps offering it. */
+    fun dismissTagDialog() {
+        tagRequest?.cancel()
+        tagDialog = null
+        publish()
+    }
+
+    /** Keeps or drops one of the offered tags before they are added. */
+    fun toggleTag(tagId: String) {
+        val dialog = tagDialog ?: return
+        if (dialog.isLoading || dialog.isCreating || dialog.options.none { it.tagId == tagId }) return
+
+        tagDialog = dialog.copy(
+            selected = if (tagId in dialog.selected) dialog.selected - tagId else dialog.selected + tagId
+        )
+        publish()
+    }
+
+    /** Adds the selected tags to the document, closes the dialog and withdraws the offer. */
+    fun applyTags() {
+        val documentTags = tags ?: return
+        val dialog = tagDialog ?: return
+        if (dialog.isLoading || dialog.isCreating) return
+
+        val selected = dialog.selected.filter { id -> dialog.options.any { it.tagId == id } }.toSet()
+        declineTags()
+        publish()
+
+        if (selected.isEmpty()) return
+
+        log("adding tags ${selected.joinToString()} to document $openedDocumentId")
+        executing = scope.launch { documentTags.addTags(selected) }
+    }
+
+    /**
+     * Makes a tag made up by the AI and adds it to the document. The dialog shows a spinner
+     * meanwhile and closes once the tag was added, or when the AI failed.
+     */
+    fun createTagWithAi() {
+        val documentTags = tags ?: return
+        val dialog = tagDialog ?: return
+        if (dialog.isLoading || dialog.isCreating) return
+
+        tagDialog = dialog.copy(isCreating = true)
+        publish()
+
+        log("creating a tag for document $openedDocumentId")
+        executing = scope.launch {
+            documentTags.createTagWithAi(documentTitle(), documentText(storyFlow.value))
+                .onSuccess { tag -> log("document $openedDocumentId tagged with the new tag \"${tag.name}\"") }
+                .onFailure { log("creating a tag for $openedDocumentId failed: ${it.message}") }
+
+            declineTags()
+            publish()
+        }
+    }
+
+    /** Withdraws the tag offer and its dialog for this document. */
+    private fun declineTags() {
+        offerTags = false
+        tagDialog = null
+        tagsDeclinedFor = openedDocumentId
+    }
+
     /** Applies [action] to the paragraph the suggestions are about and drops it from the box. */
     fun execute(action: WritingSuggestionAction, ui: WritingAgentUi) {
         val current = _state.value
@@ -251,6 +364,8 @@ class WritingAgentController(
             suggestions = local + fetched.suggestions,
             offerFolder = offerFolder,
             folderDialog = folderDialog,
+            offerTags = offerTags,
+            tagDialog = tagDialog,
         )
     }
 
@@ -284,14 +399,18 @@ class WritingAgentController(
         openedDocumentId = id
         request?.cancel()
         folderRequest?.cancel()
+        tagRequest?.cancel()
         fetched = WritingSuggestionsState.empty()
         offerFolder = false
         folderDialog = null
+        offerTags = false
+        tagDialog = null
         refreshDocumentTitleOffer(story)
         publish()
 
         val text = documentText(story)
         considerFolders(id, text)
+        considerTags(id, text)
 
         if (text.length < minimumDocumentLength) {
             log("document $id opened with ${text.length} chars, under the $minimumDocumentLength minimum: not asking")
@@ -340,6 +459,104 @@ class WritingAgentController(
             offerFolder = true
             publish()
         }
+    }
+
+    /**
+     * Offers tags once per document, as soon as it has enough text and carries none: when it
+     * opens, or later while the user writes. The backend is not asked until the user takes the
+     * offer. An offer is withdrawn when the document gets a tag another way.
+     */
+    private fun considerTags(documentId: String, text: String) {
+        val documentTags = tags ?: return
+
+        if (offerTags && documentTags.currentTagIds().isNotEmpty()) {
+            log("document $documentId got tags: tag offer withdrawn")
+            offerTags = false
+            tagDialog = null
+            publish()
+            return
+        }
+
+        if (tagsCheckedFor == documentId || tagsDeclinedFor == documentId) return
+        if (text.length < tagMinimumDocumentLength) return
+        if (documentTags.currentTagIds().isNotEmpty()) {
+            tagsCheckedFor = documentId
+            return
+        }
+
+        tagsCheckedFor = documentId
+        log("document $documentId has no tags: offering some")
+        offerTags = true
+        publish()
+    }
+
+    /**
+     * Fills the open dialog: the tags the backend says the document should carry, among the
+     * first tags of the catalogue, all selected. Without tags, offline, or when the backend
+     * fails, the dialog only offers a new tag.
+     */
+    private suspend fun askTags(documentTags: DocumentTags, documentId: String, text: String) {
+        val candidates = documentTags.candidates(tagCandidateLimit)
+        val started = TimeSource.Monotonic.markNow()
+
+        val matches = when {
+            candidates.isEmpty() -> {
+                log("workspace of document $documentId has no tags: the dialog offers only a new tag")
+                emptyList()
+            }
+
+            !isEnabled() -> {
+                log("tag request for $documentId skipped: the agent is disabled (offline, signed out or locked)")
+                emptyList()
+            }
+
+            else -> {
+                log(
+                    "asking about ${candidates.size} tags for document $documentId with ${text.length} chars: " +
+                        candidates.joinToString { it.name }
+                )
+                val request = TagSuggestionsRequest(
+                    documentTitle = documentTitle(),
+                    documentText = text,
+                    tags = candidates,
+                )
+
+                when (val result = api.tagSuggestions(request)) {
+                    is ResultData.Complete -> result.data.suggestions.mapNotNull { dto ->
+                        candidates.firstOrNull { it.id == dto.tagId }
+                            ?.let { tag -> TagSuggestion(tag.id, tag.name, tag.description, dto.probability) }
+                    }.also { matches ->
+                        log(
+                            "tag answer for $documentId in ${started.elapsedNow().inWholeMilliseconds}ms: " +
+                                matches.joinToString { "${it.name} ${(it.probability * 100).toInt()}%" }
+                                    .ifEmpty { "no tag passed the threshold" }
+                        )
+                    }
+
+                    is ResultData.Error -> {
+                        log(
+                            "tag request for $documentId failed in " +
+                                "${started.elapsedNow().inWholeMilliseconds}ms: ${result.exception?.message}; " +
+                                "the dialog offers only a new tag"
+                        )
+                        emptyList()
+                    }
+
+                    else -> emptyList()
+                }
+            }
+        }
+
+        // The dialog may have been closed, or the document, while the backend answered.
+        if (openedDocumentId != documentId || tagDialog == null) return
+
+        tagDialog = TagDialogState(
+            isLoading = false,
+            options = matches,
+            selected = matches.map { it.tagId }.toSet(),
+            catalogueIsEmpty = candidates.isEmpty(),
+        )
+        publish()
     }
 
     /**
@@ -408,7 +625,11 @@ class WritingAgentController(
 
     private fun onStoryChanged(story: StoryState) {
         refreshDocumentTitleOffer(story)
-        openedDocumentId?.let { id -> considerFolders(id, documentText(story)) }
+        openedDocumentId?.let { id ->
+            val text = documentText(story)
+            considerFolders(id, text)
+            considerTags(id, text)
+        }
 
         val focus = story.focus ?: return
         val step = story.stories[focus] ?: return
@@ -532,5 +753,6 @@ class WritingAgentController(
         const val UNTITLED_DOCUMENT_MINIMUM_SENTENCES = 1
         const val DOCUMENT_TEXT_LIMIT = 6_000
         const val FOLDER_MINIMUM_DOCUMENT_LENGTH = 40
+        const val TAG_MINIMUM_DOCUMENT_LENGTH = 40
     }
 }

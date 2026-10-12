@@ -151,6 +151,32 @@ final class RecordingTransport: HTTPTransport {
         #expect(document.preview == "Hello world")
     }
 
+    @Test func folderContentsCarryTheTagCatalogueAndTheDocumentsTagIds() throws {
+        let json = #"""
+        {"folders":[],"documents":[{"id":"d1","title":"T","workspaceId":"w","content":[],"createdAt":1,"lastUpdatedAt":2,"tagIds":["t1"]}],
+         "tags":[{"id":"t1","workspaceId":"w","name":"Work","description":"Office things","createdAt":1,"lastUpdatedAt":2,"deleted":false},
+                 {"id":"t2","workspaceId":"w","name":"Gone","createdAt":1,"lastUpdatedAt":3,"deleted":true}]}
+        """#
+
+        let contents = try JSONDecoder().decode(FolderContents.self, from: Data(json.utf8))
+
+        #expect(contents.documents[0].tagIds == ["t1"])
+        #expect(contents.tags.map(\.name) == ["Work", "Gone"])
+        #expect(contents.tags[0].description == "Office things")
+        #expect(contents.tags[1].deleted)
+        #expect(contents.tags[1].description == "")
+
+        let legacy = try JSONDecoder().decode(FolderContents.self, from: Data(#"{"folders":[],"documents":[]}"#.utf8))
+        #expect(legacy.tags.isEmpty)
+    }
+
+    @Test func encodedTagOnlyUsesBackendKeys() throws {
+        let tag = DocumentTag(id: "t", workspaceId: "w", name: "N", description: "D", createdAt: 1, lastUpdatedAt: 2, lastSyncedAt: 3)
+        let object = try JSONSerialization.jsonObject(with: JSONEncoder().encode(tag)) as! [String: Any]
+
+        #expect(Set(object.keys) == ["id", "workspaceId", "name", "description", "createdAt", "lastUpdatedAt", "deleted"])
+    }
+
     @Test func encodedDocumentOnlyUsesKnownBackendKeys() throws {
         let document = WrDocument(
             id: "d",
@@ -163,7 +189,7 @@ final class RecordingTransport: HTTPTransport {
         let object = try JSONSerialization.jsonObject(with: JSONEncoder().encode(document)) as! [String: Any]
         let allowed: Set = [
             "id", "title", "workspaceId", "content", "createdAt", "lastUpdatedAt", "isFavorite", "parentId",
-            "lastSyncedAt", "isLocked", "published", "deleted", "icon",
+            "lastSyncedAt", "isLocked", "published", "deleted", "icon", "tagIds",
         ]
         #expect(Set(object.keys).isSubset(of: allowed))
 

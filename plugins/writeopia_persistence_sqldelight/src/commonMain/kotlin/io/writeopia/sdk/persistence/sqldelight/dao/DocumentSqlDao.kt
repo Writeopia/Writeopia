@@ -19,6 +19,7 @@ import io.writeopia.sdk.models.sorting.OrderBy
 import io.writeopia.sdk.persistence.sqldelight.toLong
 import io.writeopia.sdk.sql.CommentEntityQueries
 import io.writeopia.sdk.sql.DocumentEntityQueries
+import io.writeopia.sdk.sql.DocumentTagLinkEntityQueries
 import io.writeopia.sdk.sql.StoryStepEntity
 import io.writeopia.sdk.sql.StoryStepEntityQueries
 import kotlin.time.Clock
@@ -29,13 +30,14 @@ class DocumentSqlDao(
     private val documentQueries: DocumentEntityQueries?,
     private val storyStepQueries: StoryStepEntityQueries?,
     private val commentQueries: CommentEntityQueries?,
+    private val documentTagLinkQueries: DocumentTagLinkEntityQueries? = null,
 ) : DocumentSearch {
 
     @Deprecated("Pass CommentEntityQueries to preserve comment loading.")
     constructor(
         documentQueries: DocumentEntityQueries?,
         storyStepQueries: StoryStepEntityQueries?,
-    ) : this(documentQueries, storyStepQueries, null)
+    ) : this(documentQueries, storyStepQueries, null, null)
 
     override suspend fun search(
         query: String,
@@ -102,6 +104,11 @@ class DocumentSqlDao(
                         comment.deleted.toLong(),
                     )
                 }
+            }
+
+            documentTagLinkQueries?.deleteByDocumentId(document.id)
+            document.tagIds.forEach { tagId ->
+                documentTagLinkQueries?.insert(document.id, tagId)
             }
 
             insertDocument(document)
@@ -298,6 +305,7 @@ class DocumentSqlDao(
                         title = document.title,
                         content = innerContent,
                         commentConversations = loadCommentConversations(documentId),
+                        tagIds = loadTagIds(documentId),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
@@ -378,6 +386,7 @@ class DocumentSqlDao(
                         title = document.title,
                         content = innerContent,
                         commentConversations = loadCommentConversations(documentId),
+                        tagIds = loadTagIds(documentId),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
@@ -461,6 +470,7 @@ class DocumentSqlDao(
                         title = document.title,
                         content = innerContent,
                         commentConversations = loadCommentConversations(documentId),
+                        tagIds = loadTagIds(documentId),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
@@ -544,6 +554,7 @@ class DocumentSqlDao(
                         title = document.title,
                         content = innerContent,
                         commentConversations = loadCommentConversations(documentId),
+                        tagIds = loadTagIds(documentId),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
@@ -625,6 +636,7 @@ class DocumentSqlDao(
                         title = document.title,
                         content = innerContent,
                         commentConversations = loadCommentConversations(documentId),
+                        tagIds = loadTagIds(documentId),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
@@ -665,6 +677,7 @@ class DocumentSqlDao(
         // Keep workspace ownership checks inside the transaction that removes child rows.
         queries.transaction {
             commentQueries?.deleteByDocumentIdsForWorkspace(ids, workspaceId)
+            documentTagLinkQueries?.deleteByDocumentIdsForWorkspace(ids, workspaceId)
             storyStepQueries?.deleteByDocumentIdsForWorkspace(ids, workspaceId)
             queries.hardDeleteByIds(ids, workspaceId)
         }
@@ -752,6 +765,7 @@ class DocumentSqlDao(
                         title = document.title,
                         content = innerContent,
                         commentConversations = loadCommentConversations(documentId),
+                        tagIds = loadTagIds(documentId),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
@@ -830,6 +844,7 @@ class DocumentSqlDao(
                         title = document.title,
                         content = innerContent,
                         commentConversations = loadCommentConversations(documentId),
+                        tagIds = loadTagIds(documentId),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
@@ -911,6 +926,7 @@ class DocumentSqlDao(
                         title = document.title,
                         content = innerContent,
                         commentConversations = loadCommentConversations(documentId),
+                        tagIds = loadTagIds(documentId),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
@@ -989,6 +1005,7 @@ class DocumentSqlDao(
                         title = document.title,
                         content = innerContent,
                         commentConversations = loadCommentConversations(documentId),
+                        tagIds = loadTagIds(documentId),
                         createdAt = Instant.fromEpochMilliseconds(document.created_at),
                         lastUpdatedAt = Instant.fromEpochMilliseconds(document.last_updated_at),
                         lastSyncedAt = document.last_synced_at?.let(Instant::fromEpochMilliseconds),
@@ -1058,6 +1075,13 @@ class DocumentSqlDao(
                 }
             }
             ?: emptyMap()
+
+    private suspend fun loadTagIds(documentId: String): Set<String> =
+        documentTagLinkQueries
+            ?.selectByDocumentId(documentId)
+            ?.awaitAsList()
+            ?.toSet()
+            ?: emptySet()
 
     suspend fun queryUnsyncedImagesSteps(): List<StoryStep> {
         return storyStepQueries?.selectUnSyncedSteps()

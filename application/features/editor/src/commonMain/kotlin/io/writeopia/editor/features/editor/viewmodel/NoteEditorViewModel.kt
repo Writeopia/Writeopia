@@ -7,6 +7,7 @@ import io.writeopia.model.Font
 import io.writeopia.sdk.model.story.Selection
 import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.comment.CommentConversation
+import io.writeopia.sdk.models.document.DocumentTag
 import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.story.Tag
@@ -85,7 +86,42 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 
     val showPremiumDialog: StateFlow<Boolean>
 
+    /** The tags of the open document, with their names and explanations from the catalogue. */
+    val documentTags: StateFlow<List<DocumentTag>>
+
+    /** The tag catalogue of the workspace, by name, without tombstones. */
+    val workspaceTags: StateFlow<List<DocumentTag>>
+
+    val showTagsDialog: StateFlow<Boolean>
+
+    val showAddTagDialog: StateFlow<Boolean>
+
+    /** True when the cloud AI can make up a tag: signed in, online workspace, agent available. */
+    val canSuggestTagWithAi: StateFlow<Boolean>
+
+    val aiTagDraft: StateFlow<AiTagDraft>
+
     fun changeSideMenu(tab: SideMenuTab)
+
+    fun showTagsDialog()
+
+    fun hideTagsDialog()
+
+    fun showAddTagDialog()
+
+    fun hideAddTagDialog()
+
+    fun addTagToDocument(tagId: String)
+
+    fun removeTagFromDocument(tagId: String)
+
+    /** Makes a tag in the catalogue and adds it to the document. */
+    fun createTag(name: String, description: String)
+
+    /** Asks the cloud AI for a tag; the answer lands in [aiTagDraft] for the user to confirm. */
+    fun suggestTagWithAi()
+
+    fun clearAiTagDraft()
 
     fun showSearch()
 

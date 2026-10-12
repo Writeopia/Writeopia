@@ -13,6 +13,7 @@ import io.writeopia.ui.image.ImageUploader
 import io.writeopia.core.folders.sync.ConfigFileWatcher
 import io.writeopia.core.folders.sync.DocumentConflictHandler
 import io.writeopia.core.folders.sync.DocumentMerger
+import io.writeopia.core.folders.sync.DocumentTagConflictHandler
 import io.writeopia.core.folders.sync.FolderConflictHandler
 import io.writeopia.core.folders.sync.ImageSync
 import io.writeopia.core.folders.sync.WorkspaceSync
@@ -54,6 +55,7 @@ class WorkspaceInjection private constructor(
     fun provideWorkspaceSync(): WorkspaceSync {
         val documentRepo = repositoryInjection.provideDocumentRepository()
         val folderRepo = FoldersInjector.singleton().provideFoldersRepository()
+        val tagRepo = DocumentTagsInjector.singleton().provideDocumentTagRepository()
         return WorkspaceSync(
             folderRepository = folderRepo,
             documentRepository = documentRepo,
@@ -69,7 +71,9 @@ class WorkspaceInjection private constructor(
                 connectionInjector().httpClient(),
                 connectionInjector().baseUrl(),
                 repositoryInjection.provideDocumentRepository()
-            )
+            ),
+            documentTagRepository = tagRepo,
+            documentTagConflictHandler = DocumentTagConflictHandler(tagRepo),
         )
     }
 

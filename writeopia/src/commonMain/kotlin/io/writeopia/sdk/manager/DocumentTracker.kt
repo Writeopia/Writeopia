@@ -54,4 +54,17 @@ interface DocumentTracker {
             }
         }
     }
+
+    /**
+     * Also saves the document when its tags change. Trackers that don't persist tags fall back
+     * to the comment-aware overload: tags are optional metadata, not a reason to stop tracking.
+     */
+    suspend fun saveOnStoryChanges(
+        documentEditionFlow: Flow<Pair<StoryState, DocumentInfo>>,
+        workspaceIdFlow: Flow<String>,
+        commentConversationsFlow: StateFlow<Map<String, List<Comment>>>,
+        documentTagIdsFlow: StateFlow<Set<String>>,
+    ) {
+        saveOnStoryChanges(documentEditionFlow, workspaceIdFlow, commentConversationsFlow)
+    }
 }

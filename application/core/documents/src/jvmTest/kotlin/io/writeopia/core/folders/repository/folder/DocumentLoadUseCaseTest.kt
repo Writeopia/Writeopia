@@ -99,10 +99,39 @@ class DocumentLoadUseCaseTest {
         coVerify(exactly = 0) { documentRepository.saveDocument(any()) }
     }
 
+    @Test
+    fun `tag-only backend change is saved and reported`() = runBlocking {
+        val documentRepository = mockk<DocumentRepository>(relaxed = true)
+        val documentsApi = mockk<DocumentsApi>()
+        val authRepository = mockk<AuthRepository>(relaxed = true)
+        val content = mapOf(
+            0.0 to StoryStep(id = "step-1", type = StoryTypes.TEXT.type, text = "Text", lastUpdatedAt = 1)
+        )
+        val local = document(lastUpdatedAt = 1, content = content, commentText = "Same", tagIds = emptySet())
+        val backend = document(lastUpdatedAt = 2, content = content, commentText = "Same", tagIds = setOf("tag-1"))
+
+        coEvery { documentRepository.loadDocumentById(local.id, local.workspaceId) } returns local
+        coEvery { documentsApi.getDocumentById(local.id, local.workspaceId) } returns ResultData.Complete(backend)
+
+        val useCase = DocumentLoadUseCase(
+            documentRepository = documentRepository,
+            documentsApi = documentsApi,
+            documentMerger = DocumentMerger(),
+            authRepository = authRepository,
+        )
+        var reloaded: Document? = null
+
+        useCase.fetchAndMergeFromBackend(local.id, local.workspaceId) { merged -> reloaded = merged }
+
+        assertEquals(setOf("tag-1"), assertNotNull(reloaded).tagIds)
+        coVerify(exactly = 1) { documentRepository.saveDocument(match { saved -> saved.tagIds == setOf("tag-1") }) }
+    }
+
     private fun document(
         lastUpdatedAt: Long,
         content: Map<Double, StoryStep>,
         commentText: String,
+        tagIds: Set<String> = emptySet(),
     ) = Document(
         id = "document-1",
         title = "Document",
@@ -115,5 +144,6 @@ class DocumentLoadUseCaseTest {
         commentConversations = mapOf(
             "conversation-1" to listOf(Comment(id = "comment-1", text = commentText))
         ),
+        tagIds = tagIds,
     )
 }

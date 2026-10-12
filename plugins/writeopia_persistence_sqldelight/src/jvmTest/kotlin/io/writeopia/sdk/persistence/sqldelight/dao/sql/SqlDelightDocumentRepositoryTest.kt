@@ -39,6 +39,7 @@ class SqlDelightDocumentRepositoryTest {
         database.documentEntityQueries,
         database.storyStepEntityQueries,
         database.commentEntityQueries,
+        database.documentTagLinkEntityQueries,
     )
 
     private val documentRepository = SqlDelightDocumentRepository(documentSqlDao)
@@ -247,6 +248,30 @@ class SqlDelightDocumentRepositoryTest {
         val loadedFromWorkspace = documentRepository.loadDocumentsWorkspace(document.workspaceId)
             .first { it.id == document.id }
         assertEquals(document.commentConversations, loadedFromWorkspace.commentConversations)
+    }
+
+    @Test
+    fun `save and load a document with tags`() = runTest {
+        DocumentRepositoryTests(documentRepository).saveAndLoadDocumentWithTags()
+    }
+
+    @Test
+    fun `saving again replaces the tags`() = runTest {
+        DocumentRepositoryTests(documentRepository).savingAgainReplacesTags()
+    }
+
+    @Test
+    fun `a metadata save keeps the tags`() = runTest {
+        DocumentRepositoryTests(documentRepository).metadataSaveKeepsTags()
+    }
+
+    @Test
+    fun `hard delete removes tag links in sqldelight`() = runTest {
+        val document = DocumentRepositoryTests(documentRepository).saveDocumentWithTags()
+
+        documentRepository.hardDeleteDocumentByIds(setOf(document.id), document.workspaceId)
+
+        assertTrue(database.documentTagLinkEntityQueries.selectByDocumentId(document.id).awaitAsList().isEmpty())
     }
 
     @Test

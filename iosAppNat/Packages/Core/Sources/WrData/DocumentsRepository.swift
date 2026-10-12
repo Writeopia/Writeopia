@@ -38,6 +38,13 @@ public protocol DocumentsRepository: AnyObject {
     /// Every favorite folder and document of the workspace, wherever they are, for the
     /// "Favorites" screen of the Compose app.
     func favorites() async throws -> FolderContents
+
+    // The tag catalogue of the workspace.
+
+    /// The tags documents can carry, by name, without the deleted ones.
+    func tags() async throws -> [DocumentTag]
+    /// Stores a new or changed tag, and sends it to the backend when there's one.
+    func saveTag(_ tag: DocumentTag) async throws
 }
 
 public enum MoveError: Error, Equatable {
@@ -77,6 +84,11 @@ extension DocumentsRepository {
     public func searchAll(query: String) async throws -> SearchResults {
         SearchResults(documents: try await search(query: query))
     }
+
+    // Sources without a catalogue of their own (editor previews and tests) have no tags.
+    public func tags() async throws -> [DocumentTag] { [] }
+
+    public func saveTag(_ tag: DocumentTag) async throws {}
 
     // Sources without folders of their own (editor previews and tests) don't need to offer these.
     public func folder(id: String) async throws -> Folder? { nil }

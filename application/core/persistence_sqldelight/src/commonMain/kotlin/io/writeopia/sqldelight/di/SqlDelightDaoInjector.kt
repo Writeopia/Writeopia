@@ -24,6 +24,7 @@ class SqlDelightDaoInjector(
                     documentEntityQueries,
                     storyStepEntityQueries,
                     commentEntityQueries,
+                    documentTagLinkEntityQueries,
                 )
 
                 documentSqlDao

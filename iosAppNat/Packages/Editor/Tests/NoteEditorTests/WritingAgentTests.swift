@@ -24,6 +24,39 @@ private final class FakeWritingAgentAPI: WritingAgentServing {
         if let folderFailure { throw folderFailure }
         return FolderSuggestionsResponse(suggestions: folderAnswer)
     }
+
+    var tagAnswer: [TagSuggestionDto] = []
+    private(set) var tagRequests: [TagSuggestionsRequest] = []
+    private(set) var createTagRequests: [TagCreateRequest] = []
+
+    func tagSuggestions(_ request: TagSuggestionsRequest) async throws -> TagSuggestionsResponse {
+        tagRequests.append(request)
+        return TagSuggestionsResponse(suggestions: tagAnswer)
+    }
+
+    func createTag(_ request: TagCreateRequest) async throws -> TagCreateResponse {
+        createTagRequests.append(request)
+        return TagCreateResponse(name: "Fresh", description: "Made by the AI")
+    }
+}
+
+private final class FakeTags: DocumentTags {
+    var current: [String] = []
+    var catalogue = (1...35).map { TagCandidate(id: "t\($0)", name: "Tag \($0)", description: "About \($0)") }
+    private(set) var added: [[String]] = []
+    private(set) var created: [(String, String)] = []
+
+    func currentTagIds() -> [String] { current }
+    func candidates(limit: Int) async throws -> [TagCandidate] { Array(catalogue.prefix(limit)) }
+    func addTags(_ tagIds: [String]) async throws {
+        added.append(tagIds)
+        current += tagIds
+    }
+    func createTagWithAi(documentTitle: String, documentText: String) async throws -> DocumentTag {
+        created.append((documentTitle, documentText))
+        current.append("fresh")
+        return DocumentTag(id: "fresh", workspaceId: "w", name: "Fresh", description: "Made by the AI")
+    }
 }
 
 private final class FakeFolders: DocumentFolders {
@@ -80,6 +113,7 @@ private func controller(
     api: FakeWritingAgentAPI,
     manager: WriteopiaStateManager,
     folders: FakeFolders? = nil,
+    tags: FakeTags? = nil,
     enabled: Bool = true
 ) -> WritingAgentController {
     WritingAgentController(
@@ -87,10 +121,12 @@ private func controller(
         manager: manager,
         executor: executor(manager, ai: nil),
         folders: folders,
+        tags: tags,
         isEnabled: { enabled },
         debounce: .milliseconds(20),
         minimumDocumentLength: 40,
-        folderMinimumDocumentLength: 30
+        folderMinimumDocumentLength: 30,
+        tagMinimumDocumentLength: 30
     )
 }
 
@@ -415,6 +451,76 @@ private func type(_ manager: WriteopiaStateManager, _ id: String, _ text: String
         #expect(folders.created.first?.0 == "Groceries")
         #expect(controller.state.folderDialog == nil)
         #expect(controller.state.offerFolder == false)
+        controller.stop()
+    }
+
+    @Test func aDocumentWithoutTagsIsOfferedSomeWithoutAskingTheBackend() async {
+        let api = FakeWritingAgentAPI()
+        let controller = controller(api: api, manager: manager(paragraphs: ["We need milk, eggs and bread for the week."]), tags: FakeTags())
+        controller.documentOpened(id: "doc")
+
+        #expect(api.tagRequests.isEmpty)
+        #expect(controller.state.offerTags)
+        #expect(controller.state.hasSuggestions)
+        #expect(controller.state.tagDialog == nil)
+        controller.stop()
+    }
+
+    @Test func aDocumentThatAlreadyHasTagsIsNotOfferedAny() async {
+        let tags = FakeTags()
+        tags.current = ["t1"]
+        let controller = controller(api: FakeWritingAgentAPI(), manager: manager(paragraphs: ["We need milk, eggs and bread for the week."]), tags: tags)
+        controller.documentOpened(id: "doc")
+
+        #expect(controller.state.offerTags == false)
+        controller.stop()
+    }
+
+    @Test func takingTheTagOfferAsksAboutThirtyTagsAndAddsTheSelectedOnes() async {
+        let api = FakeWritingAgentAPI()
+        api.tagAnswer = [TagSuggestionDto(tagId: "t2", probability: 0.95), TagSuggestionDto(tagId: "t1", probability: 0.9)]
+        let tags = FakeTags()
+        let controller = controller(api: api, manager: manager(paragraphs: ["We need milk, eggs and bread for the week."]), tags: tags)
+        controller.documentOpened(id: "doc")
+
+        controller.openTagDialog()
+        #expect(controller.state.tagDialog?.isLoading == true)
+        await settle { controller.state.tagDialog?.isLoading == false }
+
+        #expect(api.tagRequests.count == 1)
+        #expect(api.tagRequests.first?.tags.count == TagSuggestionsRequest.maxTags)
+        #expect(api.tagRequests.first?.tags.first?.description == "About 1")
+        #expect(controller.state.tagDialog?.options.map(\.name) == ["Tag 2", "Tag 1"])
+        #expect(controller.state.tagDialog?.selected == ["t2", "t1"])
+
+        controller.toggleTag("t1")
+        #expect(controller.state.tagDialog?.selected == ["t2"])
+        controller.applyTags()
+        await settle { !tags.added.isEmpty }
+
+        #expect(tags.added == [["t2"]])
+        #expect(controller.state.tagDialog == nil)
+        #expect(controller.state.offerTags == false)
+        controller.stop()
+    }
+
+    @Test func creatingATagWithTheAiSpinsAndWithdrawsTheOffer() async {
+        let tags = FakeTags()
+        tags.catalogue = []
+        let controller = controller(api: FakeWritingAgentAPI(), manager: manager(paragraphs: ["We need milk, eggs and bread for the week."]), tags: tags)
+        controller.documentOpened(id: "doc")
+
+        controller.openTagDialog()
+        await settle { controller.state.tagDialog?.isLoading == false }
+        #expect(controller.state.tagDialog?.catalogueIsEmpty == true)
+
+        controller.createTagWithAi()
+        #expect(controller.state.tagDialog?.isCreating == true)
+        await settle { controller.state.tagDialog == nil }
+
+        #expect(tags.created.count == 1)
+        #expect(tags.created.first?.0 == "Groceries")
+        #expect(controller.state.offerTags == false)
         controller.stop()
     }
 

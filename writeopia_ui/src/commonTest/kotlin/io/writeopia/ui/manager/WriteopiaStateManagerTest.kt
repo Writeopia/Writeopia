@@ -2032,6 +2032,38 @@ class WriteopiaStateManagerTest {
     }
 
     @Test
+    fun documentTagsShouldBeLoadedEditedAndReflectedInTheDocument() = runTest {
+        val now = Clock.System.now()
+        val manager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(),
+            userRepository = userRepository,
+        )
+
+        manager.loadDocument(
+            Document(
+                content = mapOf(0.0 to StoryStep(text = "hello", type = StoryTypes.TEXT.type)),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+                tagIds = setOf("tag-1"),
+            )
+        )
+
+        assertEquals(setOf("tag-1"), manager.documentTagIds.value)
+        assertEquals(setOf("tag-1"), manager.getDocument().tagIds)
+
+        manager.addDocumentTag("tag-2")
+        manager.removeDocumentTag("tag-1")
+
+        assertEquals(setOf("tag-2"), manager.documentTagIds.value)
+        assertEquals(setOf("tag-2"), manager.getDocument().tagIds)
+        assertEquals(setOf("tag-2"), manager.currentDocument.filterNotNull().first().tagIds)
+    }
+
+    @Test
     fun updateDocumentShouldReplaceAndPreserveCommentConversationState() = runTest {
         val now = Clock.System.now()
         val first = CommentConversation(

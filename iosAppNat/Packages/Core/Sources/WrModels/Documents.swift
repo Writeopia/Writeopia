@@ -119,6 +119,8 @@ public struct WrDocument: Codable, Identifiable, Equatable, Hashable, Sendable {
     public var published: Bool
     public var deleted: Bool
     public var icon: IconInfo?
+    /// The ids of the document's tags in the workspace catalogue (`DocumentTag`).
+    public var tagIds: [String]
 
     public init(
         id: String,
@@ -133,7 +135,8 @@ public struct WrDocument: Codable, Identifiable, Equatable, Hashable, Sendable {
         isLocked: Bool = false,
         published: Bool = false,
         deleted: Bool = false,
-        icon: IconInfo? = nil
+        icon: IconInfo? = nil,
+        tagIds: [String] = []
     ) {
         self.id = id
         self.title = title
@@ -148,6 +151,7 @@ public struct WrDocument: Codable, Identifiable, Equatable, Hashable, Sendable {
         self.published = published
         self.deleted = deleted
         self.icon = icon
+        self.tagIds = tagIds
     }
 
     public init(from decoder: Decoder) throws {
@@ -165,6 +169,7 @@ public struct WrDocument: Codable, Identifiable, Equatable, Hashable, Sendable {
         published = try container.decodeIfPresent(Bool.self, forKey: .published) ?? false
         deleted = try container.decodeIfPresent(Bool.self, forKey: .deleted) ?? false
         icon = try container.decodeIfPresent(IconInfo.self, forKey: .icon)
+        tagIds = try container.decodeIfPresent([String].self, forKey: .tagIds) ?? []
     }
 
     /// Changed on this device since the last sync, so it has to be sent to the backend.
@@ -210,19 +215,93 @@ public struct WrDocument: Codable, Identifiable, Equatable, Hashable, Sendable {
 public struct FolderContents: Codable, Equatable, Sendable {
     public var folders: [Folder]
     public var documents: [WrDocument]
+    /// The whole tag catalogue of the workspace, tombstones included, sent with every folder.
+    public var tags: [DocumentTag]
 
-    public init(folders: [Folder] = [], documents: [WrDocument] = []) {
+    public init(folders: [Folder] = [], documents: [WrDocument] = [], tags: [DocumentTag] = []) {
         self.folders = folders
         self.documents = documents
+        self.tags = tags
     }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         folders = try container.decodeIfPresent([Folder].self, forKey: .folders) ?? []
         documents = try container.decodeIfPresent([WrDocument].self, forKey: .documents) ?? []
+        tags = try container.decodeIfPresent([DocumentTag].self, forKey: .tags) ?? []
     }
 
     public var isEmpty: Bool { folders.isEmpty && documents.isEmpty }
+}
+
+/// A tag of the workspace catalogue: a short name and the explanation of what it stands for.
+/// Documents refer to tags by id (`WrDocument.tagIds`); many documents share one tag. Mirrors
+/// `DocumentTag` and `DocumentTagApi` of the Kotlin app. Times are epoch milliseconds.
+public struct DocumentTag: Codable, Identifiable, Equatable, Hashable, Sendable {
+    public let id: String
+    public var workspaceId: String
+    public var name: String
+    public var description: String
+    public var createdAt: Int64
+    public var lastUpdatedAt: Int64
+    /// When this device last sent or received the tag. Only stored locally.
+    public var lastSyncedAt: Int64?
+    /// A tombstone: the tag was removed and isn't offered, but the removal still syncs.
+    public var deleted: Bool
+
+    public init(
+        id: String = UUID().uuidString,
+        workspaceId: String,
+        name: String,
+        description: String = "",
+        createdAt: Int64 = Date.nowMillis,
+        lastUpdatedAt: Int64 = Date.nowMillis,
+        lastSyncedAt: Int64? = nil,
+        deleted: Bool = false
+    ) {
+        self.id = id
+        self.workspaceId = workspaceId
+        self.name = name
+        self.description = description
+        self.createdAt = createdAt
+        self.lastUpdatedAt = lastUpdatedAt
+        self.lastSyncedAt = lastSyncedAt
+        self.deleted = deleted
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, workspaceId, name, description, createdAt, lastUpdatedAt, lastSyncedAt, deleted
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        workspaceId = try container.decodeIfPresent(String.self, forKey: .workspaceId) ?? ""
+        name = try container.decodeIfPresent(String.self, forKey: .name) ?? ""
+        description = try container.decodeIfPresent(String.self, forKey: .description) ?? ""
+        createdAt = try container.decodeIfPresent(Int64.self, forKey: .createdAt) ?? 0
+        lastUpdatedAt = try container.decodeIfPresent(Int64.self, forKey: .lastUpdatedAt) ?? 0
+        lastSyncedAt = try container.decodeIfPresent(Int64.self, forKey: .lastSyncedAt)
+        deleted = try container.decodeIfPresent(Bool.self, forKey: .deleted) ?? false
+    }
+
+    /// The tag as the backend expects it (`DocumentTagApi`), without the local only field.
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(workspaceId, forKey: .workspaceId)
+        try container.encode(name, forKey: .name)
+        try container.encode(description, forKey: .description)
+        try container.encode(createdAt, forKey: .createdAt)
+        try container.encode(lastUpdatedAt, forKey: .lastUpdatedAt)
+        try container.encode(deleted, forKey: .deleted)
+    }
+
+    /// Changed on this device since the last sync, so it has to be sent to the backend.
+    public var isOutdated: Bool {
+        guard let lastSyncedAt else { return true }
+        return lastUpdatedAt > lastSyncedAt
+    }
 }
 
 public extension Date {

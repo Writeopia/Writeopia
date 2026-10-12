@@ -7,6 +7,10 @@ import WrNetwork
 public protocol WritingAgentServing: AnyObject {
     func suggestions(_ request: WritingSuggestionsRequest) async throws -> WritingSuggestionsResponse
     func folderSuggestions(_ request: FolderSuggestionsRequest) async throws -> FolderSuggestionsResponse
+    /// Which of the workspace tags a document should carry.
+    func tagSuggestions(_ request: TagSuggestionsRequest) async throws -> TagSuggestionsResponse
+    /// A new tag, name and explanation, made up by the cloud AI for a document.
+    func createTag(_ request: TagCreateRequest) async throws -> TagCreateResponse
 }
 
 /// Draws a picture for a paragraph. Only the cloud draws: the on-device models only write text.
@@ -32,6 +36,14 @@ public final class WritingAgentAPI: WritingAgentServing, AiImageGenerating {
 
     public func folderSuggestions(_ request: FolderSuggestionsRequest) async throws -> FolderSuggestionsResponse {
         try await client.send(.post, "api/ai/folder-suggestions", body: request)
+    }
+
+    public func tagSuggestions(_ request: TagSuggestionsRequest) async throws -> TagSuggestionsResponse {
+        try await client.send(.post, "api/ai/tag-suggestions", body: request)
+    }
+
+    public func createTag(_ request: TagCreateRequest) async throws -> TagCreateResponse {
+        try await client.send(.post, "api/ai/tag-create", body: request)
     }
 
     public func generateImage(paragraph: String, documentTitle: String, documentText: String) async throws -> String {
