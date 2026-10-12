@@ -1,0 +1,30 @@
+CREATE TABLE documentTagLinkEntity (
+  document_id TEXT NOT NULL,
+  tag_id TEXT NOT NULL,
+  PRIMARY KEY (document_id, tag_id)
+);
+
+selectByDocumentId:
+SELECT tag_id
+FROM documentTagLinkEntity
+WHERE document_id = ?;
+
+insert:
+INSERT OR IGNORE INTO documentTagLinkEntity(document_id, tag_id)
+VALUES (?, ?);
+
+deleteByDocumentId:
+DELETE FROM documentTagLinkEntity
+WHERE document_id = ?;
+
+deleteByDocumentIds:
+DELETE FROM documentTagLinkEntity
+WHERE document_id IN ?;
+
+deleteByDocumentIdsForWorkspace:
+DELETE FROM documentTagLinkEntity
+WHERE document_id IN (
+  SELECT id
+  FROM documentEntity
+  WHERE id IN ? AND workspace_id = ?
+);

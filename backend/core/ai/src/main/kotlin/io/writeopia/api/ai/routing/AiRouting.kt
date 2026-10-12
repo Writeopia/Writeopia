@@ -22,6 +22,7 @@ import io.writeopia.api.genai.model.AiGenerateResponse
 import io.writeopia.api.genai.model.TokenUsage
 import io.writeopia.api.genai.service.GenAiService
 import io.writeopia.api.typesafe.service.FolderSuggestionsService
+import io.writeopia.api.typesafe.service.TagSuggestionsService
 import io.writeopia.api.typesafe.service.WritingSuggestionsService
 import io.writeopia.buckets.GcpBucketImageStorageService
 import io.writeopia.connection.logger
@@ -66,6 +67,10 @@ fun Routing.aiRoute(debugMode: Boolean = false, writeopiaDb: WriteopiaDbBackend?
     // The writing agent (Jev, through TypeSafe) answers next to the other cloud AI routes.
     writingSuggestionsRoute(WritingSuggestionsService(), debugMode, writeopiaDb)
     folderSuggestionsRoute(FolderSuggestionsService(), debugMode, writeopiaDb)
+
+    // Document tags: Jev picks the catalogue tags a document should carry; Gemini makes up new ones.
+    tagSuggestionsRoute(TagSuggestionsService(), debugMode, writeopiaDb)
+    tagCreationRoute(genAiService, debugMode, writeopiaDb)
 
     // The pictures the writing agent offers, drawn by Gemini and kept with the user's media.
     aiImageRoute(genAiService, GcpBucketImageStorageService, debugMode, writeopiaDb)

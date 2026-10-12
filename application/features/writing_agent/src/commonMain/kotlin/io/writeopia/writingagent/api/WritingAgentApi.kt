@@ -8,6 +8,10 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.writeopia.app.dto.writingagent.FolderSuggestionsRequest
 import io.writeopia.app.dto.writingagent.FolderSuggestionsResponse
+import io.writeopia.app.dto.writingagent.TagCreateRequest
+import io.writeopia.app.dto.writingagent.TagCreateResponse
+import io.writeopia.app.dto.writingagent.TagSuggestionsRequest
+import io.writeopia.app.dto.writingagent.TagSuggestionsResponse
 import io.writeopia.app.dto.writingagent.WritingSuggestionsRequest
 import io.writeopia.app.dto.writingagent.WritingSuggestionsResponse
 import io.writeopia.app.endpoints.EndPoints
@@ -20,6 +24,12 @@ interface WritingAgentApi {
 
     /** Which of the workspace folders a document that sits in the root belongs to. */
     suspend fun folderSuggestions(request: FolderSuggestionsRequest): ResultData<FolderSuggestionsResponse>
+
+    /** Which of the workspace tags a document should carry. */
+    suspend fun tagSuggestions(request: TagSuggestionsRequest): ResultData<TagSuggestionsResponse>
+
+    /** A new tag, name and explanation, made up by the cloud AI for a document. */
+    suspend fun createTag(request: TagCreateRequest): ResultData<TagCreateResponse>
 }
 
 class KtorWritingAgentApi(
@@ -36,6 +46,14 @@ class KtorWritingAgentApi(
         request: FolderSuggestionsRequest
     ): ResultData<FolderSuggestionsResponse> =
         post(EndPoints.aiFolderSuggestions(), request, "Folder suggestions")
+
+    override suspend fun tagSuggestions(
+        request: TagSuggestionsRequest
+    ): ResultData<TagSuggestionsResponse> =
+        post(EndPoints.aiTagSuggestions(), request, "Tag suggestions")
+
+    override suspend fun createTag(request: TagCreateRequest): ResultData<TagCreateResponse> =
+        post(EndPoints.aiTagCreate(), request, "Tag creation")
 
     private suspend inline fun <reified Request, reified Response> post(
         endpoint: String,

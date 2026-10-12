@@ -18,6 +18,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
@@ -83,7 +84,8 @@ class DocumentSyncManager(
         documentEditionFlow: Flow<Pair<StoryState, DocumentInfo>>,
         workspaceIdFlow: Flow<String>,
         commentConversationsFlow: StateFlow<Map<String, List<Comment>>>,
-        documentTracker: DocumentTracker
+        documentTracker: DocumentTracker,
+        documentTagIdsFlow: StateFlow<Set<String>> = MutableStateFlow(emptySet()),
     ) {
         // Cancel any existing sync for this document
         activeSyncJobs[documentId]?.cancel()
@@ -95,7 +97,8 @@ class DocumentSyncManager(
                 documentTracker.saveOnStoryChanges(
                     documentEditionFlow,
                     boundWorkspaceIdFlow,
-                    commentConversationsFlow
+                    commentConversationsFlow,
+                    documentTagIdsFlow,
                 )
             } catch (error: UnsupportedCommentConversationsException) {
                 println("Document sync stopped for $documentId: ${error.message}")

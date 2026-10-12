@@ -228,6 +228,15 @@ private fun ExpandedBox(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
             }
+
+            if (state.offerTags) {
+                SuggestionRow(
+                    label = WrStrings.writingSuggestionTags(),
+                    testTag = "$WRITING_SUGGESTIONS_BOX_TAG.tags",
+                    onApply = controller::openTagDialog
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+            }
         }
     }
 }

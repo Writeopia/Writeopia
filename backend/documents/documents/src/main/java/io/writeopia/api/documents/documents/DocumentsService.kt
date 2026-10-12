@@ -31,6 +31,7 @@ import io.writeopia.api.documents.documents.repository.moveDocumentToFolder
 import io.writeopia.api.documents.documents.repository.moveFolderToFolder
 import io.writeopia.api.documents.documents.repository.removeUserFavorite
 import io.writeopia.api.documents.documents.repository.saveDocument
+import io.writeopia.api.documents.documents.repository.saveDocumentTag
 import io.writeopia.api.documents.documents.repository.saveFolder
 import io.writeopia.api.documents.documents.repository.setDocumentPublished
 import io.writeopia.api.documents.documents.repository.updateDocumentTitle
@@ -42,6 +43,7 @@ import io.writeopia.connection.logger
 import io.writeopia.connection.Urls
 import io.writeopia.connection.wrWebClient
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.document.DocumentTag
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.id.GenerateId
@@ -90,6 +92,11 @@ object DocumentsService {
         }
 
         return true
+    }
+
+    /** Upserts the tags a client sends; clients decide conflicts, the backend keeps the last write. */
+    fun receiveDocumentTags(tags: List<DocumentTag>, writeopiaDb: WriteopiaDbBackend) {
+        tags.forEach { tag -> writeopiaDb.saveDocumentTag(tag) }
     }
 
     suspend fun search(

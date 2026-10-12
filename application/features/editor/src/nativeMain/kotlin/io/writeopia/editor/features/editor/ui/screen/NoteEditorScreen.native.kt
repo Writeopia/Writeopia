@@ -54,6 +54,8 @@ import io.writeopia.editor.configuration.ui.HeaderEdition
 import io.writeopia.editor.configuration.ui.NoteGlobalActionsMenu
 import io.writeopia.editor.features.editor.ui.TextEditor
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.SideEditorOptions
+import io.writeopia.editor.features.editor.ui.tags.AddDocumentTagDialog
+import io.writeopia.editor.features.editor.ui.tags.DocumentTagsDialog
 import io.writeopia.editor.features.editor.ui.folders.FolderSelectionDialog
 import io.writeopia.editor.features.editor.ui.mobile.MobileAiDialog
 import io.writeopia.editor.features.editor.viewmodel.AiTargetMode
@@ -241,8 +243,46 @@ internal fun NoteEditorScreen(
                     changeSideMenuTab = noteEditorViewModel::changeSideMenu,
                     titleClick = noteEditorViewModel::titleClick,
                     onDrawingClick = onNewDrawingClick,
-                    onPublishClick = noteEditorViewModel::showPublishDialog
+                    onPublishClick = noteEditorViewModel::showPublishDialog,
+                    documentTagsState = noteEditorViewModel.documentTags,
+                    onViewTagsClick = noteEditorViewModel::showTagsDialog,
+                    onAddTagClick = noteEditorViewModel::showAddTagDialog,
+                    onRemoveTagClick = noteEditorViewModel::removeTagFromDocument,
                 )
+
+                val showTagsDialog by noteEditorViewModel.showTagsDialog.collectAsState()
+                if (showTagsDialog) {
+                    val documentTags by noteEditorViewModel.documentTags.collectAsState()
+                    val isEditableForTags by noteEditorViewModel.isEditable.collectAsState()
+                    DocumentTagsDialog(
+                        tags = documentTags,
+                        isEditable = isEditableForTags,
+                        onRemove = noteEditorViewModel::removeTagFromDocument,
+                        onAddTag = {
+                            noteEditorViewModel.hideTagsDialog()
+                            noteEditorViewModel.showAddTagDialog()
+                        },
+                        onDismiss = noteEditorViewModel::hideTagsDialog
+                    )
+                }
+
+                val showAddTagDialog by noteEditorViewModel.showAddTagDialog.collectAsState()
+                if (showAddTagDialog) {
+                    val workspaceTags by noteEditorViewModel.workspaceTags.collectAsState()
+                    val documentTagIds by noteEditorViewModel.writeopiaManager.documentTagIds.collectAsState()
+                    val canSuggestWithAi by noteEditorViewModel.canSuggestTagWithAi.collectAsState()
+                    val aiDraft by noteEditorViewModel.aiTagDraft.collectAsState()
+                    AddDocumentTagDialog(
+                        workspaceTags = workspaceTags,
+                        documentTagIds = documentTagIds,
+                        canSuggestWithAi = canSuggestWithAi,
+                        aiDraft = aiDraft,
+                        onPickTag = noteEditorViewModel::addTagToDocument,
+                        onCreateTag = noteEditorViewModel::createTag,
+                        onSuggestWithAi = noteEditorViewModel::suggestTagWithAi,
+                        onDismiss = noteEditorViewModel::hideAddTagDialog
+                    )
+                }
 
                 if (showDeleteConfirmation) {
                     DeleteConfirmationDialog(

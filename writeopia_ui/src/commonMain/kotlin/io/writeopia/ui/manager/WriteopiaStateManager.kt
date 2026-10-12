@@ -232,6 +232,10 @@ class WriteopiaStateManager(
     val commentConversations: StateFlow<Map<String, List<Comment>>> =
         _commentConversations.asStateFlow()
 
+    /** The ids of the tags of the open document, from the workspace catalogue. */
+    private val _documentTagIds = MutableStateFlow<Set<String>>(emptySet())
+    val documentTagIds: StateFlow<Set<String>> = _documentTagIds.asStateFlow()
+
     private val isEditable: Boolean
         get() = !_documentInfo.value.isLocked
 
@@ -257,8 +261,13 @@ class WriteopiaStateManager(
         }
 
     val currentDocument: StateFlow<Document?> =
-        combine(_documentInfo, _currentStory, _commentConversations) { info, state, conversations ->
-            parseDocument(info, state, conversations)
+        combine(
+            _documentInfo,
+            _currentStory,
+            _commentConversations,
+            _documentTagIds,
+        ) { info, state, conversations, tagIds ->
+            parseDocument(info, state, conversations, tagIds)
         }.stateIn(coroutineScope, SharingStarted.Lazily, null)
 
     /**
@@ -377,7 +386,8 @@ class WriteopiaStateManager(
                     userRepository?.listenForWorkspace()?.map { workspace ->
                         workspace.id
                     } ?: MutableStateFlow(Workspace.disconnectedWorkspace().id),
-                    commentConversations
+                    commentConversations,
+                    documentTagIds,
                 )
             } catch (error: UnsupportedCommentConversationsException) {
                 println(
@@ -404,7 +414,28 @@ class WriteopiaStateManager(
     }
 
     fun getDocument(): Document =
-        parseDocument(_documentInfo.value, _currentStory.value, _commentConversations.value)
+        parseDocument(
+            _documentInfo.value,
+            _currentStory.value,
+            _commentConversations.value,
+            _documentTagIds.value,
+        )
+
+    /** Adds a tag of the workspace catalogue to the document. The tracker saves the change. */
+    fun addDocumentTag(tagId: String) {
+        if (!isEditable || tagId.isBlank()) return
+        _documentTagIds.update { ids -> ids + tagId }
+    }
+
+    fun removeDocumentTag(tagId: String) {
+        if (!isEditable) return
+        _documentTagIds.update { ids -> ids - tagId }
+    }
+
+    fun setDocumentTagIds(tagIds: Set<String>) {
+        if (!isEditable) return
+        _documentTagIds.value = tagIds
+    }
 
     fun liveSync(sharedEditionManager: SharedEditionManager) {
         coroutineScope.launch(dispatcher) {
@@ -448,6 +479,7 @@ class WriteopiaStateManager(
         _currentStory.value = withNextPositions
         _commentConversations.value = emptyMap()
         commentConversationArchive.value = emptyMap()
+        _documentTagIds.value = emptySet()
     }
 
     /**
@@ -474,6 +506,7 @@ class WriteopiaStateManager(
         _documentInfo.value = document.info()
         _commentConversations.value = document.commentConversations
         replaceCommentConversationArchive(document.commentConversations)
+        _documentTagIds.value = document.tagIds
     }
 
     /**
@@ -492,6 +525,7 @@ class WriteopiaStateManager(
         backStackManager.addState(_currentStory.value)
         _commentConversations.value = document.commentConversations
         replaceCommentConversationArchive(document.commentConversations)
+        _documentTagIds.value = document.tagIds
     }
 
     /**
@@ -2247,6 +2281,7 @@ class WriteopiaStateManager(
         info: DocumentInfo,
         state: StoryState,
         conversations: Map<String, List<Comment>>,
+        tagIds: Set<String> = emptySet(),
     ): Document {
         val titleFromContent = state.stories.values.firstOrNull { storyStep ->
             // Todo: Change the type of change to allow different types. The client code should decide what is a title
@@ -2265,7 +2300,8 @@ class WriteopiaStateManager(
             parentId = info.parentId,
             isLocked = info.isLocked,
             icon = info.icon,
-            commentConversations = conversations
+            commentConversations = conversations,
+            tagIds = tagIds,
         )
     }
 

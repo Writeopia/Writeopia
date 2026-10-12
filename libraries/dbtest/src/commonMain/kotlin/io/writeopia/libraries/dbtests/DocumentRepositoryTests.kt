@@ -409,6 +409,62 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
         )
     }
 
+    suspend fun saveDocumentWithTags(tagIds: Set<String> = setOf("tag-work", "tag-ideas")): Document {
+        val now = now()
+        val document = Document(
+            id = GenerateId.generate(),
+            title = "Document with tags",
+            content = mapOf(
+                0.0 to StoryStep(type = StoryTypes.TEXT.type, text = "Tagged text", dbPosition = 0.0)
+            ),
+            tagIds = tagIds,
+            createdAt = now,
+            lastUpdatedAt = now,
+            lastSyncedAt = null,
+            workspaceId = "workspaceId",
+            parentId = "root",
+            isLocked = false,
+        )
+
+        documentRepository.saveDocument(document)
+        return document
+    }
+
+    suspend fun saveAndLoadDocumentWithTags() {
+        val document = saveDocumentWithTags()
+
+        assertEquals(document.tagIds, documentRepository.loadDocumentById(document.id, document.workspaceId)?.tagIds)
+        assertEquals(
+            document.tagIds,
+            documentRepository.loadDocumentsWorkspace(document.workspaceId).first { it.id == document.id }.tagIds,
+        )
+        assertEquals(
+            document.tagIds,
+            documentRepository.loadDocumentsByParentId("root", document.workspaceId).first { it.id == document.id }.tagIds,
+        )
+    }
+
+    suspend fun savingAgainReplacesTags() {
+        val document = saveDocumentWithTags()
+
+        documentRepository.saveDocument(document.copy(tagIds = setOf("tag-ideas")))
+        assertEquals(setOf("tag-ideas"), documentRepository.loadDocumentById(document.id, document.workspaceId)?.tagIds)
+
+        documentRepository.saveDocument(document.copy(tagIds = emptySet()))
+        assertEquals(emptySet(), documentRepository.loadDocumentById(document.id, document.workspaceId)?.tagIds)
+    }
+
+    /** A metadata save (every keystroke) must not touch the tag links. */
+    suspend fun metadataSaveKeepsTags() {
+        val document = saveDocumentWithTags()
+
+        documentRepository.saveDocumentMetadata(document.copy(title = "Renamed", tagIds = emptySet()))
+
+        val loaded = documentRepository.loadDocumentById(document.id, document.workspaceId)
+        assertEquals("Renamed", loaded?.title)
+        assertEquals(document.tagIds, loaded?.tagIds)
+    }
+
     suspend fun saveSimpleDocumentAndLoadByParentId() {
         val document = Document(
             id = GenerateId.generate(),

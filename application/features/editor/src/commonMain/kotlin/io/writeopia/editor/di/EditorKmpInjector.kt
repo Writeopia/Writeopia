@@ -8,6 +8,7 @@ import io.writeopia.auth.core.di.AuthCoreInjectionNeo
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.core.configuration.di.AppConfigurationInjector
 import io.writeopia.core.configuration.di.UiConfigurationCoreInjector
+import io.writeopia.core.folders.di.DocumentTagsInjector
 import io.writeopia.core.folders.di.FoldersInjector
 import io.writeopia.core.folders.di.InDocumentSearchInjection
 import io.writeopia.core.folders.di.WorkspaceInjection
@@ -131,6 +132,7 @@ class EditorKmpInjector private constructor(
                 PresentationSqlStore(db.presentationEntityQueries, db.presentationStepEntityQueries)
             },
             writingAgentApi = writingAgentInjection?.provideApi(),
+            documentTagRepository = DocumentTagsInjector.singleton().provideDocumentTagRepository(),
         )
 
     @Composable

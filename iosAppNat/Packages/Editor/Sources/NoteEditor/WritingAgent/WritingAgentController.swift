@@ -17,6 +17,8 @@ import WrModels
 /// Two offers are decided here, without the backend: a document with text but no title is offered
 /// a title, and a document that sits in the root folder is offered a home. Only when the user
 /// takes the folder offer does a dialog open and the backend judge the first workspace folders.
+/// A document without tags is offered tags the same way: the dialog shows the catalogue tags the
+/// backend says fit, selected, and a new tag made up by the AI.
 @Observable
 public final class WritingAgentController {
     public private(set) var state = WritingSuggestionsState.empty
@@ -28,11 +30,13 @@ public final class WritingAgentController {
     @ObservationIgnored private let api: WritingAgentServing
     @ObservationIgnored private let manager: WriteopiaStateManager
     @ObservationIgnored private let folders: DocumentFolders?
+    @ObservationIgnored private let tags: DocumentTags?
     @ObservationIgnored private let ui: () -> WritingAgentUI
     @ObservationIgnored private let isEnabled: () -> Bool
     @ObservationIgnored private let debounce: Duration
     @ObservationIgnored private let minimumDocumentLength: Int
     @ObservationIgnored private let folderMinimumDocumentLength: Int
+    @ObservationIgnored private let tagMinimumDocumentLength: Int
     @ObservationIgnored private let untitledDocumentMinimumSentences: Int
 
     /// What the backend answered last. `state` is this plus what is decided locally.
@@ -43,6 +47,11 @@ public final class WritingAgentController {
     @ObservationIgnored private var folderDialog: FolderDialogState?
     @ObservationIgnored private var foldersDeclinedFor: String?
     @ObservationIgnored private var foldersCheckedFor: String?
+    @ObservationIgnored private var offerTags = false
+    @ObservationIgnored private var tagDialog: TagDialogState?
+    @ObservationIgnored private var tagsDeclinedFor: String?
+    @ObservationIgnored private var tagsCheckedFor: String?
+    @ObservationIgnored private var tagRequest: Task<Void, Never>?
     @ObservationIgnored private var sentenceEnds: [String: Int] = [:]
     @ObservationIgnored private var openedDocumentId: String?
     @ObservationIgnored private var request: Task<Void, Never>?
@@ -53,23 +62,28 @@ public final class WritingAgentController {
     public static let documentTextLimit = 6_000
     public static let minimumDocumentLength = 200
     public static let folderMinimumDocumentLength = 40
+    public static let tagMinimumDocumentLength = 40
 
     public init(
         api: WritingAgentServing,
         manager: WriteopiaStateManager,
         executor: WritingActionExecutor,
         folders: DocumentFolders? = nil,
+        tags: DocumentTags? = nil,
         ui: @escaping () -> WritingAgentUI = { NoWritingAgentUI() },
         isEnabled: @escaping () -> Bool = { true },
         debounce: Duration = .milliseconds(600),
         minimumDocumentLength: Int = WritingAgentController.minimumDocumentLength,
         folderMinimumDocumentLength: Int = WritingAgentController.folderMinimumDocumentLength,
+        tagMinimumDocumentLength: Int = WritingAgentController.tagMinimumDocumentLength,
         untitledDocumentMinimumSentences: Int = 1
     ) {
         self.api = api
         self.manager = manager
         self.executor = executor
         self.folders = folders
+        self.tags = tags
+        self.tagMinimumDocumentLength = tagMinimumDocumentLength
         self.ui = ui
         self.isEnabled = isEnabled
         self.debounce = debounce
@@ -81,6 +95,7 @@ public final class WritingAgentController {
     public func stop() {
         request?.cancel()
         folderRequest?.cancel()
+        tagRequest?.cancel()
         executor.cancel()
     }
 
@@ -94,8 +109,10 @@ public final class WritingAgentController {
     public func dismiss() {
         request?.cancel()
         folderRequest?.cancel()
+        tagRequest?.cancel()
         declineDocumentTitle()
         declineFolder()
+        declineTags()
         fetched = .empty
         publish()
     }
@@ -137,6 +154,83 @@ public final class WritingAgentController {
         folderRequest?.cancel()
         folderDialog = nil
         publish()
+    }
+
+    /// Takes the tag offer: opens the dialog with a spinner and asks the backend which tags of
+    /// the catalogue the document should carry.
+    public func openTagDialog() {
+        guard let tags, let documentId = openedDocumentId, offerTags, tagDialog == nil else { return }
+
+        tagDialog = TagDialogState(isLoading: true)
+        publish()
+
+        tagRequest?.cancel()
+        let text = documentText()
+        tagRequest = Task { await askTags(tags, documentId: documentId, text: text) }
+    }
+
+    /// Closes the tag dialog without tagging the document. The box keeps offering it.
+    public func dismissTagDialog() {
+        tagRequest?.cancel()
+        tagDialog = nil
+        publish()
+    }
+
+    /// Keeps or drops one of the offered tags before they are added.
+    public func toggleTag(_ tagId: String) {
+        guard var dialog = tagDialog, !dialog.isLoading, !dialog.isCreating,
+              dialog.options.contains(where: { $0.tagId == tagId })
+        else { return }
+
+        if dialog.selected.contains(tagId) {
+            dialog.selected.remove(tagId)
+        } else {
+            dialog.selected.insert(tagId)
+        }
+        tagDialog = dialog
+        publish()
+    }
+
+    /// Adds the selected tags to the document, closes the dialog and withdraws the offer.
+    public func applyTags() {
+        guard let tags, let dialog = tagDialog, !dialog.isLoading, !dialog.isCreating else { return }
+
+        let selected = dialog.options.map(\.tagId).filter { dialog.selected.contains($0) }
+        declineTags()
+        publish()
+        guard !selected.isEmpty else { return }
+
+        Self.logger.info("adding tags \(selected.joined(separator: ", "), privacy: .public) to the document")
+        executing = Task { [weak self] in
+            do {
+                try await tags.addTags(selected)
+            } catch {
+                self?.executor.error = WritingActionExecutor.message(of: error)
+            }
+        }
+    }
+
+    /// Makes a tag made up by the AI and adds it to the document. The dialog shows a spinner
+    /// meanwhile and closes once the tag was added, or when the AI failed.
+    public func createTagWithAi() {
+        guard let tags, var dialog = tagDialog, !dialog.isLoading, !dialog.isCreating else { return }
+
+        dialog.isCreating = true
+        tagDialog = dialog
+        publish()
+
+        let title = manager.title
+        let text = documentText()
+        executing = Task { [weak self] in
+            do {
+                let tag = try await tags.createTagWithAi(documentTitle: title, documentText: text)
+                Self.logger.info("document tagged with the new tag \"\(tag.name, privacy: .public)\"")
+            } catch {
+                self?.executor.error = WritingActionExecutor.message(of: error)
+            }
+            self?.declineTags()
+            self?.publish()
+        }
     }
 
     /// Moves the document to `folderId`, one of the folders the dialog offers, and closes it.
@@ -189,14 +283,18 @@ public final class WritingAgentController {
         openedDocumentId = id
         request?.cancel()
         folderRequest?.cancel()
+        tagRequest?.cancel()
         fetched = .empty
         offerFolder = false
         folderDialog = nil
+        offerTags = false
+        tagDialog = nil
         refreshDocumentTitleOffer()
         publish()
 
         let text = documentText()
         considerFolders(documentId: id, text: text)
+        considerTags(documentId: id, text: text)
 
         guard text.count >= minimumDocumentLength else {
             Self.logger.info("document \(id, privacy: .public) opened with \(text.count) chars, under the minimum: not asking")
@@ -219,7 +317,9 @@ public final class WritingAgentController {
     public func storyChanged() {
         refreshDocumentTitleOffer()
         if let id = openedDocumentId {
-            considerFolders(documentId: id, text: documentText())
+            let text = documentText()
+            considerFolders(documentId: id, text: text)
+            considerTags(documentId: id, text: text)
         }
 
         guard let step = manager.focusedStep, !step.isTitle, let text = step.text else { return }
@@ -252,6 +352,12 @@ public final class WritingAgentController {
         foldersDeclinedFor = openedDocumentId
     }
 
+    private func declineTags() {
+        offerTags = false
+        tagDialog = nil
+        tagsDeclinedFor = openedDocumentId
+    }
+
     private func publish() {
         var shown = fetched
         if offerDocumentTitle {
@@ -259,6 +365,8 @@ public final class WritingAgentController {
         }
         shown.offerFolder = offerFolder
         shown.folderDialog = folderDialog
+        shown.offerTags = offerTags
+        shown.tagDialog = tagDialog
         state = shown
     }
 
@@ -298,6 +406,70 @@ public final class WritingAgentController {
         }
         Self.logger.info("document \(documentId, privacy: .public) is in the root: offering a folder")
         offerFolder = true
+        publish()
+    }
+
+    /// Offers tags once per document, as soon as it has enough text and carries none: when it
+    /// opens, or later while the user writes. The backend is not asked until the user takes the
+    /// offer. The offer is withdrawn when the document gets a tag another way.
+    private func considerTags(documentId: String, text: String) {
+        guard let tags else { return }
+
+        if offerTags, !tags.currentTagIds().isEmpty {
+            Self.logger.info("document \(documentId, privacy: .public) got tags: tag offer withdrawn")
+            offerTags = false
+            tagDialog = nil
+            publish()
+            return
+        }
+
+        guard tagsCheckedFor != documentId, tagsDeclinedFor != documentId, text.count >= tagMinimumDocumentLength else { return }
+        tagsCheckedFor = documentId
+        guard tags.currentTagIds().isEmpty else { return }
+
+        Self.logger.info("document \(documentId, privacy: .public) has no tags: offering some")
+        offerTags = true
+        publish()
+    }
+
+    /// Fills the open dialog: the tags the backend says the document should carry, among the first
+    /// tags of the catalogue, all selected. Without tags, offline, or when the backend fails, the
+    /// dialog only offers a new tag.
+    private func askTags(_ tags: DocumentTags, documentId: String, text: String) async {
+        var matches: [TagSuggestion] = []
+        var catalogueIsEmpty = false
+        do {
+            let candidates = try await tags.candidates(limit: TagSuggestionsRequest.maxTags)
+            if candidates.isEmpty {
+                catalogueIsEmpty = true
+                Self.logger.info("the workspace has no tags: the dialog offers only a new tag")
+            } else if !isEnabled() {
+                Self.logger.info("tag request skipped: the agent is disabled")
+            } else {
+                Self.logger.info("asking about \(candidates.count) tags: \(candidates.map(\.name).joined(separator: ", "), privacy: .public)")
+                let response = try await api.tagSuggestions(
+                    TagSuggestionsRequest(documentTitle: manager.title, documentText: text, tags: candidates)
+                )
+                matches = response.suggestions.compactMap { dto in
+                    candidates.first { $0.id == dto.tagId }.map {
+                        TagSuggestion(tagId: $0.id, name: $0.name, description: $0.description, probability: dto.probability)
+                    }
+                }
+                Self.logger.info("tag answer: \(matches.map { "\($0.name) \(Int($0.probability * 100))%" }.joined(separator: ", "), privacy: .public)")
+            }
+        } catch is CancellationError {
+            return
+        } catch {
+            Self.logger.error("tag request failed: \(error.localizedDescription, privacy: .public); the dialog offers only a new tag")
+        }
+
+        guard openedDocumentId == documentId, tagDialog != nil else { return }
+        tagDialog = TagDialogState(
+            isLoading: false,
+            options: matches,
+            selected: Set(matches.map(\.tagId)),
+            catalogueIsEmpty: catalogueIsEmpty
+        )
         publish()
     }
 

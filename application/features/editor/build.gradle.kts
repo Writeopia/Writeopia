@@ -75,6 +75,7 @@ kotlin {
                 implementation(project(":application:core:configuration"))
                 implementation(project(":application:features:drawing"))
                 implementation(project(":application:features:writing_agent"))
+                implementation(project(":common:endpoints"))
 
                 implementation(libs.kotlinx.serialization.json)
                 //
