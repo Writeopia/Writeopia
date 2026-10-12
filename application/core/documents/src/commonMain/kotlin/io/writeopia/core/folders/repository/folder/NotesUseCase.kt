@@ -189,10 +189,31 @@ class NotesUseCase private constructor(
                 userId,
                 workspaceId
             )
+
+            is NotesNavigation.Tag -> listenForDocumentsWithTag(notesNavigation.id, userId, workspaceId)
         }.map { menuMap ->
             menuMap.mapKeys { (key, value) ->
                 key.split(":", limit = 2)[0]
             }
+        }
+
+    /**
+     * The documents of the workspace carrying [tagId], wherever they are, keyed by the tag id
+     * like a folder's contents are keyed by the folder id. Read once per subscription.
+     */
+    private suspend fun listenForDocumentsWithTag(
+        tagId: String,
+        userId: String,
+        workspaceId: String
+    ): Flow<Map<String, List<MenuItem>>> =
+        notesConfig.listenOrderPreference(userId).map { orderPreference ->
+            val order =
+                orderPreference.takeIf { it.isNotEmpty() }?.let(OrderBy.Companion::fromString)
+                    ?: OrderBy.UPDATE
+            val documents = documentRepository.loadDocumentsWorkspace(workspaceId)
+                .filter { document -> tagId in document.tagIds }
+
+            mapOf(tagId to documents.sortedWithOrderBy(order))
         }
 
     suspend fun stopListeningForMenuItemsByParentId(id: String, workspaceId: String) {

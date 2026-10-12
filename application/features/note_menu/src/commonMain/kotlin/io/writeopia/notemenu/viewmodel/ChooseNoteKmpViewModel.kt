@@ -11,6 +11,7 @@ import io.writeopia.ai.task.AiTaskType
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.common.utils.DISCONNECTED_USER_ID
 import io.writeopia.common.utils.NotesNavigation
+import io.writeopia.core.folders.repository.tag.DocumentTagRepository
 import io.writeopia.common.utils.NotesNavigationType
 import io.writeopia.common.utils.file.FileUtils
 import io.writeopia.common.utils.file.SaveImage
@@ -30,6 +31,7 @@ import io.writeopia.sdk.export.DocumentWriter
 import io.writeopia.sdk.import.json.WriteopiaJsonParser
 import io.writeopia.sdk.import.markdown.MarkdownToDocument
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.document.DocumentTag
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.files.ExternalFile
@@ -54,6 +56,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.stateIn
@@ -79,6 +82,8 @@ internal class ChooseNoteKmpViewModel(
         documentsApi
     ),
     private val notesNavigation: NotesNavigation = NotesNavigation.Root,
+    /** Names the screen of a tag; null where the app has no tag catalogue. */
+    private val documentTagRepository: DocumentTagRepository? = null,
     private val previewParser: PreviewParser = PreviewParser(),
     private val documentToMarkdown: DocumentToMarkdown = DocumentToMarkdown,
     private val documentToTxt: DocumentToTxt = DocumentToTxt,
@@ -136,6 +141,8 @@ internal class ChooseNoteKmpViewModel(
                 is NotesNavigation.Folder -> menuItems[notesNavigation.id]
 
                 NotesNavigation.Root -> menuItems[Folder.ROOT_PATH]
+
+                is NotesNavigation.Tag -> menuItems[notesNavigation.id]
             }
 
             ResultData.Complete(pageItems ?: emptyList())
@@ -163,6 +170,21 @@ internal class ChooseNoteKmpViewModel(
                 currentFolder
                     .map { folder -> folder?.title ?: "" }
                     .stateIn(viewModelScope, SharingStarted.Lazily, "")
+
+            is NotesNavigation.Tag ->
+                currentTag
+                    .map { tag -> tag?.name ?: "" }
+                    .stateIn(viewModelScope, SharingStarted.Lazily, "")
+        }
+    }
+
+    override val currentTag: StateFlow<DocumentTag?> by lazy {
+        when (notesNavigation) {
+            is NotesNavigation.Tag ->
+                flow { emit(documentTagRepository?.getTagById(notesNavigation.id)) }
+                    .stateIn(viewModelScope, SharingStarted.Lazily, null)
+
+            else -> MutableStateFlow(null)
         }
     }
 
@@ -173,7 +195,7 @@ internal class ChooseNoteKmpViewModel(
                     notesUseCase.getFolderById(notesNavigation.id)
                 }.stateIn(viewModelScope, SharingStarted.Lazily, null)
 
-            NotesNavigation.Root, NotesNavigation.Favorites -> MutableStateFlow(null)
+            NotesNavigation.Root, NotesNavigation.Favorites, is NotesNavigation.Tag -> MutableStateFlow(null)
         }
     }
 

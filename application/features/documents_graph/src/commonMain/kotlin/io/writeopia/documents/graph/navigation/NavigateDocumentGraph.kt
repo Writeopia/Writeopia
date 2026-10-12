@@ -22,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -32,6 +33,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 import io.writeopia.common.utils.Destinations
 import io.writeopia.documents.graph.di.DocumentsGraphInjection
+import io.writeopia.documents.graph.ui.GraphItemCard
 import io.writeopia.forcegraph.ForceDirectedGraph
 import io.writeopia.forcegraph.GraphViewState
 import io.writeopia.forcegraph.rememberGraphViewState
@@ -43,7 +45,10 @@ fun NavController.navigateToForceGraph() {
 fun graphForce() = Destinations.FORCE_GRAPH.id
 
 fun NavGraphBuilder.documentsGraphNavigation(
-    documentsGraphInjection: DocumentsGraphInjection
+    documentsGraphInjection: DocumentsGraphInjection,
+    onOpenDocument: (id: String, title: String) -> Unit = { _, _ -> },
+    onOpenFolder: (id: String) -> Unit = {},
+    onOpenTag: (id: String) -> Unit = {},
 ) {
     composable(
         route = graphForce(),
@@ -51,7 +56,10 @@ fun NavGraphBuilder.documentsGraphNavigation(
         val viewModel = documentsGraphInjection.injectViewModel()
 
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-            viewModel.initSize(maxWidth.value, maxHeight.value)
+            // The canvas draws in pixels: the layout size in dp would centre the graph in the top
+            // left quarter of a high-density screen.
+            val density = LocalDensity.current
+            viewModel.initSize(with(density) { maxWidth.toPx() }, with(density) { maxHeight.toPx() })
             val state by viewModel.graphSelectedState.collectAsState()
 
             val viewState = rememberGraphViewState()
@@ -68,6 +76,18 @@ fun NavGraphBuilder.documentsGraphNavigation(
                 viewState = viewState,
                 modifier = Modifier.align(Alignment.BottomEnd).padding(12.dp)
             )
+
+            val selectedItem by viewModel.selectedItem.collectAsState()
+            selectedItem?.let { details ->
+                GraphItemCard(
+                    details = details,
+                    onOpenDocument = onOpenDocument,
+                    onOpenFolder = onOpenFolder,
+                    onOpenTag = onOpenTag,
+                    onClose = viewModel::closeDetails,
+                    modifier = Modifier.align(Alignment.BottomStart).padding(12.dp)
+                )
+            }
 
             val grouping by viewModel.grouping.collectAsState()
             GroupingSelector(

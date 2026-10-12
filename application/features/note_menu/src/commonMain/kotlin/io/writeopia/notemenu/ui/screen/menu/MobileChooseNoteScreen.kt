@@ -525,7 +525,11 @@ private fun Content(
                 )
             }
 
+            val currentTag by chooseNoteViewModel.currentTag.collectAsState()
+            currentTag?.let { tag -> TagHeader(tag) }
+
             NotesCardsScreen(
+                showTapToStart = currentTag == null,
                 isDarkTheme = isDarkTheme,
                 documents = chooseNoteViewModel.documentsState.collectAsState().value,
                 showAddMenuState = chooseNoteViewModel.showAddMenuState,

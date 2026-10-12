@@ -39,6 +39,21 @@ import writeopia.application.core.resources.generated.resources.document_tags_di
 import writeopia.application.core.resources.generated.resources.document_tags_none
 import writeopia.application.core.resources.generated.resources.document_tags_more
 import writeopia.application.core.resources.generated.resources.graph_grouping_folders
+import writeopia.application.core.resources.generated.resources.tag_screen_empty
+import writeopia.application.core.resources.generated.resources.untitled
+import writeopia.application.core.resources.generated.resources.graph_card_kind_document
+import writeopia.application.core.resources.generated.resources.graph_card_kind_folder
+import writeopia.application.core.resources.generated.resources.graph_card_kind_tag
+import writeopia.application.core.resources.generated.resources.graph_card_updated
+import writeopia.application.core.resources.generated.resources.graph_card_in_folder
+import writeopia.application.core.resources.generated.resources.graph_card_at_root
+import writeopia.application.core.resources.generated.resources.graph_card_tags
+import writeopia.application.core.resources.generated.resources.graph_card_no_tags
+import writeopia.application.core.resources.generated.resources.graph_card_folder_contents
+import writeopia.application.core.resources.generated.resources.graph_card_documents_count
+import writeopia.application.core.resources.generated.resources.graph_card_open_document
+import writeopia.application.core.resources.generated.resources.graph_card_open_folder
+import writeopia.application.core.resources.generated.resources.graph_card_show_documents
 import writeopia.application.core.resources.generated.resources.document_tags_remove
 import writeopia.application.core.resources.generated.resources.document_tags_title
 import writeopia.application.core.resources.generated.resources.document_tags_view
@@ -1208,6 +1223,52 @@ object WrStrings {
 
     @Composable
     fun graphGroupingFolders() = stringResource(Res.string.graph_grouping_folders)
+
+    @Composable
+    fun untitled() = stringResource(Res.string.untitled)
+
+    @Composable
+    fun graphCardKindDocument() = stringResource(Res.string.graph_card_kind_document)
+
+    @Composable
+    fun graphCardKindFolder() = stringResource(Res.string.graph_card_kind_folder)
+
+    @Composable
+    fun graphCardKindTag() = stringResource(Res.string.graph_card_kind_tag)
+
+    @Composable
+    fun graphCardUpdated(date: String) = stringResource(Res.string.graph_card_updated, date)
+
+    @Composable
+    fun graphCardInFolder(folder: String) = stringResource(Res.string.graph_card_in_folder, folder)
+
+    @Composable
+    fun graphCardAtRoot() = stringResource(Res.string.graph_card_at_root)
+
+    @Composable
+    fun graphCardTags(names: String) = stringResource(Res.string.graph_card_tags, names)
+
+    @Composable
+    fun graphCardNoTags() = stringResource(Res.string.graph_card_no_tags)
+
+    @Composable
+    fun graphCardFolderContents(folders: Int, documents: Int) =
+        stringResource(Res.string.graph_card_folder_contents, folders, documents)
+
+    @Composable
+    fun graphCardDocumentsCount(count: Int) = stringResource(Res.string.graph_card_documents_count, count)
+
+    @Composable
+    fun graphCardOpenDocument() = stringResource(Res.string.graph_card_open_document)
+
+    @Composable
+    fun graphCardOpenFolder() = stringResource(Res.string.graph_card_open_folder)
+
+    @Composable
+    fun graphCardShowDocuments() = stringResource(Res.string.graph_card_show_documents)
+
+    @Composable
+    fun tagScreenEmpty() = stringResource(Res.string.tag_screen_empty)
 
     @Composable
     fun documentTagAddDialogTitle() = stringResource(Res.string.document_tag_add_dialog_title)

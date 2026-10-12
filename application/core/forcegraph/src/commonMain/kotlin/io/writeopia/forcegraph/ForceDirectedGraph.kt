@@ -25,6 +25,7 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.isCtrlPressed
 import androidx.compose.ui.input.pointer.isMetaPressed
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
@@ -100,13 +101,13 @@ fun BoxWithConstraintsScope.ForceDirectedGraph(
         MaterialTheme.typography.labelSmall.copy(
             color = Color.White.copy(alpha = 0.75f),
             background = Color.Blue.copy(alpha = 0.45f),
-            fontSize = 10.sp
+            fontSize = 8.sp
         )
     val highlightedTextStyle =
         MaterialTheme.typography.labelSmall.copy(
             color = Color.White,
             background = Color.Blue,
-            fontSize = 12.sp,
+            fontSize = 10.sp,
             fontWeight = FontWeight.Bold
         )
 
@@ -117,7 +118,8 @@ fun BoxWithConstraintsScope.ForceDirectedGraph(
     // mapped back to graph space before any hit test.
     var scale by viewState::scale
     var offset by viewState::offset
-    val viewport = Size(maxWidth.value, maxHeight.value)
+    val density = LocalDensity.current
+    val viewport = with(density) { Size(maxWidth.toPx(), maxHeight.toPx()) }
     val center = Offset(viewport.width / 2, viewport.height / 2)
 
     fun toGraphSpace(position: Offset): Offset = (position - offset - center) / scale + center

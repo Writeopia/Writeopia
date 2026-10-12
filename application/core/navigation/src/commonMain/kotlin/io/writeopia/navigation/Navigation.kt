@@ -168,7 +168,10 @@ fun Navigation(
 
             if (documentsGraphInjection != null) {
                 documentsGraphNavigation(
-                    documentsGraphInjection = documentsGraphInjection
+                    documentsGraphInjection = documentsGraphInjection,
+                    onOpenDocument = navController::navigateToNote,
+                    onOpenFolder = { id -> navController.navigateToNotes(NotesNavigation.Folder(id)) },
+                    onOpenTag = { id -> navController.navigateToNotes(NotesNavigation.Tag(id)) },
                 )
             }
 

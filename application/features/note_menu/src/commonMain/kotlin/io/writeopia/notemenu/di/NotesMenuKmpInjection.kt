@@ -127,6 +127,7 @@ class NotesMenuKmpInjection private constructor(
             localAiRepository = localAiRepository,
             selectionState = selectionState,
             notesNavigation = notesNavigation,
+            documentTagRepository = DocumentTagsInjector.singleton().provideDocumentTagRepository(),
             folderController = provideFolderStateController(),
             keyboardEventFlow = keyboardEventFlow,
             workspaceConfigRepository = appConfigurationInjector.provideWorkspaceConfigRepository(),

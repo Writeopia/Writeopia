@@ -2,6 +2,7 @@ package io.writeopia.documents.graph.repository
 
 import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.core.folders.repository.tag.DocumentTagRepository
+import io.writeopia.documents.graph.GraphItemDetails
 import io.writeopia.documents.graph.ItemData
 import io.writeopia.sdk.models.utils.toAdjencyList
 import io.writeopia.sdk.repository.DocumentRepository
@@ -63,6 +64,46 @@ class GraphRepository(
             .map { document -> ItemData(document.id, document.title, parentId = ROOT_ID, isFolder = false) }
 
         return byTag + (root to (tagItems.values.toList() + untagged))
+    }
+
+    /** What the clicked node is, a tag, a folder or a document, with what the card shows about it. */
+    suspend fun loadDetails(id: String, workspaceId: String): GraphItemDetails? {
+        documentTagRepository?.getTagById(id)?.takeIf { !it.deleted }?.let { tag ->
+            val documentIds = documentRepository.loadDocumentsWorkspace(workspaceId)
+                .filter { document -> tag.id in document.tagIds }
+                .map { it.id }
+            return GraphItemDetails.TagDetails(
+                id = tag.id,
+                title = tag.name,
+                description = tag.description,
+                documentIds = documentIds,
+            )
+        }
+
+        folderRepository.getFolderById(id)?.let { folder ->
+            return GraphItemDetails.FolderDetails(
+                id = folder.id,
+                title = folder.title,
+                folderCount = folderRepository.getFolderByParentId(folder.id, workspaceId).size,
+                documentCount = documentRepository.loadDocumentsByParentId(folder.id, workspaceId).size,
+            )
+        }
+
+        val document = documentRepository.loadDocumentById(id, workspaceId) ?: return null
+        val tagNames = documentTagRepository
+            ?.let { repository -> document.tagIds.mapNotNull { tagId -> repository.getTagById(tagId)?.name } }
+            ?: emptyList()
+        val folderName = document.parentId
+            .takeIf { it.isNotBlank() && it != ROOT_ID }
+            ?.let { folderRepository.getFolderById(it)?.title }
+
+        return GraphItemDetails.DocumentDetails(
+            id = document.id,
+            title = document.title,
+            lastUpdatedAt = document.lastUpdatedAt,
+            folderName = folderName,
+            tagNames = tagNames,
+        )
     }
 
     companion object {

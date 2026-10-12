@@ -23,6 +23,8 @@ import io.writeopia.notemenu.viewmodel.FolderDestination
 import io.writeopia.notemenu.viewmodel.SyncState
 import io.writeopia.notemenu.viewmodel.UserState
 import io.writeopia.notemenu.viewmodel.pathTo
+import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.document.DocumentTag
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.id.GenerateId
@@ -99,11 +101,18 @@ internal class OnlyBackendChooseNoteKmpViewModel(
     override val userName: StateFlow<UserState<String>> = _userName.asStateFlow()
 
     override val currentFolderTitle: StateFlow<String?> = MutableStateFlow(
-        if (notesNavigation == NotesNavigation.Favorites) "Favorites" else null
+        when (notesNavigation) {
+            NotesNavigation.Favorites -> "Favorites"
+            is NotesNavigation.Tag -> "Tag"
+            else -> null
+        }
     )
 
     // Editing, moving and deleting the current folder is not offered in the backend only mode.
     override val currentFolder: StateFlow<Folder?> = MutableStateFlow(null)
+
+    // The backend only mode has no tag catalogue to name the tag with.
+    override val currentTag: StateFlow<DocumentTag?> = MutableStateFlow(null)
 
     // Asked to the backend: the cached items only hold the folders visited on the way down, so
     // they are not enough when the app starts straight inside a folder.
@@ -234,7 +243,7 @@ internal class OnlyBackendChooseNoteKmpViewModel(
 
             val folderId = when (notesNavigation) {
                 is NotesNavigation.Folder -> notesNavigation.id
-                NotesNavigation.Root, NotesNavigation.Favorites -> Folder.ROOT_PATH
+                NotesNavigation.Root, NotesNavigation.Favorites, is NotesNavigation.Tag -> Folder.ROOT_PATH
             }
 
             // Use the shared repository to load folder contents
@@ -246,6 +255,8 @@ internal class OnlyBackendChooseNoteKmpViewModel(
                 // Filter for favorites if needed
                 val pageItems = when (notesNavigation) {
                     NotesNavigation.Favorites -> allItems.filter { it.favorite }
+                    is NotesNavigation.Tag ->
+                        allItems.filter { item -> (item as? Document)?.tagIds?.contains(notesNavigation.id) == true }
                     else -> allItems
                 }
 

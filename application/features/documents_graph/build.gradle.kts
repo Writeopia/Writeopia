@@ -57,6 +57,7 @@ kotlin {
                 implementation(project(":application:core:models"))
                 implementation(project(":application:core:documents"))
                 implementation(project(":application:core:resources"))
+                implementation(libs.kotlinx.datetime)
 
                 implementation(compose.runtime)
                 implementation(compose.foundation)

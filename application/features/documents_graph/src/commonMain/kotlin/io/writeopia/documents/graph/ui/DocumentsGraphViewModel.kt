@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.documents.graph.GraphGrouping
+import io.writeopia.documents.graph.GraphItemDetails
 import io.writeopia.documents.graph.ItemData
 import io.writeopia.documents.graph.extensions.toGraph
 import io.writeopia.documents.graph.repository.GraphRepository
@@ -23,6 +24,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlin.math.sqrt
 
 class DocumentsGraphViewModel(
@@ -40,6 +42,16 @@ class DocumentsGraphViewModel(
 
     fun setGrouping(grouping: GraphGrouping) {
         _grouping.value = grouping
+        _selectedItem.value = null
+    }
+
+    private val _selectedItem = MutableStateFlow<GraphItemDetails?>(null)
+
+    /** The node the user clicked last, for the card at the corner of the graph; null when closed. */
+    val selectedItem: StateFlow<GraphItemDetails?> = _selectedItem.asStateFlow()
+
+    fun closeDetails() {
+        _selectedItem.value = null
     }
 
     private var maxWidth: Float = 1000F
@@ -101,6 +113,11 @@ class DocumentsGraphViewModel(
             _selectedNodes.value -= id
         } else {
             _selectedNodes.value += id
+        }
+
+        viewModelScope.launch {
+            val workspaceId = authRepository.getWorkspace()?.id ?: return@launch
+            _selectedItem.value = graphRepository.loadDetails(id, workspaceId)
         }
     }
 

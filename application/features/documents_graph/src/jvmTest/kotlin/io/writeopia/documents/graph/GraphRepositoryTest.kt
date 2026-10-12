@@ -73,3 +73,40 @@ class GraphRepositoryTest {
         )
     }
 }
+
+class GraphRepositoryDetailsTest {
+
+    private val workspaceId = "ws"
+
+    @Test
+    fun `the details tell a tag, a folder and a document apart`() = runTest {
+        val documents = InMemoryDocumentRepository()
+        val tags = InMemoryDocumentTagRepository()
+        tags.upsertTag(DocumentTag.create("Work", "Office things", workspaceId).copy(id = "work"))
+        documents.saveDocument(
+            Document(
+                id = "a",
+                title = "Doc a",
+                createdAt = Instant.fromEpochMilliseconds(1),
+                lastUpdatedAt = Instant.fromEpochMilliseconds(2),
+                lastSyncedAt = null,
+                workspaceId = workspaceId,
+                parentId = "root",
+                tagIds = setOf("work"),
+            )
+        )
+        val repository = GraphRepository(InMemoryFolderRepository(), documents, tags)
+
+        val tag = repository.loadDetails("work", workspaceId) as GraphItemDetails.TagDetails
+        assertEquals("Work", tag.title)
+        assertEquals("Office things", tag.description)
+        assertEquals(listOf("a"), tag.documentIds)
+
+        val document = repository.loadDetails("a", workspaceId) as GraphItemDetails.DocumentDetails
+        assertEquals("Doc a", document.title)
+        assertEquals(listOf("Work"), document.tagNames)
+        assertEquals(null, document.folderName)
+
+        assertEquals(null, repository.loadDetails("missing", workspaceId))
+    }
+}

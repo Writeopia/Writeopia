@@ -113,6 +113,8 @@ fun NotesCardsScreen(
     hideShowMenu: () -> Unit,
     editFolder: (MenuItemUi.FolderUi) -> Unit,
     modifier: Modifier = Modifier,
+    /** False on screens where a new note wouldn't land here, like a tag's documents. */
+    showTapToStart: Boolean = true,
 ) {
     when (documents) {
         is ResultData.Complete -> {
@@ -120,7 +122,15 @@ fun NotesCardsScreen(
                 Column(modifier = modifier) {
                     val isEmpty = documents.data.documentUiList.isEmpty()
 
-                    if (isEmpty) {
+                    if (isEmpty && !showTapToStart) {
+                        Text(
+                            text = WrStrings.tagScreenEmpty(),
+                            modifier = Modifier.fillMaxWidth().padding(24.dp),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                    } else if (isEmpty) {
                         TapToStartButton(isEmpty, newNote)
                     } else {
                         val notesUi: NotesUi = documents.data
@@ -146,6 +156,7 @@ fun NotesCardsScreen(
                                     newNote = newNote,
                                     editFolder = editFolder,
                                     modifier = listModifier,
+                                    showTapToStart = showTapToStart,
                                 )
                             }
 
@@ -165,6 +176,7 @@ fun NotesCardsScreen(
                                     newNote = newNote,
                                     editFolder = editFolder,
                                     modifier = listModifier,
+                                    showTapToStart = showTapToStart,
                                 )
                             }
 
@@ -183,6 +195,7 @@ fun NotesCardsScreen(
                                     newNote = newNote,
                                     editFolder = editFolder,
                                     modifier = listModifier,
+                                    showTapToStart = showTapToStart,
                                 )
                             }
                         }
@@ -284,7 +297,8 @@ private fun LazyStaggeredGridNotes(
     onDragIconClick: (String) -> Unit,
     newNote: () -> Unit,
     editFolder: (MenuItemUi.FolderUi) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    showTapToStart: Boolean = true,
 ) {
     val spacing = 6.dp
 
@@ -295,12 +309,14 @@ private fun LazyStaggeredGridNotes(
         verticalItemSpacing = spacing,
         contentPadding = contentPadding,
         content = {
-            item(span = StaggeredGridItemSpan.FullLine) {
-                TapToStartButton(
-                    isEmpty = false,
-                    newNote = newNote,
-                    modifier = Modifier.fillMaxWidth()
-                )
+            if (showTapToStart) {
+                item(span = StaggeredGridItemSpan.FullLine) {
+                    TapToStartButton(
+                        isEmpty = false,
+                        newNote = newNote,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
 
             itemsIndexed(
@@ -365,6 +381,7 @@ private fun LazyGridNotes(
     newNote: () -> Unit,
     editFolder: (MenuItemUi.FolderUi) -> Unit,
     modifier: Modifier = Modifier,
+    showTapToStart: Boolean = true,
 ) {
     val spacing = Arrangement.spacedBy(6.dp)
 
@@ -375,12 +392,14 @@ private fun LazyGridNotes(
         verticalArrangement = spacing,
         contentPadding = contentPadding,
         content = {
-            item(span = { GridItemSpan(this.maxLineSpan) }) {
-                TapToStartButton(
-                    isEmpty = false,
-                    newNote = newNote,
-                    modifier = Modifier.fillMaxWidth()
-                )
+            if (showTapToStart) {
+                item(span = { GridItemSpan(this.maxLineSpan) }) {
+                    TapToStartButton(
+                        isEmpty = false,
+                        newNote = newNote,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
 
             itemsIndexed(
@@ -441,18 +460,21 @@ private fun LazyColumnNotes(
     newNote: () -> Unit,
     editFolder: (MenuItemUi.FolderUi) -> Unit,
     modifier: Modifier = Modifier,
+    showTapToStart: Boolean = true,
 ) {
     LazyColumn(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(6.dp),
         contentPadding = contentPadding,
         content = {
-            item {
-                TapToStartButton(
-                    isEmpty = false,
-                    newNote = newNote,
-                    modifier = Modifier.fillMaxWidth()
-                )
+            if (showTapToStart) {
+                item {
+                    TapToStartButton(
+                        isEmpty = false,
+                        newNote = newNote,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
 
             itemsIndexed(
