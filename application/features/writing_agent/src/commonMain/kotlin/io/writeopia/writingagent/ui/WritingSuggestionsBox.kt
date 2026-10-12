@@ -46,12 +46,16 @@ const val WRITING_SUGGESTIONS_BOX_TAG = "WritingSuggestionsBox"
  * that applies it. The box is hidden while there is nothing to suggest. The user can fold it
  * down to a small "AI suggestions" badge with the count, to focus on the text, and open it again
  * from the badge.
+ *
+ * [showCollapsedLabel] keeps the "AI suggestions" text on the folded badge. Mobile screens turn
+ * it off, so the badge is only the icon and the count.
  */
 @Composable
 fun WritingSuggestionsBox(
     controller: WritingAgentController,
     ui: WritingAgentUi,
     modifier: Modifier = Modifier,
+    showCollapsedLabel: Boolean = true,
 ) {
     val state by controller.state.collectAsState()
     val collapsed by controller.collapsed.collectAsState()
@@ -66,6 +70,7 @@ fun WritingSuggestionsBox(
             CollapsedBadge(
                 count = state.count,
                 isLoading = state.isLoading,
+                showLabel = showCollapsedLabel,
                 onExpand = controller::toggleCollapsed
             )
         } else {
@@ -74,11 +79,15 @@ fun WritingSuggestionsBox(
     }
 }
 
-/** The folded box: the AI icon, "AI suggestions" and how many there are. A click unfolds it. */
+/**
+ * The folded box: the AI icon, "AI suggestions" (unless [showLabel] is off) and how many there
+ * are. A click unfolds it.
+ */
 @Composable
 private fun CollapsedBadge(
     count: Int,
     isLoading: Boolean,
+    showLabel: Boolean,
     onExpand: () -> Unit,
 ) {
     // The same corners as the open box, so folding only changes the size.
@@ -112,13 +121,15 @@ private fun CollapsedBadge(
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            Text(
-                text = WrStrings.writingSuggestionsBadge(),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            if (showLabel) {
+                Text(
+                    text = WrStrings.writingSuggestionsBadge(),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
 
-            Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+            }
 
             Surface(
                 shape = MaterialTheme.shapes.large,
