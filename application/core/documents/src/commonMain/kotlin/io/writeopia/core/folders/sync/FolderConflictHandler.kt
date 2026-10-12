@@ -4,6 +4,7 @@ package io.writeopia.core.folders.sync
 
 import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.sdk.models.document.Folder
+import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 class FolderConflictHandler(
@@ -13,7 +14,7 @@ class FolderConflictHandler(
     /**
      * Handle conflicts with folders that were updated both locally and in the backend.
      *
-     * @param localFolders The folders that exist locally
+     * @param localFolders The folders changed locally since they were last sent (outdated)
      * @param externalFolders The folders from the backend
      *
      * @return The folders that need to be sent to the backend (local winners + local-only folders)
@@ -22,13 +23,12 @@ class FolderConflictHandler(
         localFolders: List<Folder>,
         externalFolders: List<Folder>,
     ): List<Folder> {
-        val localFoldersById = localFolders.associateBy { it.id }
+        val outdatedLocalById = localFolders.associateBy { it.id }
         val foldersToSend = mutableListOf<Folder>()
+        val now = Clock.System.now()
 
         // Process external folders - create or update locally
         externalFolders.forEach { externalFolder ->
-            val localFolder = localFoldersById[externalFolder.id]
-
             // IMPORTANT: Check if folder is soft-deleted locally before creating/updating
             // A soft-deleted folder should never be recreated from backend data
             val existingFolder = folderRepository.getFolderById(externalFolder.id)
@@ -37,20 +37,25 @@ class FolderConflictHandler(
                 return@forEach
             }
 
-            if (localFolder == null) {
-                // Folder doesn't exist locally - create it with server's lastSyncedAt
-                folderRepository.createFolder(externalFolder)
-            } else {
-                // Folder exists both locally and externally - resolve conflict (most recent wins)
-                val winner = if (localFolder.lastUpdatedAt >= externalFolder.lastUpdatedAt) {
-                    foldersToSend.add(localFolder) // Local is newer, send to backend
+            // A folder taken from the backend is in sync by definition, so stamp it as synced.
+            // The API payload carries no lastSyncedAt; leaving it null would make the folder
+            // count as outdated and be re-sent on every sync.
+            val syncedExternal = externalFolder.markSynced(now)
+
+            // Only a local copy with unsent changes can win a conflict. An up-to-date local
+            // copy has nothing to send, so the backend's version simply replaces it.
+            val outdatedLocal = outdatedLocalById[externalFolder.id]
+
+            when {
+                existingFolder == null -> folderRepository.createFolder(syncedExternal)
+
+                outdatedLocal != null && outdatedLocal.lastUpdatedAt >= externalFolder.lastUpdatedAt -> {
+                    foldersToSend.add(outdatedLocal) // Local is newer, send to backend
                     // Keep local folder as-is, don't update lastSyncedAt with client time
-                    localFolder
-                } else {
-                    // External folder wins - keep its lastSyncedAt from server
-                    externalFolder
+                    folderRepository.updateFolder(outdatedLocal)
                 }
-                folderRepository.updateFolder(winner)
+
+                else -> folderRepository.updateFolder(syncedExternal)
             }
         }
 
@@ -62,4 +67,12 @@ class FolderConflictHandler(
 
         return foldersToSend
     }
+
+    /**
+     * The watermark is this device's clock, never the backend's lastUpdatedAt: a backend
+     * timestamp ahead of this device would otherwise hide the next local edit from the
+     * outdated check. If the backend clock is ahead, the folder is merely re-sent once.
+     */
+    private fun Folder.markSynced(now: kotlin.time.Instant): Folder =
+        copy(lastSyncedAt = now)
 }

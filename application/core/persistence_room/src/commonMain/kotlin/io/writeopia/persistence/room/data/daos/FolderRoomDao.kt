@@ -29,6 +29,13 @@ interface FolderRoomDao {
     @Query("SELECT * FROM $FOLDER_ENTITY WHERE workspace_id = :workspaceId AND deleted = 0")
     suspend fun getFoldersByWorkspaceId(workspaceId: String): List<FolderEntity>
 
+    // Folders changed locally since they were last sent to the backend, or never sent.
+    @Query(
+        "SELECT * FROM $FOLDER_ENTITY WHERE workspace_id = :workspaceId AND deleted = 0 " +
+            "AND (last_synced_at IS NULL OR last_updated_at > last_synced_at)"
+    )
+    suspend fun getOutdatedFoldersByWorkspaceId(workspaceId: String): List<FolderEntity>
+
     @Query("SELECT * FROM $FOLDER_ENTITY WHERE parent_id = :id AND deleted = 0")
     suspend fun getFolderByParentId(id: String): List<FolderEntity>
 

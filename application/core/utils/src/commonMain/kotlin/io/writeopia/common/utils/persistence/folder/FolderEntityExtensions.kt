@@ -15,6 +15,7 @@ fun FolderCommonEntity.toModel(itemCount: Long): Folder =
         title = title,
         createdAt = Instant.fromEpochMilliseconds(createdAt),
         lastUpdatedAt = Instant.fromEpochMilliseconds(lastUpdatedAt),
+        lastSyncedAt = lastSyncedAt?.let(Instant::fromEpochMilliseconds),
         workspaceId = workspaceId,
         favorite = favorite,
         // Assuming itemCount is not stored in the entity
@@ -30,6 +31,7 @@ fun Folder.toRoomEntity(): FolderCommonEntity =
         title = title,
         createdAt = createdAt.toEpochMilliseconds(),
         lastUpdatedAt = lastUpdatedAt.toEpochMilliseconds(),
+        lastSyncedAt = lastSyncedAt?.toEpochMilliseconds(),
         workspaceId = workspaceId,
         favorite = favorite,
         icon = icon?.label ?: "",

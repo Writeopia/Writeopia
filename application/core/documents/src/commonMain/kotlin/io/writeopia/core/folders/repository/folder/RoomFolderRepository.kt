@@ -95,7 +95,7 @@ class RoomFolderRepository(
     override suspend fun stopListeningForFoldersByParentId(parentId: String, workspaceId: String) {}
 
     override suspend fun localOutDatedFolders(workspaceId: String): List<Folder> =
-        folderRoomDao.getFoldersForWorkspace(workspaceId)
+        folderRoomDao.getOutdatedFoldersForWorkspace(workspaceId)
 
     override suspend fun search(query: String, workspaceId: String): List<Folder> =
         folderRoomDao.search(query, workspaceId)

@@ -678,6 +678,10 @@ internal class ChooseNoteKmpViewModel(
                 authRepository.getUser().tier == Tier.PREMIUM &&
                 workspace != null
             ) {
+                // Apply deletions and moves made on other devices before pushing local
+                // folders, so a folder deleted elsewhere is removed here instead of re-sent.
+                eventSync?.syncEvents(workspace.id)
+
                 folderSync.syncFolder(
                     folderId = notesNavigation.id,
                     workspaceId = workspace.id,

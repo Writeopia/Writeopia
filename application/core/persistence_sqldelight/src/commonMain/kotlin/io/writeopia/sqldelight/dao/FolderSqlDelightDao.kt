@@ -75,6 +75,13 @@ class FolderSqlDelightDao(database: WriteopiaDb?) : FolderSearch {
             ?.map { it.toModel(0) }
             ?: emptyList()
 
+    /** Folders changed locally since they were last sent to the backend, or never sent. */
+    suspend fun selectOutdatedByWorkspaceId(workspaceId: String): List<Folder> =
+        folderEntityQueries?.selectOutdatedByWorkspace(workspaceId)
+            ?.executeAsList()
+            ?.map { it.toModel(0) }
+            ?: emptyList()
+
     suspend fun selectByUserIdAfterTime(userId: String, instant: Long): List<Folder> =
         folderEntityQueries?.selectByWorkspaceAfterTime(userId, instant)
             ?.executeAsList()

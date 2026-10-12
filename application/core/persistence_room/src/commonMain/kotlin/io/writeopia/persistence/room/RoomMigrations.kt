@@ -31,3 +31,13 @@ val MIGRATION_30_31 = object : Migration(30, 31) {
         )
     }
 }
+
+// Folders now remember when they were last sent to the backend, so a sync only pushes the
+// ones changed since. Existing rows start as NULL (never synced) and are sent once.
+val MIGRATION_31_32 = object : Migration(31, 32) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL(
+            "ALTER TABLE FOLDER_ENTITY_TABLE ADD COLUMN last_synced_at INTEGER"
+        )
+    }
+}

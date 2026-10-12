@@ -40,6 +40,14 @@ SELECT *
 FROM folderEntity
 WHERE folderEntity.workspace_id = ? AND last_updated_at > ? AND deleted = 0;
 
+-- Folders changed locally since they were last sent to the backend (or never sent).
+-- Mirrors selectWithContentByWorkspaceIdOutdatedDocuments below for documents.
+selectOutdatedByWorkspace:
+SELECT *
+FROM folderEntity
+WHERE folderEntity.workspace_id = ? AND deleted = 0
+  AND (last_synced_at IS NULL OR last_updated_at > last_synced_at);
+
 selectChildrenFolder:
 SELECT *
 FROM folderEntity
