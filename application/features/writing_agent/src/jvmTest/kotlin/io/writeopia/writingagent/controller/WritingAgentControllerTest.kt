@@ -80,11 +80,15 @@ private class FakeApi(
 private class FakeFolders(
     var currentFolder: String = "root",
     val folders: List<FolderCandidate> = (1..12).map { FolderCandidate("f$it", "Folder $it") },
+    /** Blank keeps the old behavior: the app's candidates are all the backend gets. */
+    val workspace: String = "",
 ) : DocumentFolders {
     val movedTo = mutableListOf<String>()
     val created = mutableListOf<Pair<String, String>>()
 
     override suspend fun currentFolderId(): String = currentFolder
+
+    override suspend fun workspaceId(): String = workspace
 
     override suspend fun candidates(limit: Int): List<FolderCandidate> = folders.take(limit)
 
@@ -634,6 +638,43 @@ class WritingAgentControllerTest {
         assertNotNull(dialog)
         assertEquals(false, dialog.isLoading)
         assertTrue(dialog.options.isEmpty())
+        controller.stop()
+    }
+
+    @Test
+    fun `with a workspace the backend may answer a folder the app did not send, by its name`() = runTest(StandardTestDispatcher()) {
+        val api = FakeApi(
+            folderAnswer = listOf(
+                FolderSuggestionDto("deep", 0.95, folderName = "Nested"),
+                FolderSuggestionDto("f1", 0.9),
+                FolderSuggestionDto("nameless", 0.85),
+            ),
+        )
+        val story = MutableStateFlow(state(title, longParagraph))
+        val controller = controller(api, story, folders = FakeFolders(workspace = "ws-1"))
+        advanceUntilIdle()
+
+        controller.openFolderDialog()
+        advanceUntilIdle()
+
+        assertEquals("ws-1", api.folderRequests.single().workspaceId)
+        assertEquals(10, api.folderRequests.single().folders.size)
+        assertEquals(listOf("Nested", "Folder 1"), controller.state.value.folderDialog?.options?.map { it.name })
+        controller.stop()
+    }
+
+    @Test
+    fun `with a workspace the backend is asked even when the app has no folder to offer`() = runTest(StandardTestDispatcher()) {
+        val api = FakeApi(folderAnswer = listOf(FolderSuggestionDto("deep", 0.95, folderName = "Nested")))
+        val story = MutableStateFlow(state(title, longParagraph))
+        val controller = controller(api, story, folders = FakeFolders(folders = emptyList(), workspace = "ws-1"))
+        advanceUntilIdle()
+
+        controller.openFolderDialog()
+        advanceUntilIdle()
+
+        assertEquals(1, api.folderRequests.size)
+        assertEquals(listOf("Nested"), controller.state.value.folderDialog?.options?.map { it.name })
         controller.stop()
     }
 

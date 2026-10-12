@@ -67,7 +67,7 @@ class WriteopiaDocumentFoldersTest {
     ) = WriteopiaDocumentFolders(
         documentId = { "doc" },
         documentParentId = { Folder.ROOT_PATH },
-        workspaceId = { "ws" },
+        resolveWorkspaceId = { "ws" },
         folderRepository = repository,
         moveDocument = { id, folderId -> moved.add(id to folderId) },
         resolveAi = { ai },
@@ -114,7 +114,7 @@ class WriteopiaDocumentFoldersTest {
         val folders = WriteopiaDocumentFolders(
             documentId = { "doc" },
             documentParentId = { Folder.ROOT_PATH },
-            workspaceId = { "ws" },
+            resolveWorkspaceId = { "ws" },
             folderRepository = repository,
             moveDocument = { _, _ -> },
             resolveAi = { ai("Recipes") },
@@ -140,7 +140,7 @@ class WriteopiaDocumentFoldersTest {
         val folders = WriteopiaDocumentFolders(
             documentId = { "doc" },
             documentParentId = { Folder.ROOT_PATH },
-            workspaceId = { "ws" },
+            resolveWorkspaceId = { "ws" },
             folderRepository = repository,
             moveDocument = { id, folderId -> moved.add(id to folderId) },
             resolveAi = { ai("Recipes") },

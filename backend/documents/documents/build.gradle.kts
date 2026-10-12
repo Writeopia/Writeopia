@@ -32,6 +32,7 @@ dependencies {
 
     implementation(project(":common:endpoints"))
     implementation(project(":backend:core:database"))
+    implementation(project(":backend:core:embeddings"))
     implementation(project(":backend:core:connection"))
     implementation(project(":backend:core:auth"))
     implementation(project(":backend:core:workspaces"))

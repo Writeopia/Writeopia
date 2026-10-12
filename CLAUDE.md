@@ -290,6 +290,7 @@ See `CLAUDE_CODE_WRITEOPIA_MANUAL.md` for complete document format specification
 - **Never commit directly to `main`**: Create feature branches and open PRs
 - **Multiplatform considerations**: When adding dependencies, check if they support all required targets (JVM, JS, WASM, iOS, Android)
 - **Backend database**: Backend uses PostgreSQL, not SQLite. Schema is defined in SQLDelight for type safety.
+- **Embeddings (pgvector)**: `document_embedding` and `folder_embedding` live outside the SQLDelight schema because its PostgreSQL dialect has no `vector` type. Their DDL is in `backend/core/embeddings/.../PgVectorEmbeddingStore.kt`, mirrored in `docker/postgres/init.sql` and in the production script in WriteopiaScripts2 (`db-migrations/document_embeddings/`). Local and CI Postgres use the `pgvector/pgvector` image; the embedded test Postgres has no pgvector, so service logic is tested with `InMemoryEmbeddingStore`.
 - **SDK vs Application**: SDK modules (`writeopia*`, `plugins/*`) must not depend on `application/*` modules
 - **Version bumping**: SDK version in `build.gradle.kts` extra property, app version in `application/composeApp/build.gradle.kts`
 - **Code style**: Project uses ktlint. Run `ktlintFormat` before committing.

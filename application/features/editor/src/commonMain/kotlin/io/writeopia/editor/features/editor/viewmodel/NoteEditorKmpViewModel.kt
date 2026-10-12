@@ -208,7 +208,7 @@ class NoteEditorKmpViewModel(
             folders = WriteopiaDocumentFolders(
                 documentId = { writeopiaManager.documentInfo.value.id },
                 documentParentId = { writeopiaManager.getDocument().parentId },
-                workspaceId = { (authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()).id },
+                resolveWorkspaceId = { (authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()).id },
                 folderRepository = folderRepository,
                 moveDocument = { id, folderId -> documentRepository.moveToFolder(documentId = id, parentId = folderId) },
                 resolveAi = { aiClients.resolve(authRepository.getUser().id) },

@@ -30,6 +30,7 @@ dependencies {
     implementation(project(":backend:documents:documents"))
     implementation(project(":backend:core:auth"))
     implementation(project(":backend:core:database"))
+    implementation(project(":backend:core:embeddings"))
     implementation(project(":backend:core:connection"))
     implementation(project(":backend:core:buckets"))
     implementation(project(":backend:core:genai_service"))

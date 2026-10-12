@@ -14,8 +14,14 @@ import io.writeopia.api.core.auth.routing.passwordResetRoute
 import io.writeopia.api.core.workspaces.routing.workspaceRoute
 import io.writeopia.api.core.workspaces.service.WorkspaceService
 import io.writeopia.api.documents.documents.TutorialsService
+import io.writeopia.api.documents.embeddings.DocumentEmbeddingService
 import io.writeopia.api.documents.routing.documentsRoute
+import io.writeopia.api.embeddings.Embedder
+import io.writeopia.api.embeddings.EmbeddingStore
+import io.writeopia.api.embeddings.Embeddings
+import io.writeopia.api.embeddings.EmbeddingsSetup
 import io.writeopia.api.genai.service.GenAiService
+import io.writeopia.databse.HikariCp
 import io.writeopia.connection.logger
 import io.writeopia.sql.WriteopiaDbBackend
 import kotlinx.coroutines.runBlocking
@@ -24,14 +30,30 @@ fun Application.configureRouting(
     writeopiaDb: WriteopiaDbBackend?,
     useAi: Boolean,
     debugMode: Boolean = false,
-    adminKey: String?
+    adminKey: String?,
+    embedder: Embedder? = null,
+    embeddingStore: EmbeddingStore? = null
 ) {
     val useCloudAi = System.getenv("WRITEOPIA_USE_CLOUD_AI")?.toBoolean() == true
     val genAiService = if (useCloudAi) GenAiService() else null
 
+    // The embeddings of documents and folders: the given fakes, else Gemini + pgvector when configured.
+    val embeddings: Embeddings? = when {
+        embedder != null && embeddingStore != null -> Embeddings(embedder, embeddingStore)
+        writeopiaDb != null -> EmbeddingsSetup.create(genAiService, HikariCp.driver())
+        else -> null
+    }
+    val embeddingService = embeddings?.let { DocumentEmbeddingService(it.embedder, it.store) }
+
     routing {
         if (writeopiaDb != null) {
-            documentsRoute(writeopiaDb, useAi, debugMode, genAiService = genAiService)
+            documentsRoute(
+                writeopiaDb,
+                useAi,
+                debugMode,
+                genAiService = genAiService,
+                embeddingService = embeddingService
+            )
 
             authRoute(
                 writeopiaDb,
@@ -83,7 +105,7 @@ fun Application.configureRouting(
 
         if (useCloudAi) {
             logger.info("Cloud AI routes are enabled.")
-            aiRoute(debugMode, writeopiaDb)
+            aiRoute(debugMode, writeopiaDb, embeddings)
         } else {
             logger.info("Cloud AI routes are disabled. Set WRITEOPIA_USE_CLOUD_AI=true to enable.")
         }

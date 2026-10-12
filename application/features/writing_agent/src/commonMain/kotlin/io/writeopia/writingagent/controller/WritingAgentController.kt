@@ -560,16 +560,19 @@ class WritingAgentController(
     }
 
     /**
-     * Fills the open dialog: the folders the backend says the document belongs to, among the
-     * first workspace folders. Without folders, offline, or when the backend fails, the dialog
-     * only offers a new folder, since making one needs no backend.
+     * Fills the open dialog: the folders the backend says the document belongs to. With the
+     * workspace id the backend picks the candidates itself, the folders closest to the document
+     * among all of the workspace; the root folders sent along are its fallback. Without folders,
+     * offline, or when the backend fails, the dialog only offers a new folder, since making one
+     * needs no backend.
      */
     private suspend fun askFolders(documentFolders: DocumentFolders, documentId: String, text: String) {
+        val workspaceId = documentFolders.workspaceId()
         val candidates = documentFolders.candidates(folderCandidateLimit)
         val started = TimeSource.Monotonic.markNow()
 
         val matches = when {
-            candidates.isEmpty() -> {
+            candidates.isEmpty() && workspaceId.isBlank() -> {
                 log("document $documentId has no folder to go to: the dialog offers only a new folder")
                 emptyList()
             }
@@ -588,12 +591,15 @@ class WritingAgentController(
                     documentTitle = documentTitle(),
                     documentText = text,
                     folders = candidates,
+                    workspaceId = workspaceId,
                 )
 
                 when (val result = api.folderSuggestions(request)) {
                     is ResultData.Complete -> result.data.suggestions.mapNotNull { dto ->
-                        candidates.firstOrNull { it.id == dto.folderId }
-                            ?.let { folder -> FolderSuggestion(folder.id, folder.name, dto.probability) }
+                        // The backend may answer with a folder the app did not send: it names it.
+                        val name = candidates.firstOrNull { it.id == dto.folderId }?.name
+                            ?: dto.folderName.takeIf { it.isNotBlank() }
+                        name?.let { FolderSuggestion(dto.folderId, it, dto.probability) }
                     }.also { matches ->
                         log(
                             "folder answer for $documentId in ${started.elapsedNow().inWholeMilliseconds}ms: " +

@@ -9,6 +9,7 @@ import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.post
+import io.writeopia.api.ai.folders.FolderCandidateRanker
 import io.writeopia.api.ai.model.AiRequestResult
 import io.writeopia.api.ai.service.AiService
 import io.writeopia.api.typesafe.service.FolderSuggestionsService
@@ -21,14 +22,16 @@ import io.writeopia.sql.WriteopiaDbBackend
 private const val OPERATION = "folder-suggestions"
 
 /**
- * Files a document that was created in the root folder: the apps send its text and the folders
- * of the workspace, and get back the folders Jev is confident it belongs to. Gated like the
- * other cloud AI routes.
+ * Files a document that was created in the root folder: the apps send its text and their
+ * workspace, the backend picks the closest folders by their embeddings ([ranker]), and Jev
+ * answers with the ones it is confident the document belongs to. Gated like the other cloud AI
+ * routes.
  */
 fun Routing.folderSuggestionsRoute(
     service: FolderSuggestionsService,
     debugMode: Boolean = false,
-    writeopiaDb: WriteopiaDbBackend? = null
+    writeopiaDb: WriteopiaDbBackend? = null,
+    ranker: FolderCandidateRanker = FolderCandidateRanker(embeddings = null)
 ) {
     authenticate("auth-jwt", optional = debugMode) {
         post("/${EndPoints.aiFolderSuggestions()}") {
@@ -64,14 +67,18 @@ fun Routing.folderSuggestionsRoute(
                 return@post
             }
 
+            val candidates = ranker.candidates(request, writeopiaDb)
+
             logger.info(
-                "Folder suggestions request - user: {}, document: {} chars, folders: {}",
+                "Folder suggestions request - user: {}, document: {} chars, folders: {} from {}: {}",
                 userId,
                 request.documentText.length,
-                request.folders.size
+                candidates.candidates.size,
+                candidates.source,
+                candidates.candidates.joinToString { folder -> folder.name }
             )
 
-            val (response, usage) = service.suggest(request)
+            val (response, usage) = service.suggest(request, candidates.candidates)
 
             logger.info(
                 "Folder suggestions answer - user: {}, folders: {}, tokens: {} in / {} out",

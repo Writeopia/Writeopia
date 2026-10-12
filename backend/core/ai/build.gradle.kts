@@ -29,6 +29,7 @@ dependencies {
     implementation(libs.ktor.serialization.json)
 
     implementation(project(":backend:core:database"))
+    implementation(project(":backend:core:embeddings"))
     implementation(project(":backend:core:connection"))
     implementation(project(":backend:core:genai_service"))
     // The pictures the AI draws are stored with the user's other media.
