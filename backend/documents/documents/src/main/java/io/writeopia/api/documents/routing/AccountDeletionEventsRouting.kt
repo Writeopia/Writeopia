@@ -7,6 +7,7 @@ import io.ktor.server.routing.Routing
 import io.ktor.server.routing.post
 import io.writeopia.api.core.auth.dto.AccountDeletionEventPayload
 import io.writeopia.api.documents.documents.service.AccountDeletionWorkspaceService
+import io.writeopia.api.embeddings.EmbeddingStore
 import io.writeopia.connection.logger
 import io.writeopia.pubsub.decodePubsubPushData
 import io.writeopia.sdk.serialization.json.writeopiaJson
@@ -28,7 +29,11 @@ import io.writeopia.sql.WriteopiaDbBackend
  * (the token's aud must match this service's URL). A second verification here would just
  * duplicate what the infrastructure already guarantees.
  */
-fun Routing.accountDeletionEventsRoute(writeopiaDb: WriteopiaDbBackend, debugMode: Boolean = false) {
+fun Routing.accountDeletionEventsRoute(
+    writeopiaDb: WriteopiaDbBackend,
+    debugMode: Boolean = false,
+    embeddingStore: EmbeddingStore? = null
+) {
     post("/api/docs/internal/events/account-deletion-requested") {
         val rawPayload = decodePubsubPushData(call.receiveText())
         val payload = writeopiaJson.decodeFromString(AccountDeletionEventPayload.serializer(), rawPayload)
@@ -45,6 +50,7 @@ fun Routing.accountDeletionEventsRoute(writeopiaDb: WriteopiaDbBackend, debugMod
             userId = payload.userId,
             writeopiaDb = writeopiaDb,
             debugMode = debugMode,
+            embeddingStore = embeddingStore,
         )
 
         logger.info(

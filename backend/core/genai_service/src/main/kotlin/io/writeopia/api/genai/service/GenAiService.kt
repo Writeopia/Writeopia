@@ -2,6 +2,7 @@ package io.writeopia.api.genai.service
 
 import io.writeopia.sdk.models.presentation.PresentationPrompt
 import com.google.genai.Client
+import com.google.genai.types.EmbedContentConfig
 import com.google.genai.types.GenerateContentConfig
 import io.writeopia.api.genai.model.AiGenerateResponse
 import io.writeopia.api.genai.model.GeneratedImage
@@ -46,7 +47,12 @@ class GenAiService(
     private val location: String = System.getenv("GOOGLE_CLOUD_LOCATION") ?: "us-central1",
     private val defaultModel: String = System.getenv("GENAI_MODEL") ?: "gemini-2.0-flash",
     /** The Gemini model that answers with pictures. Its usage metadata counts the image tokens. */
-    private val imageModel: String = System.getenv("GENAI_IMAGE_MODEL") ?: DEFAULT_IMAGE_MODEL
+    private val imageModel: String = System.getenv("GENAI_IMAGE_MODEL") ?: DEFAULT_IMAGE_MODEL,
+    /** The model that turns text into vectors, for the embeddings of documents and folders. */
+    val embeddingModel: String = System.getenv("GENAI_EMBEDDING_MODEL") ?: DEFAULT_EMBEDDING_MODEL,
+    /** How many dimensions [embeddingModel] answers with. Must match the `vector(n)` columns. */
+    val embeddingDimension: Int = System.getenv("GENAI_EMBEDDING_DIMENSION")?.toIntOrNull()
+        ?: DEFAULT_EMBEDDING_DIMENSION
 ) {
     private var client: Client? = null
 
@@ -359,7 +365,42 @@ class GenAiService(
             }
         }
 
+    /**
+     * The vector of [text] from [embeddingModel], with [embeddingDimension] values, or null when
+     * the model is not configured, the text is blank or the call fails. [taskType] tells the
+     * model whether the text is a document to be found or a query looking for one.
+     */
+    suspend fun embed(text: String, taskType: String = "RETRIEVAL_DOCUMENT"): FloatArray? =
+        withContext(Dispatchers.IO) {
+            try {
+                if (!isAvailable() || text.isBlank()) return@withContext null
+
+                val config = EmbedContentConfig.builder()
+                    .taskType(taskType)
+                    .outputDimensionality(embeddingDimension)
+                    .build()
+
+                val response = getClient().models.embedContent(embeddingModel, text, config)
+                val values = response.embeddings().orElse(null)
+                    ?.firstOrNull()
+                    ?.values()
+                    ?.orElse(null)
+
+                if (values.isNullOrEmpty()) {
+                    logger.warn("GenAI embedding model {} answered without a vector", embeddingModel)
+                    return@withContext null
+                }
+
+                FloatArray(values.size) { index -> values[index] }
+            } catch (e: Exception) {
+                logger.error("Error embedding text with GenAI", e)
+                null
+            }
+        }
+
     companion object {
         const val DEFAULT_IMAGE_MODEL = "gemini-2.5-flash-image"
+        const val DEFAULT_EMBEDDING_MODEL = "gemini-embedding-001"
+        const val DEFAULT_EMBEDDING_DIMENSION = 768
     }
 }

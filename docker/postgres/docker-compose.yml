@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:latest
+    image: pgvector/pgvector:pg17
     container_name: writeopia-postgres
     environment:
       POSTGRES_USER: postgres

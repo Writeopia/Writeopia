@@ -26,6 +26,7 @@ import io.writeopia.api.documents.documents.repository.getDocumentsByParentId
 import io.writeopia.api.documents.documents.repository.getFoldersByParentId
 import io.writeopia.api.documents.documents.repository.getIdsByParentId
 import io.writeopia.api.documents.documents.repository.getSyncEventsAfterTime
+import io.writeopia.api.documents.embeddings.DocumentEmbeddingService
 import io.writeopia.api.genai.service.GenAiService
 import io.writeopia.backend.models.ImageStorageService
 import io.writeopia.buckets.GcpBucketImageStorageService
@@ -74,7 +75,8 @@ fun Routing.documentsRoute(
     useAi: Boolean,
     debug: Boolean = false,
     imageStorageService: ImageStorageService = GcpBucketImageStorageService,
-    genAiService: GenAiService? = null
+    genAiService: GenAiService? = null,
+    embeddingService: DocumentEmbeddingService? = null
 ) {
     // Public site endpoint - no authentication required
     get("/api/site/{documentId}") {
@@ -316,7 +318,8 @@ fun Routing.documentsRoute(
                     title = request.title,
                     workspaceId = workspaceId,
                     icon = request.icon?.toModel(),
-                    writeopiaDb = writeopiaDb
+                    writeopiaDb = writeopiaDb,
+                    embeddingService = embeddingService
                 )
 
                 call.respond(
@@ -349,7 +352,8 @@ fun Routing.documentsRoute(
                     title = request.title,
                     icon = icon,
                     favorite = request.favorite,
-                    writeopiaDb = writeopiaDb
+                    writeopiaDb = writeopiaDb,
+                    embeddingService = embeddingService
                 )
 
                 if (folder != null) {
@@ -390,7 +394,8 @@ fun Routing.documentsRoute(
                         },
                         workspaceId = workspaceId,
                         writeopiaDb,
-                        useAi
+                        useAi,
+                        embeddingService
                     )
 
                     if (addedToHub) {
@@ -433,6 +438,7 @@ fun Routing.documentsRoute(
                     document = documentModel,
                     workspaceId = workspaceId,
                     writeopiaDb = writeopiaDb,
+                    embeddingService = embeddingService,
                 )
 
                 call.respond(
@@ -462,6 +468,7 @@ fun Routing.documentsRoute(
                     val addedToHub = DocumentsService.receiveFolders(
                         folderList.map { folder -> folder.toModel() },
                         writeopiaDb,
+                        embeddingService,
                     )
 
                     if (addedToHub) {
@@ -656,7 +663,7 @@ fun Routing.documentsRoute(
                     return@runIfMember
                 }
 
-                DocumentsService.deleteFolder(folderId, workspaceId, userId, writeopiaDb)
+                DocumentsService.deleteFolder(folderId, workspaceId, userId, writeopiaDb, embeddingService)
 
                 call.respond(
                     status = HttpStatusCode.OK,
@@ -685,7 +692,7 @@ fun Routing.documentsRoute(
                     return@runIfMember
                 }
 
-                DocumentsService.deleteDocuments(request.documentIds, workspaceId, userId, writeopiaDb)
+                DocumentsService.deleteDocuments(request.documentIds, workspaceId, userId, writeopiaDb, embeddingService)
 
                 call.respond(
                     status = HttpStatusCode.OK,
@@ -722,7 +729,8 @@ fun Routing.documentsRoute(
                     request.targetParentId,
                     workspaceId,
                     userId,
-                    writeopiaDb
+                    writeopiaDb,
+                    embeddingService
                 )
 
                 if (moved) {
@@ -763,7 +771,8 @@ fun Routing.documentsRoute(
                     documentIds = request.documentIds,
                     workspaceId = workspaceId,
                     writeopiaDb = writeopiaDb,
-                    useAi = useAi
+                    useAi = useAi,
+                    embeddingService = embeddingService
                 )
 
                 call.respond(
@@ -1033,7 +1042,8 @@ fun Routing.documentsRoute(
                     documentId = documentId,
                     workspaceId = workspaceId,
                     request = request,
-                    writeopiaDb = writeopiaDb
+                    writeopiaDb = writeopiaDb,
+                    embeddingService = embeddingService
                 )
 
                 call.respond(
@@ -1109,7 +1119,8 @@ fun Routing.documentsRoute(
                     request.targetParentId,
                     workspaceId,
                     userId,
-                    writeopiaDb
+                    writeopiaDb,
+                    embeddingService
                 )
 
                 if (moved) {

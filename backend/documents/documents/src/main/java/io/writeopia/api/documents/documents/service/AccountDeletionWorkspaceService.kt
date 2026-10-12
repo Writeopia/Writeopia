@@ -13,6 +13,7 @@ import io.writeopia.api.documents.documents.repository.AccountDeletionWorkspaceR
 import io.writeopia.api.documents.documents.repository.getAccountDeletionWorkspaceRows
 import io.writeopia.api.documents.documents.repository.getIncompleteAccountDeletionWorkspaceRows
 import io.writeopia.api.documents.documents.repository.hardDeleteWorkspaceContents
+import io.writeopia.api.embeddings.EmbeddingStore
 import io.writeopia.api.documents.documents.repository.insertAccountDeletionWorkspace
 import io.writeopia.api.documents.documents.repository.markAccountDeletionWorkspaceCompleted
 import io.writeopia.api.documents.documents.repository.removeUserFromWorkspaceContents
@@ -46,6 +47,8 @@ object AccountDeletionWorkspaceService {
         debugMode: Boolean = false,
         publish: suspend (topicId: String, orderingKey: String, payload: String, debugMode: Boolean) -> Unit =
             PubsubPublisher::publish,
+        /** Where the workspace's document and folder embeddings are, to go with the rest. */
+        embeddingStore: EmbeddingStore? = null,
     ) {
         logger.info("[AccountDeletion] documents workspace teardown started for user $userId")
 
@@ -54,7 +57,7 @@ object AccountDeletionWorkspaceService {
         }
 
         writeopiaDb.getIncompleteAccountDeletionWorkspaceRows(userId).forEach { row ->
-            processRow(row, writeopiaDb)
+            processRow(row, writeopiaDb, embeddingStore)
         }
 
         if (writeopiaDb.getIncompleteAccountDeletionWorkspaceRows(userId).isNotEmpty()) {
@@ -99,7 +102,8 @@ object AccountDeletionWorkspaceService {
 
     private suspend fun processRow(
         row: AccountDeletionWorkspaceRow,
-        writeopiaDb: WriteopiaDbBackend
+        writeopiaDb: WriteopiaDbBackend,
+        embeddingStore: EmbeddingStore?
     ) {
         when (row.action) {
             AccountDeletionWorkspaceAction.DELETE_WORKSPACE -> {
@@ -114,6 +118,9 @@ object AccountDeletionWorkspaceService {
                 // already-gone rows is a no-op, not an error.
                 writeopiaDb.transaction {
                     writeopiaDb.hardDeleteWorkspaceContents(row.workspaceId)
+                    // The embedding tables sit outside the SQLDelight schema (pgvector), same connection.
+                    embeddingStore?.deleteDocumentsByWorkspace(row.workspaceId)
+                    embeddingStore?.deleteFoldersByWorkspace(row.workspaceId)
                     writeopiaDb.markAccountDeletionWorkspaceCompleted(
                         row.userId,
                         row.workspaceId,

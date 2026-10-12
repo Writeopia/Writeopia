@@ -20,7 +20,11 @@ import io.writeopia.api.ai.service.AiService
 import io.writeopia.api.genai.model.AiGenerateRequest
 import io.writeopia.api.genai.model.AiGenerateResponse
 import io.writeopia.api.genai.model.TokenUsage
+import io.writeopia.api.ai.folders.FolderCandidateRanker
+import io.writeopia.api.embeddings.Embeddings
+import io.writeopia.api.embeddings.EmbeddingsSetup
 import io.writeopia.api.genai.service.GenAiService
+import io.writeopia.databse.HikariCp
 import io.writeopia.api.typesafe.service.FolderSuggestionsService
 import io.writeopia.api.typesafe.service.TagSuggestionsService
 import io.writeopia.api.typesafe.service.WritingSuggestionsService
@@ -53,7 +57,12 @@ private fun isPremiumOrDebug(
         .executeAsOneOrNull() == AiConfig.ACCOUNT_TYPE_PREMIUM
 }
 
-fun Routing.aiRoute(debugMode: Boolean = false, writeopiaDb: WriteopiaDbBackend? = null) {
+fun Routing.aiRoute(
+    debugMode: Boolean = false,
+    writeopiaDb: WriteopiaDbBackend? = null,
+    /** The embeddings to rank folders with; by default Gemini + pgvector when configured, else none. */
+    embeddings: Embeddings? = null
+) {
     // In production mode, database is required for premium/quota enforcement
     if (!debugMode && writeopiaDb == null) {
         throw IllegalStateException(
@@ -63,10 +72,17 @@ fun Routing.aiRoute(debugMode: Boolean = false, writeopiaDb: WriteopiaDbBackend?
     }
 
     val genAiService = GenAiService()
+    val folderEmbeddings = embeddings
+        ?: writeopiaDb?.let { EmbeddingsSetup.create(genAiService, HikariCp.driver()) }
 
     // The writing agent (Jev, through TypeSafe) answers next to the other cloud AI routes.
     writingSuggestionsRoute(WritingSuggestionsService(), debugMode, writeopiaDb)
-    folderSuggestionsRoute(FolderSuggestionsService(), debugMode, writeopiaDb)
+    folderSuggestionsRoute(
+        FolderSuggestionsService(),
+        debugMode,
+        writeopiaDb,
+        ranker = FolderCandidateRanker(folderEmbeddings)
+    )
 
     // Document tags: Jev picks the catalogue tags a document should carry; Gemini makes up new ones.
     tagSuggestionsRoute(TagSuggestionsService(), debugMode, writeopiaDb)

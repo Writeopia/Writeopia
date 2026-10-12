@@ -36,6 +36,8 @@ import io.writeopia.api.documents.documents.repository.saveFolder
 import io.writeopia.api.documents.documents.repository.setDocumentPublished
 import io.writeopia.api.documents.documents.repository.updateDocumentTitle
 import io.writeopia.api.documents.documents.repository.upsertStoryStep
+import io.writeopia.api.documents.embeddings.DocumentEmbeddingService
+import io.writeopia.api.embeddings.DocumentPlainText
 import io.writeopia.api.documents.search.SearchDocument
 import io.writeopia.api.genai.service.GenAiService
 import io.writeopia.connection.ResultData
@@ -67,10 +69,16 @@ object DocumentsService {
         documents: List<Document>,
         workspaceId: String,
         writeopiaDb: WriteopiaDbBackend,
-        useAi: Boolean
+        useAi: Boolean,
+        embeddingService: DocumentEmbeddingService? = null
     ): Boolean {
         documents.forEach { document ->
+            // Where the document was before, so a save that also moves it refreshes both folders.
+            val previousParentId = embeddingService?.let {
+                writeopiaDb.getDocumentById(document.id, workspaceId)?.parentId
+            }
             writeopiaDb.saveDocument(document)
+            embeddingService?.onDocumentSaved(document, previousParentId, writeopiaDb)
         }
 
         return if (useAi) sendToAiHub(documents, workspaceId) else true
@@ -84,11 +92,17 @@ object DocumentsService {
     suspend fun receiveFolders(
         folders: List<Folder>,
         writeopiaDb: WriteopiaDbBackend,
+        embeddingService: DocumentEmbeddingService? = null
     ): Boolean {
         val tombstoned = writeopiaDb.saveFolder(*folders.toTypedArray())
 
         if (tombstoned.isNotEmpty()) {
             logger.info("Ignored ${tombstoned.size} tombstoned folder(s) sent by client: $tombstoned")
+        }
+
+        if (embeddingService != null) {
+            folders.filter { folder -> folder.id !in tombstoned && !folder.deleted }
+                .forEach { folder -> embeddingService.onFolderSaved(folder, writeopiaDb) }
         }
 
         return true
@@ -156,7 +170,8 @@ object DocumentsService {
         title: String,
         workspaceId: String,
         icon: MenuItem.Icon? = null,
-        writeopiaDb: WriteopiaDbBackend
+        writeopiaDb: WriteopiaDbBackend,
+        embeddingService: DocumentEmbeddingService? = null
     ): Folder {
         val now = Clock.System.now()
         val folder = Folder(
@@ -171,6 +186,7 @@ object DocumentsService {
         )
 
         writeopiaDb.saveFolder(folder)
+        embeddingService?.onFolderSaved(folder, writeopiaDb)
         return folder
     }
 
@@ -180,7 +196,8 @@ object DocumentsService {
         title: String?,
         icon: MenuItem.Icon?,
         favorite: Boolean?,
-        writeopiaDb: WriteopiaDbBackend
+        writeopiaDb: WriteopiaDbBackend,
+        embeddingService: DocumentEmbeddingService? = null
     ): Folder? {
         val existingFolder = writeopiaDb.getFolderById(folderId, workspaceId) ?: return null
 
@@ -192,6 +209,7 @@ object DocumentsService {
         )
 
         writeopiaDb.saveFolder(updatedFolder)
+        if (updatedFolder.title != existingFolder.title) embeddingService?.onFolderSaved(updatedFolder, writeopiaDb)
         return updatedFolder
     }
 
@@ -211,11 +229,28 @@ object DocumentsService {
         return documentWithWorkspace
     }
 
+    /** [upsertDocument], then the document's embedding and the folders it is in (or left). */
+    suspend fun upsertDocument(
+        document: Document,
+        workspaceId: String,
+        writeopiaDb: WriteopiaDbBackend,
+        embeddingService: DocumentEmbeddingService?
+    ): Document {
+        val previousParentId = embeddingService?.let {
+            writeopiaDb.getDocumentById(document.id, workspaceId)?.parentId
+        }
+        val saved = upsertDocument(document, workspaceId, writeopiaDb)
+        embeddingService?.onDocumentSaved(saved, previousParentId, writeopiaDb)
+
+        return saved
+    }
+
     suspend fun cloneDocuments(
         documentIds: List<String>,
         workspaceId: String,
         writeopiaDb: WriteopiaDbBackend,
-        useAi: Boolean
+        useAi: Boolean,
+        embeddingService: DocumentEmbeddingService? = null
     ): List<Document> {
         val now = Clock.System.now()
         val clonedDocuments = mutableListOf<Document>()
@@ -243,6 +278,7 @@ object DocumentsService {
             )
 
             writeopiaDb.saveDocument(clonedDocument)
+            embeddingService?.onDocumentSaved(clonedDocument, null, writeopiaDb)
             clonedDocuments.add(clonedDocument)
         }
 
@@ -270,17 +306,37 @@ object DocumentsService {
         folderId: String,
         workspaceId: String,
         userId: String,
-        writeopiaDb: WriteopiaDbBackend
+        writeopiaDb: WriteopiaDbBackend,
+        embeddingService: DocumentEmbeddingService? = null
+    ) {
+        val parentId = embeddingService?.let { writeopiaDb.getFolderById(folderId, workspaceId)?.parentId }
+        val deletedFolderIds = mutableListOf<String>()
+        val deletedDocumentIds = mutableListOf<String>()
+
+        deleteFolderTree(folderId, workspaceId, userId, writeopiaDb, deletedFolderIds, deletedDocumentIds)
+
+        embeddingService?.onFolderDeleted(deletedFolderIds, deletedDocumentIds, parentId, workspaceId, writeopiaDb)
+    }
+
+    private suspend fun deleteFolderTree(
+        folderId: String,
+        workspaceId: String,
+        userId: String,
+        writeopiaDb: WriteopiaDbBackend,
+        deletedFolderIds: MutableList<String>,
+        deletedDocumentIds: MutableList<String>
     ) {
         val childFolders = writeopiaDb.getFoldersByParentId(folderId)
 
         // Recursively delete all child folders
         childFolders.forEach { childFolder ->
-            deleteFolder(childFolder.id, workspaceId, userId, writeopiaDb)
+            deleteFolderTree(childFolder.id, workspaceId, userId, writeopiaDb, deletedFolderIds, deletedDocumentIds)
         }
 
         // Get document IDs in this folder before deleting them
         val documentIds = writeopiaDb.getIdsByParentId(folderId)
+        deletedDocumentIds.addAll(documentIds)
+        deletedFolderIds.add(folderId)
 
         // Create DELETE_DOCUMENT events for all documents in this folder
         documentIds.forEach { documentId ->
@@ -311,8 +367,14 @@ object DocumentsService {
         documentIds: List<String>,
         workspaceId: String,
         userId: String,
-        writeopiaDb: WriteopiaDbBackend
+        writeopiaDb: WriteopiaDbBackend,
+        embeddingService: DocumentEmbeddingService? = null
     ) {
+        // The folders the documents leave, read before they are gone.
+        val parentIds = embeddingService?.let {
+            documentIds.mapNotNull { documentId -> writeopiaDb.getDocumentById(documentId, workspaceId)?.parentId }
+        } ?: emptyList()
+
         // Create DELETE_DOCUMENT events for all documents
         documentIds.forEach { documentId ->
             writeopiaDb.createSyncEvent(
@@ -324,6 +386,7 @@ object DocumentsService {
         }
 
         writeopiaDb.deleteDocumentsByIds(documentIds)
+        embeddingService?.onDocumentsDeleted(documentIds, parentIds, workspaceId, writeopiaDb)
     }
 
     suspend fun favoriteDocument(
@@ -364,7 +427,8 @@ object DocumentsService {
         targetParentId: String,
         workspaceId: String,
         userId: String,
-        writeopiaDb: WriteopiaDbBackend
+        writeopiaDb: WriteopiaDbBackend,
+        embeddingService: DocumentEmbeddingService? = null
     ): Boolean {
         // Prevent moving a folder into itself
         if (folderId == targetParentId) {
@@ -393,6 +457,8 @@ object DocumentsService {
             newParentId = targetParentId
         )
 
+        embeddingService?.onFolderMoved(oldParentId, targetParentId, workspaceId, writeopiaDb)
+
         return true
     }
 
@@ -405,7 +471,8 @@ object DocumentsService {
         targetParentId: String,
         workspaceId: String,
         userId: String,
-        writeopiaDb: WriteopiaDbBackend
+        writeopiaDb: WriteopiaDbBackend,
+        embeddingService: DocumentEmbeddingService? = null
     ): Boolean {
         // Get current document to find old parent
         val currentDocument = writeopiaDb.getDocumentById(documentId, workspaceId)
@@ -425,6 +492,8 @@ object DocumentsService {
             oldParentId = oldParentId,
             newParentId = targetParentId
         )
+
+        embeddingService?.onDocumentMoved(oldParentId, targetParentId, workspaceId, writeopiaDb)
 
         return true
     }
@@ -552,7 +621,8 @@ object DocumentsService {
         documentId: String,
         workspaceId: String,
         request: StoryStepSyncRequest,
-        writeopiaDb: WriteopiaDbBackend
+        writeopiaDb: WriteopiaDbBackend,
+        embeddingService: DocumentEmbeddingService? = null
     ): StoryStepSyncResponse {
         val serverTimestamp = Clock.System.now().toEpochMilliseconds()
 
@@ -642,6 +712,9 @@ object DocumentsService {
         val stepsToReturn = serverUpdatedSteps
             .filter { (_, step) -> step.id !in clientUpdatedStepIds }
             .map { (position, step) -> step.toApi(position) }
+
+        // The document is embedded again only after a big change; the service decides.
+        embeddingService?.embedDocumentIfNeeded(documentId, workspaceId, writeopiaDb)
 
         return StoryStepSyncResponse(
             serverTimestamp = serverTimestamp,
@@ -759,7 +832,7 @@ object DocumentsService {
         }
 
         // Extract text content from all documents
-        val combinedText = extractTextFromDocuments(documentsToProcess)
+        val combinedText = DocumentPlainText.promptText(documentsToProcess)
 
         if (combinedText.isBlank()) {
             return GenerateSummaryResult.InvalidRequest("No text content found in the provided documents")
@@ -810,37 +883,6 @@ object DocumentsService {
         writeopiaDb.saveDocument(summaryDocument)
 
         return GenerateSummaryResult.Success(summaryDocument)
-    }
-
-    /**
-     * Extracts text content from a list of documents.
-     * Concatenates text from title, message, check_item, unordered_list_item, and code_block types.
-     * Every document contributes at least its title to ensure all requested documents are represented.
-     */
-    private fun extractTextFromDocuments(documents: List<Document>): String {
-        val textTypes = setOf("title", "message", "check_item", "unordered_list_item", "code_block")
-        val textParts = mutableListOf<String>()
-
-        for (document in documents) {
-            val documentParts = mutableListOf<String>()
-
-            // Add document title as header
-            documentParts.add("# ${document.title}")
-
-            // Sort content by position and extract text
-            val sortedContent = document.content.entries.sortedBy { it.key }
-            for ((_, storyStep) in sortedContent) {
-                val text = storyStep.text
-                if (storyStep.type.name in textTypes && !text.isNullOrBlank()) {
-                    documentParts.add(text)
-                }
-            }
-
-            // Include all documents, even those with only a title
-            textParts.add(documentParts.joinToString("\n"))
-        }
-
-        return textParts.joinToString("\n\n---\n\n")
     }
 
     /**

@@ -23,7 +23,7 @@ import kotlinx.coroutines.launch
 class WriteopiaDocumentFolders(
     private val documentId: () -> String,
     private val documentParentId: () -> String,
-    private val workspaceId: suspend () -> String,
+    private val resolveWorkspaceId: suspend () -> String,
     private val folderRepository: FolderRepository,
     private val moveDocument: suspend (documentId: String, folderId: String) -> Unit,
     private val resolveAi: suspend () -> AiStreaming?,
@@ -33,6 +33,8 @@ class WriteopiaDocumentFolders(
 ) : DocumentFolders {
 
     override suspend fun currentFolderId(): String = documentParentId()
+
+    override suspend fun workspaceId(): String = resolveWorkspaceId()
 
     override suspend fun candidates(limit: Int): List<FolderCandidate> =
         folderRepository.getFolderByParentId(Folder.ROOT_PATH, workspaceId())

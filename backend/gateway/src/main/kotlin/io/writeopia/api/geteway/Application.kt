@@ -8,6 +8,8 @@ import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.plugins.cors.routing.CORS
 import io.writeopia.api.core.auth.utils.installAuth
+import io.writeopia.api.embeddings.Embedder
+import io.writeopia.api.embeddings.EmbeddingStore
 import io.writeopia.connection.logger
 import io.writeopia.plugins.configureEditorSockets
 import io.writeopia.sql.WriteopiaDbBackend
@@ -27,13 +29,23 @@ fun Application.module(
     useAi: Boolean = System.getenv("WRITEOPIA_USE_AI")?.toBoolean() ?: false,
     debugMode: Boolean = System.getenv("WRITEOPIA_DEBUG_MODE")?.toBoolean() ?: false,
     stagingMode: Boolean = System.getenv("WRITEOPIA_STAGING_MODE")?.toBoolean() ?: false,
-    adminKey: String? = System.getenv("ADMIN_KEY")
+    adminKey: String? = System.getenv("ADMIN_KEY"),
+    /** The embeddings to use instead of Gemini + pgvector from the environment; tests pass fakes. */
+    embedder: Embedder? = null,
+    embeddingStore: EmbeddingStore? = null
 ) {
     val db = writeopiaDb ?: configurePersistence()
     logger.info("debug: $debugMode, staging: $stagingMode")
     installCORS(stagingMode)
     installAuth()
-    configureRouting(db, useAi, debugMode = debugMode, adminKey = adminKey)
+    configureRouting(
+        db,
+        useAi,
+        debugMode = debugMode,
+        adminKey = adminKey,
+        embedder = embedder,
+        embeddingStore = embeddingStore
+    )
     configureSerialization()
     configureEditorSockets()
     configureHTTP()
