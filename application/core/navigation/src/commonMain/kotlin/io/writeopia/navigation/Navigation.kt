@@ -113,6 +113,11 @@ fun Navigation(
                     width = density.run { sideMenuWidth.toDp() },
                     homeClick = { navController.navigateToNotes(NotesNavigation.Root) },
                     favoritesClick = { navController.navigateToNotes(NotesNavigation.Favorites) },
+                    graphClick = if (documentsGraphInjection != null) {
+                        { navController.navigateToForceGraph() }
+                    } else {
+                        null
+                    },
                     settingsClick = { navController.navigateToAccount() },
                     addFolder = globalShellViewModel::addFolder,
                     editFolder = globalShellViewModel::editFolder,

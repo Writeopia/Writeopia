@@ -304,6 +304,14 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
         try local.storedTags()
     }
 
+    public func documents(withTag tagId: String) async throws -> [WrDocument] {
+        try await local.documents(withTag: tagId)
+    }
+
+    public func allContents() async throws -> FolderContents {
+        try await local.allContents()
+    }
+
     /// Stores the tag and sends it right away; when that fails the next folder sync sends it.
     public func saveTag(_ tag: DocumentTag) async throws {
         var tag = tag

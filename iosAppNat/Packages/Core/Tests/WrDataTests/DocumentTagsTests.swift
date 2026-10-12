@@ -36,6 +36,20 @@ import WrModels
         #expect(try store.storedDocument(id: "d")?.tagIds == ["t1"])
     }
 
+    @Test func theDocumentsOfATagAndTheWholeWorkspaceAreListed() async throws {
+        let store = makeStore()
+        try store.store(WrDocument(id: "a", title: "A", workspaceId: "w", lastUpdatedAt: 1, parentId: "root", tagIds: ["t1"]))
+        try store.store(WrDocument(id: "b", title: "B", workspaceId: "w", lastUpdatedAt: 2, parentId: "f", tagIds: ["t1", "t2"]))
+        try store.store(WrDocument(id: "c", title: "C", workspaceId: "w", lastUpdatedAt: 3, parentId: "root"))
+        try store.store(Folder(id: "f", parentId: "root", title: "F", workspaceId: "w"))
+
+        #expect(try await store.documents(withTag: "t1").map(\.id) == ["b", "a"])
+        #expect(try await store.documents(withTag: "t2").map(\.id) == ["b"])
+        let all = try await store.allContents()
+        #expect(all.folders.map(\.id) == ["f"])
+        #expect(all.documents.map(\.id) == ["c", "b", "a"])
+    }
+
     @Test func theCatalogueRoundTripsWithTombstonesAndOutdatedTags() throws {
         let store = makeStore()
         try store.storeTag(DocumentTag(id: "a", workspaceId: "w", name: "Beta", description: "B", lastUpdatedAt: 2, lastSyncedAt: 2))

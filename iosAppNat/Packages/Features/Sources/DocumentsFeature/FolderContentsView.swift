@@ -33,6 +33,8 @@ final class FolderContentsViewModel {
     private(set) var ancestors: [Folder] = []
 
     let folderId: String
+    /// The tag whose documents are listed, when this "folder" is a tag.
+    let tag: DocumentTag?
     let settings: FolderDisplaySettings
     let repository: DocumentsRepository
     private let aiClient: AiStreaming?
@@ -40,6 +42,7 @@ final class FolderContentsViewModel {
     init(
         folderId: String,
         folder: Folder? = nil,
+        tag: DocumentTag? = nil,
         repository: DocumentsRepository,
         aiClient: AiStreaming? = nil,
         settings: FolderDisplaySettings = FolderDisplaySettings(preferences: nil)
@@ -47,6 +50,7 @@ final class FolderContentsViewModel {
         self.folderId = folderId
         // The folder that was opened, so its menu works before the stored copy is read.
         self.folder = folder?.id == folderId ? folder : nil
+        self.tag = tag
         self.repository = repository
         self.aiClient = aiClient
         self.settings = settings
@@ -55,10 +59,14 @@ final class FolderContentsViewModel {
     /// The "folder" that lists every favorite of the workspace.
     static let favoritesId = "wr.favorites"
 
+    /// The "folder" that lists the documents carrying a tag.
+    static func tagFolderId(_ tagId: String) -> String { "wr.tag:\(tagId)" }
+
     var isRoot: Bool { folderId == Folder.rootId }
     var isFavorites: Bool { folderId == Self.favoritesId }
+    var isTag: Bool { tag != nil }
     /// Items can be created and dropped only in a real folder.
-    var canCreateItems: Bool { !isFavorites }
+    var canCreateItems: Bool { !isFavorites && !isTag }
 
     var hasSelection: Bool { !selectedIds.isEmpty }
     var canSummarize: Bool { aiClient != nil }
@@ -253,8 +261,8 @@ final class FolderContentsViewModel {
 
         await loadLocal()
 
-        // Favorites come from what's synced already; a folder syncs itself.
-        guard !isFavorites, let syncing = repository as? DocumentSyncing else { return }
+        // Favorites and tags come from what's synced already; a folder syncs itself.
+        guard !isFavorites, !isTag, let syncing = repository as? DocumentSyncing else { return }
         isSyncing = true
         defer { isSyncing = false }
         do {
@@ -271,12 +279,17 @@ final class FolderContentsViewModel {
 
     func loadLocal() async {
         do {
-            let contents = try isFavorites
-                ? await repository.favorites()
-                : await repository.folderContents(folderId: folderId)
+            let contents: FolderContents
+            if let tag {
+                contents = FolderContents(documents: try await repository.documents(withTag: tag.id))
+            } else if isFavorites {
+                contents = try await repository.favorites()
+            } else {
+                contents = try await repository.folderContents(folderId: folderId)
+            }
             folders = contents.folders
             documents = contents.documents
-            if !isRoot, !isFavorites {
+            if !isRoot, !isFavorites, !isTag {
                 setPath(try await repository.folderPath(to: folderId))
             }
             errorMessage = nil
@@ -426,6 +439,10 @@ public enum DocumentsRoute: Hashable {
     case document(id: String, title: String)
     /// Every favorite of the workspace, like "Favorites" of the Compose side menu.
     case favorites
+    /// The documents of the workspace carrying the tag, shown like a folder.
+    case tag(DocumentTag)
+    /// The force graph of the workspace, grouped by folders or by tags.
+    case graph
 }
 
 /// Documents tab: the folders and documents of the current workspace.
@@ -471,6 +488,14 @@ private struct DocumentsNavigation: View {
                         folderView(id: folder.id, folder: folder, title: folder.displayTitle, rootTitle: rootTitle)
                     case .favorites:
                         folderView(id: FolderContentsViewModel.favoritesId, title: String(localized: "Favorites"), rootTitle: rootTitle)
+                    case .tag(let tag):
+                        folderView(id: FolderContentsViewModel.tagFolderId(tag.id), tag: tag, title: tag.name, rootTitle: rootTitle)
+                    case .graph:
+                        DocumentsGraphView(
+                            onOpenDocument: { document in router.open(document: document) },
+                            onOpenFolder: { folder in Task { await router.open(folder: folder, repository: session.documents) } },
+                            onOpenTag: { tag in router.open(tag: tag) }
+                        )
                     case .document(let id, let title):
                         NoteEditorView(
                             documentId: id,
@@ -492,10 +517,11 @@ private struct DocumentsNavigation: View {
         }
     }
 
-    private func folderView(id: String, folder: Folder? = nil, title: String, rootTitle: String) -> FolderContentsView {
+    private func folderView(id: String, folder: Folder? = nil, tag: DocumentTag? = nil, title: String, rootTitle: String) -> FolderContentsView {
         FolderContentsView(
             folderId: id,
             folder: folder,
+            tag: tag,
             title: title,
             rootTitle: rootTitle,
             repository: session.documents,
@@ -546,6 +572,7 @@ struct FolderContentsView: View {
     init(
         folderId: String,
         folder: Folder? = nil,
+        tag: DocumentTag? = nil,
         title: String,
         rootTitle: String,
         repository: DocumentsRepository,
@@ -557,7 +584,9 @@ struct FolderContentsView: View {
         transitionNamespace: Namespace.ID? = nil
     ) {
         _viewModel = State(
-            initialValue: FolderContentsViewModel(folderId: folderId, folder: folder, repository: repository, aiClient: aiClient, settings: settings)
+            initialValue: FolderContentsViewModel(
+                folderId: folderId, folder: folder, tag: tag, repository: repository, aiClient: aiClient, settings: settings
+            )
         )
         _path = path
         self.title = title
@@ -573,8 +602,11 @@ struct FolderContentsView: View {
         GeometryReader { geometry in
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
+                    if let tag = viewModel.tag {
+                        TagHeaderView(tag: tag)
+                    }
                     // Inside the scroll view, not in a top inset: an inset hides the large title on iOS 26+.
-                    if !viewModel.isRoot {
+                    if !viewModel.isRoot, !viewModel.isTag {
                         FolderBreadcrumb(
                             rootTitle: rootTitle,
                             ancestors: viewModel.ancestors,
@@ -677,8 +709,8 @@ struct FolderContentsView: View {
                 isLoading: viewModel.isLoading,
                 isEmpty: viewModel.isEmpty,
                 errorMessage: viewModel.errorMessage,
-                emptyTitle: "This folder is empty",
-                emptyImage: "folder",
+                emptyTitle: viewModel.isTag ? "No documents carry this tag yet." : "This folder is empty",
+                emptyImage: viewModel.isTag ? "tag" : "folder",
                 retry: { Task { await viewModel.load() } }
             )
         }
@@ -686,13 +718,25 @@ struct FolderContentsView: View {
         // A large title can't show an icon, so inside a folder the title is inline, with the icon.
         .toolbarTitleDisplayMode(viewModel.isRoot ? .automatic : .inline)
         .toolbar {
-            if !viewModel.isRoot, !viewModel.isFavorites {
+            if !viewModel.isRoot, !viewModel.isFavorites, !viewModel.isTag {
                 ToolbarItem(placement: .principal) {
                     folderTitle
                 }
             }
-            ToolbarItem(placement: .primaryAction) {
-                folderMenu
+            if viewModel.isRoot {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        path.append(DocumentsRoute.graph)
+                    } label: {
+                        Label("Documents graph", systemImage: "point.3.connected.trianglepath.dotted")
+                    }
+                    .accessibilityIdentifier("documents.graph")
+                }
+            }
+            if !viewModel.isTag {
+                ToolbarItem(placement: .primaryAction) {
+                    folderMenu
+                }
             }
             ToolbarItem(placement: .wrTrailing) {
                 if viewModel.isSyncing {
@@ -874,7 +918,7 @@ struct FolderContentsView: View {
 
     private var folderMenuPresentations: FolderMenuPresentations {
         FolderMenuPresentations(
-            isFolder: !viewModel.isRoot && !viewModel.isFavorites,
+            isFolder: !viewModel.isRoot && !viewModel.isFavorites && !viewModel.isTag,
             folderTitle: viewModel.folder?.displayTitle ?? title,
             folder: viewModel.folder,
             rootTitle: rootTitle,
@@ -1352,5 +1396,29 @@ public struct DocumentRow: View {
             Image(systemName: "doc.text")
                 .foregroundStyle(WrColors.textLighter)
         }
+    }
+}
+
+/// Which tag's documents the screen lists: its name and its explanation.
+private struct TagHeaderView: View {
+    let tag: DocumentTag
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 10) {
+            Circle()
+                .fill(Color(red: 1, green: 0.76, blue: 0.03))
+                .frame(width: 12, height: 12)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Tag").font(.caption).foregroundStyle(.secondary)
+                Text(tag.name).font(.title3.weight(.bold))
+                if !tag.description.isEmpty {
+                    Text(tag.description).font(.footnote).foregroundStyle(.secondary)
+                }
+            }
+            Spacer()
+        }
+        .padding(.horizontal)
+        .padding(.top, 12)
+        .accessibilityIdentifier("tagHeader")
     }
 }

@@ -689,6 +689,28 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
         try storedTags()
     }
 
+    public func documents(withTag tagId: String) async throws -> [WrDocument] {
+        try db.query(
+            """
+            \(Self.documentColumns) FROM document
+            WHERE deleted = 0 AND id IN (SELECT document_id FROM document_tag_link WHERE tag_id = ?)
+            ORDER BY last_updated_at DESC
+            """,
+            [.text(tagId)],
+            row: documentRow
+        ).map(withContent)
+    }
+
+    public func allContents() async throws -> FolderContents {
+        try seedIfNeeded()
+        let folders = try db.query("\(Self.folderColumns) FROM folder WHERE deleted = 0", row: folder)
+        let documents = try db.query(
+            "\(Self.documentColumns) FROM document WHERE deleted = 0 ORDER BY last_updated_at DESC",
+            row: documentRow
+        )
+        return FolderContents(folders: folders, documents: documents)
+    }
+
     public func saveTag(_ tag: DocumentTag) async throws {
         try storeTag(tag)
     }

@@ -41,6 +41,7 @@ public struct SideGlobalMenu: View {
                 destinationRow(.search, title: "Search", systemImage: "magnifyingglass")
                 destinationRow(.documents, title: "Home", systemImage: "house")
                 favoritesRow
+                graphRow
                 destinationRow(.settings, title: "Settings", systemImage: "gearshape")
 
                 HStack {
@@ -129,6 +130,24 @@ public struct SideGlobalMenu: View {
         .buttonStyle(.plain)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
         .accessibilityIdentifier("sideMenu.favorites")
+    }
+
+    /// The force graph of the workspace, like the graph of the Compose desktop app.
+    private var graphRow: some View {
+        Button {
+            selection = .documents
+            router.openGraph()
+        } label: {
+            Label("Documents graph", systemImage: "point.3.connected.trianglepath.dotted")
+                .font(.body)
+                .foregroundStyle(.primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 12)
+                .frame(height: 40)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("sideMenu.graph")
     }
 
     private var showsFavorites: Bool { router.showsFavorites }

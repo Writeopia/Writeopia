@@ -58,6 +58,7 @@ fun SideGlobalMenu(
     settingsClick: () -> Unit,
     addFolder: () -> Unit,
     highlightContent: () -> Unit,
+    graphClick: (() -> Unit)? = null,
     editFolder: (MenuItemUi.FolderUi) -> Unit,
     navigateToFolder: (String) -> Unit,
     navigateToEditDocument: (String, String) -> Unit,
@@ -133,6 +134,18 @@ fun SideGlobalMenu(
                             text = WrStrings.favorites(),
                             click = favoritesClick
                         )
+                    }
+
+                    if (graphClick != null) {
+                        item {
+                            SettingsOptions(
+                                showContent = showContent,
+                                iconVector = WrIcons.chart,
+                                contentDescription = WrStrings.documentsGraph(),
+                                text = WrStrings.documentsGraph(),
+                                click = graphClick
+                            )
+                        }
                     }
 
                     item {

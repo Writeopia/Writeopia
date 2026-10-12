@@ -45,6 +45,10 @@ public protocol DocumentsRepository: AnyObject {
     func tags() async throws -> [DocumentTag]
     /// Stores a new or changed tag, and sends it to the backend when there's one.
     func saveTag(_ tag: DocumentTag) async throws
+    /// The documents of the workspace carrying `tagId`, wherever they are, newest first.
+    func documents(withTag tagId: String) async throws -> [WrDocument]
+    /// Every folder and document of the workspace, for the documents graph.
+    func allContents() async throws -> FolderContents
 }
 
 public enum MoveError: Error, Equatable {
@@ -89,6 +93,25 @@ extension DocumentsRepository {
     public func tags() async throws -> [DocumentTag] { [] }
 
     public func saveTag(_ tag: DocumentTag) async throws {}
+
+    public func documents(withTag tagId: String) async throws -> [WrDocument] {
+        try await allContents().documents.filter { $0.tagIds.contains(tagId) }
+    }
+
+    /// Walks the tree from the root. Stores with a database answer this with a query instead.
+    public func allContents() async throws -> FolderContents {
+        var result = FolderContents()
+        var pending = [Folder.rootId]
+        var visited: Set<String> = []
+        while let folderId = pending.popLast() {
+            guard visited.insert(folderId).inserted else { continue }
+            let contents = try await folderContents(folderId: folderId)
+            result.folders += contents.folders
+            result.documents += contents.documents
+            pending += contents.folders.map(\.id)
+        }
+        return result
+    }
 
     // Sources without folders of their own (editor previews and tests) don't need to offer these.
     public func folder(id: String) async throws -> Folder? { nil }
