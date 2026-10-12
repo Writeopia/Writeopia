@@ -1410,9 +1410,11 @@ private struct TagHeaderView: View {
                 .frame(width: 12, height: 12)
             VStack(alignment: .leading, spacing: 2) {
                 Text("Tag").font(.caption).foregroundStyle(.secondary)
-                Text(tag.name).font(.title3.weight(.bold))
+                Text(tag.name).font(.title3.weight(.bold)).lineLimit(1)
                 if !tag.description.isEmpty {
                     Text(tag.description).font(.footnote).foregroundStyle(.secondary)
+                        .lineLimit(3)
+                        .truncationMode(.tail)
                 }
             }
             Spacer()

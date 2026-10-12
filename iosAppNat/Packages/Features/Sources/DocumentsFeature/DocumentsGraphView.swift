@@ -300,7 +300,7 @@ private struct GraphItemCard: View {
                 .accessibilityLabel("Close")
             }
             ForEach(facts, id: \.self) { fact in
-                Text(fact).font(.footnote).foregroundStyle(.secondary).lineLimit(2)
+                Text(fact).font(.footnote).foregroundStyle(.secondary).lineLimit(3).truncationMode(.tail)
             }
             Button(action: open) {
                 Text(buttonTitle).frame(maxWidth: .infinity)

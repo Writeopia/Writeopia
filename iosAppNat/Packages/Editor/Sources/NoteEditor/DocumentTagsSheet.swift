@@ -19,7 +19,8 @@ struct DocumentTagsSummary: View {
             Text(hidden > 0 ? "\(shown), +\(hidden) more" : shown)
                 .font(.footnote)
                 .foregroundStyle(.secondary)
-                .lineLimit(2)
+                .lineLimit(3)
+                .truncationMode(.tail)
         }
     }
 }
@@ -43,11 +44,13 @@ struct DocumentTagsSheet: View {
                         ForEach(viewModel.documentTags) { tag in
                             HStack(alignment: .top) {
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(tag.name).font(.body.weight(.semibold))
+                                    Text(tag.name).font(.body.weight(.semibold)).lineLimit(1)
                                     if !tag.description.isEmpty {
                                         Text(tag.description)
                                             .font(.footnote)
                                             .foregroundStyle(.secondary)
+                                            .lineLimit(3)
+                                            .truncationMode(.tail)
                                     }
                                 }
                                 Spacer()
@@ -128,12 +131,13 @@ private struct AddDocumentTagView: View {
                                 dismiss()
                             } label: {
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(tag.name).foregroundStyle(.primary)
+                                    Text(tag.name).foregroundStyle(.primary).lineLimit(1)
                                     if !tag.description.isEmpty {
                                         Text(tag.description)
                                             .font(.footnote)
                                             .foregroundStyle(.secondary)
-                                            .lineLimit(2)
+                                            .lineLimit(3)
+                                            .truncationMode(.tail)
                                     }
                                 }
                             }

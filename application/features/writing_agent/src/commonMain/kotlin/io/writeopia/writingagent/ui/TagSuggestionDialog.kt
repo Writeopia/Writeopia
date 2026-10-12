@@ -167,7 +167,7 @@ private fun TagOption(tag: TagSuggestion, selected: Boolean, onToggle: () -> Uni
                     text = tag.description,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
+                    maxLines = 3,
                     overflow = TextOverflow.Ellipsis
                 )
             }

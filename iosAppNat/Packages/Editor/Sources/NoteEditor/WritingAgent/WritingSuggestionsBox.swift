@@ -295,7 +295,8 @@ struct TagSuggestionDialog: View {
                                                 Text(tag.description)
                                                     .font(.caption)
                                                     .foregroundStyle(.secondary)
-                                                    .lineLimit(2)
+                                                    .lineLimit(3)
+                                                    .truncationMode(.tail)
                                             }
                                         }
                                         Spacer()
