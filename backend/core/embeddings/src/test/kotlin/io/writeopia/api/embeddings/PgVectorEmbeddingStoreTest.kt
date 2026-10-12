@@ -12,6 +12,9 @@ import kotlin.test.assertTrue
  * Runs against a real Postgres with pgvector (the docker-compose database locally, the CI
  * service), reached with the DB_* variables the backend uses. The embedded Postgres of the other
  * tests has no pgvector, so this test skips itself when no such database answers.
+ *
+ * The tables may already exist at the production dimension (CI runs init.sql first, and
+ * `CREATE TABLE IF NOT EXISTS` keeps them), so the vectors here have that dimension too.
  */
 class PgVectorEmbeddingStoreTest {
 
@@ -32,7 +35,7 @@ class PgVectorEmbeddingStoreTest {
         return try {
             val dataSource = HikariDataSource(config)
             dataSource.connection.use { }
-            val store = PgVectorEmbeddingStore(dataSource.asJdbcDriver(), dimension = 3)
+            val store = PgVectorEmbeddingStore(dataSource.asJdbcDriver())
             store.ensureSchema()
             if (store.isAvailable()) store to dataSource else null
         } catch (e: Exception) {
@@ -40,6 +43,10 @@ class PgVectorEmbeddingStoreTest {
             null
         }
     }
+
+    /** A vector of the store's dimension whose first values are the given ones, the rest zero. */
+    private fun vector(vararg values: Float): FloatArray =
+        FloatArray(PgVectorEmbeddingStore.DEFAULT_DIMENSION) { index -> values.getOrElse(index) { 0f } }
 
     @Test
     fun `documents and folders round trip and folders rank by distance`() {
@@ -51,7 +58,7 @@ class PgVectorEmbeddingStoreTest {
                 documentId = "$workspace-doc",
                 workspaceId = workspace,
                 model = "fake",
-                vector = floatArrayOf(1f, 0f, 0f),
+                vector = vector(1f, 0f, 0f),
                 sourceTitle = "Title",
                 sourceText = "Body",
                 embeddedAt = 42,
@@ -62,7 +69,7 @@ class PgVectorEmbeddingStoreTest {
             val read = store.document(document.documentId)!!
             assertEquals("Body 2", read.sourceText)
             assertEquals(43, read.embeddedAt)
-            assertEquals(listOf(1f, 0f, 0f), read.vector.toList())
+            assertEquals(vector(1f, 0f, 0f).toList(), read.vector.toList())
             assertEquals(DocumentEmbeddingMeta(document.documentId, "fake", 43), store.documentMeta(document.documentId))
 
             fun folder(id: String, vector: FloatArray) = StoredFolderEmbedding(
@@ -75,11 +82,11 @@ class PgVectorEmbeddingStoreTest {
                 sourceTitle = id,
                 updatedAt = 1,
             )
-            store.upsertFolder(folder("close", floatArrayOf(1f, 0.1f, 0f)))
-            store.upsertFolder(folder("far", floatArrayOf(0f, 0f, 1f)))
-            store.upsertFolder(folder("middle", floatArrayOf(1f, 1f, 0f)))
+            store.upsertFolder(folder("close", vector(1f, 0.1f, 0f)))
+            store.upsertFolder(folder("far", vector(0f, 0f, 1f)))
+            store.upsertFolder(folder("middle", vector(1f, 1f, 0f)))
 
-            val ranked = store.rankFolders(workspace, floatArrayOf(1f, 0f, 0f), "fake", limit = 2)
+            val ranked = store.rankFolders(workspace, vector(1f, 0f, 0f), "fake", limit = 2)
             assertEquals(listOf("$workspace-close", "$workspace-middle"), ranked.map { it.folderId })
             assertTrue(ranked[0].score > ranked[1].score)
 
@@ -90,7 +97,7 @@ class PgVectorEmbeddingStoreTest {
             store.deleteDocumentsByWorkspace(workspace)
             store.deleteFoldersByWorkspace(workspace)
             assertNull(store.document(document.documentId))
-            assertEquals(emptyList(), store.rankFolders(workspace, floatArrayOf(1f, 0f, 0f), "fake", 5))
+            assertEquals(emptyList(), store.rankFolders(workspace, vector(1f, 0f, 0f), "fake", 5))
         } finally {
             store.deleteDocumentsByWorkspace(workspace)
             store.deleteFoldersByWorkspace(workspace)
