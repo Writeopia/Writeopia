@@ -426,6 +426,19 @@ private fun PageOptions(
             Spacer(modifier = Modifier.height(8.dp))
         }
 
+        Title(WrStrings.documentTagsTitle())
+        Spacer(modifier = Modifier.height(6.dp))
+
+        DocumentTagsSection(
+            documentTagsState = documentTagsState,
+            isEditableState = isEditableState,
+            onViewTagsClick = onViewTagsClick,
+            onAddTagClick = onAddTagClick,
+            onRemoveTagClick = onRemoveTagClick,
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
         Title("Actions")
         Spacer(modifier = Modifier.height(6.dp))
 
@@ -446,19 +459,6 @@ private fun PageOptions(
             modifier = Modifier.fillMaxWidth(),
             paddingValues = smallButtonPadding(),
             onClick = deleteDocument
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Title(WrStrings.documentTagsTitle())
-        Spacer(modifier = Modifier.height(6.dp))
-
-        DocumentTagsSection(
-            documentTagsState = documentTagsState,
-            isEditableState = isEditableState,
-            onViewTagsClick = onViewTagsClick,
-            onAddTagClick = onAddTagClick,
-            onRemoveTagClick = onRemoveTagClick,
         )
     }
 }

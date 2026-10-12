@@ -145,14 +145,6 @@ private struct SidePagePanel: View {
     @State private var showsTags = false
 
     var body: some View {
-        PanelSection("Page") {
-            Toggle(isOn: Binding(get: { viewModel.isLocked }, set: { _ in viewModel.toggleLock() })) {
-                Label("Lock document", systemImage: viewModel.isLocked ? "lock.fill" : "lock.open")
-            }
-            .tint(WrColors.accent)
-            .accessibilityIdentifier("side.lock")
-        }
-
         PanelSection("Tags") {
             DocumentTagsSummary(viewModel: viewModel)
             Button {
@@ -165,6 +157,14 @@ private struct SidePagePanel: View {
                 DocumentTagsSheet(viewModel: viewModel)
                     .wrSheetSize(width: 440, height: 520)
             }
+        }
+
+        PanelSection("Page") {
+            Toggle(isOn: Binding(get: { viewModel.isLocked }, set: { _ in viewModel.toggleLock() })) {
+                Label("Lock document", systemImage: viewModel.isLocked ? "lock.fill" : "lock.open")
+            }
+            .tint(WrColors.accent)
+            .accessibilityIdentifier("side.lock")
         }
 
         PanelSection("Font") {

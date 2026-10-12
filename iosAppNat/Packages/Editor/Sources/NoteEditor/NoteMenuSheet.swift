@@ -24,14 +24,6 @@ struct NoteMenuSheet: View {
     var body: some View {
         NavigationStack {
             WrSheetList {
-                Section("Actions") {
-                    Toggle(isOn: Binding(get: { viewModel.isLocked }, set: { _ in viewModel.toggleLock() })) {
-                        Label("Lock document", systemImage: viewModel.isLocked ? "lock.fill" : "lock.open")
-                    }
-                    .tint(WrColors.accent)
-                    .accessibilityIdentifier("menu.lock")
-                }
-
                 Section("Tags") {
                     WrSheetRow("Tags", systemImage: "tag") {
                         showsTags = true
@@ -44,6 +36,14 @@ struct NoteMenuSheet: View {
                         }
                     }
                     .accessibilityIdentifier("menu.tags")
+                }
+
+                Section("Actions") {
+                    Toggle(isOn: Binding(get: { viewModel.isLocked }, set: { _ in viewModel.toggleLock() })) {
+                        Label("Lock document", systemImage: viewModel.isLocked ? "lock.fill" : "lock.open")
+                    }
+                    .tint(WrColors.accent)
+                    .accessibilityIdentifier("menu.lock")
                 }
 
                 Section("Font") {
