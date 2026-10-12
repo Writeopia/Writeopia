@@ -37,6 +37,8 @@ import writeopia.application.core.resources.generated.resources.document_tags_ad
 import writeopia.application.core.resources.generated.resources.document_tags_dialog_empty
 import writeopia.application.core.resources.generated.resources.document_tags_dialog_title
 import writeopia.application.core.resources.generated.resources.document_tags_none
+import writeopia.application.core.resources.generated.resources.document_tags_more
+import writeopia.application.core.resources.generated.resources.graph_grouping_folders
 import writeopia.application.core.resources.generated.resources.document_tags_remove
 import writeopia.application.core.resources.generated.resources.document_tags_title
 import writeopia.application.core.resources.generated.resources.document_tags_view
@@ -1200,6 +1202,12 @@ object WrStrings {
 
     @Composable
     fun documentTagsRemove() = stringResource(Res.string.document_tags_remove)
+
+    @Composable
+    fun documentTagsMore(count: Int) = stringResource(Res.string.document_tags_more, count)
+
+    @Composable
+    fun graphGroupingFolders() = stringResource(Res.string.graph_grouping_folders)
 
     @Composable
     fun documentTagAddDialogTitle() = stringResource(Res.string.document_tag_add_dialog_title)

@@ -1,6 +1,7 @@
 package io.writeopia.editor.features.editor.ui.desktop.edit.menu
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.buttons.CommonButton
 import io.writeopia.resources.WrStrings
@@ -10,8 +11,10 @@ import kotlinx.coroutines.flow.StateFlow
 fun LockButton(
     isEditableState: StateFlow<Boolean>,
     setEditable: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     CommonButton(
+        modifier = modifier,
         icon = WrIcons.lock,
         iconDescription = WrStrings.lockDocument(),
         text = WrStrings.lockDocument(),
@@ -21,8 +24,9 @@ fun LockButton(
 }
 
 @Composable
-fun MoveToButton(clickListener: () -> Unit) {
+fun MoveToButton(clickListener: () -> Unit, modifier: Modifier = Modifier) {
     CommonButton(
+        modifier = modifier,
         icon = WrIcons.move,
         iconDescription = WrStrings.moveTo(),
         text = WrStrings.moveTo(),
@@ -31,8 +35,9 @@ fun MoveToButton(clickListener: () -> Unit) {
 }
 
 @Composable
-fun MoveToHomeButton(clickListener: () -> Unit) {
+fun MoveToHomeButton(clickListener: () -> Unit, modifier: Modifier = Modifier) {
     CommonButton(
+        modifier = modifier,
         icon = WrIcons.move,
         iconDescription = WrStrings.moveToHome(),
         text = WrStrings.moveToHome(),
@@ -41,8 +46,9 @@ fun MoveToHomeButton(clickListener: () -> Unit) {
 }
 
 @Composable
-fun FavoriteButton(isFavorite: StateFlow<Boolean>, clickListener: () -> Unit) {
+fun FavoriteButton(isFavorite: StateFlow<Boolean>, clickListener: () -> Unit, modifier: Modifier = Modifier) {
     CommonButton(
+        modifier = modifier,
         icon = WrIcons.favorites,
         iconDescription = WrStrings.favorite(),
         text = WrStrings.favorite(),

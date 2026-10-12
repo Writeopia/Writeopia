@@ -3,6 +3,7 @@ package io.writeopia.documents.graph.di
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.writeopia.auth.core.di.AuthCoreInjectionNeo
+import io.writeopia.core.folders.di.DocumentTagsInjector
 import io.writeopia.core.folders.di.FoldersInjector
 import io.writeopia.documents.graph.repository.GraphRepository
 import io.writeopia.documents.graph.ui.DocumentsGraphViewModel
@@ -16,7 +17,8 @@ class DocumentsGraphInjection(
     private fun provideGraphRepository() =
         GraphRepository(
             FoldersInjector.singleton().provideFoldersRepository(),
-            repositoryInjection.provideDocumentRepository()
+            repositoryInjection.provideDocumentRepository(),
+            DocumentTagsInjector.singleton().provideDocumentTagRepository(),
         )
 
     @Composable

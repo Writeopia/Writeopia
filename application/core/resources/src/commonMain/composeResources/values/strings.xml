@@ -317,6 +317,8 @@
   <string name="document_tags_dialog_title">Tags of this document</string>
   <string name="document_tags_dialog_empty">This document has no tags. Add one from the catalogue or create a new one.</string>
   <string name="document_tags_remove">Remove tag</string>
+  <string name="document_tags_more">+%1$d more</string>
+  <string name="graph_grouping_folders">Folders</string>
   <string name="document_tag_add_dialog_title">Add a tag</string>
   <string name="document_tag_add_existing">Pick a tag</string>
   <string name="document_tag_add_search">Search tags</string>

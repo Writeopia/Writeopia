@@ -3,6 +3,7 @@ package io.writeopia.documents.graph.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.auth.core.manager.AuthRepository
+import io.writeopia.documents.graph.GraphGrouping
 import io.writeopia.documents.graph.ItemData
 import io.writeopia.documents.graph.extensions.toGraph
 import io.writeopia.documents.graph.repository.GraphRepository
@@ -15,6 +16,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
@@ -31,6 +33,15 @@ class DocumentsGraphViewModel(
     private val _selectedOrigin = MutableStateFlow("root")
     private val _selectedNodes = MutableStateFlow(setOf<String>())
 
+    private val _grouping = MutableStateFlow(GraphGrouping.FOLDERS)
+
+    /** Whether the hubs are the folders or the tags of the workspace. */
+    val grouping: StateFlow<GraphGrouping> = _grouping.asStateFlow()
+
+    fun setGrouping(grouping: GraphGrouping) {
+        _grouping.value = grouping
+    }
+
     private var maxWidth: Float = 1000F
     private var maxHeight: Float = 1000F
 
@@ -41,14 +52,20 @@ class DocumentsGraphViewModel(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val graphState: StateFlow<Graph> by lazy {
-        _selectedOrigin.map { origin ->
-            val result =
-                authRepository.getWorkspace()
-                    ?.id
-                    ?.let { graphRepository.loadAllDocumentsAsAdjacencyList(it) }
-                    ?: emptyMap()
+        combine(_selectedOrigin, _grouping) { _, grouping -> grouping }.map { grouping ->
+            val workspaceId = authRepository.getWorkspace()?.id
 
-            val nodes = result.values.flatten()
+            val result: Map<String, List<ItemData>> = when {
+                workspaceId == null -> emptyMap()
+
+                grouping == GraphGrouping.TAGS ->
+                    graphRepository.loadDocumentsByTagsAsAdjacencyList(workspaceId).mapKeys { it.key.id }
+
+                else ->
+                    graphRepository.loadAllDocumentsAsAdjacencyList(workspaceId).mapKeys { it.key.id }.addRoot()
+            }
+
+            val nodes = result.values.flatten().distinctBy { it.id }
             val isSmall = nodes.size <= 12
 
             if (isSmall) {
@@ -57,7 +74,7 @@ class DocumentsGraphViewModel(
 
             result
         }.map { map ->
-            map.mapKeys { it.key.id }.addRoot().toGraph(maxWidth, maxHeight)
+            map.toGraph(maxWidth, maxHeight)
         }.flatMapLatest { graph ->
             flow {
                 while (currentCoroutineContext().isActive) {

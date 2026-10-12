@@ -11,11 +11,10 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -442,16 +441,16 @@ private fun PageOptions(
         Title("Actions")
         Spacer(modifier = Modifier.height(6.dp))
 
-        FavoriteButton(isFavorite = isFavoriteState, toggleFavorite)
+        FavoriteButton(isFavorite = isFavoriteState, toggleFavorite, modifier = Modifier.fillMaxWidth())
         Spacer(modifier = Modifier.height(4.dp))
 
-        LockButton(isEditableState, setEditable)
+        LockButton(isEditableState, setEditable, modifier = Modifier.fillMaxWidth())
         Spacer(modifier = Modifier.height(4.dp))
 
-        MoveToButton(moveButtonClick)
+        MoveToButton(moveButtonClick, modifier = Modifier.fillMaxWidth())
         Spacer(modifier = Modifier.height(4.dp))
 
-        MoveToHomeButton(moveToRoot)
+        MoveToHomeButton(moveToRoot, modifier = Modifier.fillMaxWidth())
         Spacer(modifier = Modifier.height(4.dp))
 
         TextButton(
@@ -467,7 +466,6 @@ private fun PageOptions(
  * The tags of the document as chips, each removable, with a button to see them with their
  * explanations and one to add a tag from the catalogue, by hand or by the AI.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun DocumentTagsSection(
     documentTagsState: StateFlow<List<DocumentTag>>,
@@ -487,17 +485,26 @@ private fun DocumentTagsSection(
             modifier = Modifier.padding(start = 2.dp, bottom = 6.dp)
         )
     } else {
-        FlowRow(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 4.dp),
+        // One scrollable line of chips, so a long list doesn't push the buttons down.
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(bottom = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            tags.forEach { tag ->
+            tags.take(VISIBLE_TAG_CHIPS).forEach { tag ->
                 DocumentTagChip(
                     tag = tag,
                     removable = isEditable,
                     onRemove = { onRemoveTagClick(tag.id) },
                 )
+            }
+
+            val hidden = tags.size - VISIBLE_TAG_CHIPS
+            if (hidden > 0) {
+                MoreTagsChip(count = hidden, onClick = onViewTagsClick)
             }
         }
     }
@@ -554,7 +561,24 @@ private fun DocumentTagChip(tag: DocumentTag, removable: Boolean, onRemove: () -
     }
 }
 
+/** A "+N more" chip for the tags past the first [VISIBLE_TAG_CHIPS]; it opens the tags dialog. */
+@Composable
+private fun MoreTagsChip(count: Int, onClick: () -> Unit) {
+    Text(
+        text = WrStrings.documentTagsMore(count),
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onBackground,
+        modifier = Modifier
+            .clip(MaterialTheme.shapes.small)
+            .border(1.dp, MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.small)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 8.dp, vertical = 3.dp)
+            .testTag("$SIDE_MENU_TAGS_TAG.more")
+    )
+}
+
 const val SIDE_MENU_TAGS_TAG = "SideMenuTags"
+private const val VISIBLE_TAG_CHIPS = 3
 
 @Composable
 private fun Title(text: String) {

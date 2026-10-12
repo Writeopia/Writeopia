@@ -56,6 +56,7 @@ kotlin {
                 implementation(project(":application:core:auth_core"))
                 implementation(project(":application:core:models"))
                 implementation(project(":application:core:documents"))
+                implementation(project(":application:core:resources"))
 
                 implementation(compose.runtime)
                 implementation(compose.foundation)
@@ -72,6 +73,13 @@ kotlin {
 
         val jvmMain by getting {
             dependencies {
+            }
+        }
+
+        val jvmTest by getting {
+            dependencies {
+                implementation(libs.kotlin.test)
+                implementation(libs.kotlinx.coroutines.test)
             }
         }
     }

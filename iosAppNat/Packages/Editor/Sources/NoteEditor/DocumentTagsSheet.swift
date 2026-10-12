@@ -13,7 +13,10 @@ struct DocumentTagsSummary: View {
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         } else {
-            Text(viewModel.documentTags.map(\.name).joined(separator: ", "))
+            let names = viewModel.documentTags.map(\.name)
+            let shown = names.prefix(3).joined(separator: ", ")
+            let hidden = names.count - 3
+            Text(hidden > 0 ? "\(shown), +\(hidden) more" : shown)
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .lineLimit(2)
