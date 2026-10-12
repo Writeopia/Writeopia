@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
@@ -70,6 +71,9 @@ fun Navigation(
     navController: NavHostController = rememberNavController(),
     notesMenuInjection: NotesMenuInjection,
     documentsGraphInjection: DocumentsGraphInjection? = null,
+    graphNavigateBack: (() -> Unit)? = null,
+    graphBottomBarPadding: Dp = 0.dp,
+    graphTouchControls: Boolean = false,
     sideMenuKmpInjector: SideMenuKmpInjector? = null,
     notesMenuWideLayout: Boolean = false,
     editorInjector: TextEditorInjector,
@@ -177,6 +181,9 @@ fun Navigation(
                     onOpenDocument = navController::navigateToNote,
                     onOpenFolder = { id -> navController.navigateToNotes(NotesNavigation.Folder(id)) },
                     onOpenTag = { id -> navController.navigateToNotes(NotesNavigation.Tag(id)) },
+                    navigateBack = graphNavigateBack,
+                    bottomBarPadding = graphBottomBarPadding,
+                    touchControls = graphTouchControls,
                 )
             }
 

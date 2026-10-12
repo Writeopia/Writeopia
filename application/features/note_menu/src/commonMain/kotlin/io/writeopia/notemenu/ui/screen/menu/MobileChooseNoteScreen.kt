@@ -220,7 +220,13 @@ internal fun MobileChooseNoteScreen(
                     onEditFolder = { openCurrentFolderDialog(CurrentFolderDialog.EDIT) },
                     onMoveFolder = { openCurrentFolderDialog(CurrentFolderDialog.MOVE) },
                     onDeleteFolder = { openCurrentFolderDialog(CurrentFolderDialog.DELETE) },
-                    onOpenGraph = navigateToForceGraph,
+                    // Closes the sheet for good: it would otherwise still be open on return.
+                    onOpenGraph = navigateToForceGraph?.let { navigate ->
+                        {
+                            chooseNoteViewModel.cancelEditMenu()
+                            navigate()
+                        }
+                    },
                 )
 
                 currentFolder?.let { folder ->

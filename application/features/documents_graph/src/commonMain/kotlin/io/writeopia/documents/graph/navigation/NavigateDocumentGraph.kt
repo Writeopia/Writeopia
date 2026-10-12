@@ -2,6 +2,7 @@ package io.writeopia.documents.graph.navigation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -10,7 +11,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -25,7 +31,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.documents.graph.GraphGrouping
 import io.writeopia.resources.WrStrings
 import androidx.navigation.NavController
@@ -49,6 +57,10 @@ fun NavGraphBuilder.documentsGraphNavigation(
     onOpenDocument: (id: String, title: String) -> Unit = { _, _ -> },
     onOpenFolder: (id: String) -> Unit = {},
     onOpenTag: (id: String) -> Unit = {},
+    navigateBack: (() -> Unit)? = null,
+    bottomBarPadding: Dp = 0.dp,
+    /** Finger-sized zoom buttons; the compact ones suit a mouse pointer. */
+    touchControls: Boolean = false,
 ) {
     composable(
         route = graphForce(),
@@ -72,29 +84,46 @@ fun NavGraphBuilder.documentsGraphNavigation(
                 viewState = viewState,
             )
 
-            ZoomButtons(
-                viewState = viewState,
-                modifier = Modifier.align(Alignment.BottomEnd).padding(12.dp)
-            )
+            // The controls float over the graph, which fills the whole window. They stay out of
+            // the status bar and display cutouts, and above the mobile bottom navigation bar.
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .windowInsetsPadding(WindowInsets.safeDrawing)
+                    .padding(bottom = bottomBarPadding)
+            ) {
+                if (navigateBack != null) {
+                    BackButton(
+                        onClick = navigateBack,
+                        modifier = Modifier.align(Alignment.TopStart).padding(12.dp)
+                    )
+                }
 
-            val selectedItem by viewModel.selectedItem.collectAsState()
-            selectedItem?.let { details ->
-                GraphItemCard(
-                    details = details,
-                    onOpenDocument = onOpenDocument,
-                    onOpenFolder = onOpenFolder,
-                    onOpenTag = onOpenTag,
-                    onClose = viewModel::closeDetails,
-                    modifier = Modifier.align(Alignment.BottomStart).padding(12.dp)
+                ZoomButtons(
+                    viewState = viewState,
+                    touchControls = touchControls,
+                    modifier = Modifier.align(Alignment.BottomEnd).padding(12.dp)
+                )
+
+                val selectedItem by viewModel.selectedItem.collectAsState()
+                selectedItem?.let { details ->
+                    GraphItemCard(
+                        details = details,
+                        onOpenDocument = onOpenDocument,
+                        onOpenFolder = onOpenFolder,
+                        onOpenTag = onOpenTag,
+                        onClose = viewModel::closeDetails,
+                        modifier = Modifier.align(Alignment.BottomStart).padding(12.dp)
+                    )
+                }
+
+                val grouping by viewModel.grouping.collectAsState()
+                GroupingSelector(
+                    grouping = grouping,
+                    onGroupingChange = viewModel::setGrouping,
+                    modifier = Modifier.align(Alignment.TopEnd).padding(12.dp)
                 )
             }
-
-            val grouping by viewModel.grouping.collectAsState()
-            GroupingSelector(
-                grouping = grouping,
-                onGroupingChange = viewModel::setGrouping,
-                modifier = Modifier.align(Alignment.TopEnd).padding(12.dp)
-            )
         }
     }
 }
@@ -135,34 +164,68 @@ private fun GroupingSelector(
     }
 }
 
+/** The way back to the documents menu on mobile, where there is no side menu. */
+@Composable
+private fun BackButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Icon(
+        imageVector = WrIcons.backArrowMobile,
+        contentDescription = WrStrings.close(),
+        tint = MaterialTheme.colorScheme.onSurface,
+        modifier = modifier
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            .clickable(onClick = onClick)
+            .padding(6.dp)
+            .testTag(GRAPH_BACK_TAG)
+    )
+}
+
 /** Zoom in, zoom out and back to 1:1. The only way to zoom on a desktop without a mouse wheel. */
 @Composable
-private fun ZoomButtons(viewState: GraphViewState, modifier: Modifier = Modifier) {
+private fun ZoomButtons(
+    viewState: GraphViewState,
+    touchControls: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val size = if (touchControls) 44.dp else 32.dp
+    val spacing = if (touchControls) 8.dp else 4.dp
+
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        ZoomButton(symbol = "+", testTag = "$GRAPH_ZOOM_TAG.in", onClick = viewState::zoomIn)
-        Spacer(modifier = Modifier.height(4.dp))
-        ZoomButton(symbol = "−", testTag = "$GRAPH_ZOOM_TAG.out", onClick = viewState::zoomOut)
-        Spacer(modifier = Modifier.height(4.dp))
-        ZoomButton(symbol = "1:1", testTag = "$GRAPH_ZOOM_TAG.reset", onClick = viewState::reset)
+        ZoomButton(symbol = "+", size = size, testTag = "$GRAPH_ZOOM_TAG.in", onClick = viewState::zoomIn)
+        Spacer(modifier = Modifier.height(spacing))
+        ZoomButton(symbol = "−", size = size, testTag = "$GRAPH_ZOOM_TAG.out", onClick = viewState::zoomOut)
+        Spacer(modifier = Modifier.height(spacing))
+        ZoomButton(symbol = "1:1", size = size, testTag = "$GRAPH_ZOOM_TAG.reset", onClick = viewState::reset)
     }
 }
 
 @Composable
-private fun ZoomButton(symbol: String, testTag: String, onClick: () -> Unit) {
-    Text(
-        text = symbol,
-        style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.onSurface,
+private fun ZoomButton(symbol: String, size: Dp, testTag: String, onClick: () -> Unit) {
+    val touchSized = size >= 44.dp
+
+    Box(
+        contentAlignment = Alignment.Center,
         modifier = Modifier
-            .clip(RoundedCornerShape(6.dp))
+            .clip(RoundedCornerShape(if (touchSized) 10.dp else 6.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             .clickable(onClick = onClick)
-            .width(32.dp)
-            .padding(vertical = 5.dp)
-            .testTag(testTag),
-        textAlign = TextAlign.Center
-    )
+            .width(size)
+            .height(if (touchSized) size else 22.dp)
+            .testTag(testTag)
+    ) {
+        Text(
+            text = symbol,
+            style = if (touchSized) {
+                MaterialTheme.typography.titleMedium
+            } else {
+                MaterialTheme.typography.labelMedium
+            },
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center
+        )
+    }
 }
 
 const val GRAPH_GROUPING_TAG = "GraphGrouping"
 const val GRAPH_ZOOM_TAG = "GraphZoom"
+const val GRAPH_BACK_TAG = "GraphBack"

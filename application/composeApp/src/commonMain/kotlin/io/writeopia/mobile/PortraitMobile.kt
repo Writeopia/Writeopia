@@ -114,6 +114,11 @@ fun PortraitMobile(
                 editorInjector = editorInjector,
                 drawingInjection = drawingInjection,
                 documentsGraphInjection = documentsGraphInjection,
+                // There is no side menu over the graph on mobile: the arrow is the way back, and
+                // its controls must sit above the overlaid bottom navigation bar.
+                graphNavigateBack = navController::navigateUp,
+                graphBottomBarPadding = if (scrollAwareState.isVisible && !isWideScreen) 80.dp else 0.dp,
+                graphTouchControls = true,
                 selectedColorTheme = colorThemeState,
                 selectedAccentColor = accentColorState,
                 selectColorTheme = uiConfigViewModel::changeColorTheme,
