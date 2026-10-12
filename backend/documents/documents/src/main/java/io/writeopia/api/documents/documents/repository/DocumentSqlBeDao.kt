@@ -178,20 +178,38 @@ class DocumentSqlBeDao(
             } ?: emptyList()
     }
 
-    fun insertFolder(folder: Folder) {
-        foldersQueries?.insert(
-            id = folder.id,
-            parent_id = folder.parentId,
-            workspace_id = folder.workspaceId,
-            title = folder.title,
-            created_at = folder.lastUpdatedAt.toEpochMilliseconds().toInt(),
-            last_updated_at = folder.lastUpdatedAt.toEpochMilliseconds(),
-            last_synced_at = folder.lastSyncedAt?.toEpochMilliseconds(),
-            favorite = folder.favorite,
-            icon = folder.icon?.label,
-            icon_tint = folder.icon?.tint
-        )
+    /**
+     * Upserts [folder] unless a tombstone exists for its id, in which case nothing is written.
+     *
+     * @return true when the folder was written, false when it was dropped because it was
+     * deleted earlier (a stale copy re-sent by another device must not resurrect it).
+     */
+    fun insertFolder(folder: Folder): Boolean {
+        val queries = foldersQueries ?: return false
+
+        return queries.transactionWithResult {
+            if (isFolderTombstoned(folder.id)) {
+                false
+            } else {
+                queries.insert(
+                    id = folder.id,
+                    parent_id = folder.parentId,
+                    workspace_id = folder.workspaceId,
+                    title = folder.title,
+                    created_at = folder.lastUpdatedAt.toEpochMilliseconds().toInt(),
+                    last_updated_at = folder.lastUpdatedAt.toEpochMilliseconds(),
+                    last_synced_at = folder.lastSyncedAt?.toEpochMilliseconds(),
+                    favorite = folder.favorite,
+                    icon = folder.icon?.label,
+                    icon_tint = folder.icon?.tint
+                )
+                true
+            }
+        }
     }
+
+    fun isFolderTombstoned(folderId: String): Boolean =
+        (foldersQueries?.isTombstoned(folderId)?.executeAsOneOrNull() ?: 0L) > 0L
 
     fun loadDocumentById(id: String, workspaceId: String): Document? =
         documentQueries?.selectById(id, workspaceId)
@@ -938,8 +956,15 @@ class DocumentSqlBeDao(
         )
     }
 
+    /** Soft delete: leaves a tombstone so the folder cannot be recreated by a stale client. */
     fun deleteFolder(folderId: String, workspaceId: String) {
-        foldersQueries?.deleteFolder(folderId, workspaceId)
+        val now = Clock.System.now().toEpochMilliseconds()
+        foldersQueries?.deleteFolder(
+            deleted_at = now,
+            last_updated_at = now,
+            id = folderId,
+            workspace_id = workspaceId
+        )
     }
 
     fun moveFolderToFolder(folderId: String, parentId: String) {
@@ -1196,5 +1221,6 @@ fun Folder_entity.toModel(count: Long) =
             Instant.fromEpochMilliseconds(last_synced_at!!)
         } else {
             null
-        }
+        },
+        deleted = deleted
     )

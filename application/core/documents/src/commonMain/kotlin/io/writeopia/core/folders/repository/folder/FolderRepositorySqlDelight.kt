@@ -78,7 +78,7 @@ class FolderRepositorySqlDelight(
     }
 
     override suspend fun localOutDatedFolders(workspaceId: String): List<Folder> =
-        getFoldersForWorkspace(workspaceId)
+        folderDao.selectOutdatedByWorkspaceId(workspaceId)
 
     override suspend fun deleteFolderById(folderId: String, workspaceId: String) {
         folderDao.deleteFolder(folderId, workspaceId)

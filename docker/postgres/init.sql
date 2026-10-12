@@ -94,7 +94,9 @@ CREATE TABLE folder_entity (
   last_synced_at BIGINT,
   favorite BOOLEAN NOT NULL,
   icon TEXT,
-  icon_tint INTEGER
+  icon_tint INTEGER,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE,
+  deleted_at BIGINT
 );
 
 CREATE TABLE workspace_to_user (

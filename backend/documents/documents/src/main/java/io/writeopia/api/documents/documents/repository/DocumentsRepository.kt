@@ -26,10 +26,18 @@ fun WriteopiaDbBackend.saveDocument(vararg documents: Document) {
     documents.forEach(dao::insertDocumentWithContent)
 }
 
-suspend fun WriteopiaDbBackend.saveFolder(vararg folders: Folder) {
+/**
+ * Upserts [folders], skipping any whose id is tombstoned (deleted earlier).
+ *
+ * @return the ids that were dropped because they are tombstoned.
+ */
+suspend fun WriteopiaDbBackend.saveFolder(vararg folders: Folder): List<String> {
     val dao = getDocumentDaoFn()
-    folders.forEach(dao::insertFolder)
+    return folders.filterNot { folder -> dao.insertFolder(folder) }.map { folder -> folder.id }
 }
+
+fun WriteopiaDbBackend.isFolderTombstoned(folderId: String): Boolean =
+    getDocumentDaoFn().isFolderTombstoned(folderId)
 
 suspend fun WriteopiaDbBackend.documentsDiffByFolder(
     folderId: String,

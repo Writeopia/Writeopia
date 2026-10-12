@@ -842,6 +842,60 @@ class DocumentationIntegrationTests {
     }
 
     @Test
+    fun `a deleted folder cannot be recreated by a client re-sending it`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val workspaceId = Random.nextInt().toString()
+
+        val folder = FolderApi(
+            id = "tombstoned_${Random.nextInt()}",
+            title = "Deleted elsewhere",
+            parentId = "root",
+            createdAt = Clock.System.now(),
+            lastUpdatedAt = Clock.System.now(),
+            workspaceId = workspaceId,
+            itemCount = 0L,
+        )
+
+        val createResponse = client.post("/api/docs/workspace/folder") {
+            contentType(ContentType.Application.Json)
+            setBody(SendFoldersRequest(listOf(folder), workspaceId))
+        }
+        assertEquals(HttpStatusCode.OK, createResponse.status)
+
+        val deleteResponse = client.delete("/api/docs/workspace/$workspaceId/folder/${folder.id}")
+        assertEquals(HttpStatusCode.OK, deleteResponse.status)
+
+        // A device that still holds the folder re-sends it, as a stale copy with a newer timestamp.
+        val resendResponse = client.post("/api/docs/workspace/folder") {
+            contentType(ContentType.Application.Json)
+            setBody(SendFoldersRequest(listOf(folder.copy(lastUpdatedAt = Clock.System.now())), workspaceId))
+        }
+        assertEquals(HttpStatusCode.OK, resendResponse.status)
+
+        // The tombstone wins: the folder stays deleted everywhere it could show up.
+        val getResponse = client.get("/api/docs/workspace/$workspaceId/folder/${folder.id}")
+        assertEquals(HttpStatusCode.NotFound, getResponse.status)
+
+        val rootContents = client.get("/api/docs/workspace/$workspaceId/folder/root/contents")
+            .body<FolderContentResponse>()
+        assertFalse(rootContents.folders.any { it.id == folder.id })
+
+        val workspaceDiff = client.post("/api/docs/workspace/diff") {
+            contentType(ContentType.Application.Json)
+            setBody(WorkspaceDiffRequest(workspaceId, 0L))
+        }.body<WorkspaceDiffResponse>()
+        assertFalse(workspaceDiff.folders.any { it.id == folder.id })
+
+        // Deleting it again is a no-op 404, not a crash.
+        val secondDelete = client.delete("/api/docs/workspace/$workspaceId/folder/${folder.id}")
+        assertEquals(HttpStatusCode.NotFound, secondDelete.status)
+    }
+
+    @Test
     fun `it should recursively delete nested folders and documents when deleting a parent folder`() =
         testApplication {
             application {

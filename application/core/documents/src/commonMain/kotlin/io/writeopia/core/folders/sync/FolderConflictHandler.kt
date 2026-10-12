@@ -4,6 +4,7 @@ package io.writeopia.core.folders.sync
 
 import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.sdk.models.document.Folder
+import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 class FolderConflictHandler(
@@ -24,6 +25,7 @@ class FolderConflictHandler(
     ): List<Folder> {
         val localFoldersById = localFolders.associateBy { it.id }
         val foldersToSend = mutableListOf<Folder>()
+        val now = Clock.System.now()
 
         // Process external folders - create or update locally
         externalFolders.forEach { externalFolder ->
@@ -37,9 +39,14 @@ class FolderConflictHandler(
                 return@forEach
             }
 
+            // A folder taken from the backend is in sync by definition, so stamp it as synced.
+            // The API payload carries no lastSyncedAt; leaving it null would make the folder
+            // count as outdated and be re-sent on every sync.
+            val syncedExternal = externalFolder.markSynced(now)
+
             if (localFolder == null) {
-                // Folder doesn't exist locally - create it with server's lastSyncedAt
-                folderRepository.createFolder(externalFolder)
+                // Folder doesn't exist locally - create it
+                folderRepository.createFolder(syncedExternal)
             } else {
                 // Folder exists both locally and externally - resolve conflict (most recent wins)
                 val winner = if (localFolder.lastUpdatedAt >= externalFolder.lastUpdatedAt) {
@@ -47,8 +54,8 @@ class FolderConflictHandler(
                     // Keep local folder as-is, don't update lastSyncedAt with client time
                     localFolder
                 } else {
-                    // External folder wins - keep its lastSyncedAt from server
-                    externalFolder
+                    // External folder wins
+                    syncedExternal
                 }
                 folderRepository.updateFolder(winner)
             }
@@ -62,4 +69,11 @@ class FolderConflictHandler(
 
         return foldersToSend
     }
+
+    /**
+     * lastSyncedAt is never earlier than lastUpdatedAt, so a server clock ahead of this
+     * device's cannot make the folder look outdated.
+     */
+    private fun Folder.markSynced(now: kotlin.time.Instant): Folder =
+        copy(lastSyncedAt = maxOf(now, lastUpdatedAt))
 }

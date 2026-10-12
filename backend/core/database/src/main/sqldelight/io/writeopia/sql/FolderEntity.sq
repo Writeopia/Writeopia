@@ -1,3 +1,8 @@
+-- Folders are never hard deleted by user action. Deleting one leaves a tombstone
+-- (deleted = TRUE, deleted_at set) so that a device which still holds a stale copy
+-- cannot recreate it on its next sync: DocumentSqlBeDao.insertFolder checks
+-- isTombstoned before upserting. Only the account-deletion saga removes rows
+-- (deleteByWorkspace).
 CREATE TABLE folder_entity (
   id TEXT PRIMARY KEY,
   parent_id TEXT NOT NULL,
@@ -8,55 +13,70 @@ CREATE TABLE folder_entity (
   last_synced_at BIGINT,
   favorite BOOLEAN NOT NULL,
   icon TEXT,
-  icon_tint INTEGER
+  icon_tint INTEGER,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE,
+  deleted_at BIGINT
 );
 
 query:
 SELECT *
 FROM folder_entity
-WHERE title LIKE '%' || ? || '%'
+WHERE title LIKE '%' || ? || '%' AND deleted = FALSE
 ORDER BY last_updated_at
 LIMIT 10;
 
 getLastUpdated:
 SELECT *
 FROM folder_entity
+WHERE deleted = FALSE
 ORDER BY last_updated_at;
 
 selectAllFolders:
 SELECT *
-FROM folder_entity;
+FROM folder_entity
+WHERE deleted = FALSE;
 
 selectByWorkspace:
 SELECT *
 FROM folder_entity
-WHERE folder_entity.workspace_id = ?;
+WHERE folder_entity.workspace_id = ? AND deleted = FALSE;
 
 selectByWorkspaceAfterTime:
 SELECT *
 FROM folder_entity
-WHERE folder_entity.workspace_id = ? AND last_updated_at > ?;
+WHERE folder_entity.workspace_id = ? AND last_updated_at > ? AND deleted = FALSE;
 
 selectChildrenFolder:
 SELECT *
 FROM folder_entity
-WHERE folder_entity.parent_id = ?;
+WHERE folder_entity.parent_id = ? AND deleted = FALSE;
 
 selectFolderById:
 SELECT *
 FROM folder_entity
-WHERE folder_entity.id = ? AND workspace_id = ?;
+WHERE folder_entity.id = ? AND workspace_id = ? AND deleted = FALSE;
+
+-- Tombstone lookup. Checked before accepting a folder from a client so a stale copy of
+-- a deleted folder is dropped instead of resurrecting it.
+isTombstoned:
+SELECT COUNT(id)
+FROM folder_entity
+WHERE id = ? AND deleted = TRUE;
 
 countAllFolderItems:
 SELECT parent_id, COUNT(id)
 FROM folder_entity
+WHERE deleted = FALSE
 GROUP BY parent_id;
 
 countAllDocumentItems:
 SELECT parent_document_id, COUNT(id)
 FROM document_entity
+WHERE deleted = FALSE
 GROUP BY parent_document_id;
 
+-- Upsert. Never call this on a tombstoned id (see isTombstoned); SQLDelight's PostgreSQL
+-- parser does not accept a WHERE clause on DO UPDATE, so the guard lives in Kotlin.
 insert:
 INSERT INTO folder_entity(id, parent_id, workspace_id, title, created_at, last_updated_at, favorite, icon, icon_tint, last_synced_at)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -65,14 +85,16 @@ UPDATE SET id=excluded.id, parent_id=excluded.parent_id, workspace_id=excluded.w
 created_at=excluded.created_at, last_updated_at=excluded.last_updated_at, favorite=excluded.favorite,
 icon=excluded.icon, icon_tint=excluded.icon_tint, last_synced_at=excluded.last_synced_at;
 
--- update:
--- UPDATE(title, parent_id, update_at): SET title=title, parent_id=parent_id, update_at=update_at;
-
+-- Soft delete: leaves a tombstone.
 deleteFolder:
-DELETE FROM folder_entity WHERE id = ? AND workspace_id = ?;
+UPDATE folder_entity
+SET deleted = TRUE, deleted_at = ?, last_updated_at = ?
+WHERE id = ? AND workspace_id = ? AND deleted = FALSE;
 
 deleteFolderByParent:
-DELETE FROM folder_entity WHERE parent_id = ? AND workspace_id = ?;
+UPDATE folder_entity
+SET deleted = TRUE, deleted_at = ?, last_updated_at = ?
+WHERE parent_id = ? AND workspace_id = ? AND deleted = FALSE;
 
 -- Bulk delete, every folder in the workspace. Used only by the account-deletion saga
 -- when a whole workspace is being torn down.
@@ -80,10 +102,10 @@ deleteByWorkspace:
 DELETE FROM folder_entity WHERE workspace_id = ?;
 
 moveToFolder:
-UPDATE folder_entity SET parent_id = ?, last_updated_at = ? WHERE id = ?;
+UPDATE folder_entity SET parent_id = ?, last_updated_at = ? WHERE id = ? AND deleted = FALSE;
 
 setLastUpdate:
-UPDATE folder_entity SET last_updated_at = ? WHERE id = ?;
+UPDATE folder_entity SET last_updated_at = ? WHERE id = ? AND deleted = FALSE;
 
 favoriteById:
-UPDATE folder_entity SET favorite = ? WHERE id = ?;
+UPDATE folder_entity SET favorite = ? WHERE id = ? AND deleted = FALSE;

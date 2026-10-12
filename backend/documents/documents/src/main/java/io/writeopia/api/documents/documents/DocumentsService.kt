@@ -38,6 +38,7 @@ import io.writeopia.api.documents.documents.repository.upsertStoryStep
 import io.writeopia.api.documents.search.SearchDocument
 import io.writeopia.api.genai.service.GenAiService
 import io.writeopia.connection.ResultData
+import io.writeopia.connection.logger
 import io.writeopia.connection.Urls
 import io.writeopia.connection.wrWebClient
 import io.writeopia.sdk.models.document.Document
@@ -73,11 +74,20 @@ object DocumentsService {
         return if (useAi) sendToAiHub(documents, workspaceId) else true
     }
 
+    /**
+     * Stores folders sent by a client. Folders deleted earlier (tombstoned) are dropped
+     * rather than recreated: a device that still holds a stale copy must not bring a
+     * folder back for everyone else.
+     */
     suspend fun receiveFolders(
         folders: List<Folder>,
         writeopiaDb: WriteopiaDbBackend,
     ): Boolean {
-        folders.forEach { folder -> writeopiaDb.saveFolder(folder) }
+        val tombstoned = writeopiaDb.saveFolder(*folders.toTypedArray())
+
+        if (tombstoned.isNotEmpty()) {
+            logger.info("Ignored ${tombstoned.size} tombstoned folder(s) sent by client: $tombstoned")
+        }
 
         return true
     }

@@ -6,6 +6,7 @@ data class FolderCommonEntity(
     val title: String,
     val createdAt: Long,
     val lastUpdatedAt: Long,
+    val lastSyncedAt: Long? = null,
     val workspaceId: String,
     val favorite: Boolean = false,
     val icon: String,
