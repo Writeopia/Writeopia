@@ -34,8 +34,53 @@ class FolderConflictHandlerTest {
         val created = slot<Folder>()
         coVerify { folderRepository.createFolder(capture(created)) }
         assertEquals("external", created.captured.id)
+        assertNotNull(created.captured.lastSyncedAt)
+        assertTrue(toSend.isEmpty())
+    }
+
+    @Test
+    fun `the sync watermark is the device clock even when the backend timestamp is ahead`() = runBlocking {
+        val folderRepository = mockk<FolderRepository>(relaxed = true)
+        coEvery { folderRepository.getFolderById(any()) } returns null
+        val handler = FolderConflictHandler(folderRepository)
+
+        val before = Clock.System.now()
+        val fromTheFuture = Folder.fromName("Ahead", workspaceId).copy(
+            id = "ahead",
+            lastUpdatedAt = before + 2.hours
+        )
+
+        handler.handleConflict(localFolders = emptyList(), externalFolders = listOf(fromTheFuture))
+
+        val created = slot<Folder>()
+        coVerify { folderRepository.createFolder(capture(created)) }
         val lastSyncedAt = assertNotNull(created.captured.lastSyncedAt)
-        assertTrue(lastSyncedAt >= created.captured.lastUpdatedAt)
+        assertTrue(lastSyncedAt >= before)
+        assertTrue(lastSyncedAt < fromTheFuture.lastUpdatedAt)
+        assertEquals(fromTheFuture.lastUpdatedAt, created.captured.lastUpdatedAt)
+    }
+
+    @Test
+    fun `an up to date local copy is replaced by the backend copy and not re-sent`() = runBlocking {
+        val folderRepository = mockk<FolderRepository>(relaxed = true)
+        val now = Clock.System.now()
+        val existing = Folder.fromName("Same", workspaceId).copy(
+            id = "same",
+            lastUpdatedAt = now - 1.hours,
+            lastSyncedAt = now - 1.hours
+        )
+        val external = existing.copy(title = "Renamed elsewhere", lastUpdatedAt = now - 1.hours, lastSyncedAt = null)
+        coEvery { folderRepository.getFolderById("same") } returns existing
+        val handler = FolderConflictHandler(folderRepository)
+
+        // The local copy is not outdated, so it is not among the local folders handed in.
+        val toSend = handler.handleConflict(localFolders = emptyList(), externalFolders = listOf(external))
+
+        val updated = slot<Folder>()
+        coVerify { folderRepository.updateFolder(capture(updated)) }
+        coVerify(exactly = 0) { folderRepository.createFolder(any()) }
+        assertEquals("Renamed elsewhere", updated.captured.title)
+        assertNotNull(updated.captured.lastSyncedAt)
         assertTrue(toSend.isEmpty())
     }
 

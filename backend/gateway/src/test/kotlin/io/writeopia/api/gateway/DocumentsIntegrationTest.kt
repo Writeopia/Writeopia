@@ -896,6 +896,55 @@ class DocumentationIntegrationTests {
     }
 
     @Test
+    fun `a folder cannot be created inside a deleted folder`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val workspaceId = Random.nextInt().toString()
+
+        val parent = FolderApi(
+            id = "deletedParent_${Random.nextInt()}",
+            title = "Deleted parent",
+            parentId = "root",
+            createdAt = Clock.System.now(),
+            lastUpdatedAt = Clock.System.now(),
+            workspaceId = workspaceId,
+            itemCount = 0L,
+        )
+
+        val createResponse = client.post("/api/docs/workspace/folder") {
+            contentType(ContentType.Application.Json)
+            setBody(SendFoldersRequest(listOf(parent), workspaceId))
+        }
+        assertEquals(HttpStatusCode.OK, createResponse.status)
+
+        val deleteResponse = client.delete("/api/docs/workspace/$workspaceId/folder/${parent.id}")
+        assertEquals(HttpStatusCode.OK, deleteResponse.status)
+
+        // A device that created a child offline, before learning the parent was deleted, sends it.
+        val orphan = parent.copy(id = "orphan_${Random.nextInt()}", title = "Made offline", parentId = parent.id)
+        val sendOrphan = client.post("/api/docs/workspace/folder") {
+            contentType(ContentType.Application.Json)
+            setBody(SendFoldersRequest(listOf(orphan), workspaceId))
+        }
+        assertEquals(HttpStatusCode.OK, sendOrphan.status)
+
+        val getOrphan = client.get("/api/docs/workspace/$workspaceId/folder/${orphan.id}")
+        assertEquals(HttpStatusCode.NotFound, getOrphan.status)
+
+        // A sibling under a live parent is still accepted as usual.
+        val sibling = parent.copy(id = "sibling_${Random.nextInt()}", title = "Under root")
+        client.post("/api/docs/workspace/folder") {
+            contentType(ContentType.Application.Json)
+            setBody(SendFoldersRequest(listOf(sibling), workspaceId))
+        }
+        val getSibling = client.get("/api/docs/workspace/$workspaceId/folder/${sibling.id}")
+        assertEquals(HttpStatusCode.OK, getSibling.status)
+    }
+
+    @Test
     fun `it should recursively delete nested folders and documents when deleting a parent folder`() =
         testApplication {
             application {

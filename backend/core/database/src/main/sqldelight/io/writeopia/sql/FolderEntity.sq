@@ -1,8 +1,12 @@
 -- Folders are never hard deleted by user action. Deleting one leaves a tombstone
 -- (deleted = TRUE, deleted_at set) so that a device which still holds a stale copy
 -- cannot recreate it on its next sync: DocumentSqlBeDao.insertFolder checks
--- isTombstoned before upserting. Only the account-deletion saga removes rows
--- (deleteByWorkspace).
+-- isTombstoned for the folder and for its parent before upserting. Only the
+-- account-deletion saga removes rows (deleteByWorkspace).
+--
+-- There is no migration framework for the backend: Schema.create() builds this on
+-- empty (local/test) databases, and production gets the equivalent hand-run SQL from
+-- WriteopiaScripts2/db-migrations/folder_tombstone/.
 CREATE TABLE folder_entity (
   id TEXT PRIMARY KEY,
   parent_id TEXT NOT NULL,

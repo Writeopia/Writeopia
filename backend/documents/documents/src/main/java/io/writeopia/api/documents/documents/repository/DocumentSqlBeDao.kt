@@ -179,16 +179,21 @@ class DocumentSqlBeDao(
     }
 
     /**
-     * Upserts [folder] unless a tombstone exists for its id, in which case nothing is written.
+     * Upserts [folder] unless a tombstone exists for its id or for its parent, in which case
+     * nothing is written.
      *
-     * @return true when the folder was written, false when it was dropped because it was
-     * deleted earlier (a stale copy re-sent by another device must not resurrect it).
+     * @return true when the folder was written, false when it was dropped because it, or the
+     * folder it sits in, was deleted earlier (a stale copy re-sent by another device must not
+     * resurrect a folder, nor leave an orphan inside a deleted one).
      */
     fun insertFolder(folder: Folder): Boolean {
         val queries = foldersQueries ?: return false
 
         return queries.transactionWithResult {
-            if (isFolderTombstoned(folder.id)) {
+            val parentTombstoned =
+                folder.parentId != Folder.ROOT_PATH && isFolderTombstoned(folder.parentId)
+
+            if (parentTombstoned || isFolderTombstoned(folder.id)) {
                 false
             } else {
                 queries.insert(
