@@ -32,14 +32,15 @@ class PgVectorEmbeddingStore(
 
     override fun documentMeta(documentId: String): DocumentEmbeddingMeta? =
         query(
-            "SELECT document_id, model, embedded_at FROM document_embedding WHERE document_id = ?",
+            "SELECT document_id, model, embedded_at, checked_at FROM document_embedding WHERE document_id = ?",
             1,
             { bindString(0, documentId) }
         ) { cursor ->
             DocumentEmbeddingMeta(
                 documentId = cursor.getString(0)!!,
                 model = cursor.getString(1)!!,
-                embeddedAt = cursor.getLong(2)!!
+                embeddedAt = cursor.getLong(2)!!,
+                checkedAt = cursor.getLong(3)!!
             )
         }.firstOrNull()
 
@@ -50,7 +51,7 @@ class PgVectorEmbeddingStore(
         if (ids.isEmpty()) return emptyList()
 
         return query(
-            "SELECT document_id, workspace_id, model, embedding::text, source_title, source_text, embedded_at " +
+            "SELECT document_id, workspace_id, model, embedding::text, source_title, source_text, embedded_at, checked_at " +
                 "FROM document_embedding WHERE document_id IN ${placeholders(ids.size)}",
             ids.size,
             { ids.forEachIndexed { index, id -> bindString(index, id) } }
@@ -62,7 +63,8 @@ class PgVectorEmbeddingStore(
                 vector = EmbeddingVectors.fromPgText(cursor.getString(3)!!),
                 sourceTitle = cursor.getString(4)!!,
                 sourceText = cursor.getString(5)!!,
-                embeddedAt = cursor.getLong(6)!!
+                embeddedAt = cursor.getLong(6)!!,
+                checkedAt = cursor.getLong(7)!!
             )
         }
     }
@@ -72,13 +74,13 @@ class PgVectorEmbeddingStore(
         driver.execute(
             null,
             "INSERT INTO document_embedding " +
-                "(document_id, workspace_id, model, embedding, source_title, source_text, embedded_at) " +
-                "VALUES (?, ?, ?, ?::vector, ?, ?, ?) " +
+                "(document_id, workspace_id, model, embedding, source_title, source_text, embedded_at, checked_at) " +
+                "VALUES (?, ?, ?, ?::vector, ?, ?, ?, ?) " +
                 "ON CONFLICT (document_id) DO UPDATE SET " +
                 "workspace_id = EXCLUDED.workspace_id, model = EXCLUDED.model, embedding = EXCLUDED.embedding, " +
                 "source_title = EXCLUDED.source_title, source_text = EXCLUDED.source_text, " +
-                "embedded_at = EXCLUDED.embedded_at",
-            7
+                "embedded_at = EXCLUDED.embedded_at, checked_at = EXCLUDED.checked_at",
+            8
         ) {
             bindString(0, embedding.documentId)
             bindString(1, embedding.workspaceId)
@@ -87,6 +89,14 @@ class PgVectorEmbeddingStore(
             bindString(4, embedding.sourceTitle)
             bindString(5, embedding.sourceText)
             bindLong(6, embedding.embeddedAt)
+            bindLong(7, embedding.checkedAt)
+        }.value
+    }
+
+    override fun markDocumentChecked(documentId: String, checkedAt: Long) {
+        driver.execute(null, "UPDATE document_embedding SET checked_at = ? WHERE document_id = ?", 2) {
+            bindLong(0, checkedAt)
+            bindString(1, documentId)
         }.value
     }
 
@@ -237,7 +247,8 @@ class PgVectorEmbeddingStore(
               embedding     vector($dimension) NOT NULL,
               source_title  TEXT NOT NULL,
               source_text   TEXT NOT NULL,
-              embedded_at   BIGINT NOT NULL
+              embedded_at   BIGINT NOT NULL,
+              checked_at    BIGINT NOT NULL
             )
             """.trimIndent(),
             "CREATE INDEX IF NOT EXISTS idx_document_embedding_workspace_id ON document_embedding(workspace_id)",

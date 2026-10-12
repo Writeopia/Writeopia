@@ -41,17 +41,25 @@ class DocumentEmbeddingService(
     private val now: () -> Long = { Clock.System.now().toEpochMilliseconds() },
 ) {
 
-    /** Embeds the document if its text changed enough, then refreshes the folders above it. */
+    /**
+     * Embeds the document if its text changed enough, then refreshes the folders above it.
+     *
+     * The syncs arrive every few hundred milliseconds while the user types, so the document is
+     * compared with its embedded text at most once per cooldown: a comparison that finds too
+     * small a change is recorded as a check, and until the cooldown passes again nothing is even
+     * loaded. The changes made meanwhile are still measured against the embedded text, so they
+     * are embedded as soon as a check finds them big enough.
+     */
     suspend fun embedDocumentIfNeeded(documentId: String, workspaceId: String, db: WriteopiaDbBackend) {
         guarded("embedding document $documentId") {
             val meta = store.documentMeta(documentId)
-            // The cheap gate: within the cooldown nothing is even loaded.
-            if (meta != null && meta.model == embedder.model && !policy.cooldownElapsed(meta.embeddedAt, now())) {
+            // The cheap gate: within the cooldown of the last check nothing is even loaded.
+            if (meta != null && meta.model == embedder.model && !policy.cooldownElapsed(meta.checkedAt, now())) {
                 return@guarded
             }
 
             val document = db.getDocumentWithContentById(documentId, workspaceId) ?: return@guarded
-            embedDocument(document, db)
+            if (!embedDocument(document, db) && meta != null) store.markDocumentChecked(documentId, now())
         }
     }
 

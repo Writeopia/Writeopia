@@ -11,7 +11,7 @@ class InMemoryEmbeddingStore : EmbeddingStore {
     val allFolders: List<StoredFolderEmbedding> get() = folderRows.values.toList()
 
     override fun documentMeta(documentId: String): DocumentEmbeddingMeta? =
-        documentRows[documentId]?.let { row -> DocumentEmbeddingMeta(row.documentId, row.model, row.embeddedAt) }
+        documentRows[documentId]?.let { row -> DocumentEmbeddingMeta(row.documentId, row.model, row.embeddedAt, row.checkedAt) }
 
     override fun document(documentId: String): StoredDocumentEmbedding? = documentRows[documentId]
 
@@ -20,6 +20,10 @@ class InMemoryEmbeddingStore : EmbeddingStore {
 
     override fun upsertDocument(embedding: StoredDocumentEmbedding) {
         documentRows[embedding.documentId] = embedding
+    }
+
+    override fun markDocumentChecked(documentId: String, checkedAt: Long) {
+        documentRows.computeIfPresent(documentId) { _, row -> row.copy(checkedAt = checkedAt) }
     }
 
     override fun deleteDocuments(documentIds: Collection<String>) {

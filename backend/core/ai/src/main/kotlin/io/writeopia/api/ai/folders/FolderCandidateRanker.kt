@@ -46,12 +46,17 @@ class FolderCandidateRanker(
             return if (request.folders.isEmpty()) Outcome(emptyList(), Source.NONE) else Outcome(request.folders.take(limit), Source.APP)
         }
 
+        // A vector may outlive its folder (deleted, or renamed to nothing): only live, named folders count.
         val rows = db.folderEntityQueries.selectByIds(ids, workspaceId).executeAsList().associateBy { row -> row.id }
-        val candidates = ids.mapNotNull { id -> rows[id] }.map { row -> profile(row, workspaceId, db) }
+        val candidates = ids.mapNotNull { id -> rows[id] }
+            .filter { row -> row.title.isNotBlank() }
+            .take(limit)
+            .map { row -> profile(row, workspaceId, db) }
 
         return Outcome(candidates, source)
     }
 
+    /** The ids to consider, best first and more than [limit] when possible, so a stale one costs no place. */
     private suspend fun rankedIds(
         request: FolderSuggestionsRequest,
         workspaceId: String,
@@ -74,8 +79,7 @@ class FolderCandidateRanker(
         if (ranked.isEmpty()) return byActivity to Source.ACTIVITY
 
         // Folders without a vector yet take the places left.
-        val filled = (ranked + byActivity.filter { id -> id !in ranked }).take(limit)
-        return filled to Source.VECTORS
+        return (ranked + byActivity.filter { id -> id !in ranked }) to Source.VECTORS
     }
 
     /** The folders of the workspace with a name, most recently updated first. */
@@ -84,7 +88,6 @@ class FolderCandidateRanker(
             .executeAsList()
             .filter { row -> row.title.isNotBlank() }
             .sortedByDescending { row -> row.last_updated_at ?: 0L }
-            .take(limit)
             .map { row -> row.id }
 
     private fun profile(row: Folder_entity, workspaceId: String, db: WriteopiaDbBackend): FolderCandidate {

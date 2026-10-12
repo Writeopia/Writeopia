@@ -15,6 +15,7 @@ import io.writeopia.api.embeddings.EmbeddingPurpose
 import io.writeopia.api.embeddings.EmbeddingVectors
 import io.writeopia.api.embeddings.FolderEmbeddingKind
 import io.writeopia.api.embeddings.InMemoryEmbeddingStore
+import io.writeopia.api.embeddings.StoredDocumentEmbedding
 import io.writeopia.api.geteway.configurePersistence
 import io.writeopia.api.geteway.module
 import io.writeopia.sdk.models.story.StoryStep
@@ -127,9 +128,14 @@ class DocumentEmbeddingsIntegrationTest {
         }
 
         // Pretend the first embedding is old, so the cooldown is not what holds the next one back.
-        store.upsertDocument(firstEmbedding.copy(embeddedAt = firstEmbedding.embeddedAt - 10 * 60_000))
+        fun StoredDocumentEmbedding.at(millis: Long) = copy(embeddedAt = millis, checkedAt = millis)
+        store.upsertDocument(firstEmbedding.at(now - 10 * 60_000))
         syncSteps(sync(step("$workspace-s1", "Boil a lot of water in a large pot and salt it generously.", position = 1.0)))
         assertEquals(1, embedder.calls.size)
+        // The comparison is recorded, so the next syncs are not even loaded until the cooldown passes again.
+        val checked = assertNotNull(store.documentMeta(pasta.id))
+        assertEquals(now - 10 * 60_000, checked.embeddedAt)
+        assertTrue(checked.checkedAt >= now)
 
         // 3. A big change is embedded again once the cooldown passed, not before.
         val rewrite = sync(
@@ -137,11 +143,11 @@ class DocumentEmbeddingsIntegrationTest {
             step("$workspace-s2", "Toss the hot pasta in the eggs away from the heat so they do not scramble.", position = 2.0),
             step("$workspace-s3", "Add a splash of the cooking water to loosen the sauce before serving.", position = 3.0),
         )
-        store.upsertDocument(store.document(pasta.id)!!.copy(embeddedAt = now))
+        store.upsertDocument(store.document(pasta.id)!!.at(now))
         syncSteps(rewrite)
         assertEquals(1, embedder.calls.size)
 
-        store.upsertDocument(store.document(pasta.id)!!.copy(embeddedAt = now - 10 * 60_000))
+        store.upsertDocument(store.document(pasta.id)!!.at(now - 10 * 60_000))
         syncSteps(rewrite)
         assertEquals(2, embedder.calls.size)
         val pastaVector = store.document(pasta.id)!!.vector

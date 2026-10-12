@@ -64,13 +64,18 @@ class PgVectorEmbeddingStoreTest {
                 embeddedAt = 42,
             )
             store.upsertDocument(document)
-            store.upsertDocument(document.copy(sourceText = "Body 2", embeddedAt = 43))
+            store.upsertDocument(document.copy(sourceText = "Body 2", embeddedAt = 43, checkedAt = 43))
 
             val read = store.document(document.documentId)!!
             assertEquals("Body 2", read.sourceText)
             assertEquals(43, read.embeddedAt)
+            assertEquals(43, read.checkedAt)
             assertEquals(vector(1f, 0f, 0f).toList(), read.vector.toList())
-            assertEquals(DocumentEmbeddingMeta(document.documentId, "fake", 43), store.documentMeta(document.documentId))
+            assertEquals(DocumentEmbeddingMeta(document.documentId, "fake", 43, 43), store.documentMeta(document.documentId))
+
+            store.markDocumentChecked(document.documentId, 50)
+            assertEquals(DocumentEmbeddingMeta(document.documentId, "fake", 43, 50), store.documentMeta(document.documentId))
+            assertEquals(43, store.document(document.documentId)!!.embeddedAt)
 
             fun folder(id: String, vector: FloatArray) = StoredFolderEmbedding(
                 folderId = "$workspace-$id",

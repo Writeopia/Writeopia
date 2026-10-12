@@ -21,6 +21,12 @@ import io.writeopia.sql.WriteopiaDbBackend
 
 private const val OPERATION = "folder-suggestions"
 
+/** Same rule as the workspaces module: a member of a workspace that is not being deleted. */
+private fun WriteopiaDbBackend.isMember(userId: String, workspaceId: String): Boolean =
+    workspaceEntityQueries.getWorkspacesByUserId(userId)
+        .executeAsList()
+        .any { row -> row.workspace_id == workspaceId && row.workspace_status != "DELETION_PENDING" }
+
 /**
  * Files a document that was created in the root folder: the apps send its text and their
  * workspace, the backend picks the closest folders by their embeddings ([ranker]), and Jev
@@ -64,6 +70,15 @@ fun Routing.folderSuggestionsRoute(
             } catch (e: ContentTransformationException) {
                 logger.warn("Bad request in folder suggestions: {}", e::class.simpleName)
                 call.respond(HttpStatusCode.BadRequest, FolderSuggestionsResponse(error = "Invalid request format"))
+                return@post
+            }
+
+            // The candidates come from the workspace's folders: only a member may ask about it.
+            if (!debugMode && writeopiaDb != null && request.workspaceId.isNotBlank() &&
+                !writeopiaDb.isMember(userId, request.workspaceId)
+            ) {
+                logger.warn("Folder suggestions denied - user {} is not in workspace {}", userId, request.workspaceId)
+                call.respond(HttpStatusCode.Forbidden, FolderSuggestionsResponse(error = "Not a member of the workspace"))
                 return@post
             }
 

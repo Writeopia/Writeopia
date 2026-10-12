@@ -252,7 +252,8 @@ CREATE TABLE IF NOT EXISTS document_embedding (
   embedding     vector(768) NOT NULL,
   source_title  TEXT NOT NULL,
   source_text   TEXT NOT NULL,
-  embedded_at   BIGINT NOT NULL
+  embedded_at   BIGINT NOT NULL,
+  checked_at    BIGINT NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_document_embedding_workspace_id ON document_embedding(workspace_id);

@@ -37,8 +37,8 @@ class EmbeddingRefreshPolicy(
         return changedChars(previous.sourceText, body) >= threshold
     }
 
-    /** The cheap check, made before loading a document: has the cooldown since [embeddedAt] passed? */
-    fun cooldownElapsed(embeddedAt: Long, nowMillis: Long): Boolean = nowMillis - embeddedAt >= cooldownMillis
+    /** The cheap check, made before loading a document: has the cooldown since [sinceMillis] (the last embedding or check) passed? */
+    fun cooldownElapsed(sinceMillis: Long, nowMillis: Long): Boolean = nowMillis - sinceMillis >= cooldownMillis
 
     companion object {
         const val DEFAULT_MIN_CHANGED_CHARS = 200

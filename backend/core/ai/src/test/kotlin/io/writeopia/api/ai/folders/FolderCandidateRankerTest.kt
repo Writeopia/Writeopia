@@ -149,6 +149,24 @@ class FolderCandidateRankerTest {
     }
 
     @Test
+    fun `vectors of gone or unnamed folders cost no place and the limit holds`() = runTest {
+        folder("$workspace-a", "A", updatedAt = 1)
+        folder("$workspace-b", "B", updatedAt = 2)
+        folder("$workspace-c", "C", updatedAt = 3)
+        folder("$workspace-untitled", "", updatedAt = 4)
+
+        val store = InMemoryEmbeddingStore()
+        vector("$workspace-deleted", floatArrayOf(1f, 0.1f), store)
+        vector("$workspace-untitled", floatArrayOf(1f, 0.1f), store)
+        vector("$workspace-c", floatArrayOf(0.9f, 0.1f), store)
+
+        val outcome = FolderCandidateRanker(Embeddings(AxisEmbedder(), store), limit = 2).candidates(request, db)
+
+        assertEquals(FolderCandidateRanker.Source.VECTORS, outcome.source)
+        assertEquals(listOf("$workspace-c", "$workspace-b"), outcome.candidates.map { it.id })
+    }
+
+    @Test
     fun `when the document cannot be embedded folders come by activity`() = runTest {
         folder("$workspace-old", "Old", updatedAt = 1)
         folder("$workspace-recent", "Recent", updatedAt = 99)

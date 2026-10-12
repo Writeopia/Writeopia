@@ -9,6 +9,8 @@ data class StoredDocumentEmbedding(
     val sourceTitle: String,
     val sourceText: String,
     val embeddedAt: Long,
+    /** When the document was last compared with this text, embedded or not; never before [embeddedAt]. */
+    val checkedAt: Long = embeddedAt,
 )
 
 /** The part of a document embedding that gates a refresh, read without the text or the vector. */
@@ -16,6 +18,7 @@ data class DocumentEmbeddingMeta(
     val documentId: String,
     val model: String,
     val embeddedAt: Long,
+    val checkedAt: Long = embeddedAt,
 )
 
 /** How a folder's vector was made. */
@@ -61,6 +64,9 @@ interface EmbeddingStore {
     fun document(documentId: String): StoredDocumentEmbedding?
     fun documents(documentIds: Collection<String>): List<StoredDocumentEmbedding>
     fun upsertDocument(embedding: StoredDocumentEmbedding)
+
+    /** Records that the document was compared with its embedded text at [checkedAt] and found not changed enough. */
+    fun markDocumentChecked(documentId: String, checkedAt: Long)
     fun deleteDocuments(documentIds: Collection<String>)
     fun deleteDocumentsByWorkspace(workspaceId: String)
 
