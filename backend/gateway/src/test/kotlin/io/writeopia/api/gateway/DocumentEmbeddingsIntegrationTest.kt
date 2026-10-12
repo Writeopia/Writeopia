@@ -127,7 +127,7 @@ class DocumentEmbeddingsIntegrationTest {
         }
 
         // Pretend the first embedding is old, so the cooldown is not what holds the next one back.
-        store.upsertDocument(firstEmbedding.copy(embeddedAt = firstEmbedding.embeddedAt - 60_000))
+        store.upsertDocument(firstEmbedding.copy(embeddedAt = firstEmbedding.embeddedAt - 10 * 60_000))
         syncSteps(sync(step("$workspace-s1", "Boil a lot of water in a large pot and salt it generously.", position = 1.0)))
         assertEquals(1, embedder.calls.size)
 
@@ -141,7 +141,7 @@ class DocumentEmbeddingsIntegrationTest {
         syncSteps(rewrite)
         assertEquals(1, embedder.calls.size)
 
-        store.upsertDocument(store.document(pasta.id)!!.copy(embeddedAt = now - 60_000))
+        store.upsertDocument(store.document(pasta.id)!!.copy(embeddedAt = now - 10 * 60_000))
         syncSteps(rewrite)
         assertEquals(2, embedder.calls.size)
         val pastaVector = store.document(pasta.id)!!.vector

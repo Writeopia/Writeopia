@@ -43,7 +43,7 @@ class EmbeddingRefreshPolicy(
     companion object {
         const val DEFAULT_MIN_CHANGED_CHARS = 200
         const val DEFAULT_CHANGED_RATIO = 0.15
-        const val DEFAULT_COOLDOWN_MILLIS = 30_000L
+        const val DEFAULT_COOLDOWN_MILLIS = 5 * 60_000L
 
         /**
          * How many characters changed between two texts, counted by lines: the characters of the
