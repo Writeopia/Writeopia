@@ -360,7 +360,7 @@ internal fun NoteEditorScreen(
                 WritingSuggestionsBox(
                     controller = agent,
                     ui = agentUi,
-                    showCollapsedLabel = false,
+                    mobile = true,
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .padding(end = 8.dp, bottom = if (isWideLayout) 16.dp else 72.dp)

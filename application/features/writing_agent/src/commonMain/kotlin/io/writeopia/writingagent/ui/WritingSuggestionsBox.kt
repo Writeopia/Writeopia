@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -47,15 +48,16 @@ const val WRITING_SUGGESTIONS_BOX_TAG = "WritingSuggestionsBox"
  * down to a small "AI suggestions" badge with the count, to focus on the text, and open it again
  * from the badge.
  *
- * [showCollapsedLabel] keeps the "AI suggestions" text on the folded badge. Mobile screens turn
- * it off, so the badge is only the icon and the count.
+ * [mobile] adapts the box to touch screens: the folded badge drops the "AI suggestions" text,
+ * so it is only the icon and the count, and the fold and close buttons grow to a finger-sized
+ * tap target.
  */
 @Composable
 fun WritingSuggestionsBox(
     controller: WritingAgentController,
     ui: WritingAgentUi,
     modifier: Modifier = Modifier,
-    showCollapsedLabel: Boolean = true,
+    mobile: Boolean = false,
 ) {
     val state by controller.state.collectAsState()
     val collapsed by controller.collapsed.collectAsState()
@@ -70,11 +72,11 @@ fun WritingSuggestionsBox(
             CollapsedBadge(
                 count = state.count,
                 isLoading = state.isLoading,
-                showLabel = showCollapsedLabel,
+                showLabel = !mobile,
                 onExpand = controller::toggleCollapsed
             )
         } else {
-            ExpandedBox(state = state, controller = controller, ui = ui)
+            ExpandedBox(state = state, controller = controller, ui = ui, mobile = mobile)
         }
     }
 }
@@ -151,7 +153,13 @@ private fun ExpandedBox(
     state: WritingSuggestionsState,
     controller: WritingAgentController,
     ui: WritingAgentUi,
+    mobile: Boolean,
 ) {
+    // A mouse hits a 20dp icon fine. A finger needs the 44dp that platform guidelines ask for, so
+    // the icon keeps its drawn size and the clickable padding around it grows instead.
+    val buttonSize = if (mobile) 44.dp else 20.dp
+    val buttonPadding = if (mobile) 12.dp else 2.dp
+
     Surface(
         modifier = Modifier
             .widthIn(min = 220.dp, max = 320.dp)
@@ -191,29 +199,36 @@ private fun ExpandedBox(
                     )
                 }
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                // On mobile the buttons' padding already separates them, and shifting the row
+                // toward the end edge keeps the icons where they sat before growing.
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = if (mobile) Modifier.offset(x = buttonPadding) else Modifier
+                ) {
                     Icon(
                         imageVector = WrIcons.smallArrowDown,
                         contentDescription = WrStrings.writingSuggestionsHide(),
                         modifier = Modifier
-                            .size(20.dp)
+                            .size(buttonSize)
                             .clip(CircleShape)
                             .clickable(onClick = controller::toggleCollapsed)
-                            .padding(2.dp)
+                            .padding(buttonPadding)
                             .testTag("$WRITING_SUGGESTIONS_BOX_TAG.collapse"),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
-                    Spacer(modifier = Modifier.width(4.dp))
+                    if (!mobile) {
+                        Spacer(modifier = Modifier.width(4.dp))
+                    }
 
                     Icon(
                         imageVector = WrIcons.close,
                         contentDescription = WrStrings.dismiss(),
                         modifier = Modifier
-                            .size(20.dp)
+                            .size(buttonSize)
                             .clip(CircleShape)
                             .clickable(onClick = controller::dismiss)
-                            .padding(2.dp),
+                            .padding(buttonPadding),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
