@@ -4,6 +4,14 @@ import io.writeopia.app.dto.writingagent.FolderCandidate
 import io.writeopia.app.dto.writingagent.FolderSuggestionDto
 import io.writeopia.app.dto.writingagent.FolderSuggestionsRequest
 import io.writeopia.app.dto.writingagent.FolderSuggestionsResponse
+import io.writeopia.app.dto.writingagent.TagCandidate
+import io.writeopia.app.dto.writingagent.TagCreateRequest
+import io.writeopia.app.dto.writingagent.TagCreateResponse
+import io.writeopia.app.dto.writingagent.TagSuggestionDto
+import io.writeopia.app.dto.writingagent.TagSuggestionsRequest
+import io.writeopia.app.dto.writingagent.TagSuggestionsResponse
+import io.writeopia.sdk.models.document.DocumentTag
+import io.writeopia.writingagent.tags.DocumentTags
 import io.writeopia.app.dto.writingagent.WritingSuggestionAction
 import io.writeopia.app.dto.writingagent.WritingSuggestionDto
 import io.writeopia.app.dto.writingagent.WritingSuggestionScope
@@ -35,9 +43,26 @@ private class FakeApi(
     var folderAnswer: List<FolderSuggestionDto> = emptyList(),
     var folderFailure: Exception? = null,
     var folderDelayMillis: Long = 0,
+    var tagAnswer: List<TagSuggestionDto> = emptyList(),
+    var tagFailure: Exception? = null,
+    var tagDelayMillis: Long = 0,
 ) : WritingAgentApi {
     val requests = mutableListOf<WritingSuggestionsRequest>()
     val folderRequests = mutableListOf<FolderSuggestionsRequest>()
+    val tagRequests = mutableListOf<TagSuggestionsRequest>()
+    val createTagRequests = mutableListOf<TagCreateRequest>()
+
+    override suspend fun tagSuggestions(request: TagSuggestionsRequest): ResultData<TagSuggestionsResponse> {
+        tagRequests.add(request)
+        if (tagDelayMillis > 0) delay(tagDelayMillis)
+        tagFailure?.let { return ResultData.Error(it) }
+        return ResultData.Complete(TagSuggestionsResponse(tagAnswer))
+    }
+
+    override suspend fun createTag(request: TagCreateRequest): ResultData<TagCreateResponse> {
+        createTagRequests.add(request)
+        return ResultData.Complete(TagCreateResponse(name = "Fresh", description = "Made by the AI"))
+    }
 
     override suspend fun suggestions(request: WritingSuggestionsRequest): ResultData<WritingSuggestionsResponse> {
         requests.add(request)
@@ -73,6 +98,29 @@ private class FakeFolders(
     }
 }
 
+private class FakeTags(
+    var current: Set<String> = emptySet(),
+    val catalogue: List<TagCandidate> = (1..35).map { TagCandidate("t$it", "Tag $it", "About $it") },
+) : DocumentTags {
+    val added = mutableListOf<Set<String>>()
+    val created = mutableListOf<Pair<String, String>>()
+
+    override fun currentTagIds(): Set<String> = current
+
+    override suspend fun candidates(limit: Int): List<TagCandidate> = catalogue.take(limit)
+
+    override suspend fun addTags(tagIds: Set<String>) {
+        added.add(tagIds)
+        current = current + tagIds
+    }
+
+    override suspend fun createTagWithAi(documentTitle: String, documentText: String): Result<DocumentTag> {
+        created.add(documentTitle to documentText)
+        current = current + "fresh"
+        return Result.success(DocumentTag.create("Fresh", "Made by the AI", "workspace"))
+    }
+}
+
 private class FakeExecutor : WritingActionExecutor {
     val executed = mutableListOf<Pair<WritingSuggestionAction, String?>>()
 
@@ -99,6 +147,7 @@ class WritingAgentControllerTest {
         executor: FakeExecutor = FakeExecutor(),
         enabled: Boolean = true,
         folders: FakeFolders? = null,
+        tags: FakeTags? = null,
     ) = WritingAgentController(
         scope = this,
         api = api,
@@ -107,10 +156,12 @@ class WritingAgentControllerTest {
         documentTitle = { "Groceries" },
         executor = executor,
         folders = folders,
+        tags = tags,
         isEnabled = { enabled },
         debounceMillis = 100,
         minimumDocumentLength = 40,
         folderMinimumDocumentLength = 30,
+        tagMinimumDocumentLength = 30,
     ).also { it.start() }
 
     @Test
@@ -357,6 +408,165 @@ class WritingAgentControllerTest {
         type = StoryTypes.TEXT.type,
         text = "We need milk, eggs, bread and butter for the whole week ahead of us."
     )
+
+    @Test
+    fun `a document without tags is offered some in the box, without asking the backend`() = runTest(StandardTestDispatcher()) {
+        val api = FakeApi(tagAnswer = listOf(TagSuggestionDto("t2", 0.95)))
+        val story = MutableStateFlow(state(title, longParagraph))
+        val controller = controller(api, story, tags = FakeTags())
+        advanceUntilIdle()
+
+        assertTrue(api.tagRequests.isEmpty())
+        assertTrue(controller.state.value.offerTags)
+        assertTrue(controller.state.value.hasSuggestions)
+        assertEquals(1, controller.state.value.count)
+        assertNull(controller.state.value.tagDialog)
+        controller.stop()
+    }
+
+    @Test
+    fun `a document that already has tags is not offered any, and an offer is withdrawn once it gets one`() = runTest(
+        StandardTestDispatcher()
+    ) {
+        val tagged = FakeTags(current = setOf("t1"))
+        val story = MutableStateFlow(state(title, longParagraph))
+        val controller = controller(FakeApi(), story, tags = tagged)
+        advanceUntilIdle()
+        assertEquals(false, controller.state.value.offerTags)
+        controller.stop()
+
+        val untagged = FakeTags()
+        val story2 = MutableStateFlow(state(title, longParagraph))
+        val controller2 = controller(FakeApi(), story2, tags = untagged)
+        advanceUntilIdle()
+        assertTrue(controller2.state.value.offerTags)
+
+        untagged.current = setOf("t9")
+        story2.value = state(title, longParagraph.copy(text = longParagraph.text + " More."))
+        advanceUntilIdle()
+
+        assertEquals(false, controller2.state.value.offerTags)
+        controller2.stop()
+    }
+
+    @Test
+    fun `a short document is offered tags only once it has enough text`() = runTest(StandardTestDispatcher()) {
+        val story = MutableStateFlow(state(title, paragraph))
+        val controller = controller(FakeApi(), story, tags = FakeTags())
+        advanceUntilIdle()
+        assertEquals(false, controller.state.value.offerTags)
+
+        story.value = state(title, longParagraph)
+        advanceUntilIdle()
+
+        assertTrue(controller.state.value.offerTags)
+        controller.stop()
+    }
+
+    @Test
+    fun `taking the tag offer opens a dialog that spins, asks about thirty tags and lists the fits selected`() = runTest(
+        StandardTestDispatcher()
+    ) {
+        val api = FakeApi(
+            tagAnswer = listOf(TagSuggestionDto("t2", 0.95), TagSuggestionDto("t1", 0.9)),
+            tagDelayMillis = 50,
+        )
+        val story = MutableStateFlow(state(title, longParagraph))
+        val controller = controller(api, story, tags = FakeTags())
+        advanceUntilIdle()
+
+        controller.openTagDialog()
+        assertEquals(true, controller.state.value.tagDialog?.isLoading)
+        advanceUntilIdle()
+
+        assertEquals(1, api.tagRequests.size)
+        assertEquals(TagSuggestionsRequest.MAX_TAGS, api.tagRequests.single().tags.size)
+        assertEquals("About 1", api.tagRequests.single().tags.first().description)
+        assertEquals("Groceries", api.tagRequests.single().documentTitle)
+
+        val dialog = controller.state.value.tagDialog
+        assertNotNull(dialog)
+        assertEquals(false, dialog.isLoading)
+        assertEquals(listOf("Tag 2", "Tag 1"), dialog.options.map { it.name })
+        assertEquals(setOf("t2", "t1"), dialog.selected)
+        controller.stop()
+    }
+
+    @Test
+    fun `in a workspace without tags the dialog only offers a new tag`() = runTest(StandardTestDispatcher()) {
+        val api = FakeApi()
+        val story = MutableStateFlow(state(title, longParagraph))
+        val controller = controller(api, story, tags = FakeTags(catalogue = emptyList()))
+        advanceUntilIdle()
+
+        controller.openTagDialog()
+        advanceUntilIdle()
+
+        assertTrue(api.tagRequests.isEmpty())
+        val dialog = controller.state.value.tagDialog
+        assertNotNull(dialog)
+        assertEquals(false, dialog.isLoading)
+        assertTrue(dialog.options.isEmpty())
+        assertTrue(dialog.catalogueIsEmpty)
+        controller.stop()
+    }
+
+    @Test
+    fun `applying the dialog adds the tags still selected, closes it and withdraws the offer`() = runTest(StandardTestDispatcher()) {
+        val api = FakeApi(tagAnswer = listOf(TagSuggestionDto("t2", 0.95), TagSuggestionDto("t1", 0.9)))
+        val tags = FakeTags()
+        val story = MutableStateFlow(state(title, longParagraph))
+        val controller = controller(api, story, tags = tags)
+        advanceUntilIdle()
+        controller.openTagDialog()
+        advanceUntilIdle()
+
+        controller.toggleTag("t1")
+        assertEquals(setOf("t2"), controller.state.value.tagDialog?.selected)
+        controller.applyTags()
+        advanceUntilIdle()
+
+        assertEquals(listOf(setOf("t2")), tags.added)
+        assertNull(controller.state.value.tagDialog)
+        assertEquals(false, controller.state.value.offerTags)
+        controller.stop()
+    }
+
+    @Test
+    fun `creating a tag spins in the dialog, uses the AI and withdraws the offer`() = runTest(StandardTestDispatcher()) {
+        val tags = FakeTags()
+        val story = MutableStateFlow(state(title, longParagraph))
+        val controller = controller(FakeApi(), story, tags = tags)
+        advanceUntilIdle()
+        controller.openTagDialog()
+        advanceUntilIdle()
+
+        controller.createTagWithAi()
+        assertEquals(true, controller.state.value.tagDialog?.isCreating)
+        advanceUntilIdle()
+
+        assertEquals(1, tags.created.size)
+        assertEquals("Groceries", tags.created.single().first)
+        assertTrue(tags.created.single().second.contains("We need milk"))
+        assertNull(controller.state.value.tagDialog)
+        assertEquals(false, controller.state.value.offerTags)
+        controller.stop()
+    }
+
+    @Test
+    fun `dismissing the box withdraws the tag offer for this document`() = runTest(StandardTestDispatcher()) {
+        val story = MutableStateFlow(state(title, longParagraph))
+        val controller = controller(FakeApi(), story, tags = FakeTags())
+        advanceUntilIdle()
+        assertTrue(controller.state.value.offerTags)
+
+        controller.dismiss()
+        story.value = state(title, longParagraph.copy(text = longParagraph.text + " Again."))
+        advanceUntilIdle()
+
+        assertEquals(false, controller.state.value.offerTags)
+        controller.stop()
+    }
 
     @Test
     fun `a document opened in the root is offered a folder in the box, without asking the backend`() = runTest(StandardTestDispatcher()) {

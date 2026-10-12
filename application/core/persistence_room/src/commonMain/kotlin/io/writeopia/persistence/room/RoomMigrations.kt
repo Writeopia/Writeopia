@@ -41,3 +41,40 @@ val MIGRATION_31_32 = object : Migration(31, 32) {
         )
     }
 }
+
+// The document tags: the link rows of a document and the workspace tag catalogue.
+val MIGRATION_32_33 = object : Migration(32, 33) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS DOCUMENT_TAG_LINK_TABLE (
+                document_id TEXT NOT NULL,
+                tag_id TEXT NOT NULL,
+                PRIMARY KEY(document_id, tag_id)
+            )
+            """.trimIndent()
+        )
+        connection.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_DOCUMENT_TAG_LINK_TABLE_document_id " +
+                "ON DOCUMENT_TAG_LINK_TABLE(document_id)"
+        )
+        connection.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS DOCUMENT_TAG_ENTITY_TABLE (
+                id TEXT NOT NULL PRIMARY KEY,
+                workspace_id TEXT NOT NULL,
+                name TEXT NOT NULL,
+                description TEXT NOT NULL,
+                created_at INTEGER NOT NULL,
+                last_updated_at INTEGER NOT NULL,
+                last_synced_at INTEGER,
+                deleted INTEGER NOT NULL
+            )
+            """.trimIndent()
+        )
+        connection.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_DOCUMENT_TAG_ENTITY_TABLE_workspace_id " +
+                "ON DOCUMENT_TAG_ENTITY_TABLE(workspace_id)"
+        )
+    }
+}

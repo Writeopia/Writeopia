@@ -172,6 +172,10 @@ struct SearchView: View {
                 case .favorites:
                     // Search only opens documents; the favorites live in the Documents tab.
                     Text("Favorites")
+                case .tag(let tag):
+                    Text(tag.name)
+                case .graph:
+                    Text("Documents graph")
                 }
             }
         }

@@ -57,6 +57,7 @@ actual fun NotesMenuScreen(
         sideMenuContent = sideMenuContent,
         onCurrentFolderDeleted = { navigationController.popBackStack() },
         navigateToAncestor = navigationController::navigateBackToNotes,
+        navigateToForceGraph = onForceGraphSelected,
         modifier = modifier,
     )
 }

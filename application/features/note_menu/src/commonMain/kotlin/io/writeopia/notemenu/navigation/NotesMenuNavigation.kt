@@ -136,7 +136,7 @@ fun NavGraphBuilder.notesMenuNavigation(
 
 fun NavController.navigateToNotes(navigation: NotesNavigation) {
     when (navigation) {
-        is NotesNavigation.Folder -> {
+        is NotesNavigation.Folder, is NotesNavigation.Tag -> {
             navigate(
                 "${Destinations.CHOOSE_NOTE.id}/${navigation.navigationType.type}/${navigation.id}",
             )
@@ -169,7 +169,7 @@ fun NavController.navigateBackToNotes(navigation: NotesNavigation) {
 
 private fun NavBackStackEntry.shows(navigation: NotesNavigation): Boolean =
     when (navigation) {
-        is NotesNavigation.Folder ->
+        is NotesNavigation.Folder, is NotesNavigation.Tag ->
             destination.route == NoteMenuDestiny.noteMenu() &&
                 savedStateHandle.get<String?>(NAVIGATION_TYPE) == navigation.navigationType.type &&
                 savedStateHandle.get<String?>(NAVIGATION_PATH) == navigation.id

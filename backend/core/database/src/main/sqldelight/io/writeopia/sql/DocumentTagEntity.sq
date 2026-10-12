@@ -1,0 +1,36 @@
+-- The tag catalogue of a workspace: a short name and the explanation of what the tag means.
+-- Deleted tags stay as tombstones so every client learns about the removal on its next diff.
+CREATE TABLE document_tag_entity (
+  id TEXT PRIMARY KEY,
+  workspace_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  description TEXT NOT NULL,
+  created_at BIGINT NOT NULL,
+  last_updated_at BIGINT NOT NULL,
+  deleted BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+CREATE INDEX idx_document_tag_workspace_id ON document_tag_entity(workspace_id);
+
+selectByWorkspace:
+SELECT *
+FROM document_tag_entity
+WHERE workspace_id = ?
+ORDER BY name;
+
+selectByIds:
+SELECT *
+FROM document_tag_entity
+WHERE id IN ?;
+
+insert:
+INSERT INTO document_tag_entity(id, workspace_id, name, description, created_at, last_updated_at, deleted)
+VALUES (?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT(id) DO
+UPDATE SET workspace_id=excluded.workspace_id, name=excluded.name, description=excluded.description,
+created_at=excluded.created_at, last_updated_at=excluded.last_updated_at, deleted=excluded.deleted;
+
+deleteByWorkspace:
+DELETE
+FROM document_tag_entity
+WHERE workspace_id = ?;

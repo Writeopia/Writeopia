@@ -71,6 +71,8 @@ import io.writeopia.editor.features.editor.ui.folders.FolderSelectionDialog
 import io.writeopia.editor.features.editor.ui.mobile.MobileAiDialog
 import io.writeopia.editor.features.editor.ui.publish.PremiumOnlyDialog
 import io.writeopia.editor.features.editor.ui.publish.PublishDialog
+import io.writeopia.editor.features.editor.ui.tags.AddDocumentTagDialog
+import io.writeopia.editor.features.editor.ui.tags.DocumentTagsDialog
 import io.writeopia.editor.features.editor.viewmodel.AiTargetMode
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.editor.features.editor.viewmodel.ShareDocument
@@ -86,6 +88,7 @@ import io.writeopia.ui.drawer.factory.DefaultDrawersAndroid
 import io.writeopia.ui.model.SelectionMetadata
 import io.writeopia.writingagent.actions.WritingAgentUi
 import io.writeopia.writingagent.ui.FolderSuggestionDialog
+import io.writeopia.writingagent.ui.TagSuggestionDialog
 import io.writeopia.writingagent.ui.WritingSuggestionsBox
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -309,7 +312,11 @@ internal fun NoteEditorScreen(
                     changeSideMenuTab = noteEditorViewModel::changeSideMenu,
                     titleClick = noteEditorViewModel::titleClick,
                     onDrawingClick = onNewDrawingClick,
-                    onPublishClick = noteEditorViewModel::showPublishDialog
+                    onPublishClick = noteEditorViewModel::showPublishDialog,
+                    documentTagsState = noteEditorViewModel.documentTags,
+                    onViewTagsClick = noteEditorViewModel::showTagsDialog,
+                    onAddTagClick = noteEditorViewModel::showAddTagDialog,
+                    onRemoveTagClick = noteEditorViewModel::removeTagFromDocument,
                 )
 
                 if (showDeleteConfirmation) {
@@ -359,6 +366,7 @@ internal fun NoteEditorScreen(
                 )
 
                 FolderSuggestionDialog(controller = agent)
+                TagSuggestionDialog(controller = agent)
             }
 
             val headerEdition by noteEditorViewModel.editHeader.collectAsState()
@@ -416,6 +424,40 @@ internal fun NoteEditorScreen(
                     onPublishAndView = noteEditorViewModel::publishDocument,
                     onUnpublish = noteEditorViewModel::unpublishDocument,
                     onCopyLink = noteEditorViewModel::copyPublishLink
+                )
+            }
+
+            val showTagsDialog by noteEditorViewModel.showTagsDialog.collectAsState()
+            if (showTagsDialog) {
+                val documentTags by noteEditorViewModel.documentTags.collectAsState()
+                val isEditableForTags by noteEditorViewModel.isEditable.collectAsState()
+                DocumentTagsDialog(
+                    tags = documentTags,
+                    isEditable = isEditableForTags,
+                    onRemove = noteEditorViewModel::removeTagFromDocument,
+                    onAddTag = {
+                        noteEditorViewModel.hideTagsDialog()
+                        noteEditorViewModel.showAddTagDialog()
+                    },
+                    onDismiss = noteEditorViewModel::hideTagsDialog
+                )
+            }
+
+            val showAddTagDialog by noteEditorViewModel.showAddTagDialog.collectAsState()
+            if (showAddTagDialog) {
+                val workspaceTags by noteEditorViewModel.workspaceTags.collectAsState()
+                val documentTagIds by noteEditorViewModel.writeopiaManager.documentTagIds.collectAsState()
+                val canSuggestWithAi by noteEditorViewModel.canSuggestTagWithAi.collectAsState()
+                val aiDraft by noteEditorViewModel.aiTagDraft.collectAsState()
+                AddDocumentTagDialog(
+                    workspaceTags = workspaceTags,
+                    documentTagIds = documentTagIds,
+                    canSuggestWithAi = canSuggestWithAi,
+                    aiDraft = aiDraft,
+                    onPickTag = noteEditorViewModel::addTagToDocument,
+                    onCreateTag = noteEditorViewModel::createTag,
+                    onSuggestWithAi = noteEditorViewModel::suggestTagWithAi,
+                    onDismiss = noteEditorViewModel::hideAddTagDialog
                 )
             }
 

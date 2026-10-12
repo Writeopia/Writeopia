@@ -8,6 +8,9 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.core.folders.api.DocumentsApi
+import kotlin.test.assertNotNull
+import io.writeopia.sdk.models.document.DocumentTag
+import io.writeopia.core.folders.repository.tag.InMemoryDocumentTagRepository
 import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.Folder
@@ -100,6 +103,52 @@ class FolderSyncTest {
         // Verify that both sendDocuments and sendFolders were called
         coVerify { documentsApi.sendDocuments(any(), workspaceId) }
         coVerify { documentsApi.sendFolders(any(), workspaceId) }
+    }
+
+    @Test
+    fun `syncFolder applies the tag catalogue and sends the outdated tags`() = runBlocking {
+        val documentRepository = mockk<DocumentRepository>(relaxed = true)
+        val documentsApi = mockk<DocumentsApi>()
+        val documentConflictHandler = mockk<DocumentConflictHandler>()
+        val folderConflictHandler = mockk<FolderConflictHandler>()
+        val folderRepository = mockk<FolderRepository>(relaxed = true)
+        val authRepository = mockk<AuthRepository>()
+        val tagRepository = InMemoryDocumentTagRepository()
+
+        val localTag = DocumentTag.create("Local", "Made here", workspaceId)
+        tagRepository.upsertTag(localTag)
+        val remoteTag = DocumentTag.create("Remote", "Made elsewhere", workspaceId).copy(id = "remote-tag")
+
+        coEvery { folderRepository.getFolderById(folderId) } returns Folder.fromName("Test Folder", workspaceId).copy(id = folderId)
+        coEvery {
+            documentsApi.getFolderNewData(folderId, workspaceId, any(), any())
+        } returns ResultData.Complete(FolderContentResponse(tags = listOf(remoteTag.toApi())))
+        coEvery { documentRepository.loadOutdatedDocumentsForWorkspace(workspaceId) } returns emptyList()
+        coEvery { folderRepository.localOutDatedFolders(workspaceId) } returns emptyList()
+        coEvery { documentConflictHandler.handleConflict(any(), any()) } returns emptyList()
+        coEvery { folderConflictHandler.handleConflict(any(), any()) } returns emptyList()
+        coEvery { documentsApi.sendDocuments(any(), workspaceId) } returns ResultData.Complete(Unit)
+        coEvery { documentsApi.sendFolders(any(), workspaceId) } returns ResultData.Complete(Unit)
+        coEvery { documentsApi.sendTags(any(), workspaceId) } returns ResultData.Complete(Unit)
+
+        val folderSync = FolderSync(
+            documentRepository = documentRepository,
+            documentsApi = documentsApi,
+            documentConflictHandler = documentConflictHandler,
+            folderConflictHandler = folderConflictHandler,
+            folderRepository = folderRepository,
+            authRepository = authRepository,
+            minSyncInternal = 0.milliseconds,
+            documentTagRepository = tagRepository,
+            documentTagConflictHandler = DocumentTagConflictHandler(tagRepository),
+        )
+
+        folderSync.syncFolder(folderId, workspaceId, force = true)
+
+        coVerify { documentsApi.sendTags(match { it.size == 1 && it.first().id == localTag.id }, workspaceId) }
+        assertEquals("Remote", tagRepository.getTagById("remote-tag")?.name)
+        assertNotNull(tagRepository.getTagById(localTag.id)?.lastSyncedAt)
+        Unit
     }
 
     @Test

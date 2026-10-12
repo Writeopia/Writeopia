@@ -72,6 +72,7 @@ public final class NoteEditorViewModel {
     @ObservationIgnored private let publishing: DocumentPublishing?
     @ObservationIgnored private let imageUploader: ImageUploading?
     @ObservationIgnored private let isPremium: Bool
+    @ObservationIgnored private let tagAgent: WritingAgentServing?
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private var aiTask: Task<Void, Never>?
     @ObservationIgnored private var suggestionTask: Task<Void, Never>?
@@ -129,6 +130,7 @@ public final class NoteEditorViewModel {
         self.publishing = publishing
         self.imageUploader = imageUploader
         self.isPremium = isPremium
+        self.tagAgent = writingAgent
         self.defaults = defaults
         self.writeopiaManager = writeopiaManager
         writeopiaManager.fontFamily = defaults.string(forKey: Self.fontKey).flatMap(EditorFont.init(rawValue:)) ?? .system
@@ -189,6 +191,14 @@ public final class NoteEditorViewModel {
                     resolveAi: { aiClient },
                     onMoved: { [weak self] folderId in self?.documentMoved(to: folderId) }
                 ),
+                // A document without tags is offered some from the workspace catalogue.
+                tags: RepositoryDocumentTags(
+                    workspaceId: { [weak self] in self?.loadedDocument?.workspaceId ?? "" },
+                    tagIds: { [weak self] in self?.tagIds ?? [] },
+                    repository: repository,
+                    api: writingAgent,
+                    onAdded: { [weak self] ids in self?.tagsAdded(ids) }
+                ),
                 ui: { [weak self] in self?.writingAgentUI ?? NoWritingAgentUI() },
                 isEnabled: { [weak self] in self?.isLocked == false }
             )
@@ -201,6 +211,75 @@ public final class NoteEditorViewModel {
     /// the new folder.
     func documentMoved(to folderId: String) {
         loadedDocument?.parentId = folderId
+    }
+
+    // MARK: - Tags
+
+    /// The ids of the tags of the document, from the workspace catalogue. Saved with the document.
+    public private(set) var tagIds: [String] = []
+
+    /// The tag catalogue of the workspace, by name, without the deleted ones.
+    public private(set) var workspaceTags: [DocumentTag] = []
+
+    /// The tags of the document with their names and explanations.
+    public var documentTags: [DocumentTag] {
+        workspaceTags.filter { tagIds.contains($0.id) }
+    }
+
+    /// True when the cloud AI can make up a tag: the writing agent of an online workspace.
+    public var canSuggestTagWithAi: Bool { tagAgent != nil }
+
+    public func reloadTags() async {
+        workspaceTags = (try? await repository.tags()) ?? []
+    }
+
+    public func addTag(id: String) {
+        guard !isLocked, !id.isEmpty, !tagIds.contains(id) else { return }
+        tagIds.append(id)
+        documentChanged()
+    }
+
+    public func removeTag(id: String) {
+        guard !isLocked, tagIds.contains(id) else { return }
+        tagIds.removeAll { $0 == id }
+        documentChanged()
+    }
+
+    /// Makes a tag in the catalogue and adds it to the document.
+    @discardableResult
+    public func createTag(name: String, description: String) async throws -> DocumentTag {
+        let tag = DocumentTag(
+            workspaceId: loadedDocument?.workspaceId ?? "",
+            name: name.trimmingCharacters(in: .whitespacesAndNewlines),
+            description: description.trimmingCharacters(in: .whitespacesAndNewlines)
+        )
+        try await repository.saveTag(tag)
+        workspaceTags = (workspaceTags + [tag]).sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+        addTag(id: tag.id)
+        return tag
+    }
+
+    /// Asks the cloud AI for a tag: a name and an explanation for the user to edit and confirm.
+    public func suggestTagWithAi() async throws -> (name: String, description: String) {
+        guard let tagAgent else { throw WritingAgentError.noAi }
+        let answer = try await tagAgent.createTag(
+            TagCreateRequest(
+                documentTitle: title,
+                documentText: String(writeopiaManager.documentTextWithTitle.prefix(WritingAgentController.documentTextLimit)),
+                existingTagNames: workspaceTags.map(\.name)
+            )
+        )
+        guard answer.error == nil, !answer.name.isEmpty else { throw WritingAgentError.emptyAnswer }
+        return (answer.name, answer.description)
+    }
+
+    /// The writing agent added tags (new ones included): the document carries them from now on.
+    private func tagsAdded(_ ids: [String]) {
+        for id in ids where !tagIds.contains(id) {
+            tagIds.append(id)
+        }
+        documentChanged()
+        Task { await reloadTags() }
     }
 
     /// The editor is closing: nothing is asked or applied anymore.
@@ -332,7 +411,8 @@ public final class NoteEditorViewModel {
             createdAt: base.createdAt,
             lastUpdatedAt: base.lastUpdatedAt,
             isFavorite: base.isFavorite,
-            parentId: base.parentId
+            parentId: base.parentId,
+            tagIds: tagIds
         )
     }
 
@@ -541,6 +621,7 @@ public final class NoteEditorViewModel {
 
     private func show(_ document: WrDocument) {
         loadedDocument = document
+        tagIds = document.tagIds
         writeopiaManager.loadDocument(document)
         changeCountAtLoad = writeopiaManager.changeCount
         savedSteps = Dictionary(writeopiaManager.documentContent.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
@@ -613,12 +694,13 @@ public final class NoteEditorViewModel {
 
         let base = loadedDocument ?? WrDocument(id: documentId, title: "", workspaceId: "")
         let title = writeopiaManager.title
-        if title != base.title || isLocked != base.isLocked { changed = true }
+        if title != base.title || isLocked != base.isLocked || tagIds != base.tagIds { changed = true }
 
         var document = base
         document.title = title
         document.content = steps
         document.isLocked = isLocked
+        document.tagIds = tagIds
         if changed { document.lastUpdatedAt = now }
         return (document, changed)
     }
@@ -697,6 +779,7 @@ public final class NoteEditorViewModel {
             errorMessage = nil
             lastSyncTimestamp = document.lastSyncedAt ?? 0
             pushedSteps = savedSteps
+            await reloadTags()
             writingAgent?.documentOpened(id: documentId)
         } catch is CancellationError {
             return

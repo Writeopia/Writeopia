@@ -9,12 +9,17 @@ sealed class NotesNavigation(val navigationType: NotesNavigationType, val id: St
 
     data object Root : NotesNavigation(navigationType = NotesNavigationType.ROOT, "root")
 
+    /** The documents of the workspace carrying the tag, shown like a folder. */
+    class Tag(tagId: String) :
+        NotesNavigation(navigationType = NotesNavigationType.TAG, id = tagId)
+
     companion object {
         fun fromType(type: NotesNavigationType, path: String): NotesNavigation =
             when (type) {
                 NotesNavigationType.FAVORITES -> Favorites
                 NotesNavigationType.ROOT -> Root
                 NotesNavigationType.FOLDER -> Folder(path)
+                NotesNavigationType.TAG -> Tag(path)
             }
     }
 }
@@ -22,7 +27,8 @@ sealed class NotesNavigation(val navigationType: NotesNavigationType, val id: St
 enum class NotesNavigationType(val type: String) {
     FAVORITES("favorites"),
     ROOT("root"),
-    FOLDER("folder");
+    FOLDER("folder"),
+    TAG("tag");
 
     companion object {
         fun fromType(type: String) = entries.firstOrNull { it.type == type }

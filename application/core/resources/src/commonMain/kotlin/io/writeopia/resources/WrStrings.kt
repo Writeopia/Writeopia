@@ -21,6 +21,53 @@ import writeopia.application.core.resources.generated.resources.writing_folder_d
 import writeopia.application.core.resources.generated.resources.writing_folder_dialog_new_folder
 import writeopia.application.core.resources.generated.resources.writing_folder_dialog_none
 import writeopia.application.core.resources.generated.resources.writing_folder_dialog_not_now
+import writeopia.application.core.resources.generated.resources.document_tag_add_dialog_title
+import writeopia.application.core.resources.generated.resources.document_tag_add_existing
+import writeopia.application.core.resources.generated.resources.document_tag_add_new
+import writeopia.application.core.resources.generated.resources.document_tag_add_no_match
+import writeopia.application.core.resources.generated.resources.document_tag_add_search
+import writeopia.application.core.resources.generated.resources.document_tag_ai_failed
+import writeopia.application.core.resources.generated.resources.document_tag_cancel
+import writeopia.application.core.resources.generated.resources.document_tag_create
+import writeopia.application.core.resources.generated.resources.document_tag_create_with_ai
+import writeopia.application.core.resources.generated.resources.document_tag_creating_with_ai
+import writeopia.application.core.resources.generated.resources.document_tag_description
+import writeopia.application.core.resources.generated.resources.document_tag_name
+import writeopia.application.core.resources.generated.resources.document_tags_add
+import writeopia.application.core.resources.generated.resources.document_tags_dialog_empty
+import writeopia.application.core.resources.generated.resources.document_tags_dialog_title
+import writeopia.application.core.resources.generated.resources.document_tags_none
+import writeopia.application.core.resources.generated.resources.document_tags_more
+import writeopia.application.core.resources.generated.resources.graph_grouping_folders
+import writeopia.application.core.resources.generated.resources.tag_screen_empty
+import writeopia.application.core.resources.generated.resources.documents_graph
+import writeopia.application.core.resources.generated.resources.untitled
+import writeopia.application.core.resources.generated.resources.graph_card_kind_document
+import writeopia.application.core.resources.generated.resources.graph_card_kind_folder
+import writeopia.application.core.resources.generated.resources.graph_card_kind_tag
+import writeopia.application.core.resources.generated.resources.graph_card_updated
+import writeopia.application.core.resources.generated.resources.graph_card_in_folder
+import writeopia.application.core.resources.generated.resources.graph_card_at_root
+import writeopia.application.core.resources.generated.resources.graph_card_tags
+import writeopia.application.core.resources.generated.resources.graph_card_no_tags
+import writeopia.application.core.resources.generated.resources.graph_card_folder_contents
+import writeopia.application.core.resources.generated.resources.graph_card_documents_count
+import writeopia.application.core.resources.generated.resources.graph_card_open_document
+import writeopia.application.core.resources.generated.resources.graph_card_open_folder
+import writeopia.application.core.resources.generated.resources.graph_card_show_documents
+import writeopia.application.core.resources.generated.resources.document_tags_remove
+import writeopia.application.core.resources.generated.resources.document_tags_title
+import writeopia.application.core.resources.generated.resources.document_tags_view
+import writeopia.application.core.resources.generated.resources.writing_suggestion_tags
+import writeopia.application.core.resources.generated.resources.writing_tag_dialog_add
+import writeopia.application.core.resources.generated.resources.writing_tag_dialog_body
+import writeopia.application.core.resources.generated.resources.writing_tag_dialog_creating
+import writeopia.application.core.resources.generated.resources.writing_tag_dialog_loading
+import writeopia.application.core.resources.generated.resources.writing_tag_dialog_new_tag
+import writeopia.application.core.resources.generated.resources.writing_tag_dialog_no_catalogue
+import writeopia.application.core.resources.generated.resources.writing_tag_dialog_none
+import writeopia.application.core.resources.generated.resources.writing_tag_dialog_not_now
+import writeopia.application.core.resources.generated.resources.writing_tag_dialog_title
 import writeopia.application.core.resources.generated.resources.writing_folder_dialog_title
 import writeopia.application.core.resources.generated.resources.writing_suggestion_drawing
 import writeopia.application.core.resources.generated.resources.writing_suggestion_spreadsheet
@@ -1120,4 +1167,146 @@ object WrStrings {
 
     @Composable
     fun writingFolderDialogNotNow() = stringResource(Res.string.writing_folder_dialog_not_now)
+
+    @Composable
+    fun writingSuggestionTags() = stringResource(Res.string.writing_suggestion_tags)
+
+    @Composable
+    fun writingTagDialogTitle() = stringResource(Res.string.writing_tag_dialog_title)
+
+    @Composable
+    fun writingTagDialogBody() = stringResource(Res.string.writing_tag_dialog_body)
+
+    @Composable
+    fun writingTagDialogLoading() = stringResource(Res.string.writing_tag_dialog_loading)
+
+    @Composable
+    fun writingTagDialogNone() = stringResource(Res.string.writing_tag_dialog_none)
+
+    @Composable
+    fun writingTagDialogNoCatalogue() = stringResource(Res.string.writing_tag_dialog_no_catalogue)
+
+    @Composable
+    fun writingTagDialogAdd() = stringResource(Res.string.writing_tag_dialog_add)
+
+    @Composable
+    fun writingTagDialogNewTag() = stringResource(Res.string.writing_tag_dialog_new_tag)
+
+    @Composable
+    fun writingTagDialogCreating() = stringResource(Res.string.writing_tag_dialog_creating)
+
+    @Composable
+    fun writingTagDialogNotNow() = stringResource(Res.string.writing_tag_dialog_not_now)
+
+    @Composable
+    fun documentTagsTitle() = stringResource(Res.string.document_tags_title)
+
+    @Composable
+    fun documentTagsNone() = stringResource(Res.string.document_tags_none)
+
+    @Composable
+    fun documentTagsView() = stringResource(Res.string.document_tags_view)
+
+    @Composable
+    fun documentTagsAdd() = stringResource(Res.string.document_tags_add)
+
+    @Composable
+    fun documentTagsDialogTitle() = stringResource(Res.string.document_tags_dialog_title)
+
+    @Composable
+    fun documentTagsDialogEmpty() = stringResource(Res.string.document_tags_dialog_empty)
+
+    @Composable
+    fun documentTagsRemove() = stringResource(Res.string.document_tags_remove)
+
+    @Composable
+    fun documentTagsMore(count: Int) = stringResource(Res.string.document_tags_more, count)
+
+    @Composable
+    fun graphGroupingFolders() = stringResource(Res.string.graph_grouping_folders)
+
+    @Composable
+    fun untitled() = stringResource(Res.string.untitled)
+
+    @Composable
+    fun graphCardKindDocument() = stringResource(Res.string.graph_card_kind_document)
+
+    @Composable
+    fun graphCardKindFolder() = stringResource(Res.string.graph_card_kind_folder)
+
+    @Composable
+    fun graphCardKindTag() = stringResource(Res.string.graph_card_kind_tag)
+
+    @Composable
+    fun graphCardUpdated(date: String) = stringResource(Res.string.graph_card_updated, date)
+
+    @Composable
+    fun graphCardInFolder(folder: String) = stringResource(Res.string.graph_card_in_folder, folder)
+
+    @Composable
+    fun graphCardAtRoot() = stringResource(Res.string.graph_card_at_root)
+
+    @Composable
+    fun graphCardTags(names: String) = stringResource(Res.string.graph_card_tags, names)
+
+    @Composable
+    fun graphCardNoTags() = stringResource(Res.string.graph_card_no_tags)
+
+    @Composable
+    fun graphCardFolderContents(folders: Int, documents: Int) =
+        stringResource(Res.string.graph_card_folder_contents, folders, documents)
+
+    @Composable
+    fun graphCardDocumentsCount(count: Int) = stringResource(Res.string.graph_card_documents_count, count)
+
+    @Composable
+    fun graphCardOpenDocument() = stringResource(Res.string.graph_card_open_document)
+
+    @Composable
+    fun graphCardOpenFolder() = stringResource(Res.string.graph_card_open_folder)
+
+    @Composable
+    fun graphCardShowDocuments() = stringResource(Res.string.graph_card_show_documents)
+
+    @Composable
+    fun tagScreenEmpty() = stringResource(Res.string.tag_screen_empty)
+
+    @Composable
+    fun documentsGraph() = stringResource(Res.string.documents_graph)
+
+    @Composable
+    fun documentTagAddDialogTitle() = stringResource(Res.string.document_tag_add_dialog_title)
+
+    @Composable
+    fun documentTagAddExisting() = stringResource(Res.string.document_tag_add_existing)
+
+    @Composable
+    fun documentTagAddSearch() = stringResource(Res.string.document_tag_add_search)
+
+    @Composable
+    fun documentTagAddNoMatch() = stringResource(Res.string.document_tag_add_no_match)
+
+    @Composable
+    fun documentTagAddNew() = stringResource(Res.string.document_tag_add_new)
+
+    @Composable
+    fun documentTagName() = stringResource(Res.string.document_tag_name)
+
+    @Composable
+    fun documentTagDescription() = stringResource(Res.string.document_tag_description)
+
+    @Composable
+    fun documentTagCreate() = stringResource(Res.string.document_tag_create)
+
+    @Composable
+    fun documentTagCreateWithAi() = stringResource(Res.string.document_tag_create_with_ai)
+
+    @Composable
+    fun documentTagCreatingWithAi() = stringResource(Res.string.document_tag_creating_with_ai)
+
+    @Composable
+    fun documentTagAiFailed() = stringResource(Res.string.document_tag_ai_failed)
+
+    @Composable
+    fun documentTagCancel() = stringResource(Res.string.document_tag_cancel)
 }

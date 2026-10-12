@@ -4984,6 +4984,292 @@
           }
         }
       }
+    },
+    "Add tags" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar tags"
+          }
+        }
+      }
+    },
+    "Which tags fit this document?" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quais tags combinam com este documento?"
+          }
+        }
+      }
+    },
+    "This document has no tags. Pick the ones that fit, or let the AI create one." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este documento não tem tags. Escolha as que combinam, ou deixe a IA criar uma."
+          }
+        }
+      }
+    },
+    "Creating a tag…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Criando uma tag…"
+          }
+        }
+      }
+    },
+    "Looking at your tags…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Olhando suas tags…"
+          }
+        }
+      }
+    },
+    "This workspace has no tags yet." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este workspace ainda não tem tags."
+          }
+        }
+      }
+    },
+    "None of your tags seems to fit this document." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nenhuma das suas tags parece combinar com este documento."
+          }
+        }
+      }
+    },
+    "Create with AI" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Criar com IA"
+          }
+        }
+      }
+    },
+    "Add selected" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar selecionadas"
+          }
+        }
+      }
+    },
+    "Add tag" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar tag"
+          }
+        }
+      }
+    },
+    "View tags" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver tags"
+          }
+        }
+      }
+    },
+    "No tags yet" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ainda sem tags"
+          }
+        }
+      }
+    },
+    "Tags of this document" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tags deste documento"
+          }
+        }
+      }
+    },
+    "This document has no tags. Add one from the catalogue or create a new one." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este documento não tem tags. Adicione uma do catálogo ou crie uma nova."
+          }
+        }
+      }
+    },
+    "Remove tag" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remover tag"
+          }
+        }
+      }
+    },
+    "Add a tag" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar uma tag"
+          }
+        }
+      }
+    },
+    "Pick a tag" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolha uma tag"
+          }
+        }
+      }
+    },
+    "Search tags" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar tags"
+          }
+        }
+      }
+    },
+    "No tag matches. Create one below." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nenhuma tag corresponde. Crie uma abaixo."
+          }
+        }
+      }
+    },
+    "New tag" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nova tag"
+          }
+        }
+      }
+    },
+    "What does this tag mean?" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O que esta tag significa?"
+          }
+        }
+      }
+    },
+    "Asking the AI…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Perguntando à IA…"
+          }
+        }
+      }
+    },
+    "Suggest with AI" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sugerir com IA"
+          }
+        }
+      }
+    },
+    "Create and add" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Criar e adicionar"
+          }
+        }
+      }
+    },
+    "The AI could not suggest a tag. Try again or write one." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A IA não conseguiu sugerir uma tag. Tente de novo ou escreva uma."
+          }
+        }
+      }
+    },
+    "The tag couldn't be saved." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível salvar a tag."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

@@ -109,6 +109,41 @@ public enum FolderConflictHandler {
     }
 }
 
+/// Settles the tag catalogue changed here and on the backend. Mirrors `DocumentTagConflictHandler`
+/// of the Kotlin app: the copy updated last wins, a tag deleted here is never brought back (its
+/// tombstone goes up instead), and what came from this device is returned to be sent.
+public enum TagConflictHandler {
+    public static func handle(
+        local: [DocumentTag],
+        remote: [DocumentTag],
+        store: LocalDocumentsRepository
+    ) throws -> [DocumentTag] {
+        var toSend: [DocumentTag] = []
+        let localById = Dictionary(local.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+
+        for external in remote {
+            let existing = try localById[external.id] ?? store.storedTag(id: external.id)
+            guard let existing else {
+                var synced = external
+                synced.lastSyncedAt = external.lastUpdatedAt
+                try store.storeTag(synced)
+                continue
+            }
+            if existing.lastUpdatedAt >= external.lastUpdatedAt {
+                if let mine = localById[external.id] { toSend.append(mine) }
+            } else {
+                var synced = external
+                synced.lastSyncedAt = external.lastUpdatedAt
+                try store.storeTag(synced)
+            }
+        }
+
+        let remoteIds = Set(remote.map(\.id))
+        toSend += local.filter { !remoteIds.contains($0.id) }
+        return toSend
+    }
+}
+
 // MARK: - API
 
 /// Sync endpoints of the documents service.
@@ -157,6 +192,21 @@ public final class SyncAPI {
             let workspaceId: String
         }
         try await client.perform(.post, "api/docs/workspace/folder", body: Body(folders: folders.map(\.api), workspaceId: workspaceId))
+    }
+
+    /// Upserts tags of the workspace catalogue.
+    public func sendTags(_ tags: [DocumentTag]) async throws {
+        guard !tags.isEmpty else { return }
+        struct Body: Encodable {
+            let tags: [DocumentTag]
+            let workspaceId: String
+        }
+        let owned = tags.map { tag -> DocumentTag in
+            var tag = tag
+            tag.workspaceId = workspaceId
+            return tag
+        }
+        try await client.perform(.post, "api/docs/workspace/tag", body: Body(tags: owned, workspaceId: workspaceId))
     }
 
     public func document(id: String) async throws -> WrDocument {
@@ -247,6 +297,39 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
     }
 
     public var workspaceId: String { remote.workspaceId }
+
+    // MARK: - Tags: the catalogue lives on this device and goes up with the folder sync.
+
+    public func tags() async throws -> [DocumentTag] {
+        try local.storedTags()
+    }
+
+    public func documents(withTag tagId: String) async throws -> [WrDocument] {
+        try await local.documents(withTag: tagId)
+    }
+
+    public func allContents() async throws -> FolderContents {
+        try await local.allContents()
+    }
+
+    /// Stores the tag and sends it right away; when that fails the next folder sync sends it.
+    public func saveTag(_ tag: DocumentTag) async throws {
+        var tag = tag
+        tag.workspaceId = workspaceId
+        try local.storeTag(tag)
+        do {
+            try await api.sendTags([tag])
+            try markSynced(tag)
+        } catch {
+            // The tag stays outdated and goes with the next sync.
+        }
+    }
+
+    private func markSynced(_ sent: DocumentTag) throws {
+        guard var stored = try local.storedTag(id: sent.id), stored.lastUpdatedAt <= sent.lastUpdatedAt else { return }
+        stored.lastSyncedAt = max(Date.nowMillis, stored.lastUpdatedAt)
+        try local.storeTag(stored)
+    }
 
     // MARK: - Presentations on this device: the ones of the local AI and copies of the cloud ones, never synced.
 
@@ -510,6 +593,17 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
             try markSynced(folder)
         }
 
+        // The whole tag catalogue of the workspace comes with every folder.
+        let tagsToSend = try TagConflictHandler.handle(
+            local: try local.storedOutdatedTags(),
+            remote: remoteContents.tags,
+            store: local
+        )
+        try await api.sendTags(tagsToSend)
+        for tag in tagsToSend {
+            try markSynced(tag)
+        }
+
         // Changes made in other folders that couldn't be sent yet (a move while offline, for
         // one) go with this sync too, so they don't wait for their folder to be opened. After
         // this folder is handled: they're still outdated while its listing is applied, so a
@@ -525,7 +619,9 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
         guard remoteCopy.id == documentId else { return nil }
 
         guard var merged = DocumentMerger.merge(local: localCopy, remote: remoteCopy) else { return nil }
-        guard localCopy == nil || merged.content != localCopy?.content || merged.title != localCopy?.title else {
+        guard localCopy == nil || merged.content != localCopy?.content || merged.title != localCopy?.title
+            || merged.tagIds != localCopy?.tagIds
+        else {
             return nil
         }
         if localCopy?.isOutdated != true {

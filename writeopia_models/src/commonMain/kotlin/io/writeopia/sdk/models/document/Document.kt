@@ -23,6 +23,8 @@ data class Document(
     val deleted: Boolean = false,
     val published: Boolean = false,
     val commentConversations: Map<String, List<Comment>> = emptyMap(),
+    /** The ids of the [DocumentTag]s of this document, from the workspace catalogue. */
+    val tagIds: Set<String> = emptySet(),
 ) : MenuItem {
 
     init {

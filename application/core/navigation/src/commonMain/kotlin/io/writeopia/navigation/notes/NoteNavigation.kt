@@ -45,7 +45,7 @@ fun NavController.navigateToAccount() {
 
 fun NavController.navigateToFolder(navigation: NotesNavigation) {
     when (navigation) {
-        is NotesNavigation.Folder -> {
+        is NotesNavigation.Folder, is NotesNavigation.Tag -> {
             val id = this.currentBackStackEntry?.savedStateHandle?.get<String?>(NAVIGATION_PATH)
 
             if (id != navigation.id) {
@@ -69,7 +69,7 @@ fun NavController.navigateToFolder(navigation: NotesNavigation) {
 
 fun NavController.navigateToFolderDesktop(navigation: NotesNavigation) {
     when (navigation) {
-        is NotesNavigation.Folder -> {
+        is NotesNavigation.Folder, is NotesNavigation.Tag -> {
             val id = this.currentBackStackEntry?.savedStateHandle?.get<String?>(NAVIGATION_PATH)
 
             if (id != navigation.id) {
@@ -93,7 +93,7 @@ fun NavController.navigateToFolderDesktop(navigation: NotesNavigation) {
 
 fun NavController.navigateToFolderMobile(navigation: NotesNavigation) {
     when (navigation) {
-        is NotesNavigation.Folder -> {
+        is NotesNavigation.Folder, is NotesNavigation.Tag -> {
             this.navigate(
                 "${Destinations.CHOOSE_NOTE.id}/${navigation.navigationType.type}/${navigation.id}",
             )

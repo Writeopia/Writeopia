@@ -53,7 +53,9 @@ import io.writeopia.navigation.notes.navigateToNoteMenu
 import io.writeopia.navigation.notifications.navigateToNotifications
 import io.writeopia.navigation.search.navigateToSearch
 import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
+import io.writeopia.documents.graph.di.DocumentsGraphInjection
 import io.writeopia.notemenu.di.NotesMenuInjection
+import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.notemenu.navigation.NAVIGATION_PATH
 import io.writeopia.notemenu.navigation.NAVIGATION_TYPE
 import io.writeopia.theme.WriteopiaTheme
@@ -79,6 +81,8 @@ fun PortraitMobile(
     val accentColor by accentColorState.collectAsState()
     val scrollAwareState = rememberScrollAwareState()
     val sideMenuKmpInjector = remember { SideMenuKmpInjector() }
+    // The documents graph reuses the desktop screen; the route must be registered to open it.
+    val documentsGraphInjection = remember { DocumentsGraphInjection(RepositoryInjector.singleton()) }
 
     LaunchedEffect(navController) {
         navController.currentBackStackEntryFlow.collect { navEntry ->
@@ -109,6 +113,7 @@ fun PortraitMobile(
                 navController = navController,
                 editorInjector = editorInjector,
                 drawingInjection = drawingInjection,
+                documentsGraphInjection = documentsGraphInjection,
                 selectedColorTheme = colorThemeState,
                 selectedAccentColor = accentColorState,
                 selectColorTheme = uiConfigViewModel::changeColorTheme,

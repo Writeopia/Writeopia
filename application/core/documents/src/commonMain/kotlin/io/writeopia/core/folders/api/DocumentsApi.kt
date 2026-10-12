@@ -14,6 +14,7 @@ import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.writeopia.sdk.models.api.request.documents.FolderDiffRequest
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.document.DocumentTag
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.models.utils.ResultData
@@ -23,6 +24,7 @@ import io.writeopia.sdk.serialization.data.IconApi
 import io.writeopia.sdk.serialization.request.UpdateFolderRequest
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
+import io.writeopia.sdk.serialization.json.SendDocumentTagsRequest
 import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import io.writeopia.sdk.serialization.json.SendFoldersRequest
 import io.writeopia.sdk.serialization.request.CloneDocumentsRequest
@@ -40,6 +42,7 @@ import io.writeopia.sdk.serialization.response.FolderContentResponse
 import io.writeopia.sdk.serialization.response.GenerateSummaryResponse
 import io.writeopia.sdk.serialization.response.WorkspaceDiffResponse
 import io.ktor.http.HttpStatusCode
+import io.writeopia.app.endpoints.EndPoints
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
@@ -78,7 +81,7 @@ class DocumentsApi(
         workspaceId: String,
         lastSync: Instant,
         orderBy: String = "last_updated_at"
-    ): ResultData<Pair<List<Document>, List<Folder>>> {
+    ): ResultData<WorkspaceNewData> {
         val url = "$baseUrl/api/docs/workspace/diff"
         val response = client.post(url) {
             contentType(ContentType.Application.Json)
@@ -86,11 +89,15 @@ class DocumentsApi(
         }
 
         return if (response.status.isSuccess()) {
-            val (foldersApi, documentsApi) = response.body<WorkspaceDiffResponse>()
-            val documents = documentsApi.map { it.toModel() }
-            val folders = foldersApi.map { it.toModel() }
+            val diff = response.body<WorkspaceDiffResponse>()
 
-            ResultData.Complete(documents to folders)
+            ResultData.Complete(
+                WorkspaceNewData(
+                    documents = diff.documents.map { it.toModel() },
+                    folders = diff.folders.map { it.toModel() },
+                    tags = diff.tags.map { it.toModel() },
+                )
+            )
         } else {
             println("response error: $response")
             ResultData.Error()
@@ -133,6 +140,27 @@ class DocumentsApi(
         return if (response.status.isSuccess()) {
             ResultData.Complete(Unit)
         } else {
+            ResultData.Error()
+        }
+    }
+
+    /** Upserts the tags of the workspace catalogue in the backend. */
+    suspend fun sendTags(
+        tags: List<DocumentTag>,
+        workspaceId: String
+    ): ResultData<Unit> {
+        if (workspaceId == Workspace.disconnectedWorkspace().id) return ResultData.Error()
+        if (tags.isEmpty()) return ResultData.Complete(Unit)
+
+        val response = client.post("$baseUrl/${EndPoints.documentTags()}") {
+            contentType(ContentType.Application.Json)
+            setBody(SendDocumentTagsRequest(tags.map { it.toApi() }, workspaceId))
+        }
+
+        return if (response.status.isSuccess()) {
+            ResultData.Complete(Unit)
+        } else {
+            println("error sending tags: $response")
             ResultData.Error()
         }
     }
@@ -475,3 +503,10 @@ sealed class GenerateSummaryApiResult {
 
     data class Error(val message: String) : GenerateSummaryApiResult()
 }
+
+/** What a workspace diff brings down: changed documents, every folder and the whole tag catalogue. */
+data class WorkspaceNewData(
+    val documents: List<Document>,
+    val folders: List<Folder>,
+    val tags: List<DocumentTag> = emptyList(),
+)

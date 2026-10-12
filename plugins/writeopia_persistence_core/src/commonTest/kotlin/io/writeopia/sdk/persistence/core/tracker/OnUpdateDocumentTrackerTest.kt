@@ -117,6 +117,66 @@ class OnUpdateDocumentTrackerTest {
         assertEquals(sourceDocument.workspaceId, persisted.workspaceId)
     }
 
+    @Test
+    fun tagChangeShouldSaveTheWholeDocumentWithItsTags() = runTest {
+        val sourceDocument = sourceDocument(emptyList())
+        val recorder = RecordingDocumentUpdate()
+        val tracker = OnUpdateDocumentTracker(recorder)
+        val documentEditionFlow = MutableStateFlow(
+            StoryState(
+                stories = sourceDocument.content,
+                lastEdit = LastEdit.Nothing,
+            ) to sourceDocument.info()
+        )
+        val tagIdsFlow = MutableStateFlow(setOf("tag-1"))
+
+        val job = launch {
+            tracker.saveOnStoryChanges(
+                documentEditionFlow,
+                MutableStateFlow(sourceDocument.workspaceId),
+                MutableStateFlow(emptyMap()),
+                tagIdsFlow,
+            )
+        }
+        runCurrent()
+        assertFalse(recorder.savedDocument.isCompleted)
+
+        tagIdsFlow.value = setOf("tag-1", "tag-2")
+
+        val persisted = withTimeout(1_000) { recorder.savedDocument.await() }
+        job.cancel()
+
+        assertEquals(setOf("tag-1", "tag-2"), persisted.tagIds)
+        assertEquals(sourceDocument.content.getValue(0.0).text, persisted.content.getValue(0.0).text)
+        assertEquals(true, persisted.lastUpdatedAt > sourceDocument.lastUpdatedAt)
+    }
+
+    @Test
+    fun wholeDocumentSaveShouldCarryTheTags() = runTest {
+        val sourceDocument = sourceDocument(emptyList())
+        val recorder = RecordingDocumentUpdate()
+        val tracker = OnUpdateDocumentTracker(recorder)
+
+        val job = launch {
+            tracker.saveOnStoryChanges(
+                MutableStateFlow(
+                    StoryState(
+                        stories = sourceDocument.content,
+                        lastEdit = LastEdit.Whole,
+                    ) to sourceDocument.info()
+                ),
+                MutableStateFlow(sourceDocument.workspaceId),
+                MutableStateFlow(emptyMap()),
+                MutableStateFlow(setOf("tag-1")),
+            )
+        }
+
+        val persisted = withTimeout(1_000) { recorder.savedDocument.await() }
+        job.cancel()
+
+        assertEquals(setOf("tag-1"), persisted.tagIds)
+    }
+
     private fun conversation(): CommentConversation =
         CommentConversation(
             id = "conversation-1",

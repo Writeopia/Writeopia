@@ -28,6 +28,17 @@ public final class DocumentsRouter {
         path.append(DocumentsRoute.document(id: document.id, title: document.displayTitle))
     }
 
+    /// Shows the documents carrying `tag`, like a folder.
+    func open(tag: DocumentTag) {
+        path.append(DocumentsRoute.tag(tag))
+    }
+
+    /// Shows the documents graph, right under the root.
+    func openGraph() {
+        favoritesOpened = false
+        path = NavigationPath([DocumentsRoute.graph])
+    }
+
     /// Shows every favorite of the workspace, right under the root.
     func openFavorites() {
         favoritesOpened = true

@@ -30,6 +30,7 @@ class KmpSearchInjection private constructor(
         writeopiaDb?.documentEntityQueries,
         writeopiaDb?.storyStepEntityQueries,
         writeopiaDb?.commentEntityQueries,
+        writeopiaDb?.documentTagLinkEntityQueries,
     )
 
     private fun provideSearchApi(): SearchApi =

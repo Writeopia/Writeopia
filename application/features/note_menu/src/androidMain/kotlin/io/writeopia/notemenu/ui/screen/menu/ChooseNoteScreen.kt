@@ -32,6 +32,7 @@ internal fun ChooseNoteScreen(
     sideMenuContent: @Composable () -> Unit = {},
     onCurrentFolderDeleted: () -> Unit = {},
     navigateToAncestor: (NotesNavigation) -> Unit = navigateToNotes,
+    navigateToForceGraph: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val hasSelectedNotes by chooseNoteViewModel.hasSelectedNotes.collectAsState()
@@ -67,6 +68,7 @@ internal fun ChooseNoteScreen(
         sideMenuContent = sideMenuContent,
         onCurrentFolderDeleted = onCurrentFolderDeleted,
         navigateToAncestor = navigateToAncestor,
+        navigateToForceGraph = navigateToForceGraph,
         modifier = modifier,
     )
 }

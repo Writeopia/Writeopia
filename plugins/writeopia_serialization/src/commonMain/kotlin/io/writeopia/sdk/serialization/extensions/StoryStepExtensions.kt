@@ -80,6 +80,7 @@ fun Document.toApi(): DocumentApi =
         title = title,
         content = content.map { (position, story) -> story.toApi(position) },
         commentConversations = commentConversations.toApi(),
+        tagIds = tagIds.toList(),
         createdAt = createdAt.toEpochMilliseconds(),
         lastUpdatedAt = lastUpdatedAt.toEpochMilliseconds(),
         lastSyncedAt = lastSyncedAt?.toEpochMilliseconds(),
@@ -100,6 +101,7 @@ fun DocumentApi.toModel(): Document =
             .sortedBy { it.position }
             .associate { story -> story.position to story.toModel() },
         commentConversations = commentConversations.toCommentMap(),
+        tagIds = tagIds.toSet(),
         createdAt = Instant.fromEpochMilliseconds(createdAt),
         lastUpdatedAt = Instant.fromEpochMilliseconds(lastUpdatedAt),
         lastSyncedAt = lastSyncedAt?.let { Instant.fromEpochMilliseconds(it) },

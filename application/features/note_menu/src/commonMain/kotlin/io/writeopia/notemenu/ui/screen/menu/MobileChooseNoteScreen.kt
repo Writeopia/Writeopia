@@ -85,6 +85,7 @@ internal fun MobileChooseNoteScreen(
     sideMenuContent: @Composable () -> Unit = {},
     onCurrentFolderDeleted: () -> Unit = {},
     navigateToAncestor: (NotesNavigation) -> Unit = navigateToNotes,
+    navigateToForceGraph: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     LaunchedEffect(key1 = "refresh", block = {
@@ -219,6 +220,7 @@ internal fun MobileChooseNoteScreen(
                     onEditFolder = { openCurrentFolderDialog(CurrentFolderDialog.EDIT) },
                     onMoveFolder = { openCurrentFolderDialog(CurrentFolderDialog.MOVE) },
                     onDeleteFolder = { openCurrentFolderDialog(CurrentFolderDialog.DELETE) },
+                    onOpenGraph = navigateToForceGraph,
                 )
 
                 currentFolder?.let { folder ->
@@ -525,7 +527,11 @@ private fun Content(
                 )
             }
 
+            val currentTag by chooseNoteViewModel.currentTag.collectAsState()
+            currentTag?.let { tag -> TagHeader(tag) }
+
             NotesCardsScreen(
+                showTapToStart = currentTag == null,
                 isDarkTheme = isDarkTheme,
                 documents = chooseNoteViewModel.documentsState.collectAsState().value,
                 showAddMenuState = chooseNoteViewModel.showAddMenuState,

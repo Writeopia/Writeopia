@@ -2,6 +2,7 @@ package io.writeopia.notemenu.viewmodel
 
 import io.writeopia.core.configuration.models.NotesArrangement
 import io.writeopia.notemenu.ui.dto.NotesUi
+import io.writeopia.sdk.models.document.DocumentTag
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.files.ExternalFile
@@ -30,6 +31,9 @@ interface ChooseNoteViewModel : FolderController {
      * The folder currently being displayed. Null when not inside a folder (root or favorites).
      */
     val currentFolder: StateFlow<Folder?>
+
+    /** The tag whose documents are displayed. Null everywhere but on a tag screen. */
+    val currentTag: StateFlow<DocumentTag?>
 
     /**
      * The folders from the root down to the one displayed, for the breadcrumb. Empty when not

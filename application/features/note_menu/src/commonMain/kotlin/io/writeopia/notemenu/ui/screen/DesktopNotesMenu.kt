@@ -31,6 +31,7 @@ import io.writeopia.common.utils.configuration.PlatformType
 import io.writeopia.common.utils.file.directoryChooserSave
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.common.utils.NotesNavigation
+import io.writeopia.notemenu.ui.screen.menu.TagHeader
 import io.writeopia.notemenu.ui.screen.actions.DesktopNoteActionsMenu
 import io.writeopia.notemenu.ui.screen.configuration.molecules.NotesConfigurationMenu
 import io.writeopia.notemenu.ui.screen.configuration.molecules.NotesSelectionMenu
@@ -90,11 +91,15 @@ fun DesktopNotesMenu(
                     )
                     .background(MaterialTheme.colorScheme.background)
             ) {
+                val currentTag by chooseNoteViewModel.currentTag.collectAsState()
+                currentTag?.let { tag -> TagHeader(tag, modifier = Modifier.padding(start = 24.dp)) }
+
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.padding(start = 40.dp)
                 ) {
                     NotesCardsScreen(
+                        showTapToStart = currentTag == null,
                         isDarkTheme = isDarkTheme,
                         documents = chooseNoteViewModel.documentsState.collectAsState().value,
                         showAddMenuState = chooseNoteViewModel.showAddMenuState,

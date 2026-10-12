@@ -60,13 +60,29 @@ class OnUpdateDocumentTracker(
         workspaceIdFlow: Flow<String>,
         commentConversationsFlow: StateFlow<Map<String, List<Comment>>>,
     ) {
+        saveOnStoryChanges(
+            documentEditionFlow,
+            workspaceIdFlow,
+            commentConversationsFlow,
+            MutableStateFlow(emptySet()),
+        )
+    }
+
+    override suspend fun saveOnStoryChanges(
+        documentEditionFlow: Flow<Pair<StoryState, DocumentInfo>>,
+        workspaceIdFlow: Flow<String>,
+        commentConversationsFlow: StateFlow<Map<String, List<Comment>>>,
+        documentTagIdsFlow: StateFlow<Set<String>>,
+    ) {
         var previousCommentConversations: Map<String, List<Comment>>? = null
+        var previousTagIds: Set<String>? = null
 
         fun fullDocument(
             storyState: StoryState,
             documentInfo: DocumentInfo,
             workspaceId: String,
             commentConversations: Map<String, List<Comment>>,
+            tagIds: Set<String>,
         ): Document {
             val stories = storyState.stories.filter { (_, story) -> !story.ephemeral }
             val titleFromContent = stories.values
@@ -86,6 +102,7 @@ class OnUpdateDocumentTracker(
                 isLocked = documentInfo.isLocked,
                 favorite = documentInfo.isFavorite,
                 commentConversations = commentConversations,
+                tagIds = tagIds,
             )
         }
 
@@ -93,22 +110,29 @@ class OnUpdateDocumentTracker(
             documentEditionFlow,
             workspaceIdFlow,
             commentConversationsFlow,
-        ) { documentEdition, workspaceId, commentConversations ->
-            Triple(documentEdition, workspaceId, commentConversations)
-        }.collect { (documentEdition, workspaceId, commentConversations) ->
+            documentTagIdsFlow,
+        ) { documentEdition, workspaceId, commentConversations, tagIds ->
+            TrackedEdition(documentEdition, workspaceId, commentConversations, tagIds)
+        }.collect { (documentEdition, workspaceId, commentConversations, tagIds) ->
             val (storyState, documentInfo) = documentEdition
             val commentsChanged = previousCommentConversations?.let { previous ->
                 previous != commentConversations
             } ?: false
             previousCommentConversations = commentConversations
 
-            if (commentsChanged) {
+            // Tags and comments are metadata outside the story: a change to them is saved whole,
+            // which also bumps lastUpdatedAt so the sync sends the document.
+            val tagsChanged = previousTagIds?.let { previous -> previous != tagIds } ?: false
+            previousTagIds = tagIds
+
+            if (commentsChanged || tagsChanged) {
                 withContext(NonCancellable) {
                     val document = fullDocument(
                         storyState,
                         documentInfo,
                         workspaceId,
                         commentConversations,
+                        tagIds,
                     )
                     documentUpdate.saveDocument(document)
                     onDocumentUpdate(document)
@@ -161,6 +185,7 @@ class OnUpdateDocumentTracker(
                         documentInfo,
                         workspaceId,
                         commentConversations,
+                        tagIds,
                     )
                     documentUpdate.saveDocument(document)
                     onDocumentUpdate(document)
@@ -382,3 +407,10 @@ class OnUpdateDocumentTracker(
         }
     }
 }
+
+private data class TrackedEdition(
+    val documentEdition: Pair<StoryState, DocumentInfo>,
+    val workspaceId: String,
+    val commentConversations: Map<String, List<Comment>>,
+    val tagIds: Set<String>,
+)

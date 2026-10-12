@@ -107,6 +107,11 @@ private struct ExpandedBox: View {
                     controller.openFolderDialog()
                 }
             }
+            if state.offerTags {
+                SuggestionRow(label: String(localized: "Add tags"), identifier: "writingAgent.tags") {
+                    controller.openTagDialog()
+                }
+            }
         }
         .padding(12)
         .frame(minWidth: 220, maxWidth: 320, alignment: .leading)
@@ -224,6 +229,107 @@ struct FolderSuggestionDialog: View {
                     .buttonStyle(.borderedProminent)
                     .disabled(dialog.isLoading || dialog.isCreating)
                     .accessibilityIdentifier("writingAgent.folder.new")
+            }
+        }
+        .padding(20)
+        .interactiveDismissDisabled(dialog.isCreating)
+    }
+
+    private func progress(_ label: LocalizedStringKey) -> some View {
+        HStack(spacing: 10) {
+            ProgressView().controlSize(.small)
+            Text(label)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
+/// The dialog that tags a document without tags, like `TagSuggestionDialog` of the Kotlin app: a
+/// spinner while the backend judges the catalogue, the tags that fit to keep or drop, and a new
+/// tag made up by the AI.
+struct TagSuggestionDialog: View {
+    let controller: WritingAgentController
+    let dialog: TagDialogState
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(spacing: 10) {
+                Image(systemName: "tag.fill")
+                    .foregroundStyle(WrColors.accent)
+                Text("Which tags fit this document?")
+                    .font(.headline)
+            }
+            Text("This document has no tags. Pick the ones that fit, or let the AI create one.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            Group {
+                if dialog.isCreating {
+                    progress("Creating a tag…")
+                } else if dialog.isLoading {
+                    progress("Looking at your tags…")
+                } else if dialog.catalogueIsEmpty {
+                    Text("This workspace has no tags yet.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                } else if dialog.options.isEmpty {
+                    Text("None of your tags seems to fit this document.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                } else {
+                    ScrollView {
+                        VStack(spacing: 4) {
+                            ForEach(dialog.options) { tag in
+                                let selected = dialog.selected.contains(tag.tagId)
+                                Button {
+                                    controller.toggleTag(tag.tagId)
+                                } label: {
+                                    HStack(alignment: .top) {
+                                        Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                                            .foregroundStyle(selected ? WrColors.accent : .secondary)
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(tag.name)
+                                                .lineLimit(1)
+                                            if !tag.description.isEmpty {
+                                                Text(tag.description)
+                                                    .font(.caption)
+                                                    .foregroundStyle(.secondary)
+                                                    .lineLimit(2)
+                                            }
+                                        }
+                                        Spacer()
+                                        Text("\(Int(tag.probability * 100))%")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 10)
+                                    .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                                .background(WrColors.secondaryFill, in: RoundedRectangle(cornerRadius: 8))
+                                .accessibilityIdentifier("writingAgent.tag.\(tag.tagId)")
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(minLength: 0)
+
+            HStack {
+                Button("Not now") { controller.dismissTagDialog() }
+                    .disabled(dialog.isCreating)
+                    .accessibilityIdentifier("writingAgent.tags.notNow")
+                Spacer()
+                Button("Create with AI") { controller.createTagWithAi() }
+                    .disabled(dialog.isLoading || dialog.isCreating)
+                    .accessibilityIdentifier("writingAgent.tags.new")
+                Button("Add selected") { controller.applyTags() }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(dialog.isLoading || dialog.isCreating || dialog.selected.isEmpty)
+                    .accessibilityIdentifier("writingAgent.tags.add")
             }
         }
         .padding(20)

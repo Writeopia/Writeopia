@@ -22,6 +22,8 @@ data class DocumentApi(
     val deleted: Boolean = false,
     val published: Boolean = false,
     val commentConversations: List<CommentConversationApi> = emptyList(),
+    /** The ids of the document's tags in the workspace catalogue. */
+    val tagIds: List<String> = emptyList(),
 ) {
     @Deprecated("Use primary constructor with commentConversations.")
     constructor(
@@ -53,5 +55,6 @@ data class DocumentApi(
         deleted = deleted,
         published = published,
         commentConversations = emptyList(),
+        tagIds = emptyList(),
     )
 }

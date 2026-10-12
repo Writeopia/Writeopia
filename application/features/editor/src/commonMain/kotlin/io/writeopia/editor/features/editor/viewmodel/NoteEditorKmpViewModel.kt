@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalTime::class)
+@file:OptIn(ExperimentalTime::class, ExperimentalCoroutinesApi::class)
 
 package io.writeopia.editor.features.editor.viewmodel
 
@@ -29,6 +29,7 @@ import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.commonui.extensions.toFolderUi
 import io.writeopia.core.folders.repository.InDocumentSearchRepository
 import io.writeopia.core.folders.repository.folder.FolderRepository
+import io.writeopia.core.folders.repository.tag.DocumentTagRepository
 import io.writeopia.editor.features.editor.copy.CopyManager
 import io.writeopia.editor.features.search.FindInText
 import io.writeopia.editor.model.EditState
@@ -45,6 +46,7 @@ import io.writeopia.sdk.model.story.StoryState
 import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.document.DocumentTag
 import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.span.Span
@@ -74,6 +76,8 @@ import io.writeopia.ui.model.SelectionMetadata
 import io.writeopia.ui.utils.Spans
 import io.writeopia.writingagent.actions.WriteopiaActionExecutor
 import io.writeopia.writingagent.folders.WriteopiaDocumentFolders
+import io.writeopia.writingagent.tags.WriteopiaDocumentTags
+import io.writeopia.app.dto.writingagent.TagCreateRequest
 import io.writeopia.writingagent.api.WritingAgentApi
 import io.writeopia.writingagent.controller.WritingAgentController
 import kotlinx.coroutines.Dispatchers
@@ -81,6 +85,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -97,6 +102,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 class NoteEditorKmpViewModel(
@@ -130,7 +136,9 @@ class NoteEditorKmpViewModel(
     ),
     presentationsApi: PresentationsApi? = null,
     presentationsStore: PresentationsStore? = null,
-    writingAgentApi: WritingAgentApi? = null,
+    private val writingAgentApi: WritingAgentApi? = null,
+    /** The workspace tag catalogue. Null where the app has no tags. */
+    private val documentTagRepository: DocumentTagRepository? = null,
 ) : NoteEditorViewModel,
     ViewModel(),
     BackstackInform by writeopiaManager,
@@ -207,8 +215,33 @@ class NoteEditorKmpViewModel(
                 aiTaskManager = aiTaskManager,
                 taskIdPrefix = { "editor-${writeopiaManager.documentInfo.value.id}" },
             ),
+            // A document without tags is offered some from the workspace catalogue.
+            tags = documentTagRepository?.let { tagRepository ->
+                WriteopiaDocumentTags(
+                    documentTagIds = { writeopiaManager.documentTagIds.value },
+                    workspaceId = { (authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()).id },
+                    tagRepository = tagRepository,
+                    api = api,
+                    addToDocument = writeopiaManager::addDocumentTag,
+                    sendTag = { tag -> sendTagToBackend(tag) },
+                )
+            },
             isEnabled = { !writeopiaManager.documentInfo.value.isLocked && aiClients.isCloudAiReady() },
         ).also { it.start() }
+    }
+
+    /**
+     * Sends a tag of the catalogue to the backend right away and marks it synced on success. When
+     * it fails, the workspace sync sends it later.
+     */
+    private suspend fun sendTagToBackend(tag: DocumentTag) {
+        val api = documentsApi ?: return
+        val repository = documentTagRepository ?: return
+        if (tag.workspaceId == Workspace.disconnectedWorkspace().id) return
+
+        if (api.sendTags(listOf(tag), tag.workspaceId) is ResultData.Complete) {
+            repository.upsertTag(tag.copy(lastSyncedAt = Clock.System.now()))
+        }
     }
 
     init {
@@ -429,6 +462,106 @@ class NoteEditorKmpViewModel(
     private val _showPublishDialog = MutableStateFlow(false)
     override val showPublishDialog: StateFlow<Boolean> = _showPublishDialog.asStateFlow()
 
+    override val workspaceTags: StateFlow<List<DocumentTag>> =
+        writeopiaManager.workspaceIdFlow
+            .flatMapLatest { workspaceId ->
+                documentTagRepository?.listenForTags(workspaceId) ?: flowOf(emptyList())
+            }
+            .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    override val documentTags: StateFlow<List<DocumentTag>> =
+        combine(writeopiaManager.documentTagIds, workspaceTags) { ids, tags ->
+            tags.filter { tag -> tag.id in ids }
+        }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    private val _showTagsDialog = MutableStateFlow(false)
+    override val showTagsDialog: StateFlow<Boolean> = _showTagsDialog.asStateFlow()
+
+    private val _showAddTagDialog = MutableStateFlow(false)
+    override val showAddTagDialog: StateFlow<Boolean> = _showAddTagDialog.asStateFlow()
+
+    private val _canSuggestTagWithAi = MutableStateFlow(false)
+    override val canSuggestTagWithAi: StateFlow<Boolean> = _canSuggestTagWithAi.asStateFlow()
+
+    private val _aiTagDraft = MutableStateFlow<AiTagDraft>(AiTagDraft.Idle)
+    override val aiTagDraft: StateFlow<AiTagDraft> = _aiTagDraft.asStateFlow()
+
+    override fun showTagsDialog() {
+        _showTagsDialog.value = true
+    }
+
+    override fun hideTagsDialog() {
+        _showTagsDialog.value = false
+    }
+
+    override fun showAddTagDialog() {
+        _aiTagDraft.value = AiTagDraft.Idle
+        _showAddTagDialog.value = true
+        viewModelScope.launch(Dispatchers.Default) {
+            _canSuggestTagWithAi.value = writingAgentApi != null && aiClients.isCloudAiReady()
+        }
+    }
+
+    override fun hideAddTagDialog() {
+        _showAddTagDialog.value = false
+        _aiTagDraft.value = AiTagDraft.Idle
+    }
+
+    override fun addTagToDocument(tagId: String) {
+        writeopiaManager.addDocumentTag(tagId)
+        _showAddTagDialog.value = false
+    }
+
+    override fun removeTagFromDocument(tagId: String) {
+        writeopiaManager.removeDocumentTag(tagId)
+    }
+
+    override fun createTag(name: String, description: String) {
+        val repository = documentTagRepository ?: return
+        if (name.isBlank()) return
+
+        viewModelScope.launch(Dispatchers.Default) {
+            val workspaceId = (authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()).id
+            val tag = DocumentTag.create(name, description, workspaceId)
+
+            repository.upsertTag(tag)
+            writeopiaManager.addDocumentTag(tag.id)
+            hideAddTagDialog()
+            sendTagToBackend(tag)
+        }
+    }
+
+    override fun suggestTagWithAi() {
+        val api = writingAgentApi ?: return
+        if (_aiTagDraft.value is AiTagDraft.Loading) return
+
+        _aiTagDraft.value = AiTagDraft.Loading
+        viewModelScope.launch(Dispatchers.Default) {
+            val request = TagCreateRequest(
+                documentTitle = writeopiaManager.documentInfo.value.title,
+                documentText = writeopiaManager.getDocumentText().take(WritingAgentController.DOCUMENT_TEXT_LIMIT),
+                existingTagNames = workspaceTags.value.map { it.name },
+            )
+
+            val draft = when (val result = api.createTag(request)) {
+                is ResultData.Complete ->
+                    if (result.data.error == null && result.data.name.isNotBlank()) {
+                        AiTagDraft.Ready(result.data.name, result.data.description)
+                    } else {
+                        AiTagDraft.Failed
+                    }
+
+                else -> AiTagDraft.Failed
+            }
+
+            if (_aiTagDraft.value is AiTagDraft.Loading) _aiTagDraft.value = draft
+        }
+    }
+
+    override fun clearAiTagDraft() {
+        _aiTagDraft.value = AiTagDraft.Idle
+    }
+
     private val _isDocumentPublished = MutableStateFlow(false)
     override val isDocumentPublished: StateFlow<Boolean> = _isDocumentPublished.asStateFlow()
 
@@ -608,6 +741,7 @@ class NoteEditorKmpViewModel(
             documentEditionFlow = writeopiaManager.documentEditionState,
             workspaceIdFlow = writeopiaManager.workspaceIdFlow,
             commentConversationsFlow = writeopiaManager.commentConversations,
+            documentTagIdsFlow = writeopiaManager.documentTagIds,
             documentTracker = OnUpdateDocumentTracker(documentRepository)
         )
 
@@ -688,6 +822,7 @@ class NoteEditorKmpViewModel(
             documentEditionFlow = writeopiaManager.documentEditionState,
             workspaceIdFlow = writeopiaManager.workspaceIdFlow,
             commentConversationsFlow = writeopiaManager.commentConversations,
+            documentTagIdsFlow = writeopiaManager.documentTagIds,
             documentTracker = OnUpdateDocumentTracker(
                 documentRepository,
                 onStoryStepUpdate = { storyStep, position ->

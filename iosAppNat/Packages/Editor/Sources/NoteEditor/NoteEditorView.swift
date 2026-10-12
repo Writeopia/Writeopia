@@ -376,6 +376,17 @@ public struct NoteEditorView: View {
                     .wrSheetSize(width: 420, height: 380)
             }
         }
+        .sheet(
+            isPresented: Binding(
+                get: { viewModel.writingAgent?.state.tagDialog != nil },
+                set: { if !$0 { viewModel.writingAgent?.dismissTagDialog() } }
+            )
+        ) {
+            if let agent = viewModel.writingAgent, let dialog = agent.state.tagDialog {
+                TagSuggestionDialog(controller: agent, dialog: dialog)
+                    .wrSheetSize(width: 440, height: 440)
+            }
+        }
         .photosPicker(isPresented: $showAgentImagePicker, selection: $agentImageItem, matching: .images)
         .onChange(of: agentImageItem) {
             if let item = agentImageItem {

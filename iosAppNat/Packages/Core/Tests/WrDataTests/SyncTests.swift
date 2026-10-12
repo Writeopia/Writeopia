@@ -108,6 +108,7 @@ final class FakeBackend: HTTPTransport {
     private(set) var searchRequests = 0
     private(set) var sentDocuments: [[String: Any]] = []
     private(set) var sentFolders: [[String: Any]] = []
+    private(set) var sentTags: [[String: Any]] = []
     private(set) var stepSyncBodies: [[String: Any]] = []
     private(set) var deletedIds: [String] = []
     private(set) var deletedFolderIds: [String] = []
@@ -133,6 +134,9 @@ final class FakeBackend: HTTPTransport {
             response = try JSONEncoder().encode(contents)
         case "/api/docs/workspace/document":
             sentDocuments += body["documents"] as? [[String: Any]] ?? []
+            response = Data("Accepted".utf8)
+        case "/api/docs/workspace/tag":
+            sentTags += body["tags"] as? [[String: Any]] ?? []
             response = Data("Accepted".utf8)
         case "/api/docs/workspace/folder":
             if folderSendFails {
@@ -218,6 +222,36 @@ final class FakeBackend: HTTPTransport {
         try await repository.syncFolder("root")
 
         #expect(try repository.local.storedDocument(id: "old") == nil)
+    }
+
+    @Test func folderSyncAppliesTheTagCatalogueAndSendsTheOutdatedTags() async throws {
+        let backend = FakeBackend()
+        backend.folderDiff = FolderContents(tags: [
+            DocumentTag(id: "remote", workspaceId: "w", name: "Remote", description: "Made elsewhere", lastUpdatedAt: 5),
+        ])
+        let repository = makeRepository(backend)
+        try repository.local.storeTag(DocumentTag(id: "mine", workspaceId: "w", name: "Mine", lastUpdatedAt: 7))
+
+        try await repository.syncFolder("root")
+
+        #expect(backend.sentTags.map { $0["id"] as? String } == ["mine"])
+        #expect(Set(backend.sentTags[0].keys) == ["id", "workspaceId", "name", "description", "createdAt", "lastUpdatedAt", "deleted"])
+        #expect(try repository.local.storedTag(id: "remote")?.description == "Made elsewhere")
+        #expect(try repository.local.storedTag(id: "remote")?.isOutdated == false)
+        #expect(try repository.local.storedTag(id: "mine")?.isOutdated == false)
+    }
+
+    @Test func savingATagStoresItAndSendsItAtOnce() async throws {
+        let backend = FakeBackend()
+        let repository = makeRepository(backend)
+
+        try await repository.saveTag(DocumentTag(workspaceId: "", name: "Ideas", description: "Things to try"))
+
+        let sent = try #require(backend.sentTags.first)
+        #expect(sent["name"] as? String == "Ideas")
+        #expect(sent["workspaceId"] as? String == "w")
+        #expect(try await repository.tags().map(\.name) == ["Ideas"])
+        #expect(try repository.local.storedOutdatedTags().isEmpty)
     }
 
     @Test func foldersAreSentInTheBackendFormat() async throws {

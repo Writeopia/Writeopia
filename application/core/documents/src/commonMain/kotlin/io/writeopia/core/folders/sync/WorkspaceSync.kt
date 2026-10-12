@@ -5,6 +5,7 @@ package io.writeopia.core.folders.sync
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.repository.folder.FolderRepository
+import io.writeopia.core.folders.repository.tag.DocumentTagRepository
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.repository.DocumentRepository
@@ -22,6 +23,8 @@ class WorkspaceSync(
     private val documentConflictHandler: DocumentConflictHandler,
     private val folderConflictHandler: FolderConflictHandler,
     private val imageSync: ImageSync,
+    private val documentTagRepository: DocumentTagRepository? = null,
+    private val documentTagConflictHandler: DocumentTagConflictHandler? = null,
     private val minSyncInternal: Duration = 3.seconds
 ) {
     private var lastSuccessfulSync: Instant = Instant.DISTANT_PAST
@@ -43,7 +46,7 @@ class WorkspaceSync(
                 workspaceId,
                 workspace.lastSync
             )
-            val (newDocuments, newFolders) = if (response is ResultData.Complete) {
+            val (newDocuments, newFolders, newTags) = if (response is ResultData.Complete) {
                 response.data
             } else {
                 return ResultData.Error()
@@ -68,9 +71,17 @@ class WorkspaceSync(
 
             val resultSendFolders = documentsApi.sendFolders(foldersNotSent, workspaceId)
 
+            val tagsNotSent = documentTagConflictHandler?.handleConflict(
+                localTags = documentTagRepository?.localOutdatedTags(workspaceId) ?: emptyList(),
+                externalTags = newTags,
+            ) ?: emptyList()
+            val resultSendTags =
+                if (tagsNotSent.isEmpty()) ResultData.Complete(Unit) else documentsApi.sendTags(tagsNotSent, workspaceId)
+
             if (
                 resultSendDocuments is ResultData.Complete &&
-                resultSendFolders is ResultData.Complete
+                resultSendFolders is ResultData.Complete &&
+                resultSendTags is ResultData.Complete
             ) {
                 // Documents and folders were sent successfully.
                 // Update lastSyncedAt for sent items to prevent re-sending them.
@@ -86,6 +97,10 @@ class WorkspaceSync(
                 foldersNotSent.forEach { folder ->
                     val updatedFolder = folder.copy(lastSyncedAt = syncTime)
                     folderRepository.updateFolder(updatedFolder)
+                }
+
+                tagsNotSent.forEach { tag ->
+                    documentTagRepository?.upsertTag(tag.copy(lastSyncedAt = syncTime))
                 }
 
                 documentRepository.refreshDocuments()

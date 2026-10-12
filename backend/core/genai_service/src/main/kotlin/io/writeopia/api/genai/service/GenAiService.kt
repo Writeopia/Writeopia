@@ -31,6 +31,16 @@ private const val FAQ_PROMPT =
 private const val TAGS_PROMPT =
     "Generate a list of relevant tags based on the following text. The tags should capture key topics, themes, and important concepts. Use concise, single-word tags that accurately represent the content. Produce at most 10 tags. Detect the language of the text and write in the same language."
 
+private const val DOCUMENT_TAG_PROMPT =
+    "Make up one tag for the document below, for a workspace where documents carry tags from a " +
+        "shared catalogue. The tag names a subject, project or kind of document that this document " +
+        "and others like it share: a broad category of at most three words, like \"Meetings\", " +
+        "\"Recipes\" or \"Project Atlas\", not a title for this one document. Also write a " +
+        "one-sentence explanation of what the tag means, so people and other tools know which " +
+        "documents should carry it. Do not reuse or paraphrase a name from the existing tags. " +
+        "Use the language of the text. Answer only with JSON of the form " +
+        "{\"name\": \"...\", \"description\": \"...\"}."
+
 class GenAiService(
     private val projectId: String = System.getenv("GOOGLE_CLOUD_PROJECT") ?: "",
     private val location: String = System.getenv("GOOGLE_CLOUD_LOCATION") ?: "us-central1",
@@ -58,7 +68,11 @@ class GenAiService(
         return result.first
     }
 
-    suspend fun generateWithUsage(prompt: String, modelName: String? = null): Pair<AiGenerateResponse, TokenUsage> {
+    suspend fun generateWithUsage(
+        prompt: String,
+        modelName: String? = null,
+        config: GenerateContentConfig? = null,
+    ): Pair<AiGenerateResponse, TokenUsage> {
         return withContext(Dispatchers.IO) {
             try {
                 if (!isAvailable()) {
@@ -76,7 +90,7 @@ class GenAiService(
                 val response = genAiClient.models.generateContent(
                     targetModel,
                     prompt,
-                    null
+                    config
                 )
 
                 val usage = response.usageMetadata().orElse(null)
@@ -257,6 +271,29 @@ class GenAiService(
 
     fun streamTagsWithUsage(text: String, modelName: String? = null, onUsage: (TokenUsage) -> Unit): Flow<AiGenerateResponse> {
         return streamGenerateWithUsage("$TAGS_PROMPT:\n```\n$text\n```", modelName, onUsage)
+    }
+
+    /**
+     * A new tag for a document, as JSON the model is told to answer with. [existingTagNames] are
+     * the names of the catalogue, which the answer must not repeat.
+     */
+    suspend fun generateDocumentTagWithUsage(
+        documentTitle: String,
+        documentText: String,
+        existingTagNames: List<String>,
+        modelName: String? = null,
+    ): Pair<AiGenerateResponse, TokenUsage> {
+        val existing = if (existingTagNames.isEmpty()) {
+            "none"
+        } else {
+            existingTagNames.joinToString(separator = ", ") { name -> "\"$name\"" }
+        }
+        val prompt = "$DOCUMENT_TAG_PROMPT\n\nExisting tags: $existing\n\nTitle: $documentTitle\n\n```\n$documentText\n```"
+        val config = GenerateContentConfig.builder()
+            .responseMimeType("application/json")
+            .build()
+
+        return generateWithUsage(prompt, modelName, config)
     }
 
     fun streamGenerateBaseWithUsage(prompt: String, modelName: String? = null, onUsage: (TokenUsage) -> Unit): Flow<AiGenerateResponse> {

@@ -47,6 +47,53 @@ public struct FolderDialogState: Equatable, Sendable {
     }
 }
 
+/// A tag of the workspace catalogue the document should carry, by the backend's judgment.
+public struct TagSuggestion: Equatable, Identifiable, Sendable {
+    public let tagId: String
+    public let name: String
+    public let description: String
+    public let probability: Double
+
+    public var id: String { tagId }
+
+    public init(tagId: String, name: String, description: String, probability: Double) {
+        self.tagId = tagId
+        self.name = name
+        self.description = description
+        self.probability = probability
+    }
+}
+
+/// The dialog that tags a document without tags, opened from the box. It shows a spinner while the
+/// backend judges the catalogue, then the tags that fit, selected, to add at once, and the option
+/// of a new tag made up by the AI.
+public struct TagDialogState: Equatable, Sendable {
+    /// True while the backend judges the catalogue.
+    public var isLoading = false
+    /// The tags above the threshold, best first. Empty when none fits, the catalogue is empty, or the backend failed.
+    public var options: [TagSuggestion] = []
+    /// The ids of the options the user keeps selected; all of them to start with.
+    public var selected: Set<String> = []
+    /// True while the AI makes up and adds the new tag.
+    public var isCreating = false
+    /// True when the workspace has no tag to offer at all: the dialog only offers a new one.
+    public var catalogueIsEmpty = false
+
+    public init(
+        isLoading: Bool = false,
+        options: [TagSuggestion] = [],
+        selected: Set<String> = [],
+        isCreating: Bool = false,
+        catalogueIsEmpty: Bool = false
+    ) {
+        self.isLoading = isLoading
+        self.options = options
+        self.selected = selected
+        self.isCreating = isCreating
+        self.catalogueIsEmpty = catalogueIsEmpty
+    }
+}
+
 /// What the writing agent offers right now. `stepId` is the block the suggestions are about: the
 /// paragraph being written, or the title when they are about the whole document. The id is kept
 /// instead of the position because the actions insert blocks, which moves every position.
@@ -59,6 +106,10 @@ public struct WritingSuggestionsState: Equatable, Sendable {
     public var offerFolder = false
     /// The dialog filing the document, open after the user took the folder offer; nil otherwise.
     public var folderDialog: FolderDialogState?
+    /// True when the box offers to tag the document, which has no tags yet.
+    public var offerTags = false
+    /// The dialog tagging the document, open after the user took the tag offer; nil otherwise.
+    public var tagDialog: TagDialogState?
 
     public init(
         stepId: String? = nil,
@@ -66,7 +117,9 @@ public struct WritingSuggestionsState: Equatable, Sendable {
         suggestions: [WritingSuggestion] = [],
         isLoading: Bool = false,
         offerFolder: Bool = false,
-        folderDialog: FolderDialogState? = nil
+        folderDialog: FolderDialogState? = nil,
+        offerTags: Bool = false,
+        tagDialog: TagDialogState? = nil
     ) {
         self.stepId = stepId
         self.scope = scope
@@ -74,15 +127,17 @@ public struct WritingSuggestionsState: Equatable, Sendable {
         self.isLoading = isLoading
         self.offerFolder = offerFolder
         self.folderDialog = folderDialog
+        self.offerTags = offerTags
+        self.tagDialog = tagDialog
     }
 
     public static let empty = WritingSuggestionsState()
 
-    /// True when the box has something to show. The folder dialog is shown apart from the box.
-    public var hasSuggestions: Bool { !suggestions.isEmpty || offerFolder }
+    /// True when the box has something to show. The dialogs are shown apart from the box.
+    public var hasSuggestions: Bool { !suggestions.isEmpty || offerFolder || offerTags }
 
     /// How many rows the box offers: the badge of the collapsed box shows this.
-    public var count: Int { suggestions.count + (offerFolder ? 1 : 0) }
+    public var count: Int { suggestions.count + (offerFolder ? 1 : 0) + (offerTags ? 1 : 0) }
 }
 
 /// Counts the sentence ends of a text (".", "!", "?" and ":"): the agent asks again when the

@@ -192,10 +192,21 @@ class DocumentMergerTest {
         lastUpdatedAt = updatedAt,
     )
 
+    @Test
+    fun `the tags of the copy updated last win`() {
+        val content = mapOf(0.0 to step("step-1", 1, null))
+        val local = document(lastUpdatedAt = 1, comments = emptyMap(), content = content, tagIds = setOf("old"))
+        val backend = document(lastUpdatedAt = 2, comments = emptyMap(), content = content, tagIds = setOf("new"))
+
+        assertEquals(setOf("new"), merger.merge(local, backend)?.tagIds)
+        assertEquals(setOf("old"), merger.merge(local.copy(lastUpdatedAt = Instant.fromEpochMilliseconds(3)), backend)?.tagIds)
+    }
+
     private fun document(
         lastUpdatedAt: Long,
         comments: Map<String, List<Comment>>,
         content: Map<Double, StoryStep>,
+        tagIds: Set<String> = emptySet(),
     ) = Document(
         id = "document-1",
         title = "Document",
@@ -206,5 +217,6 @@ class DocumentMergerTest {
         workspaceId = "workspace-1",
         parentId = "root",
         commentConversations = comments,
+        tagIds = tagIds,
     )
 }

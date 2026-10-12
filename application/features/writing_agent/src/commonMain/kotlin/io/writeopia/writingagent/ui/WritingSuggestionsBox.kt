@@ -23,7 +23,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -150,7 +149,7 @@ private fun ExpandedBox(
         shadowElevation = 4.dp,
         shape = RoundedCornerShape(12.dp)
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
+        Column(modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 8.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -209,7 +208,7 @@ private fun ExpandedBox(
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             state.suggestions.forEach { suggestion ->
                 SuggestionRow(
@@ -217,7 +216,7 @@ private fun ExpandedBox(
                     testTag = "$WRITING_SUGGESTIONS_BOX_TAG.${suggestion.action}",
                     onApply = { controller.execute(suggestion.action, ui) }
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(2.dp))
             }
 
             if (state.offerFolder) {
@@ -226,7 +225,16 @@ private fun ExpandedBox(
                     testTag = "$WRITING_SUGGESTIONS_BOX_TAG.folder",
                     onApply = controller::openFolderDialog
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(2.dp))
+            }
+
+            if (state.offerTags) {
+                SuggestionRow(
+                    label = WrStrings.writingSuggestionTags(),
+                    testTag = "$WRITING_SUGGESTIONS_BOX_TAG.tags",
+                    onApply = controller::openTagDialog
+                )
+                Spacer(modifier = Modifier.height(2.dp))
             }
         }
     }
@@ -244,7 +252,7 @@ private fun SuggestionRow(
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
             .clickable(onClick = onApply)
-            .padding(start = 8.dp, top = 6.dp, bottom = 6.dp),
+            .padding(start = 8.dp, end = 4.dp, top = 3.dp, bottom = 3.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
@@ -256,13 +264,19 @@ private fun SuggestionRow(
             modifier = Modifier.weight(1f)
         )
 
-        TextButton(onClick = onApply, modifier = Modifier.testTag(testTag)) {
-            Text(
-                text = WrStrings.writingSuggestionApply(),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
+        Spacer(modifier = Modifier.width(8.dp))
+
+        // A plain label instead of a Material button: the button's 40dp minimum made every row tall.
+        Text(
+            text = WrStrings.writingSuggestionApply(),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier
+                .clip(RoundedCornerShape(6.dp))
+                .clickable(onClick = onApply)
+                .padding(horizontal = 6.dp, vertical = 2.dp)
+                .testTag(testTag)
+        )
     }
 }
 

@@ -12,11 +12,13 @@ import kotlin.time.Instant
 fun DocumentEntity.toModel(
     content: Map<Double, StoryStep> = emptyMap(),
     commentConversations: Map<String, List<Comment>> = emptyMap(),
+    tagIds: Set<String> = emptySet(),
 ) = Document(
     id = id,
     title = title,
     content = content,
     commentConversations = commentConversations,
+    tagIds = tagIds,
     createdAt = Instant.fromEpochMilliseconds(createdAt),
     lastUpdatedAt = Instant.fromEpochMilliseconds(lastUpdatedAt),
     workspaceId = workspaceId,

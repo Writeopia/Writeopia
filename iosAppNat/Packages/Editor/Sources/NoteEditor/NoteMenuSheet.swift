@@ -16,6 +16,7 @@ struct NoteMenuSheet: View {
     let onDelete: () -> Void
     var onPresentationsClick: () -> Void = {}
     @State private var confirmsDelete = false
+    @State private var showsTags = false
     @State private var exportedFile: ExportedFile?
     @State private var exportError: String?
     @Environment(\.dismiss) private var dismiss
@@ -23,6 +24,20 @@ struct NoteMenuSheet: View {
     var body: some View {
         NavigationStack {
             WrSheetList {
+                Section("Tags") {
+                    WrSheetRow("Tags", systemImage: "tag") {
+                        showsTags = true
+                    } trailing: {
+                        if !viewModel.documentTags.isEmpty {
+                            Text(viewModel.documentTags.map(\.name).joined(separator: ", "))
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+                    }
+                    .accessibilityIdentifier("menu.tags")
+                }
+
                 Section("Actions") {
                     Toggle(isOn: Binding(get: { viewModel.isLocked }, set: { _ in viewModel.toggleLock() })) {
                         Label("Lock document", systemImage: viewModel.isLocked ? "lock.fill" : "lock.open")
@@ -89,6 +104,10 @@ struct NoteMenuSheet: View {
                 }
             }
             .navigationTitle("Document")
+            .sheet(isPresented: $showsTags) {
+                DocumentTagsSheet(viewModel: viewModel)
+                    .wrSheetSize(width: 440, height: 520)
+            }
             .toolbarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {

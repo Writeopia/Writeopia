@@ -24,6 +24,21 @@ class DocumentSqlDelightRepositoryTest {
     }
 
     @Test
+    fun saveAndLoadDocumentWithTags() = runTest {
+        createDb().saveAndLoadDocumentWithTags()
+    }
+
+    @Test
+    fun savingAgainReplacesTags() = runTest {
+        createDb().savingAgainReplacesTags()
+    }
+
+    @Test
+    fun metadataSaveKeepsTags() = runTest {
+        createDb().metadataSaveKeepsTags()
+    }
+
+    @Test
     fun saveAndLoadADocumentWithContent() = runTest {
         val documentRepositoryTests: DocumentRepositoryTests = createDb()
         documentRepositoryTests.saveAndLoadADocumentWithContent()

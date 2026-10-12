@@ -142,8 +142,23 @@ private struct SidePagePanel: View {
     @Bindable var viewModel: NoteEditorViewModel
     let onDelete: () -> Void
     @State private var confirmsDelete = false
+    @State private var showsTags = false
 
     var body: some View {
+        PanelSection("Tags") {
+            DocumentTagsSummary(viewModel: viewModel)
+            Button {
+                showsTags = true
+            } label: {
+                Label(viewModel.documentTags.isEmpty ? "Add tag" : "View tags", systemImage: "tag")
+            }
+            .accessibilityIdentifier("side.tags")
+            .sheet(isPresented: $showsTags) {
+                DocumentTagsSheet(viewModel: viewModel)
+                    .wrSheetSize(width: 440, height: 520)
+            }
+        }
+
         PanelSection("Page") {
             Toggle(isOn: Binding(get: { viewModel.isLocked }, set: { _ in viewModel.toggleLock() })) {
                 Label("Lock document", systemImage: viewModel.isLocked ? "lock.fill" : "lock.open")

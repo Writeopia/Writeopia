@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -71,6 +72,8 @@ internal fun MobileConfigurationsMenu(
     onEditFolder: () -> Unit = {},
     onMoveFolder: () -> Unit = {},
     onDeleteFolder: () -> Unit = {},
+    /** Opens the documents graph; null where the app has no graph screen. */
+    onOpenGraph: (() -> Unit)? = null,
 ) {
     if (!visibilityState) return
 
@@ -103,6 +106,7 @@ internal fun MobileConfigurationsMenu(
             onEditFolder = hideThen(onEditFolder),
             onMoveFolder = hideThen(onMoveFolder),
             onDeleteFolder = hideThen(onDeleteFolder),
+            onOpenGraph = onOpenGraph?.let(hideThen),
         )
     }
 }
@@ -119,6 +123,7 @@ private fun ConfigurationsMenuContent(
     onEditFolder: () -> Unit,
     onMoveFolder: () -> Unit,
     onDeleteFolder: () -> Unit,
+    onOpenGraph: (() -> Unit)? = null,
 ) {
     Column(
         modifier = Modifier
@@ -135,6 +140,10 @@ private fun ConfigurationsMenuContent(
             onMoveFolder = onMoveFolder,
             onDeleteFolder = onDeleteFolder,
         )
+
+        if (onOpenGraph != null) {
+            GraphSection(onOpenGraph)
+        }
 
         Spacer(modifier = Modifier.height(20.dp))
     }
@@ -392,4 +401,28 @@ private fun ConfigurationsMenu_Preview() {
 @Composable
 private fun ArrangementOptions_Preview() {
     ArrangementOptions(MutableStateFlow(1), {}, {}, {})
+}
+
+/** The way to the documents graph on phones, which have no side menu to offer it. */
+@Composable
+private fun GraphSection(onOpenGraph: () -> Unit) {
+    Spacer(modifier = Modifier.height(12.dp))
+
+    androidx.compose.material3.TextButton(
+        onClick = onOpenGraph,
+        modifier = Modifier.fillMaxWidth().testTag("configurationsMenu.graph")
+    ) {
+        androidx.compose.material3.Icon(
+            imageVector = WrIcons.chart,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = WrStrings.documentsGraph(),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.weight(1f)
+        )
+    }
 }

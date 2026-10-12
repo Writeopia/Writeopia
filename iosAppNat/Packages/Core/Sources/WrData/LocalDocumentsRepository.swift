@@ -444,6 +444,7 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
     /// Removes the document from this device for good (it was deleted elsewhere).
     public func hardDeleteDocument(id: String) throws {
         try db.transaction {
+            try db.run("DELETE FROM document_tag_link WHERE document_id = ?", [.text(id)])
             try db.run("DELETE FROM story_step WHERE document_id = ?", [.text(id)])
             try db.run("DELETE FROM document WHERE id = ?", [.text(id)])
             try db.run(
@@ -641,8 +642,131 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
                 PRIMARY KEY (presentation_id, id)
             );
             CREATE INDEX IF NOT EXISTS presentation_step_presentation ON presentation_step(presentation_id);
+
+            CREATE TABLE IF NOT EXISTS document_tag (
+                id TEXT PRIMARY KEY NOT NULL,
+                workspace_id TEXT NOT NULL,
+                name TEXT NOT NULL,
+                description TEXT NOT NULL,
+                created_at INTEGER NOT NULL,
+                last_updated_at INTEGER NOT NULL,
+                last_synced_at INTEGER,
+                deleted INTEGER NOT NULL DEFAULT 0
+            );
+            CREATE INDEX IF NOT EXISTS document_tag_workspace ON document_tag(workspace_id);
+
+            CREATE TABLE IF NOT EXISTS document_tag_link (
+                document_id TEXT NOT NULL,
+                tag_id TEXT NOT NULL,
+                PRIMARY KEY (document_id, tag_id)
+            );
+            CREATE INDEX IF NOT EXISTS document_tag_link_document ON document_tag_link(document_id);
             """
         )
+    }
+
+    // MARK: - Tags
+
+    private static let tagColumns = """
+        SELECT id, workspace_id, name, description, created_at, last_updated_at, last_synced_at, deleted
+        """
+
+    private func tag(_ row: SQLiteDatabase.Row) -> DocumentTag? {
+        guard let id = row.text(0) else { return nil }
+        return DocumentTag(
+            id: id,
+            workspaceId: row.text(1) ?? workspaceId,
+            name: row.text(2) ?? "",
+            description: row.text(3) ?? "",
+            createdAt: row.integer(4) ?? 0,
+            lastUpdatedAt: row.integer(5) ?? 0,
+            lastSyncedAt: row.integer(6),
+            deleted: row.bool(7)
+        )
+    }
+
+    public func tags() async throws -> [DocumentTag] {
+        try storedTags()
+    }
+
+    public func documents(withTag tagId: String) async throws -> [WrDocument] {
+        try db.query(
+            """
+            \(Self.documentColumns) FROM document
+            WHERE deleted = 0 AND id IN (SELECT document_id FROM document_tag_link WHERE tag_id = ?)
+            ORDER BY last_updated_at DESC
+            """,
+            [.text(tagId)],
+            row: documentRow
+        ).map(withContent)
+    }
+
+    public func allContents() async throws -> FolderContents {
+        try seedIfNeeded()
+        let folders = try db.query("\(Self.folderColumns) FROM folder WHERE deleted = 0", row: folder)
+        let documents = try db.query(
+            "\(Self.documentColumns) FROM document WHERE deleted = 0 ORDER BY last_updated_at DESC",
+            row: documentRow
+        )
+        return FolderContents(folders: folders, documents: documents)
+    }
+
+    public func saveTag(_ tag: DocumentTag) async throws {
+        try storeTag(tag)
+    }
+
+    /// The tags of the workspace that are not tombstones, by name.
+    public func storedTags() throws -> [DocumentTag] {
+        try db.query("\(Self.tagColumns) FROM document_tag WHERE deleted = 0 ORDER BY name", row: tag)
+    }
+
+    /// Every tag, tombstones included: what the sync compares.
+    public func storedAllTags() throws -> [DocumentTag] {
+        try db.query("\(Self.tagColumns) FROM document_tag ORDER BY name", row: tag)
+    }
+
+    /// Tags changed since they were last sent, tombstones included.
+    public func storedOutdatedTags() throws -> [DocumentTag] {
+        try db.query(
+            "\(Self.tagColumns) FROM document_tag WHERE last_synced_at IS NULL OR last_updated_at > last_synced_at",
+            row: tag
+        )
+    }
+
+    public func storedTag(id: String) throws -> DocumentTag? {
+        try db.query("\(Self.tagColumns) FROM document_tag WHERE id = ?", [.text(id)], row: tag).first
+    }
+
+    public func storeTag(_ tag: DocumentTag) throws {
+        try db.run(
+            """
+            INSERT OR REPLACE INTO document_tag
+            (id, workspace_id, name, description, created_at, last_updated_at, last_synced_at, deleted)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            [
+                .text(tag.id), .text(tag.workspaceId.isEmpty ? workspaceId : tag.workspaceId), .text(tag.name),
+                .text(tag.description), .integer(tag.createdAt), .integer(tag.lastUpdatedAt),
+                .integer(tag.lastSyncedAt), .bool(tag.deleted),
+            ]
+        )
+    }
+
+    /// Marks the tag deleted and bumps its time, so the removal syncs like an edit.
+    public func softDeleteTag(id: String) throws {
+        try db.run("UPDATE document_tag SET deleted = 1, last_updated_at = ? WHERE id = ?", [.integer(Date.nowMillis), .text(id)])
+    }
+
+    private func tagIds(of documentId: String) throws -> [String] {
+        try db.query("SELECT tag_id FROM document_tag_link WHERE document_id = ? ORDER BY tag_id", [.text(documentId)]) { $0.text(0) }
+    }
+
+    /// The document's links are replaced whole, like its steps.
+    private func writeTagLinks(_ document: WrDocument) throws {
+        try db.run("DELETE FROM document_tag_link WHERE document_id = ?", [.text(document.id)])
+        for tagId in document.tagIds {
+            try db.run("INSERT OR IGNORE INTO document_tag_link (document_id, tag_id) VALUES (?, ?)", [.text(document.id), .text(tagId)])
+        }
     }
 
     private static let documentColumns = """
@@ -670,7 +794,8 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
             isLocked: row.bool(10),
             published: row.bool(11),
             deleted: row.bool(12),
-            icon: row.text(8).map { IconInfo(label: $0, tint: row.integer(9).map(Int.init)) }
+            icon: row.text(8).map { IconInfo(label: $0, tint: row.integer(9).map(Int.init)) },
+            tagIds: (try? tagIds(of: id)) ?? []
         )
     }
 
@@ -733,6 +858,7 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
                 .bool(document.deleted),
             ]
         )
+        try writeTagLinks(document)
     }
 
     private func writeStep(_ step: StoryStep, documentId: String) throws {

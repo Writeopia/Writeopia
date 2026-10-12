@@ -3,6 +3,7 @@
 package io.writeopia.api.documents.documents.repository
 
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.document.DocumentTag
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.extensions.sortWithOrderBy
@@ -15,6 +16,9 @@ import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.TagInfo
 import io.writeopia.sdk.search.DocumentSearch
 import io.writeopia.sql.DocumentEntityQueries
+import io.writeopia.sql.DocumentTagEntityQueries
+import io.writeopia.sql.DocumentTagLinkEntityQueries
+import io.writeopia.sql.Document_tag_entity
 import io.writeopia.sql.FolderEntityQueries
 import io.writeopia.sql.Folder_entity
 import io.writeopia.sql.StoryStepEntityQueries
@@ -29,6 +33,8 @@ class DocumentSqlBeDao(
     private val storyStepQueries: StoryStepEntityQueries?,
     private val foldersQueries: FolderEntityQueries?,
     private val userFavoriteQueries: UserFavoriteEntityQueries? = null,
+    private val documentTagQueries: DocumentTagEntityQueries? = null,
+    private val documentTagLinkQueries: DocumentTagLinkEntityQueries? = null,
 ) : DocumentSearch {
 
     override suspend fun search(query: String, workspaceId: String): List<Document> =
@@ -68,19 +74,79 @@ class DocumentSqlBeDao(
             } ?: emptyList()
 
     fun insertDocumentWithContent(document: Document) {
-        val result =
-            documentQueries?.selectById(document.id, document.workspaceId)?.executeAsOneOrNull()
+        val queries = documentQueries ?: return
 
-        if (result != null) {
-            storyStepQueries?.deleteByDocumentId(document.id)
+        queries.transaction {
+            val result = queries.selectById(document.id, document.workspaceId).executeAsOneOrNull()
+
+            if (result != null) {
+                storyStepQueries?.deleteByDocumentId(document.id)
+            }
+
+            document.content.values.forEachIndexed { i, storyStep ->
+                insertStoryStep(storyStep, i.toDouble(), document.id)
+            }
+
+            replaceTagLinks(document)
+            insertDocument(document)
         }
-
-        document.content.values.forEachIndexed { i, storyStep ->
-            insertStoryStep(storyStep, i.toDouble(), document.id)
-        }
-
-        insertDocument(document)
     }
+
+    /** The document's tag links are replaced whole, like its story steps. */
+    private fun replaceTagLinks(document: Document) {
+        val linkQueries = documentTagLinkQueries ?: return
+
+        linkQueries.deleteByDocumentId(document.id)
+        document.tagIds.forEach { tagId ->
+            linkQueries.insert(document_id = document.id, tag_id = tagId, workspace_id = document.workspaceId)
+        }
+    }
+
+    /** The [documents] with their tag ids, read in one query for all of them. */
+    private fun attachTagIds(documents: List<Document>): List<Document> {
+        val linkQueries = documentTagLinkQueries ?: return documents
+        if (documents.isEmpty()) return documents
+
+        val tagIdsByDocument = linkQueries.selectByDocumentIds(documents.map { it.id })
+            .executeAsList()
+            .groupBy({ it.document_id }, { it.tag_id })
+
+        return documents.map { document ->
+            val tagIds = tagIdsByDocument[document.id]
+            if (tagIds.isNullOrEmpty()) document else document.copy(tagIds = tagIds.toSet())
+        }
+    }
+
+    fun insertDocumentTag(tag: DocumentTag) {
+        documentTagQueries?.insert(
+            id = tag.id,
+            workspace_id = tag.workspaceId,
+            name = tag.name,
+            description = tag.description,
+            created_at = tag.createdAt.toEpochMilliseconds(),
+            last_updated_at = tag.lastUpdatedAt.toEpochMilliseconds(),
+            deleted = tag.deleted,
+        )
+    }
+
+    /** The whole catalogue of the workspace, tombstones included. */
+    fun loadDocumentTagsByWorkspaceId(workspaceId: String): List<DocumentTag> =
+        documentTagQueries?.selectByWorkspace(workspaceId)
+            ?.executeAsList()
+            ?.map { it.toModel() }
+            ?: emptyList()
+
+    private fun Document_tag_entity.toModel(): DocumentTag =
+        DocumentTag(
+            id = id,
+            workspaceId = workspace_id,
+            name = name,
+            description = description,
+            createdAt = Instant.fromEpochMilliseconds(created_at),
+            lastUpdatedAt = Instant.fromEpochMilliseconds(last_updated_at),
+            lastSyncedAt = Instant.fromEpochMilliseconds(last_updated_at),
+            deleted = deleted,
+        )
 
     private fun insertDocument(document: Document) {
         documentQueries?.insert(
@@ -246,6 +312,9 @@ class DocumentSqlBeDao(
             ?.toModel(0)
 
     fun loadDocumentWithContentByIds(id: List<String>): List<Document> =
+        attachTagIds(loadDocumentWithContentByIdsRaw(id))
+
+    private fun loadDocumentWithContentByIdsRaw(id: List<String>): List<Document> =
         documentQueries?.selectWithContentByIds(id)
             ?.executeAsList()
             ?.groupBy { it.id }
@@ -532,7 +601,14 @@ class DocumentSqlBeDao(
             } ?: emptyList()
     }
 
-    fun loadDocumentsWithContentFolderIdAfterTime(folderId: String, workspaceId: String, time: Long): List<Document> {
+    fun loadDocumentsWithContentFolderIdAfterTime(folderId: String, workspaceId: String, time: Long): List<Document> =
+        attachTagIds(loadDocumentsWithContentFolderIdAfterTimeRaw(folderId, workspaceId, time))
+
+    private fun loadDocumentsWithContentFolderIdAfterTimeRaw(
+        folderId: String,
+        workspaceId: String,
+        time: Long
+    ): List<Document> {
         return documentQueries?.selectWithContentByFolderIdAfterTime(folderId, time, workspaceId)
             ?.executeAsList()
             ?.groupBy { it.id }
@@ -603,7 +679,10 @@ class DocumentSqlBeDao(
             } ?: emptyList()
     }
 
-    fun loadDocumentsWithContentByWorkspaceIdAfterTime(workspaceId: String, time: Long): List<Document> {
+    fun loadDocumentsWithContentByWorkspaceIdAfterTime(workspaceId: String, time: Long): List<Document> =
+        attachTagIds(loadDocumentsWithContentByWorkspaceIdAfterTimeRaw(workspaceId, time))
+
+    private fun loadDocumentsWithContentByWorkspaceIdAfterTimeRaw(workspaceId: String, time: Long): List<Document> {
         return documentQueries?.selectWithContentByWorkspaceIdAfterTime(time, workspaceId)
             ?.executeAsList()
             ?.groupBy { it.id }
@@ -675,6 +754,10 @@ class DocumentSqlBeDao(
     }
 
     fun loadDocumentWithContentById(documentId: String, workspaceId: String): Document? =
+        loadDocumentWithContentByIdRaw(documentId, workspaceId)
+            ?.let { document -> attachTagIds(listOf(document)).first() }
+
+    private fun loadDocumentWithContentByIdRaw(documentId: String, workspaceId: String): Document? =
         documentQueries?.selectWithContentById(documentId, workspaceId)
             ?.executeAsList()
             ?.groupBy { it.id }
@@ -745,7 +828,10 @@ class DocumentSqlBeDao(
             }
             ?.firstOrNull()
 
-    fun loadDocumentByParentId(parentId: String): List<Document> {
+    fun loadDocumentByParentId(parentId: String): List<Document> =
+        attachTagIds(loadDocumentByParentIdRaw(parentId))
+
+    private fun loadDocumentByParentIdRaw(parentId: String): List<Document> {
         return documentQueries?.selectWithContentByParentId(parentId)
             ?.executeAsList()
             ?.groupBy { it.id }

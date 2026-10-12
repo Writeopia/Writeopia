@@ -1,6 +1,7 @@
 package io.writeopia.api.documents.documents.repository
 
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.document.DocumentTag
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.extensions.sortWithOrderBy
 import io.writeopia.sdk.models.sorting.OrderBy
@@ -15,7 +16,9 @@ private fun WriteopiaDbBackend.getDocumentDaoFn(): DocumentSqlBeDao =
             documentEntityQueries,
             storyStepEntityQueries,
             folderEntityQueries,
-            userFavoriteEntityQueries
+            userFavoriteEntityQueries,
+            documentTagEntityQueries,
+            documentTagLinkEntityQueries,
         ).also {
             documentSqlDao = it
         }
@@ -38,6 +41,15 @@ suspend fun WriteopiaDbBackend.saveFolder(vararg folders: Folder): List<String> 
 
 fun WriteopiaDbBackend.isFolderTombstoned(folderId: String): Boolean =
     getDocumentDaoFn().isFolderTombstoned(folderId)
+
+fun WriteopiaDbBackend.saveDocumentTag(vararg tags: DocumentTag) {
+    val dao = getDocumentDaoFn()
+    tags.forEach(dao::insertDocumentTag)
+}
+
+/** The whole tag catalogue of the workspace, tombstones included. */
+fun WriteopiaDbBackend.allDocumentTagsByWorkspaceId(workspaceId: String): List<DocumentTag> =
+    getDocumentDaoFn().loadDocumentTagsByWorkspaceId(workspaceId)
 
 suspend fun WriteopiaDbBackend.documentsDiffByFolder(
     folderId: String,

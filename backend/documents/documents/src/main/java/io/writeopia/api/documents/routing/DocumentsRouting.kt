@@ -16,6 +16,7 @@ import io.writeopia.api.core.workspaces.utils.runIfMember
 import io.writeopia.api.documents.documents.DocumentsService
 import io.writeopia.api.documents.documents.PresentationsService
 import io.writeopia.api.documents.documents.TutorialsService
+import io.writeopia.api.documents.documents.repository.allDocumentTagsByWorkspaceId
 import io.writeopia.api.documents.documents.repository.allFoldersByWorkspaceId
 import io.writeopia.api.documents.documents.repository.deletePresentation
 import io.writeopia.api.documents.documents.repository.getPresentationById
@@ -36,6 +37,7 @@ import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sdk.serialization.json.SendDocumentsRequest
+import io.writeopia.sdk.serialization.json.SendDocumentTagsRequest
 import io.writeopia.sdk.serialization.json.SendFoldersRequest
 import io.writeopia.sdk.serialization.request.CloneDocumentsRequest
 import io.writeopia.sdk.serialization.request.CreateFolderRequest
@@ -288,7 +290,8 @@ fun Routing.documentsRoute(
                     status = HttpStatusCode.OK,
                     message = FolderContentResponse(
                         folders = folders.map { it.toApi() },
-                        documents = documentsWithFavorites.map { it.toApi() }
+                        documents = documentsWithFavorites.map { it.toApi() },
+                        tags = writeopiaDb.allDocumentTagsByWorkspaceId(workspaceId).map { it.toApi() },
                     )
                 )
             } catch (e: Exception) {
@@ -488,6 +491,31 @@ fun Routing.documentsRoute(
         }
     }
 
+    post<SendDocumentTagsRequest>("/api/docs/workspace/tag") { request ->
+        val userId = call.requirePremiumUserId(writeopiaDb, debug) ?: return@post
+        val workspaceId = request.workspaceId
+
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            try {
+                val tags = request.tags
+                    .filter { tag -> tag.id.isNotBlank() }
+                    .map { tag -> tag.copy(workspaceId = workspaceId).toModel() }
+
+                DocumentsService.receiveDocumentTags(tags, writeopiaDb)
+
+                logger.info("Received ${tags.size} tags for workspace $workspaceId")
+
+                call.respond(status = HttpStatusCode.OK, message = "Accepted")
+            } catch (e: Exception) {
+                logger.error("Error receiving tags for workspace $workspaceId", e)
+                call.respond(
+                    status = HttpStatusCode.InternalServerError,
+                    message = "${e.message}"
+                )
+            }
+        }
+    }
+
     post<FolderDiffRequest>("/api/docs/workspace/document/folder/diff") { folderDiff ->
         val userId = call.requirePremiumUserId(writeopiaDb, debug) ?: return@post
         val workspaceId = folderDiff.workspaceId
@@ -533,7 +561,8 @@ fun Routing.documentsRoute(
                     status = HttpStatusCode.OK,
                     message = FolderContentResponse(
                         folders = subfolders.map { it.toApi() },
-                        documents = documentsWithFavorites.map { document -> document.toApi() }
+                        documents = documentsWithFavorites.map { document -> document.toApi() },
+                        tags = writeopiaDb.allDocumentTagsByWorkspaceId(workspaceId).map { it.toApi() },
                     )
                 )
             } catch (e: Exception) {
@@ -568,17 +597,19 @@ fun Routing.documentsRoute(
                     writeopiaDb
                 )
                 val folders = writeopiaDb.allFoldersByWorkspaceId(workspaceDiff.workspaceId)
+                val tags = writeopiaDb.allDocumentTagsByWorkspaceId(workspaceDiff.workspaceId)
 
                 logger.info(
-                    "Workspace diff - workspaceId: $workspaceId, returning ${documents.size} documents " +
-                        "and ${folders.size} folders"
+                    "Workspace diff - workspaceId: $workspaceId, returning ${documents.size} documents, " +
+                        "${folders.size} folders and ${tags.size} tags"
                 )
 
                 call.respond(
                     status = HttpStatusCode.OK,
                     message = WorkspaceDiffResponse(
-                        folders.map { it.toApi() },
-                        documents.map { it.toApi() }
+                        folders = folders.map { it.toApi() },
+                        documents = documents.map { it.toApi() },
+                        tags = tags.map { it.toApi() },
                     )
                 )
             } catch (e: Exception) {

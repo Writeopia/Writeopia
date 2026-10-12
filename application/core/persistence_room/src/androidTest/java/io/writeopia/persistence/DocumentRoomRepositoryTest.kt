@@ -52,6 +52,7 @@ class DocumentRoomRepositoryTest {
             storyUnitEntityDao,
             commentEntityDao,
             database,
+            database.documentTagLinkDao(),
         )
         documentRepositoryTests = DocumentRepositoryTests(documentRepository)
     }
@@ -140,6 +141,30 @@ class DocumentRoomRepositoryTest {
     @Test
     fun commentIdCannotMoveBetweenDocuments() = runTest {
         documentRepositoryTests.commentIdCannotMoveBetweenDocuments()
+    }
+
+    @Test
+    fun saveAndLoadDocumentWithTags() = runTest {
+        documentRepositoryTests.saveAndLoadDocumentWithTags()
+    }
+
+    @Test
+    fun savingAgainReplacesTags() = runTest {
+        documentRepositoryTests.savingAgainReplacesTags()
+    }
+
+    @Test
+    fun metadataSaveKeepsTags() = runTest {
+        documentRepositoryTests.metadataSaveKeepsTags()
+    }
+
+    @Test
+    fun hardDeleteRemovesTagLinks() = runTest {
+        val document = documentRepositoryTests.saveDocumentWithTags()
+
+        documentRepository.hardDeleteDocumentByIds(setOf(document.id), document.workspaceId)
+
+        assertTrue(database.documentTagLinkDao().loadTagIdsByDocumentId(document.id).isEmpty())
     }
 
     @Test

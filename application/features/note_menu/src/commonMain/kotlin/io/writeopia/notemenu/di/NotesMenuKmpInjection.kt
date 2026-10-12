@@ -12,10 +12,12 @@ import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.core.configuration.di.AppConfigurationInjector
 import io.writeopia.core.configuration.repository.ConfigurationRepository
 import io.writeopia.core.folders.api.DocumentsApi
+import io.writeopia.core.folders.di.DocumentTagsInjector
 import io.writeopia.core.folders.di.FoldersInjector
 import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.core.folders.repository.folder.NotesUseCase
 import io.writeopia.core.folders.sync.DocumentConflictHandler
+import io.writeopia.core.folders.sync.DocumentTagConflictHandler
 import io.writeopia.core.folders.sync.EventSync
 import io.writeopia.core.folders.sync.FolderConflictHandler
 import io.writeopia.core.folders.sync.FolderSync
@@ -76,6 +78,7 @@ class NotesMenuKmpInjection private constructor(
     private fun provideDocumentSync(): FolderSync {
         val documentRepository = repositoryInjection.provideDocumentRepository()
         val folderRepository = provideFolderRepository()
+        val tagRepository = DocumentTagsInjector.singleton().provideDocumentTagRepository()
 
         return FolderSync(
             documentRepository = documentRepository,
@@ -87,7 +90,9 @@ class NotesMenuKmpInjection private constructor(
                 folderRepository = folderRepository
             ),
             folderRepository = folderRepository,
-            authRepository = authCoreInjection.provideAuthRepository()
+            authRepository = authCoreInjection.provideAuthRepository(),
+            documentTagRepository = tagRepository,
+            documentTagConflictHandler = DocumentTagConflictHandler(tagRepository),
         )
     }
 
@@ -122,6 +127,7 @@ class NotesMenuKmpInjection private constructor(
             localAiRepository = localAiRepository,
             selectionState = selectionState,
             notesNavigation = notesNavigation,
+            documentTagRepository = DocumentTagsInjector.singleton().provideDocumentTagRepository(),
             folderController = provideFolderStateController(),
             keyboardEventFlow = keyboardEventFlow,
             workspaceConfigRepository = appConfigurationInjector.provideWorkspaceConfigRepository(),
