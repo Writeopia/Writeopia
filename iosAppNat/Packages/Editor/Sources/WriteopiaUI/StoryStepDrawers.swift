@@ -587,11 +587,15 @@ struct DocumentLinkDrawer: View {
 }
 
 /// A card for a pasted web address: the link icon, the address and, once the backend AI wrote
-/// it, a short description of the page. It can not be edited; a tap opens the address.
+/// it, a short description of the page. It can not be edited; a tap opens the address, and the
+/// button at its end copies it.
 struct LinkCardDrawer: View {
     let step: StoryStep
     let manager: WriteopiaStateManager
     @Environment(\.openURL) private var openURL
+    /// True for a moment after the address was copied; the button shows a check mark.
+    @State private var copied = false
+    @State private var copiedFeedback: Task<Void, Never>?
 
     private var address: String { step.url ?? "" }
     private var description: String? {
@@ -636,7 +640,9 @@ struct LinkCardDrawer: View {
                 }
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, 14)
+            .padding(.leading, 14)
+            // Room for the copy button, which floats over the trailing end.
+            .padding(.trailing, address.isEmpty ? 14 : 48)
             .padding(.vertical, 12)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(WrColors.secondaryFill, in: RoundedRectangle(cornerRadius: 12))
@@ -645,6 +651,13 @@ struct LinkCardDrawer: View {
         .buttonStyle(.plain)
         .disabled(URL(string: address) == nil)
         .accessibilityLabel(Text("Link card \(address)"))
+        // A button inside the card's button wouldn't get the taps on the Mac; over it, it does.
+        .overlay(alignment: .trailing) {
+            if !address.isEmpty {
+                copyButton
+                    .padding(.trailing, 8)
+            }
+        }
         .contextMenu {
             if manager.isEditable {
                 Button("Delete link", systemImage: "trash", role: .destructive) {
@@ -652,6 +665,28 @@ struct LinkCardDrawer: View {
                 }
             }
         }
+    }
+
+    private var copyButton: some View {
+        Button {
+            SystemPasteboard.copy(address)
+            copiedFeedback?.cancel()
+            withAnimation(.snappy(duration: 0.15)) { copied = true }
+            copiedFeedback = Task {
+                try? await Task.sleep(for: .seconds(1.5))
+                guard !Task.isCancelled else { return }
+                withAnimation(.snappy(duration: 0.15)) { copied = false }
+            }
+        } label: {
+            Image(systemName: copied ? "checkmark" : "doc.on.doc")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(copied ? WrColors.accent : WrColors.textLighter)
+                .frame(width: 32, height: 32)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(copied ? Text("Copied") : Text("Copy link"))
+        .accessibilityIdentifier("step.link_card.copy")
     }
 }
 

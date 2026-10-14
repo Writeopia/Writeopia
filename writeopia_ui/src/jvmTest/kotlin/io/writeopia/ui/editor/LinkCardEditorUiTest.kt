@@ -83,5 +83,6 @@ class LinkCardEditorUiTest {
 
         onNodeWithTag("LinkCard_1.0").assertIsDisplayed()
         onNodeWithText("https://writeopia.io").assertIsDisplayed()
+        onNodeWithTag("LinkCardCopy_1.0").assertIsDisplayed()
     }
 }

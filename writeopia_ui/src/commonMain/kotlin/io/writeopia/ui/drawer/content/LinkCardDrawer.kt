@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -22,15 +23,19 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -51,11 +56,14 @@ import io.writeopia.ui.drawer.StoryStepDrawer
 import io.writeopia.ui.icons.WrSdkIcons
 import io.writeopia.ui.model.DrawConfig
 import io.writeopia.ui.model.DrawInfo
+import kotlinx.coroutines.delay
+
+private const val COPIED_FEEDBACK_MILLIS = 1500L
 
 /**
  * Drawer for a link card: a card made from a pasted web address. The card can not be edited.
  * It shows a link icon, the address and, once the AI wrote one, a short description of the page.
- * Clicking it opens the address in the browser.
+ * Clicking it opens the address in the browser; the button at its end copies the address.
  */
 class LinkCardDrawer(
     private val modifier: Modifier = Modifier,
@@ -79,6 +87,15 @@ class LinkCardDrawer(
         val interactionSource = remember { MutableInteractionSource() }
         val isHovered by interactionSource.collectIsHoveredAsState()
         val uriHandler = LocalUriHandler.current
+        val clipboardManager = LocalClipboardManager.current
+        var copied by remember { mutableStateOf(false) }
+
+        LaunchedEffect(copied) {
+            if (copied) {
+                delay(COPIED_FEEDBACK_MILLIS)
+                copied = false
+            }
+        }
 
         SelectableByDrag(
             modifier = Modifier.dragAndDropTarget(
@@ -187,6 +204,25 @@ class LinkCardDrawer(
                                         overflow = TextOverflow.Ellipsis
                                     )
                                 }
+                            }
+
+                            if (url.isNotBlank()) {
+                                Spacer(modifier = Modifier.width(8.dp))
+
+                                Icon(
+                                    imageVector = if (copied) WrSdkIcons.check else WrSdkIcons.copy,
+                                    contentDescription = if (copied) "Copied" else "Copy link",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier
+                                        .testTag("LinkCardCopy_${drawInfo.position}")
+                                        .clip(CircleShape)
+                                        .clickable {
+                                            clipboardManager.setText(AnnotatedString(url))
+                                            copied = true
+                                        }
+                                        .size(30.dp)
+                                        .padding(6.dp)
+                                )
                             }
                         }
                     }
