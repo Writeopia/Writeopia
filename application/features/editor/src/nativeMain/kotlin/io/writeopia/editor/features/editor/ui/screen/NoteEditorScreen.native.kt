@@ -250,40 +250,6 @@ internal fun NoteEditorScreen(
                     onRemoveTagClick = noteEditorViewModel::removeTagFromDocument,
                 )
 
-                val showTagsDialog by noteEditorViewModel.showTagsDialog.collectAsState()
-                if (showTagsDialog) {
-                    val documentTags by noteEditorViewModel.documentTags.collectAsState()
-                    val isEditableForTags by noteEditorViewModel.isEditable.collectAsState()
-                    DocumentTagsDialog(
-                        tags = documentTags,
-                        isEditable = isEditableForTags,
-                        onRemove = noteEditorViewModel::removeTagFromDocument,
-                        onAddTag = {
-                            noteEditorViewModel.hideTagsDialog()
-                            noteEditorViewModel.showAddTagDialog()
-                        },
-                        onDismiss = noteEditorViewModel::hideTagsDialog
-                    )
-                }
-
-                val showAddTagDialog by noteEditorViewModel.showAddTagDialog.collectAsState()
-                if (showAddTagDialog) {
-                    val workspaceTags by noteEditorViewModel.workspaceTags.collectAsState()
-                    val documentTagIds by noteEditorViewModel.writeopiaManager.documentTagIds.collectAsState()
-                    val canSuggestWithAi by noteEditorViewModel.canSuggestTagWithAi.collectAsState()
-                    val aiDraft by noteEditorViewModel.aiTagDraft.collectAsState()
-                    AddDocumentTagDialog(
-                        workspaceTags = workspaceTags,
-                        documentTagIds = documentTagIds,
-                        canSuggestWithAi = canSuggestWithAi,
-                        aiDraft = aiDraft,
-                        onPickTag = noteEditorViewModel::addTagToDocument,
-                        onCreateTag = noteEditorViewModel::createTag,
-                        onSuggestWithAi = noteEditorViewModel::suggestTagWithAi,
-                        onDismiss = noteEditorViewModel::hideAddTagDialog
-                    )
-                }
-
                 if (showDeleteConfirmation) {
                     DeleteConfirmationDialog(
                         onConfirmation = {
@@ -306,6 +272,42 @@ internal fun NoteEditorScreen(
                         onDismissRequest = { showFolderSelection = false }
                     )
                 }
+            }
+
+            // Both menus open these dialogs: the side menu on wide layouts and the global
+            // actions menu on phones, so they live outside the wide-layout branch.
+            val showTagsDialog by noteEditorViewModel.showTagsDialog.collectAsState()
+            if (showTagsDialog) {
+                val documentTags by noteEditorViewModel.documentTags.collectAsState()
+                val isEditableForTags by noteEditorViewModel.isEditable.collectAsState()
+                DocumentTagsDialog(
+                    tags = documentTags,
+                    isEditable = isEditableForTags,
+                    onRemove = noteEditorViewModel::removeTagFromDocument,
+                    onAddTag = {
+                        noteEditorViewModel.hideTagsDialog()
+                        noteEditorViewModel.showAddTagDialog()
+                    },
+                    onDismiss = noteEditorViewModel::hideTagsDialog
+                )
+            }
+
+            val showAddTagDialog by noteEditorViewModel.showAddTagDialog.collectAsState()
+            if (showAddTagDialog) {
+                val workspaceTags by noteEditorViewModel.workspaceTags.collectAsState()
+                val documentTagIds by noteEditorViewModel.writeopiaManager.documentTagIds.collectAsState()
+                val canSuggestWithAi by noteEditorViewModel.canSuggestTagWithAi.collectAsState()
+                val aiDraft by noteEditorViewModel.aiTagDraft.collectAsState()
+                AddDocumentTagDialog(
+                    workspaceTags = workspaceTags,
+                    documentTagIds = documentTagIds,
+                    canSuggestWithAi = canSuggestWithAi,
+                    aiDraft = aiDraft,
+                    onPickTag = noteEditorViewModel::addTagToDocument,
+                    onCreateTag = noteEditorViewModel::createTag,
+                    onSuggestWithAi = noteEditorViewModel::suggestTagWithAi,
+                    onDismiss = noteEditorViewModel::hideAddTagDialog
+                )
             }
 
             val headerEdition by noteEditorViewModel.editHeader.collectAsState()
