@@ -24,6 +24,7 @@ import io.writeopia.api.documents.documents.repository.getFoldersByParentId
 import io.writeopia.api.documents.documents.repository.getIdsByParentId
 import io.writeopia.api.documents.documents.repository.getPublishedDocumentById
 import io.writeopia.api.documents.documents.repository.getStoryStepById
+import io.writeopia.api.documents.documents.repository.getStoryStepDocumentId
 import io.writeopia.api.documents.documents.repository.getStoryStepsAfterTime
 import io.writeopia.api.documents.documents.repository.getUserFavoriteDocumentIds
 import io.writeopia.api.documents.documents.repository.isDocumentPublished
@@ -732,7 +733,10 @@ object DocumentsService {
         /** The card as saved, with the description as its text. */
         data class Success(val position: Double, val storyStep: StoryStep) : LinkCardDescriptionResult()
 
-        /** The request does not carry a link card with an address (maps to HTTP 400). */
+        /**
+         * The request does not carry a link card with a web address, or its card belongs to
+         * another document (maps to HTTP 400).
+         */
         data class InvalidRequest(val message: String) : LinkCardDescriptionResult()
 
         /** The AI answered nothing usable (maps to HTTP 502). */
@@ -768,6 +772,18 @@ object DocumentsService {
             return LinkCardDescriptionResult.InvalidRequest("The link card has no address")
         }
 
+        // The address goes into an AI prompt: only a web address of a sane length is accepted.
+        if (!LinkCardDescription.isWebAddress(url)) {
+            return LinkCardDescriptionResult.InvalidRequest("The link card address is not a web address")
+        }
+
+        // The card's id may only be reused inside this document; another document's step is
+        // not overwritten through it.
+        val stepDocumentId = writeopiaDb.getStoryStepDocumentId(requestedStep.id)
+        if (stepDocumentId != null && stepDocumentId != documentId) {
+            return LinkCardDescriptionResult.InvalidRequest("The story step belongs to another document")
+        }
+
         val description = LinkCardDescription.tidy(describe(url))
             ?: return LinkCardDescriptionResult.Error("The AI answered no description for $url")
 
@@ -789,6 +805,7 @@ object DocumentsService {
 
         // The synced card, when there is one, keeps its place: the client may have moved it.
         val (position, storedStep) = writeopiaDb.getStoryStepById(requestedStep.id)
+            ?.takeIf { writeopiaDb.getStoryStepDocumentId(requestedStep.id) == documentId }
             ?: (request.position to requestedStep)
 
         val describedStep = storedStep.copy(

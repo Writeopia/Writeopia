@@ -3,6 +3,7 @@
 package io.writeopia.api.documents.documents
 
 import io.writeopia.api.documents.documents.repository.getStoryStepById
+import io.writeopia.api.documents.documents.repository.getStoryStepDocumentId
 import io.writeopia.api.documents.documents.repository.getStoryStepsAfterTime
 import io.writeopia.api.documents.documents.repository.upsertStoryStep
 import io.writeopia.sdk.models.story.StoryStep
@@ -13,6 +14,7 @@ import kotlinx.coroutines.runBlocking
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.time.ExperimentalTime
@@ -120,6 +122,46 @@ class DescribeLinkCardTest {
         )
         assertIs<DocumentsService.LinkCardDescriptionResult.InvalidRequest>(noAddress)
         assertNull(db.getStoryStepById("card-1"))
+    }
+
+    @Test
+    fun `refuses an address that is not a web address without asking the AI`() = runBlocking {
+        var asked = false
+        val result = DocumentsService.describeLinkCard(
+            documentId = documentId,
+            workspaceId = workspaceId,
+            request = request(linkCard(url = "javascript:alert(1)")),
+            describe = { asked = true; "x" },
+            writeopiaDb = db
+        )
+
+        assertIs<DocumentsService.LinkCardDescriptionResult.InvalidRequest>(result)
+        assertFalse(asked)
+        assertNull(db.getStoryStepById("card-1"))
+    }
+
+    @Test
+    fun `refuses a card id that belongs to another document without asking the AI`() = runBlocking {
+        val otherDocumentId = "doc-other"
+        db.upsertStoryStep(linkCard(id = "card-elsewhere"), position = 1.0, documentId = otherDocumentId, lastUpdatedAt = 1_000L)
+        try {
+            var asked = false
+            val result = DocumentsService.describeLinkCard(
+                documentId = documentId,
+                workspaceId = workspaceId,
+                request = request(linkCard(id = "card-elsewhere")),
+                describe = { asked = true; "Stolen." },
+                writeopiaDb = db
+            )
+
+            assertIs<DocumentsService.LinkCardDescriptionResult.InvalidRequest>(result)
+            assertFalse(asked)
+            val (_, stored) = db.getStoryStepById("card-elsewhere")!!
+            assertNull(stored.text)
+            assertEquals(otherDocumentId, db.getStoryStepDocumentId("card-elsewhere"))
+        } finally {
+            db.storyStepEntityQueries.deleteByDocumentId(otherDocumentId)
+        }
     }
 
     @Test

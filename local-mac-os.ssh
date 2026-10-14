@@ -1,5 +1,13 @@
-cd /Users/leandroferreira/WriteopiaProject/Writeopia/iosAppNat
+#!/bin/sh
+# Builds the native Mac app in Release and installs it in /Applications.
+# Runs from the checkout this script is in; pass another checkout's root as the first argument.
+set -eu
+
+ROOT="${1:-$(cd "$(dirname "$0")" && pwd)}"
+cd "$ROOT/iosAppNat"
+
 xcodebuild -project iosAppNat.xcodeproj -scheme iosAppNat \
   -configuration Release -destination 'platform=macOS' \
   -derivedDataPath build build
+
 cp -R build/Build/Products/Release/Writeopia.app /Applications/

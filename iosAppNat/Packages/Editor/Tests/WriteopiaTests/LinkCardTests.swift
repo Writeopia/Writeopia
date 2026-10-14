@@ -74,5 +74,11 @@ private func state(_ steps: [StoryStep]) -> StoryState {
         let bare = StoryStep(type: .linkCard, url: "https://writeopia.io", position: 1)
         #expect(DocumentToMarkdown.parse([withDescription]) == "[A text editor.](https://writeopia.io)\n")
         #expect(DocumentToMarkdown.parse([bare]) == "[https://writeopia.io](https://writeopia.io)\n")
+
+        // Brackets in the label and spaces or parentheses in the address can not break the link.
+        let brackets = StoryStep(type: .linkCard, text: "Editor [beta] done", url: "https://writeopia.io", position: 1)
+        let oddAddress = StoryStep(type: .linkCard, text: "Odd address", url: "https://w.io/a b(c)", position: 1)
+        #expect(DocumentToMarkdown.parse([brackets]) == "[Editor \\[beta\\] done](https://writeopia.io)\n")
+        #expect(DocumentToMarkdown.parse([oddAddress]) == "[Odd address](<https://w.io/a b(c)>)\n")
     }
 }

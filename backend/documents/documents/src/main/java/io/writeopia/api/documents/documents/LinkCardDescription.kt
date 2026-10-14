@@ -1,5 +1,8 @@
 package io.writeopia.api.documents.documents
 
+import java.net.URI
+import java.net.URISyntaxException
+
 /**
  * The description a link card shows under its address: what the AI answered, tidied and cut to
  * [MAX_WORDS] words.
@@ -7,6 +10,28 @@ package io.writeopia.api.documents.documents
 object LinkCardDescription {
 
     const val MAX_WORDS = 60
+
+    /** Longer addresses are refused; browsers and servers stop around here too. */
+    const val MAX_URL_LENGTH = 2048
+
+    /**
+     * Whether [url] is an http or https address with a host, of at most [MAX_URL_LENGTH]
+     * characters: the only addresses sent to the AI.
+     */
+    fun isWebAddress(url: String): Boolean {
+        if (url.isBlank() || url.length > MAX_URL_LENGTH || url.any { it.isWhitespace() || it.isISOControl() }) {
+            return false
+        }
+
+        val uri = try {
+            URI(url)
+        } catch (_: URISyntaxException) {
+            return false
+        }
+
+        val scheme = uri.scheme?.lowercase()
+        return (scheme == "http" || scheme == "https") && !uri.host.isNullOrBlank()
+    }
 
     /**
      * The AI prompt for the page at [url].

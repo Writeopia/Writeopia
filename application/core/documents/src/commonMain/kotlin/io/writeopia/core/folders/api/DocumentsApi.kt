@@ -314,6 +314,8 @@ class DocumentsApi(
         workspaceId: String,
         request: LinkCardDescriptionRequest
     ): ResultData<StoryStep> {
+        if (workspaceId == Workspace.disconnectedWorkspace().id) return ResultData.Error()
+
         val response = client.post(
             "$baseUrl/api/docs/workspace/$workspaceId/document/$documentId/link-card/describe"
         ) {
