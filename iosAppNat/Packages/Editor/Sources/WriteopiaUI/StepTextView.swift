@@ -165,6 +165,11 @@ struct StepTextView: UIViewRepresentable {
 final class StepUITextView: UITextView {
     var onEraseAtStart: (() -> Void)?
 
+    /// The document is the source of truth and keeps the history: without an undo manager the
+    /// text view doesn't undo on its own, and Cmd+Z of a hardware keyboard reaches the editor's
+    /// shortcut, like Cmd+Z on the Mac.
+    override var undoManager: UndoManager? { nil }
+
     override func deleteBackward() {
         if selectedRange.location == 0, selectedRange.length == 0 {
             onEraseAtStart?()

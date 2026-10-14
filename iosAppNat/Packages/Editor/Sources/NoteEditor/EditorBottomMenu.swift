@@ -7,7 +7,7 @@ import WrData
 import WrDesign
 
 /// Menu under the editor, like `MobileInputScreen` of the Compose app when no text is
-/// selected. AI, the text formats, drawing and images work; undo and redo are placeholders.
+/// selected: AI, the text formats, link, drawing, images, undo and redo.
 ///
 /// Drawn as a floating Liquid Glass capsule on iOS 26+, and as a material capsule before that.
 struct EditorBottomMenu: View {
@@ -62,9 +62,14 @@ struct EditorBottomMenu: View {
                         onImagePicked(item)
                         pickedPhoto = nil
                     }
-                    // No undo history yet, so they look disabled like in the Compose app.
-                    MenuButton(systemImage: "arrow.uturn.backward", label: "Undo", isEnabled: false)
-                    MenuButton(systemImage: "arrow.uturn.forward", label: "Redo", isEnabled: false)
+                    MenuButton(systemImage: "arrow.uturn.backward", label: "Undo", isEnabled: manager.canUndo) {
+                        manager.undo()
+                    }
+                    .accessibilityIdentifier("editor.menu.undo")
+                    MenuButton(systemImage: "arrow.uturn.forward", label: "Redo", isEnabled: manager.canRedo) {
+                        manager.redo()
+                    }
+                    .accessibilityIdentifier("editor.menu.redo")
                 }
                 .padding(.horizontal, 10)
             }

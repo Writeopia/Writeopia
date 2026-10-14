@@ -75,7 +75,8 @@ struct StepTextViewRepresentable: NSViewRepresentable {
         textView.usesRuler = false
         textView.importsGraphics = false
         textView.allowsImageEditing = false
-        // The document is the source of truth; its history will come from the model, not the view.
+        // The document is the source of truth; undo and redo come from the state manager, not
+        // from the view (see `StepNSTextView.undo(_:)`).
         textView.allowsUndo = false
         textView.isContinuousSpellCheckingEnabled = true
         textView.isAutomaticSpellingCorrectionEnabled = true
@@ -109,6 +110,7 @@ struct StepTextViewRepresentable: NSViewRepresentable {
             manager.onCutSelectedLines?()
             return true
         }
+        textView.history = manager
 
         render(step, in: textView, coordinator: coordinator)
 
@@ -305,13 +307,16 @@ struct StepTextViewRepresentable: NSViewRepresentable {
     }
 }
 
-/// Reports focus, lets the selected lines take Copy and Cut over the text, and measures its
-/// height for any width without disturbing the text on screen.
+/// Reports focus, lets the selected lines take Copy and Cut over the text, sends Undo and Redo
+/// of the Edit menu to the document history, and measures its height for any width without
+/// disturbing the text on screen.
 final class StepNSTextView: NSTextView {
     var onFocusChange: ((Bool) -> Void)?
     /// Return true when the selected lines were copied, so the text isn't.
     var onCopyLines: (() -> Bool)?
     var onCutLines: (() -> Bool)?
+    /// The document history behind Edit > Undo and Edit > Redo while this view has the focus.
+    weak var history: WriteopiaStateManager?
 
     /// A second layout of the same text storage, used only to measure.
     private lazy var measuringContainer: NSTextContainer = {
@@ -373,6 +378,28 @@ final class StepNSTextView: NSTextView {
     override func cut(_ sender: Any?) {
         if onCutLines?() == true { return }
         super.cut(sender)
+    }
+
+    // The Edit menu sends `undo:` and `redo:` to the first responder. The view has no undo of
+    // its own (`allowsUndo` is false), so they reach the document history instead.
+
+    @objc func undo(_ sender: Any?) {
+        history?.undo()
+    }
+
+    @objc func redo(_ sender: Any?) {
+        history?.redo()
+    }
+
+    override func validateUserInterfaceItem(_ item: any NSValidatedUserInterfaceItem) -> Bool {
+        switch item.action {
+        case #selector(undo(_:)):
+            return history?.canUndo == true
+        case #selector(redo(_:)):
+            return history?.canRedo == true
+        default:
+            return super.validateUserInterfaceItem(item)
+        }
     }
 }
 #endif

@@ -123,5 +123,45 @@ import WrModels
         #expect(manager.step(withId: "b")?.text == "Second")
         #expect(manager.currentStory.sortedStories.count == 3)
     }
+
+    /// Edit > Undo and Edit > Redo send `undo:` and `redo:` to the first responder: the text
+    /// view answers with the document history, and validates the items by it.
+    @Test func editMenuUndoAndRedoGoThroughTheDocumentHistory() async {
+        let (manager, window, hosting) = host()
+        await settle()
+
+        guard let textView = textViews(in: hosting).first(where: { $0.string == "Second" }) else {
+            Issue.record("text view of the step not found")
+            return
+        }
+        let undoItem = NSMenuItem(title: "Undo", action: #selector(StepNSTextView.undo(_:)), keyEquivalent: "z")
+        let redoItem = NSMenuItem(title: "Redo", action: #selector(StepNSTextView.redo(_:)), keyEquivalent: "Z")
+        #expect(textView.undoManager == nil, "the view has no history of its own")
+        #expect(!textView.validateUserInterfaceItem(undoItem))
+
+        window.makeFirstResponder(textView)
+        textView.setSelectedRange(NSRange(location: 6, length: 0))
+        textView.insertText("!", replacementRange: NSRange(location: 6, length: 0))
+        await settle()
+        #expect(manager.step(withId: "b")?.text == "Second!")
+        #expect(textView.validateUserInterfaceItem(undoItem))
+        #expect(!textView.validateUserInterfaceItem(redoItem))
+
+        // The menu finds the action in the first responder (no key window here to route it).
+        #expect(window.firstResponder === textView)
+        #expect(textView.responds(to: #selector(StepNSTextView.undo(_:))))
+        textView.undo(undoItem)
+        await settle()
+        #expect(manager.step(withId: "b")?.text == "Second")
+        #expect(textView.string == "Second", "the view shows the restored text")
+        #expect(window.firstResponder === textView)
+        #expect(textView.selectedRange().location == 6)
+        #expect(textView.validateUserInterfaceItem(redoItem))
+
+        textView.redo(redoItem)
+        await settle()
+        #expect(manager.step(withId: "b")?.text == "Second!")
+        #expect(textView.string == "Second!")
+    }
 }
 #endif
