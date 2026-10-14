@@ -228,3 +228,11 @@ fun WriteopiaDbBackend.getDocumentIdsByWorkspaceId(workspaceId: String): List<St
 fun WriteopiaDbBackend.updateDocumentTitle(documentId: String, title: String) {
     getDocumentDaoFn().updateDocumentTitle(documentId, title)
 }
+
+/**
+ * Records a change of the document's steps on the document row, so the next folder diff of
+ * the other devices includes it.
+ */
+fun WriteopiaDbBackend.touchDocument(documentId: String, lastUpdatedAt: Long, lastSynced: Long) {
+    getDocumentDaoFn().touchDocument(documentId, lastUpdatedAt, lastSynced)
+}

@@ -144,6 +144,9 @@ internal class OnlyBackendChooseNoteKmpViewModel(
     private val _showAddMenuState = MutableStateFlow(false)
     override val showAddMenuState: StateFlow<Boolean> = _showAddMenuState.asStateFlow()
 
+    // Everything is read from the backend directly: there is no sync step to show.
+    override val isSyncingState: StateFlow<Boolean> = MutableStateFlow(false).asStateFlow()
+
     private val _showAiOptionsState = MutableStateFlow(false)
     override val showAiOptionsState: StateFlow<Boolean> = _showAiOptionsState.asStateFlow()
 

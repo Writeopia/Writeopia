@@ -37,6 +37,7 @@ import io.writeopia.api.documents.documents.repository.saveDocumentTag
 import io.writeopia.api.documents.documents.repository.saveFolder
 import io.writeopia.api.documents.documents.repository.setDocumentPublished
 import io.writeopia.api.documents.documents.repository.updateDocumentTitle
+import io.writeopia.api.documents.documents.repository.touchDocument
 import io.writeopia.api.documents.documents.repository.upsertStoryStep
 import io.writeopia.api.documents.embeddings.DocumentEmbeddingService
 import io.writeopia.api.embeddings.DocumentPlainText
@@ -705,6 +706,20 @@ object DocumentsService {
 
         if (deletionsToApply.isNotEmpty()) {
             writeopiaDb.deleteStoryStepsByIds(deletionsToApply)
+        }
+
+        // Steps alone don't change the document row: without this, the folder diffs of the
+        // other devices (filtered by last_synced) never listed a document edited this way.
+        if (clientUpdatedStepIds.isNotEmpty() || deletionsToApply.isNotEmpty()) {
+            val currentUpdatedAt = writeopiaDb.getDocumentById(documentId, workspaceId)
+                ?.lastUpdatedAt
+                ?.toEpochMilliseconds()
+                ?: 0L
+            writeopiaDb.touchDocument(
+                documentId = documentId,
+                lastUpdatedAt = maxOf(currentUpdatedAt, request.requestTimestamp),
+                lastSynced = serverTimestamp
+            )
         }
 
         // Get deletions that happened on server (steps that existed before but are now gone)

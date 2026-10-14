@@ -15,7 +15,9 @@ CREATE TABLE story_step_entity (
   tags TEXT NOT NULL,
   spans TEXT NOT NULL,
   link_to_document TEXT,
-  last_updated_at INTEGER
+  -- Epoch milliseconds. BIGINT: as INTEGER the value was truncated to 32 bits on write
+  -- (production migration in WriteopiaScripts2/db-migrations/story_step_timestamps/).
+  last_updated_at BIGINT
 );
 
 selectByDocumentId:

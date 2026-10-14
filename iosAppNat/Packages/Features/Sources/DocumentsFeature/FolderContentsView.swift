@@ -67,6 +67,9 @@ final class FolderContentsViewModel {
     var isTag: Bool { tag != nil }
     /// Items can be created and dropped only in a real folder.
     var canCreateItems: Bool { !isFavorites && !isTag }
+    /// Documents of the open space sync with the backend, so the cards tell which ones still
+    /// have to be sent. A private space never syncs, so nothing is marked there.
+    var showsSyncState: Bool { repository is DocumentSyncing }
 
     var hasSelection: Bool { !selectedIds.isEmpty }
     var canSummarize: Bool { aiClient != nil }
@@ -253,9 +256,24 @@ final class FolderContentsViewModel {
         (folders.map(FolderItem.folder) + documents.map(FolderItem.document)).sorted(by: settings.order)
     }
 
+    /// The load in progress, so the appearance of the view and the return from a document
+    /// don't sync the folder twice.
+    @ObservationIgnored private var loadTask: Task<Void, Never>?
+
     /// Shows what's on this device right away, then syncs the folder with the backend (open
     /// space) and shows the result, like the notes list of the Compose app.
     func load() async {
+        if let loadTask {
+            await loadTask.value
+            return
+        }
+        let task = Task { await performLoad() }
+        loadTask = task
+        defer { loadTask = nil }
+        await task.value
+    }
+
+    private func performLoad() async {
         isLoading = true
         defer { isLoading = false }
 
@@ -568,6 +586,8 @@ struct FolderContentsView: View {
     private static let gridSpacing: CGFloat = 12
     private let columns = [GridItem(.adaptive(minimum: FolderContentsView.minCardWidth), spacing: FolderContentsView.gridSpacing)]
     @State private var contentWidth: CGFloat = 0
+    /// How deep in the navigation stack this folder is, to notice when it is on top again.
+    @State private var depth: Int?
 
     init(
         folderId: String,
@@ -765,7 +785,16 @@ struct FolderContentsView: View {
                 }
             }
         }
-        .task { await viewModel.load() }
+        .task {
+            depth = path.count
+            await viewModel.load()
+        }
+        // Back from a document or a subfolder: show what changed there (the edited preview, the
+        // sync state). On macOS the task above doesn't run again when the stack pops.
+        .onChange(of: path.count) { previous, current in
+            guard let depth, previous > depth, current == depth else { return }
+            Task { await viewModel.load() }
+        }
         // Something outside the list, like the side menu, changed the folders.
         .onChange(of: contentsVersion) { Task { await viewModel.loadLocal() } }
         .sheet(isPresented: $showsMoveSelection) {
@@ -861,7 +890,13 @@ struct FolderContentsView: View {
 
     private func cell(_ item: FolderItem, style: ItemCard.Style) -> some View {
         NavigationLink(value: item.route) {
-            ItemCard(item: item, isDropTarget: dropTargetId == item.id, isSelected: viewModel.isSelected(item.id), style: style)
+            ItemCard(
+                item: item,
+                isDropTarget: dropTargetId == item.id,
+                isSelected: viewModel.isSelected(item.id),
+                style: style,
+                showsSyncState: viewModel.showsSyncState
+            )
         }
         .buttonStyle(.plain)
         .zoomTransitionSource(id: item.id, in: transitionNamespace, enabled: !item.isFolder)
@@ -1051,6 +1086,9 @@ struct ItemCard: View {
     let isDropTarget: Bool
     var isSelected = false
     var style: Style = .grid
+    /// Marks the documents changed on this device since their last sync, like the cloud icon
+    /// of `NotesCardsScreen` in the Compose app.
+    var showsSyncState = false
 
     var body: some View {
         Group {
@@ -1101,7 +1139,7 @@ struct ItemCard: View {
                         iconImage
                             .font(.title2)
                         Spacer()
-                        favoriteStar
+                        badges
                     }
 
                     titleText
@@ -1139,7 +1177,7 @@ struct ItemCard: View {
         .frame(maxWidth: .infinity, minHeight: 70, alignment: .bottomLeading)
         .background(color)
         .overlay(alignment: .topTrailing) {
-            favoriteStar
+            badges
                 .padding(8)
         }
     }
@@ -1152,12 +1190,31 @@ struct ItemCard: View {
             .multilineTextAlignment(.leading)
     }
 
+    /// The favorite star and the sync indicator, at the top right of the card.
+    private var badges: some View {
+        HStack(spacing: 6) {
+            favoriteStar
+            syncIndicator
+        }
+    }
+
     @ViewBuilder
     private var favoriteStar: some View {
         if isFavorite {
             Image(systemName: "star.fill")
                 .font(.caption)
                 .foregroundStyle(.yellow)
+        }
+    }
+
+    /// Shown while the document has changes that were not sent to the backend yet.
+    @ViewBuilder
+    private var syncIndicator: some View {
+        if needsSync {
+            Image(systemName: "icloud.and.arrow.up")
+                .font(.caption)
+                .foregroundStyle(WrColors.textLighter)
+                .accessibilityLabel("Not synced")
         }
     }
 
@@ -1173,11 +1230,8 @@ struct ItemCard: View {
                         .font(.body.weight(.medium))
                         .foregroundStyle(WrColors.textLight)
                         .lineLimit(1)
-                    if isFavorite {
-                        Image(systemName: "star.fill")
-                            .font(.caption)
-                            .foregroundStyle(.yellow)
-                    }
+                    favoriteStar
+                    syncIndicator
                 }
                 if let preview, !preview.isEmpty {
                     Text(preview)
@@ -1222,6 +1276,12 @@ struct ItemCard: View {
         case .folder(let folder): folder.favorite
         case .document(let document): document.isFavorite
         }
+    }
+
+    /// A document of a synced space with changes made since its last sync.
+    var needsSync: Bool {
+        guard showsSyncState, case .document(let document) = item else { return false }
+        return document.isOutdated
     }
 
     private var preview: String? {
