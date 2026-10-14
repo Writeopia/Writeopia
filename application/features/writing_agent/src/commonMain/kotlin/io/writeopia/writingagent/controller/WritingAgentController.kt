@@ -82,11 +82,13 @@ class WritingAgentController(
     private val tagMinimumDocumentLength: Int = TAG_MINIMUM_DOCUMENT_LENGTH,
     /** Where the agent tells what it asks and what came back. */
     private val log: (String) -> Unit = { message -> ApiLogger.log("$LOG_TAG $message") },
+    /** Whether the box opens folded to its badge; phones do, to keep the text in view. */
+    startCollapsed: Boolean = false,
 ) {
     private val _state = MutableStateFlow(WritingSuggestionsState.empty())
     val state: StateFlow<WritingSuggestionsState> = _state.asStateFlow()
 
-    private val _collapsed = MutableStateFlow(false)
+    private val _collapsed = MutableStateFlow(startCollapsed)
 
     /**
      * True when the user folded the box down to a small "AI suggestions" badge with a count, to

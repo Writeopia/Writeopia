@@ -152,6 +152,7 @@ class WritingAgentControllerTest {
         enabled: Boolean = true,
         folders: FakeFolders? = null,
         tags: FakeTags? = null,
+        startCollapsed: Boolean = false,
     ) = WritingAgentController(
         scope = this,
         api = api,
@@ -166,7 +167,21 @@ class WritingAgentControllerTest {
         minimumDocumentLength = 40,
         folderMinimumDocumentLength = 30,
         tagMinimumDocumentLength = 30,
+        startCollapsed = startCollapsed,
     ).also { it.start() }
+
+    @Test
+    fun `the box can start folded, as on phones, and still unfolds`() = runTest(StandardTestDispatcher()) {
+        val api = FakeApi(answer = listOf(WritingSuggestionDto(WritingSuggestionAction.LIST, 0.9)))
+        val story = MutableStateFlow(state(title, longParagraph))
+        val controller = controller(api, story, startCollapsed = true)
+        advanceUntilIdle()
+
+        assertTrue(controller.collapsed.value)
+        controller.toggleCollapsed()
+        assertEquals(false, controller.collapsed.value)
+        controller.stop()
+    }
 
     @Test
     fun `a new sentence asks for suggestions about the focused paragraph`() = runTest(StandardTestDispatcher()) {

@@ -72,6 +72,8 @@ class EditorKmpInjector private constructor(
     private val imageUploader: ImageUploader? = null,
     val textSelectionActiveState: MutableStateFlow<Boolean> = MutableStateFlow(false),
     private val writingAgentInjection: WritingAgentInjection? = WritingAgentInjection.singleton(),
+    /** The AI suggestions box starts folded on phones; the desktop opens it. */
+    private val writingAgentStartsCollapsed: Boolean = false,
 ) : TextEditorInjector {
 
     // SharedFlow for drawing save events - ViewModel subscribes to this
@@ -132,6 +134,7 @@ class EditorKmpInjector private constructor(
                 PresentationSqlStore(db.presentationEntityQueries, db.presentationStepEntityQueries)
             },
             writingAgentApi = writingAgentInjection?.provideApi(),
+            writingAgentStartsCollapsed = writingAgentStartsCollapsed,
             documentTagRepository = DocumentTagsInjector.singleton().provideDocumentTagRepository(),
         )
 
@@ -225,6 +228,7 @@ class EditorKmpInjector private constructor(
             localAiInjection = null,
             genAiInjection = genAiInjection,
             imageUploader = imageUploader,
+            writingAgentStartsCollapsed = true,
         )
 
         fun desktop(

@@ -137,6 +137,7 @@ class NoteEditorKmpViewModel(
     presentationsApi: PresentationsApi? = null,
     presentationsStore: PresentationsStore? = null,
     private val writingAgentApi: WritingAgentApi? = null,
+    private val writingAgentStartsCollapsed: Boolean = false,
     /** The workspace tag catalogue. Null where the app has no tags. */
     private val documentTagRepository: DocumentTagRepository? = null,
 ) : NoteEditorViewModel,
@@ -191,6 +192,7 @@ class NoteEditorKmpViewModel(
         WritingAgentController(
             scope = viewModelScope,
             api = api,
+            startCollapsed = writingAgentStartsCollapsed,
             storyFlow = writeopiaManager.currentStory,
             documentIdFlow = writeopiaManager.documentInfo.map { info -> info.id },
             documentTitle = { writeopiaManager.documentInfo.value.title },
