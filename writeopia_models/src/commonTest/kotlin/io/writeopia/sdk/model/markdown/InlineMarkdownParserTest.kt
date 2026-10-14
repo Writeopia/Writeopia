@@ -12,6 +12,36 @@ import kotlin.test.assertTrue
 class InlineMarkdownParserTest {
 
     @Test
+    fun `a url that is already a link keeps the step untouched`() {
+        val text = "https://github.com/Writeopia/Writeopia"
+        val storyStep = StoryStep(
+            type = StoryTypes.TEXT.type,
+            text = text,
+            spans = setOf(SpanInfo.create(start = 0, end = text.length, span = Span.LINK, extra = text))
+        )
+
+        val result = InlineMarkdownParser.parseMarkdown(storyStep)
+
+        assertEquals(storyStep, result)
+        assertEquals(storyStep.localId, result.localId)
+    }
+
+    @Test
+    fun `a new url gets a link span and a new local id`() {
+        val text = "see https://writeopia.io now"
+        val storyStep = StoryStep(type = StoryTypes.TEXT.type, text = text)
+
+        val result = InlineMarkdownParser.parseMarkdown(storyStep)
+
+        assertEquals(text, result.text)
+        assertEquals(
+            setOf(SpanInfo.create(start = 4, end = 24, span = Span.LINK, extra = "https://writeopia.io")),
+            result.spans
+        )
+        assertTrue(result.localId != storyStep.localId)
+    }
+
+    @Test
     fun `bold text should be converted to BOLD span`() {
         val storyStep = StoryStep(
             type = StoryTypes.TEXT.type,

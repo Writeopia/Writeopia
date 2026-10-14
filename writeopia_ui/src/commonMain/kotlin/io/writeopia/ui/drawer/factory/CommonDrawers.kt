@@ -103,8 +103,7 @@ object CommonDrawers {
                     textToolbox = textToolbox,
                     slashCommands = slashCommands,
                     slashCommandsEnabled = slashCommandsEnabled,
-                    spellChecker = spellChecker,
-                    showLinkPopup = isDesktop,
+                    spellChecker = spellChecker
                 )
             }
 
@@ -137,8 +136,7 @@ object CommonDrawers {
                     textToolbox = textToolbox,
                     slashCommands = slashCommands,
                     slashCommandsEnabled = slashCommandsEnabled,
-                    spellChecker = null, // Don't spell check code blocks
-                    showLinkPopup = isDesktop,
+                    spellChecker = null // Don't spell check code blocks
                 )
             }
         )
@@ -387,8 +385,7 @@ private fun RowScope.messageDrawer(
     textToolbox: @Composable (Boolean) -> Unit,
     slashCommands: List<SlashCommand> = defaultSlashCommands,
     slashCommandsEnabled: Boolean = true,
-    spellChecker: SpellChecker? = null,
-    showLinkPopup: Boolean = true,
+    spellChecker: SpellChecker? = null
 ): TextDrawer =
     TextDrawer(
         modifier = modifier.weight(1F),
@@ -408,6 +405,5 @@ private fun RowScope.messageDrawer(
         textToolbox = textToolbox,
         slashCommands = slashCommands,
         slashCommandsEnabled = slashCommandsEnabled,
-        spellChecker = spellChecker,
-        showLinkPopup = showLinkPopup,
+        spellChecker = spellChecker
     )
