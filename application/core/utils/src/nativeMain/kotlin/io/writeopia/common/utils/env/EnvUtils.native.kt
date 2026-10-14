@@ -11,4 +11,7 @@ actual object EnvUtils {
     @OptIn(ExperimentalForeignApi::class)
     actual fun getLocalAiUrl(): String? =
         getenv("LOCAL_AI_URL")?.toKString()?.takeIf { it.isNotBlank() }
+
+    // The native targets are iOS, which has no desktop window buttons.
+    actual fun isMacOs(): Boolean = false
 }

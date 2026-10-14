@@ -46,6 +46,15 @@ class FolderSync(
         force: Boolean = false,
         orderBy: String = "last_updated_at"
     ) {
+        SyncActivity.track { syncFolderInternal(folderId, workspaceId, force, orderBy) }
+    }
+
+    private suspend fun syncFolderInternal(
+        folderId: String,
+        workspaceId: String,
+        force: Boolean,
+        orderBy: String
+    ) {
         try {
             if (workspaceId == Workspace.disconnectedWorkspace().id) return
 

@@ -20,8 +20,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -29,10 +33,15 @@ import androidx.compose.ui.unit.dp
 import io.writeopia.commonui.buttons.verticalPaddingCommonButton
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.FontOptions
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.LockButton
+import io.writeopia.editor.features.editor.ui.tags.DocumentTagChipsRow
 import io.writeopia.model.Font
 import io.writeopia.resources.WrStrings
+import io.writeopia.sdk.models.document.DocumentTag
 import io.writeopia.theme.WriteopiaTheme
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+
+const val GLOBAL_MENU_TAGS_TAG = "GlobalMenuTags"
 
 // @Preview
 @Composable
@@ -46,6 +55,10 @@ internal fun NoteGlobalActionsMenu(
     onPublishClick: () -> Unit = {},
     showPresentation: Boolean = false,
     onPresentationClick: () -> Unit = {},
+    documentTagsState: StateFlow<List<DocumentTag>> = MutableStateFlow(emptyList()),
+    onViewTagsClick: () -> Unit = {},
+    onAddTagClick: () -> Unit = {},
+    onRemoveTagClick: (String) -> Unit = {},
 ) {
     Box(
         modifier = Modifier
@@ -67,6 +80,20 @@ internal fun NoteGlobalActionsMenu(
                 setEditable,
 //            selectedColor = WriteopiaTheme.colorScheme.highlight,
 //            defaultColor = MaterialTheme.colorScheme.background
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Title(WrStrings.documentTagsTitle())
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            DocumentTagsSection(
+                documentTagsState = documentTagsState,
+                isEditableState = isEditableState,
+                onViewTagsClick = onViewTagsClick,
+                onAddTagClick = onAddTagClick,
+                onRemoveTagClick = onRemoveTagClick,
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -136,6 +163,59 @@ internal fun NoteGlobalActionsMenu(
     }
 }
 
+/**
+ * The tags of the document as chips, each removable while the document is editable, with a
+ * button to see them with their explanations and one to add a tag. The mobile counterpart of
+ * the section in the desktop side menu.
+ */
+@Composable
+private fun DocumentTagsSection(
+    documentTagsState: StateFlow<List<DocumentTag>>,
+    isEditableState: StateFlow<Boolean>,
+    onViewTagsClick: () -> Unit,
+    onAddTagClick: () -> Unit,
+    onRemoveTagClick: (String) -> Unit,
+) {
+    val tags by documentTagsState.collectAsState()
+    val isEditable by isEditableState.collectAsState()
+
+    if (tags.isEmpty()) {
+        Text(
+            text = WrStrings.documentTagsNone(),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 2.dp)
+        )
+    } else {
+        DocumentTagChipsRow(
+            tags = tags,
+            removable = isEditable,
+            onRemove = onRemoveTagClick,
+            onMoreClick = onViewTagsClick,
+            testTagPrefix = GLOBAL_MENU_TAGS_TAG,
+        )
+    }
+
+    Spacer(modifier = Modifier.height(8.dp))
+
+    Row {
+        ShareButton(
+            modifier = Modifier.weight(1F).testTag("$GLOBAL_MENU_TAGS_TAG.view"),
+            text = WrStrings.documentTagsView(),
+            onClick = onViewTagsClick
+        )
+
+        Spacer(modifier = Modifier.width(4.dp))
+
+        ShareButton(
+            modifier = Modifier.weight(1F).testTag("$GLOBAL_MENU_TAGS_TAG.add"),
+            text = WrStrings.documentTagsAdd(),
+            enabled = isEditable,
+            onClick = onAddTagClick
+        )
+    }
+}
+
 @Composable
 private fun Title(label: String) {
     Text(
@@ -146,11 +226,17 @@ private fun Title(label: String) {
 }
 
 @Composable
-private fun ShareButton(text: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
+private fun ShareButton(
+    text: String,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    onClick: () -> Unit
+) {
     Text(
         modifier = modifier
+            .alpha(if (enabled) 1F else DISABLED_ALPHA)
             .clip(RoundedCornerShape(6.dp))
-            .clickable(onClick = onClick)
+            .clickable(enabled = enabled, onClick = onClick)
             .background(MaterialTheme.colorScheme.background)
             // The height of the lock button, so all the buttons of the menu match
             .padding(horizontal = 8.dp, vertical = verticalPaddingCommonButton().dp),
@@ -162,3 +248,5 @@ private fun ShareButton(text: String, modifier: Modifier = Modifier, onClick: ()
         textAlign = TextAlign.Center
     )
 }
+
+private const val DISABLED_ALPHA = 0.5F

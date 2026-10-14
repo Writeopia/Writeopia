@@ -82,14 +82,14 @@ class RoomFolderRepository(
         folderRoomDao.getFolderById(id)
 
     override suspend fun getFolderByParentId(parentId: String, workspaceId: String): List<Folder> =
-        folderRoomDao.getFolderByParentId(parentId)
+        folderRoomDao.getFolderByParentId(parentId, workspaceId)
 
     override suspend fun listenForFoldersByParentId(
         parentId: String,
         workspaceId: String,
     ): Flow<Map<String, List<Folder>>> =
         // Room stops listening by itself once the flow isn't collected anymore.
-        folderRoomDao.listenForFolderByParentId(parentId)
+        folderRoomDao.listenForFolderByParentId(parentId, workspaceId)
             .map { folders -> folders.groupBy { folder -> folder.parentId } }
 
     override suspend fun stopListeningForFoldersByParentId(parentId: String, workspaceId: String) {}

@@ -29,7 +29,13 @@ class WorkspaceSync(
 ) {
     private var lastSuccessfulSync: Instant = Instant.DISTANT_PAST
 
-    suspend fun syncWorkspace(workspaceId: String, force: Boolean = false): ResultData<Unit> {
+    suspend fun syncWorkspace(workspaceId: String, force: Boolean = false): ResultData<Unit> =
+        SyncActivity.track { syncWorkspaceInternal(workspaceId, force) }
+
+    private suspend fun syncWorkspaceInternal(
+        workspaceId: String,
+        force: Boolean
+    ): ResultData<Unit> {
         try {
             if (workspaceId == Workspace.disconnectedWorkspace().id) {
                 return ResultData.Complete(Unit)

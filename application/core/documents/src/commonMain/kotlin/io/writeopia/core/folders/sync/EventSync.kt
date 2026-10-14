@@ -30,7 +30,10 @@ class EventSync(
      *
      * First pushes any local pending deletions to the backend, then pulls events from server.
      */
-    suspend fun syncEvents(workspaceId: String): ResultData<Unit> {
+    suspend fun syncEvents(workspaceId: String): ResultData<Unit> =
+        SyncActivity.track { syncEventsInternal(workspaceId) }
+
+    private suspend fun syncEventsInternal(workspaceId: String): ResultData<Unit> {
         try {
             if (workspaceId == Workspace.disconnectedWorkspace().id) {
                 return ResultData.Idle()

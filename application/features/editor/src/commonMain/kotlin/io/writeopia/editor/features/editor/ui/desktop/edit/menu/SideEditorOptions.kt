@@ -11,7 +11,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,7 +22,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -51,7 +49,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -65,6 +62,7 @@ import io.writeopia.common.utils.configuration.PlatformType
 import io.writeopia.common.utils.file.fileChooserLoad
 import io.writeopia.common.utils.file.fileChooserSave
 import io.writeopia.common.utils.icons.WrIcons
+import io.writeopia.editor.features.editor.ui.tags.DocumentTagChipsRow
 import io.writeopia.editor.features.editor.viewmodel.AiTargetMode
 import io.writeopia.editor.features.editor.viewmodel.SideMenuTab
 import io.writeopia.model.Font
@@ -485,28 +483,14 @@ private fun DocumentTagsSection(
             modifier = Modifier.padding(start = 2.dp, bottom = 6.dp)
         )
     } else {
-        // One scrollable line of chips, so a long list doesn't push the buttons down.
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .padding(bottom = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            tags.take(VISIBLE_TAG_CHIPS).forEach { tag ->
-                DocumentTagChip(
-                    tag = tag,
-                    removable = isEditable,
-                    onRemove = { onRemoveTagClick(tag.id) },
-                )
-            }
-
-            val hidden = tags.size - VISIBLE_TAG_CHIPS
-            if (hidden > 0) {
-                MoreTagsChip(count = hidden, onClick = onViewTagsClick)
-            }
-        }
+        DocumentTagChipsRow(
+            tags = tags,
+            removable = isEditable,
+            onRemove = onRemoveTagClick,
+            onMoreClick = onViewTagsClick,
+            testTagPrefix = SIDE_MENU_TAGS_TAG,
+            modifier = Modifier.padding(bottom = 4.dp),
+        )
     }
 
     TextButton(
@@ -526,59 +510,7 @@ private fun DocumentTagsSection(
     )
 }
 
-@Composable
-private fun DocumentTagChip(tag: DocumentTag, removable: Boolean, onRemove: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .clip(MaterialTheme.shapes.small)
-            .background(WriteopiaTheme.colorScheme.optionsSelector, MaterialTheme.shapes.small)
-            .padding(start = 8.dp, end = if (removable) 4.dp else 8.dp, top = 3.dp, bottom = 3.dp)
-            .testTag("$SIDE_MENU_TAGS_TAG.chip.${tag.id}"),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = tag.name,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.widthIn(max = 160.dp)
-        )
-
-        if (removable) {
-            Spacer(modifier = Modifier.width(2.dp))
-            Icon(
-                imageVector = WrIcons.close,
-                contentDescription = WrStrings.documentTagsRemove(),
-                modifier = Modifier
-                    .size(16.dp)
-                    .clip(CircleShape)
-                    .clickable(onClick = onRemove)
-                    .padding(1.dp),
-                tint = MaterialTheme.colorScheme.onBackground
-            )
-        }
-    }
-}
-
-/** A "+N more" chip for the tags past the first [VISIBLE_TAG_CHIPS]; it opens the tags dialog. */
-@Composable
-private fun MoreTagsChip(count: Int, onClick: () -> Unit) {
-    Text(
-        text = WrStrings.documentTagsMore(count),
-        style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.onBackground,
-        modifier = Modifier
-            .clip(MaterialTheme.shapes.small)
-            .border(1.dp, MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.small)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 3.dp)
-            .testTag("$SIDE_MENU_TAGS_TAG.more")
-    )
-}
-
 const val SIDE_MENU_TAGS_TAG = "SideMenuTags"
-private const val VISIBLE_TAG_CHIPS = 3
 
 @Composable
 private fun Title(text: String) {

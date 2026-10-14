@@ -195,7 +195,8 @@ fun DesktopApp(
                         searchClick = globalShellViewModel::showSearch,
                         highlightContent = {},
                         changeIcon = globalShellViewModel::changeIcons,
-                        toggleMaxScreen = toggleMaxScreen
+                        toggleMaxScreen = toggleMaxScreen,
+                        isSyncingState = globalShellViewModel.isSyncingState
                     )
 
                     Column {
