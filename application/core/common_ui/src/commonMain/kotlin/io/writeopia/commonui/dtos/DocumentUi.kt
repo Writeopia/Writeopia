@@ -45,6 +45,7 @@ sealed interface MenuItemUi : Node, Traversable {
         override val selected: Boolean = false,
         override val isFavorite: Boolean = false,
         val itemsCount: Long = 0,
+        val lastUpdatedAt: Long = 0,
         override val parentId: String = "root",
         val expanded: Boolean = false,
         override var depth: Int = 0,

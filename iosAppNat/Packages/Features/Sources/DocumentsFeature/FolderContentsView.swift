@@ -1236,7 +1236,9 @@ struct ItemCard: View {
     private var footer: some View {
         switch item {
         case .folder(let folder):
-            Text("\(folder.itemCount) items")
+            if let lastUpdatedAt = folder.lastUpdatedAt {
+                Text(lastUpdatedAt, format: .relative(presentation: .named))
+            }
         case .document(let document):
             if document.lastUpdatedAt > 0 {
                 Text(document.lastUpdatedDate, format: .relative(presentation: .named))

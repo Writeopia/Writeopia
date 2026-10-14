@@ -87,6 +87,7 @@ import io.writeopia.ui.drawer.preview.VideoPreviewDrawer
 import io.writeopia.ui.model.DrawInfo
 import io.writeopia.common.utils.configuration.LocalPlatform
 import io.writeopia.common.utils.configuration.PlatformType
+import io.writeopia.common.utils.date.formatRelativeTime
 import kotlinx.coroutines.flow.StateFlow
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -654,7 +655,7 @@ private fun FolderItem(
                         Spacer(modifier = Modifier.height(4.dp))
 
                         Text(
-                            text = "${folderUi.itemsCount} items",
+                            text = formatRelativeTime(folderUi.lastUpdatedAt),
                             color = textColor,
                             style = MaterialTheme.typography.bodySmall
                         )
