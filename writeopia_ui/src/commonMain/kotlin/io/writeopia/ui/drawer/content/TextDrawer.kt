@@ -14,6 +14,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -91,7 +92,12 @@ class TextDrawer(
     private val textToolbox: @Composable (Boolean) -> Unit = {},
     private val slashCommands: List<SlashCommand> = defaultSlashCommands,
     private val slashCommandsEnabled: Boolean = true,
-    private val spellChecker: SpellChecker? = null
+    private val spellChecker: SpellChecker? = null,
+    /**
+     * Whether a popup with the clickable URL shows when the cursor is inside a link. Desktop
+     * only: on phones the text selection toolbar is where links are handled.
+     */
+    private val showLinkPopup: Boolean = true,
 ) : SimpleTextDrawer {
 
     @Composable
@@ -124,6 +130,16 @@ class TextDrawer(
             mutableStateOf(inputText)
         }
 
+        SideEffect {
+            log(
+                "recompose pos=${drawInfo.position} localId=${step.localId} " +
+                    "hasFocus=${drawInfo.hasFocus()} selectMode=${drawInfo.selectMode} " +
+                    "drawSelection=${drawInfo.selection} stepText='${step.text}' " +
+                    "inputText='${inputText.text}' inputSelection=${inputText.selection} " +
+                    "spans=${spans.size}"
+            )
+        }
+
         var textLayoutResult by remember {
             mutableStateOf<TextLayoutResult?>(null)
         }
@@ -145,6 +161,7 @@ class TextDrawer(
             if (selection != null && selection.fromEnd && textLayoutResult != null) {
                 val newRange = selection.toTextRange(step.text ?: "", textLayoutResult)
                 if (inputText.selection != newRange) {
+                    log("layout effect pos=${drawInfo.position}: selection ${inputText.selection} -> $newRange")
                     val updatedInputText = inputText.copy(selection = newRange)
                     inputText = updatedInputText
                     previousInputText = updatedInputText
@@ -208,6 +225,7 @@ class TextDrawer(
 
         if (drawInfo.hasFocus()) {
             LaunchedEffect(step.localId) {
+                log("requestFocus pos=${drawInfo.position} localId=${step.localId} requester=${focusRequester != null}")
                 focusRequester?.requestFocus()
             }
         }
@@ -244,6 +262,10 @@ class TextDrawer(
                             )
                         }
                         .onFocusChanged { focusState ->
+                            log(
+                                "onFocusChanged pos=${drawInfo.position} isFocused=${focusState.isFocused} " +
+                                    "hasFocus=${focusState.hasFocus} drawHasFocus=${drawInfo.hasFocus()}"
+                            )
                             onFocusChanged(drawInfo.position, focusState)
                         }
                         .testTag("MessageDrawer_${drawInfo.position}")
@@ -268,6 +290,13 @@ class TextDrawer(
                         val previousSelection = previousValue.selection
                         val sizeDifference = value.text.length - previousValue.text.length
 
+                        log(
+                            "onValueChange pos=${drawInfo.position} " +
+                                "text '${previousValue.text}'->'${value.text}' " +
+                                "selection $previousSelection->${value.selection} " +
+                                "sizeDiff=$sizeDifference composition=${value.composition}"
+                        )
+
                         if (abs(sizeDifference) > 0 || value.text != previousValue.text) {
                             spans = Spans.recalculateSpans(
                                 spans = spans,
@@ -277,6 +306,7 @@ class TextDrawer(
                                 oldSelectionEnd = previousSelection.end,
                                 newSelectionStart = value.selection.start,
                             )
+                            log("spans recalculated pos=${drawInfo.position}: $spans")
                         }
 
                         // Detect slash command
@@ -334,6 +364,11 @@ class TextDrawer(
                                     isDarkTheme
                                 )
                             )
+                            log(
+                                "edit pos=${drawInfo.position} inputText='${updatedInputText.text}' " +
+                                    "selection=${updatedInputText.selection} " +
+                                    "previousStillCurrent=${previousInputText == value}"
+                            )
                             inputText = updatedInputText
                             if (previousInputText == value) {
                                 previousInputText = updatedInputText
@@ -341,6 +376,7 @@ class TextDrawer(
                         }
 
                         if (!showSlashCommandPopup) {
+                            log("onTextEdit pos=${drawInfo.position} start=$start end=$end")
                             onTextEdit(
                                 TextInput(value.text, start, end, spans),
                                 drawInfo.position,
@@ -349,6 +385,7 @@ class TextDrawer(
                         }
 
                         if (start == 0 || end == 0) {
+                            log("edit delayed pos=${drawInfo.position} (cursor at 0)")
                             coroutineScope.launch {
                                 // Delay to avoid jumping to previous line too soon when erasing text
                                 delay(70)
@@ -375,7 +412,11 @@ class TextDrawer(
 
             textToolbox(hasSelection)
 
-            if (selectedLink != null) {
+            LaunchedEffect(selectedLink) {
+                log("selectedLink pos=${drawInfo.position} link=$selectedLink showPopup=$showLinkPopup")
+            }
+
+            if (showLinkPopup && selectedLink != null) {
                 Popup(offset = IntOffset(0, -20)) {
                     LinkHandler(selectedLink ?: "")
                 }
@@ -479,6 +520,11 @@ private fun SlashCommandPopup(
             }
         )
     }
+}
+
+/** Debug trace of the text field; prefixed so it can be filtered in Logcat or the terminal. */
+private fun log(message: String) {
+    println("TextDrawer: $message")
 }
 
 @Composable
