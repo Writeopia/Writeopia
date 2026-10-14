@@ -21,8 +21,17 @@ import WrModels
     @Test func linksWithoutSchemeOpenOverHttps() {
         #expect(TextStyles.linkURL("writeopia.io") == URL(string: "https://writeopia.io"))
         #expect(TextStyles.linkURL(" http://a.b ") == URL(string: "http://a.b"))
+        #expect(TextStyles.linkURL("localhost:8080") == URL(string: "https://localhost:8080"))
         #expect(TextStyles.linkURL("") == nil)
         #expect(TextStyles.linkURL(nil) == nil)
+    }
+
+    @Test func explicitSchemesAreKept() {
+        #expect(TextStyles.linkURL("mailto:hi@writeopia.io") == URL(string: "mailto:hi@writeopia.io"))
+        #expect(TextStyles.linkURL("tel:+5511999999999") == URL(string: "tel:+5511999999999"))
+        #expect(LinkInput.normalized("mailto:hi@writeopia.io") == "mailto:hi@writeopia.io")
+        #expect(LinkInput.normalized("localhost:8080") == "https://localhost:8080")
+        #expect(LinkInput.normalized("writeopia.io:443/path") == "https://writeopia.io:443/path")
     }
 
     @Test func linkSpansWithoutURLAreOnlyStyled() {

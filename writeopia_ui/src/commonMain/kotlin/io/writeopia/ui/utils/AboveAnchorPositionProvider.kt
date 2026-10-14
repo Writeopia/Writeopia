@@ -8,7 +8,8 @@ import androidx.compose.ui.window.PopupPositionProvider
 
 /**
  * Places a popup right above the composable it belongs to, whatever the screen density. A fixed
- * pixel offset lands on top of the text on dense phone screens.
+ * pixel offset lands on top of the text on dense phone screens. When there is no room above,
+ * the popup goes below the anchor instead, and it never leaves the window sideways.
  */
 object AboveAnchorPositionProvider : PopupPositionProvider {
     override fun calculatePosition(
@@ -16,8 +17,15 @@ object AboveAnchorPositionProvider : PopupPositionProvider {
         windowSize: IntSize,
         layoutDirection: LayoutDirection,
         popupContentSize: IntSize
-    ): IntOffset = IntOffset(
-        x = anchorBounds.left,
-        y = (anchorBounds.top - popupContentSize.height).coerceAtLeast(0)
-    )
+    ): IntOffset {
+        val above = anchorBounds.top - popupContentSize.height
+        val y = if (above >= 0) above else anchorBounds.bottom
+        val maxX = (windowSize.width - popupContentSize.width).coerceAtLeast(0)
+        val maxY = (windowSize.height - popupContentSize.height).coerceAtLeast(0)
+
+        return IntOffset(
+            x = anchorBounds.left.coerceIn(0, maxX),
+            y = y.coerceIn(0, maxY)
+        )
+    }
 }

@@ -102,10 +102,9 @@ enum TextStyles {
     }
 
     /// The URL of a `LINK` span. Links written without a scheme open over `https`, as in the
-    /// Compose app.
+    /// Compose app; see `LinkInput`.
     static func linkURL(_ extra: String?) -> URL? {
-        guard let trimmed = extra?.trimmingCharacters(in: .whitespacesAndNewlines), !trimmed.isEmpty else { return nil }
-        return URL(string: trimmed.contains("://") ? trimmed : "https://" + trimmed)
+        LinkInput.normalized(extra).flatMap(URL.init(string:))
     }
 
     /// Attributes `NSTextView` and `UITextView` draw over link ranges; the span's own color
