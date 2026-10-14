@@ -99,6 +99,7 @@ Each element in the `content` array is a StoryStep:
 | `code_block` | 23 | Code block | Code snippets |
 | `document_link` | 20 | Link to another document | Uses `documentLink` field |
 | `divider` | 21 | Horizontal divider | Section separators |
+| `link_card` | 24 | Card for a web address | `url` is the address, `text` the AI description (max 60 words) |
 | `image` | 2 | Image | Uses `url` or `path` field |
 | `space` | 7 | Empty space | Spacing element |
 

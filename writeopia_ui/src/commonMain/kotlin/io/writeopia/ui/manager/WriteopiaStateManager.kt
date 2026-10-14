@@ -47,10 +47,12 @@ import io.writeopia.ui.extensions.toSelectionMetadata
 import io.writeopia.ui.keyboard.KeyboardEvent
 import io.writeopia.ui.model.DrawState
 import io.writeopia.ui.model.DrawStory
+import io.writeopia.ui.model.LinkCardCreation
 import io.writeopia.ui.image.ImageUploader
 import io.writeopia.ui.model.SelectionInfo
 import io.writeopia.ui.model.SelectionMetadata
 import io.writeopia.ui.model.TextInput
+import io.writeopia.ui.utils.LinkDetector
 import io.writeopia.ui.modifiers.StepsModifier
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -58,9 +60,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
@@ -243,6 +248,14 @@ class WriteopiaStateManager(
 
     private val _onEditPositions = MutableStateFlow(setOf<Double>())
     val onEditPositions = _onEditPositions.asStateFlow()
+
+    private val _linkCardCreated = MutableSharedFlow<LinkCardCreation>(extraBufferCapacity = 16)
+
+    /**
+     * The link cards created by pasting an address in an empty line. The app listens to this to
+     * ask the backend for a description of each page.
+     */
+    val linkCardCreated: SharedFlow<LinkCardCreation> = _linkCardCreated.asSharedFlow()
 
     /**
      * Tracks the anchor position for keyboard-based multi-line selection.
@@ -1608,6 +1621,8 @@ class WriteopiaStateManager(
         if (lineBreakByContent && text.contains("\n")) {
             val newStep = step.copy(text = text, spans = input.spans)
             onLineBreak(Action.LineBreak(newStep, position), processCommands = processCommands)
+        } else if (isLinkPastedInEmptyText(step, text)) {
+            createLinkCard(step, position, text.trim())
         } else {
             val newText = text.replace("\n", "")
             val newStep = step.copy(text = newText, spans = input.spans)
@@ -1624,6 +1639,71 @@ class WriteopiaStateManager(
                 )
             }
         }
+    }
+
+    private fun isLinkPastedInEmptyText(step: StoryStep, text: String): Boolean =
+        step.type.number == StoryTypes.TEXT.type.number &&
+            LinkDetector.isPastedLink(previousText = step.text, newText = text)
+
+    /**
+     * Turns an empty line into a link card for [url]. The card has no description yet: the app
+     * asks the backend for one when [linkCardCreated] emits. A card can not be typed in, so the
+     * cursor moves to the line below it, which is created when there is none.
+     */
+    private fun createLinkCard(step: StoryStep, position: Double, url: String) {
+        val next = step.nextPosition?.let { nextPosition -> nextPosition to getStory(nextPosition) }
+        val nextIsText = next?.second?.type?.number == StoryTypes.TEXT.type.number
+
+        if (!nextIsText) {
+            // An empty line break adds an empty text line after this one and focuses it.
+            onLineBreak(Action.LineBreak(step.copy(text = "\n", spans = emptySet()), position))
+        }
+
+        val linkCard = (getStory(position) ?: step).copy(
+            type = StoryTypes.LINK_CARD.type,
+            url = url,
+            text = null,
+            tags = emptySet(),
+            spans = emptySet()
+        )
+
+        changeStoryState(Action.StoryStateChange(linkCard, position, preserveFocus = true))
+
+        if (getStory(position)?.type?.number != StoryTypes.LINK_CARD.type.number) return
+
+        if (nextIsText && next != null) {
+            _currentStory.value = _currentStory.value.copy(
+                focus = next.first,
+                selection = Selection.fromPosition(cursorPosition = 0, stepPosition = next.first)
+            )
+        }
+
+        _linkCardCreated.tryEmit(LinkCardCreation(linkCard, position))
+    }
+
+    /**
+     * Applies a [StoryStep] that the backend changed to the open document, in the position its id
+     * has here. Used for the description of a link card, which the AI writes after the card is
+     * synced. Nothing happens when the step is not in the document anymore.
+     *
+     * @return true when the step was applied.
+     */
+    fun applyServerStoryStep(storyStep: StoryStep): Boolean {
+        val entry = _currentStory.value.stories.entries.firstOrNull { (_, step) ->
+            step.id == storyStep.id
+        } ?: return false
+
+        val (position, localStep) = entry
+        val updated = storyStep.copy(
+            localId = GenerateId.generate(),
+            dbPosition = localStep.dbPosition,
+            nextPosition = localStep.nextPosition,
+            previousPosition = localStep.previousPosition
+        )
+
+        changeStoryState(Action.StoryStateChange(updated, position, preserveFocus = true), trackIt = false)
+
+        return true
     }
 
     /**

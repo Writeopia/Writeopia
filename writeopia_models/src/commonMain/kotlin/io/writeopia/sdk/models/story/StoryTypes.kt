@@ -55,6 +55,12 @@ enum class StoryTypes(val type: StoryType) {
     DOCUMENT_LINK(StoryType("document_link", 20)),
     DIVIDER(StoryType("divider", 21)),
     EQUATION(StoryType("equation", 22)),
+
+    /**
+     * A card with a link to a web page: [StoryStep.url] holds the address and [StoryStep.text]
+     * a short description of the page, written by the AI once the card is synced.
+     */
+    LINK_CARD(StoryType("link_card", 24)),
     DRAWING(StoryType("drawing", 100)),
     SPREADSHEET(StoryType("spreadsheet", 101)),
     SPREADSHEET_ROW(StoryType("spreadsheet_row", 102)),

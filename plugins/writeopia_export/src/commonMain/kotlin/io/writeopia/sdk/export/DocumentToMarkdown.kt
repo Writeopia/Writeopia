@@ -112,6 +112,13 @@ object DocumentToMarkdown : DocumentWriter {
                 content to "- $text"
             }
 
+            StoryTypes.LINK_CARD.type.number -> {
+                val url = storyStep.url ?: ""
+                val label = storyStep.text?.takeIf { it.isNotBlank() } ?: url
+
+                ContentAdd.NOTHING to "[$label]($url)"
+            }
+
             else -> ContentAdd.NOTHING to storyStep.text
         }
 

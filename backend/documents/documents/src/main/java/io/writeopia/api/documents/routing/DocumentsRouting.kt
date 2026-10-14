@@ -14,6 +14,7 @@ import io.ktor.server.routing.put
 import io.writeopia.api.core.auth.utils.requirePremiumUserId
 import io.writeopia.api.core.workspaces.utils.runIfMember
 import io.writeopia.api.documents.documents.DocumentsService
+import io.writeopia.api.documents.documents.LinkCardDescription
 import io.writeopia.api.documents.documents.PresentationsService
 import io.writeopia.api.documents.documents.TutorialsService
 import io.writeopia.api.documents.documents.repository.allDocumentTagsByWorkspaceId
@@ -48,6 +49,7 @@ import io.writeopia.sdk.serialization.request.FavoriteDocumentRequest
 import io.writeopia.sdk.serialization.request.GeneratePresentationRequest
 import io.writeopia.sdk.serialization.request.GenerateSummaryRequest
 import io.writeopia.sdk.serialization.request.ImageUploadRequest
+import io.writeopia.sdk.serialization.request.LinkCardDescriptionRequest
 import io.writeopia.sdk.serialization.request.MoveDocumentRequest
 import io.writeopia.sdk.serialization.request.MoveFolderRequest
 import io.writeopia.sdk.serialization.request.StoryStepSyncRequest
@@ -58,6 +60,7 @@ import io.writeopia.sdk.serialization.response.EventDiffResponse
 import io.writeopia.sdk.serialization.response.FolderContentResponse
 import io.writeopia.sdk.serialization.response.GeneratePresentationResponse
 import io.writeopia.sdk.serialization.response.GenerateSummaryResponse
+import io.writeopia.sdk.serialization.response.LinkCardDescriptionResponse
 import io.writeopia.sdk.serialization.response.PresentationsResponse
 import io.writeopia.sdk.serialization.response.SearchResponse
 import io.writeopia.sdk.serialization.response.SyncEventApi
@@ -1054,6 +1057,72 @@ fun Routing.documentsRoute(
                 call.respond(
                     status = HttpStatusCode.InternalServerError,
                     message = "${e.message}"
+                )
+            }
+        }
+    }
+
+    post<LinkCardDescriptionRequest>("/api/docs/workspace/{workspaceId}/document/{documentId}/link-card/describe") { request ->
+        val userId = call.requirePremiumUserId(writeopiaDb, debug) ?: return@post
+        val workspaceId = call.pathParameters["workspaceId"] ?: ""
+        val documentId = call.pathParameters["documentId"] ?: ""
+
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            if (genAiService == null) {
+                call.respond(
+                    status = HttpStatusCode.ServiceUnavailable,
+                    message = LinkCardDescriptionResponse(error = "GenAI service is not available")
+                )
+                return@runIfMember
+            }
+
+            try {
+                val result = DocumentsService.describeLinkCard(
+                    documentId = documentId,
+                    workspaceId = workspaceId,
+                    request = request,
+                    describe = { url ->
+                        val (answer, _) = genAiService.generateWithUrlContextAndUsage(
+                            LinkCardDescription.prompt(url)
+                        )
+                        if (answer.error != null) {
+                            logger.warn("Link card description failed for $url: ${answer.error}")
+                        }
+                        answer.response
+                    },
+                    writeopiaDb = writeopiaDb
+                )
+
+                when (result) {
+                    is DocumentsService.LinkCardDescriptionResult.Success -> {
+                        call.respond(
+                            status = HttpStatusCode.OK,
+                            message = LinkCardDescriptionResponse(
+                                storyStep = result.storyStep.toApi(result.position)
+                            )
+                        )
+                    }
+
+                    is DocumentsService.LinkCardDescriptionResult.InvalidRequest -> {
+                        call.respond(
+                            status = HttpStatusCode.BadRequest,
+                            message = LinkCardDescriptionResponse(error = result.message)
+                        )
+                    }
+
+                    is DocumentsService.LinkCardDescriptionResult.Error -> {
+                        logger.error("Link card description failed in document $documentId: ${result.message}")
+                        call.respond(
+                            status = HttpStatusCode.BadGateway,
+                            message = LinkCardDescriptionResponse(error = "Failed to describe the link")
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                logger.error("Error describing a link card in document $documentId", e)
+                call.respond(
+                    status = HttpStatusCode.InternalServerError,
+                    message = LinkCardDescriptionResponse(error = "An unexpected error occurred")
                 )
             }
         }

@@ -16,6 +16,7 @@ import io.writeopia.sdk.models.api.request.documents.FolderDiffRequest
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.DocumentTag
 import io.writeopia.sdk.models.document.Folder
+import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.models.utils.ResultData
 import kotlinx.coroutines.CancellationException
@@ -33,6 +34,7 @@ import io.writeopia.sdk.serialization.request.CreateFolderRequest
 import io.writeopia.sdk.serialization.request.DeleteDocumentsRequest
 import io.writeopia.sdk.serialization.request.EventDiffRequest
 import io.writeopia.sdk.serialization.request.FavoriteDocumentRequest
+import io.writeopia.sdk.serialization.request.LinkCardDescriptionRequest
 import io.writeopia.sdk.serialization.request.MoveDocumentRequest
 import io.writeopia.sdk.serialization.request.MoveFolderRequest
 import io.writeopia.sdk.serialization.request.WorkspaceDiffRequest
@@ -41,6 +43,7 @@ import io.writeopia.sdk.serialization.request.DocumentSyncInfo
 import io.writeopia.sdk.serialization.response.EventDiffResponse
 import io.writeopia.sdk.serialization.response.FolderContentResponse
 import io.writeopia.sdk.serialization.response.GenerateSummaryResponse
+import io.writeopia.sdk.serialization.response.LinkCardDescriptionResponse
 import io.writeopia.sdk.serialization.response.WorkspaceDiffResponse
 import io.ktor.http.HttpStatusCode
 import io.writeopia.app.endpoints.EndPoints
@@ -297,6 +300,39 @@ class DocumentsApi(
             ResultData.Complete(Unit)
         } else {
             println("error favoriting document: $response")
+            ResultData.Error()
+        }
+    }
+
+    /**
+     * Asks the backend to describe the page of a link card with the AI and to save the
+     * description in the card. The backend is updated before this answers, so a sync from
+     * [LinkCardDescriptionRequest.requestTimestamp] on returns the described card.
+     */
+    suspend fun describeLinkCard(
+        documentId: String,
+        workspaceId: String,
+        request: LinkCardDescriptionRequest
+    ): ResultData<StoryStep> {
+        val response = client.post(
+            "$baseUrl/api/docs/workspace/$workspaceId/document/$documentId/link-card/describe"
+        ) {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
+
+        if (!response.status.isSuccess()) {
+            println("error describing link card: $response")
+            return ResultData.Error()
+        }
+
+        val body = response.body<LinkCardDescriptionResponse>()
+        val storyStep = body.storyStep?.toModel()
+
+        return if (storyStep != null) {
+            ResultData.Complete(storyStep)
+        } else {
+            println("error describing link card: ${body.error}")
             ResultData.Error()
         }
     }

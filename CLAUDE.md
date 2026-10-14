@@ -220,6 +220,7 @@ Common types used in document content:
 - `document_link` (number: 20) - Link to another document
 - `image` (number: 2) - Image with `url` or `path`
 - `divider` (number: 21) - Horizontal divider
+- `link_card` (number: 24) - Card for a pasted web address: `url` holds the address, `text` the AI description
 - `space` (number: 7) - Empty space
 
 ### Text Formatting

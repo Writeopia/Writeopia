@@ -1,0 +1,41 @@
+package io.writeopia.api.documents.documents
+
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+
+class LinkCardDescriptionTest {
+
+    @Test
+    fun `a short answer is kept as one paragraph`() {
+        val tidy = LinkCardDescription.tidy("  \"Writeopia is a text editor.\n\nIt works offline.\"  ")
+
+        assertEquals("Writeopia is a text editor. It works offline.", tidy)
+    }
+
+    @Test
+    fun `a long answer is cut to sixty words`() {
+        val answer = (1..100).joinToString(" ") { "word$it" }
+
+        val tidy = LinkCardDescription.tidy(answer)!!
+
+        assertEquals(LinkCardDescription.MAX_WORDS, tidy.split(" ").size)
+        assertTrue(tidy.endsWith("word60"))
+    }
+
+    @Test
+    fun `a blank answer is no description`() {
+        assertNull(LinkCardDescription.tidy(null))
+        assertNull(LinkCardDescription.tidy("   \n "))
+        assertNull(LinkCardDescription.tidy("\"\""))
+    }
+
+    @Test
+    fun `the prompt names the address and the word limit`() {
+        val prompt = LinkCardDescription.prompt("https://writeopia.io")
+
+        assertTrue(prompt.contains("https://writeopia.io"))
+        assertTrue(prompt.contains("60 words"))
+    }
+}

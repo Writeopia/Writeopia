@@ -4,6 +4,8 @@ import io.writeopia.sdk.models.presentation.PresentationPrompt
 import com.google.genai.Client
 import com.google.genai.types.EmbedContentConfig
 import com.google.genai.types.GenerateContentConfig
+import com.google.genai.types.Tool
+import com.google.genai.types.UrlContext
 import io.writeopia.api.genai.model.AiGenerateResponse
 import io.writeopia.api.genai.model.GeneratedImage
 import io.writeopia.api.genai.model.ImageGeneration
@@ -304,6 +306,26 @@ class GenAiService(
 
     fun streamGenerateBaseWithUsage(prompt: String, modelName: String? = null, onUsage: (TokenUsage) -> Unit): Flow<AiGenerateResponse> {
         return streamGenerateWithUsage(prompt, modelName, onUsage)
+    }
+
+    /**
+     * Answers [prompt] with the model allowed to read the web pages the prompt names, through
+     * Gemini's URL context tool. When the model or the tool refuses, the prompt is sent again
+     * without the tool, so the model answers from what it knows about the address.
+     */
+    suspend fun generateWithUrlContextAndUsage(
+        prompt: String,
+        modelName: String? = null
+    ): Pair<AiGenerateResponse, TokenUsage> {
+        val config = GenerateContentConfig.builder()
+            .tools(Tool.builder().urlContext(UrlContext.builder().build()).build())
+            .build()
+
+        val withTool = generateWithUsage(prompt, modelName, config)
+        if (withTool.first.error == null && !withTool.first.response.isNullOrBlank()) return withTool
+
+        logger.warn("GenAI could not answer with URL context, answering without it: {}", withTool.first.error)
+        return generateWithUsage(prompt, modelName)
     }
 
     /**
