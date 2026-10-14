@@ -11,8 +11,10 @@ import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.repository.UserRepository
 import io.writeopia.ui.model.LinkCardCreation
 import io.writeopia.ui.model.TextInput
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -32,11 +34,14 @@ class LinkCardStateManagerTest {
         override suspend fun getWorkspace(): Workspace = Workspace.disconnectedWorkspace()
     }
 
-    private fun managerWith(vararg lines: String?): WriteopiaStateManager {
+    private fun managerWith(
+        vararg lines: String?,
+        dispatcher: CoroutineDispatcher = UnconfinedTestDispatcher()
+    ): WriteopiaStateManager {
         val now = Clock.System.now()
         val manager = WriteopiaStateManager.create(
             writeopiaManager = WriteopiaManager(),
-            dispatcher = UnconfinedTestDispatcher(),
+            dispatcher = dispatcher,
             userRepository = userRepository,
         )
         val content = buildMap {
@@ -89,6 +94,32 @@ class LinkCardStateManagerTest {
         assertEquals("", below.value.text)
         assertEquals(below.key, state.focus)
         job.cancel()
+    }
+
+    @Test
+    fun theCardSurvivesWorkScheduledOnTheDispatcher() = runTest {
+        // A dispatcher that runs nothing until asked, like Dispatchers.Default in the app:
+        // anything the creation leaves to a coroutine would land after the card and could undo it.
+        val manager = managerWith(null, dispatcher = StandardTestDispatcher(testScheduler))
+
+        manager.handleTextInput(
+            TextInput(text = "https://www.google.com/", start = 23, end = 23),
+            position = 1.0,
+            lineBreakByContent = true
+        )
+        val rightAfter = manager.currentStory.value
+        assertEquals(StoryTypes.LINK_CARD.type, rightAfter.stories[1.0]!!.type)
+        assertEquals(3, rightAfter.stories.size)
+
+        advanceUntilIdle()
+
+        val settled = manager.currentStory.value
+        assertEquals(StoryTypes.LINK_CARD.type, settled.stories[1.0]!!.type, "the card was overwritten later")
+        assertEquals("https://www.google.com/", settled.stories[1.0]!!.url)
+        assertEquals(3, settled.stories.size)
+        val below = settled.stories.entries.first { (position, _) -> position > 1.0 }
+        assertEquals(StoryTypes.TEXT.type, below.value.type)
+        assertEquals(below.key, settled.focus)
     }
 
     @Test

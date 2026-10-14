@@ -275,6 +275,11 @@ public struct WriteopiaManager {
         contentManager.add(step, after: position, in: state.stories)
     }
 
+    /// Turns the text step at `position` into a link card for `url`. See `ContentManager`.
+    public func createLinkCard(url: String, at position: Double, state: StoryState) -> StoryState {
+        contentManager.createLinkCard(url: url, at: position, in: state.stories)
+    }
+
     /// Replaces the step with the same id as `step`, keeping its position.
     public func replaceStep(_ step: StoryStep, state: StoryState) -> StoryState {
         guard let position = state.stories.first(where: { $0.value.id == step.id })?.key else { return state }

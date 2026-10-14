@@ -50,6 +50,11 @@ public final class WriteopiaStateManager {
     /// Called with the id of the last line that just became a list item or a checkbox, so the AI
     /// can suggest the next items, like `generateSuggestionsList` of the SDK.
     @ObservationIgnored public var onListStarted: ((String) -> Void)?
+    /// Called with a link card just made from a pasted address, so the app can ask the backend
+    /// for a description of the page.
+    @ObservationIgnored public var onLinkCardCreated: ((StoryStep) -> Void)?
+    /// Link cards whose description is being written; their drawer says so.
+    public private(set) var describingLinkStepIds: Set<String> = []
     @ObservationIgnored let writeopiaManager: WriteopiaManager
     @ObservationIgnored private let focusHandler = FocusHandler()
     /// Copy and Cut of the selected lines, when the app has a clipboard for them. Called from
@@ -112,6 +117,8 @@ public final class WriteopiaStateManager {
                 Action.LineBreak(storyStep: newStep, position: position, cursor: cursor),
                 state: currentStory
             ))
+        } else if step.type.number == StoryType.text.number, LinkDetector.isPastedLink(previous: step.text, new: text) {
+            createLinkCard(url: text.trimmingCharacters(in: .whitespacesAndNewlines), stepId: stepId, at: position)
         } else if !step.isTitle, let (command, rest) = TextCommands.command(in: text) {
             applyCommand(command, rest: rest, to: newStep, at: position, cursor: cursor)
         } else {
@@ -120,6 +127,31 @@ public final class WriteopiaStateManager {
                 state: currentStory
             ))
         }
+    }
+
+    /// A whole address pasted in an empty line becomes a link card, with the cursor on the line
+    /// below it. The description comes later, from the backend, through `onLinkCardCreated`.
+    private func createLinkCard(url: String, stepId: String, at position: Double) {
+        dismissAiSuggestions()
+        apply(writeopiaManager.createLinkCard(url: url, at: position, state: currentStory))
+        guard let card = step(withId: stepId), card.type.number == StoryType.linkCard.number else { return }
+        describingLinkStepIds.insert(card.id)
+        onLinkCardCreated?(card)
+    }
+
+    /// The backend wrote the description of the page of a link card. Nothing happens when the
+    /// card left the document meanwhile.
+    public func linkCardDescribed(stepId: String, description: String) {
+        describingLinkStepIds.remove(stepId)
+        guard var card = step(withId: stepId), card.type.number == StoryType.linkCard.number else { return }
+        card.text = description
+        currentStory = writeopiaManager.replaceStep(card, state: currentStory)
+        changeCount += 1
+    }
+
+    /// The description of a link card could not be written; the card stays as it is.
+    public func linkCardDescriptionFailed(stepId: String) {
+        describingLinkStepIds.remove(stepId)
     }
 
     /// A command typed at the start of the line changes the type of the step and disappears

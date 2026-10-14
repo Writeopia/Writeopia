@@ -17,6 +17,7 @@ public enum StoryTypes {
         StoryType.image.number,
         StoryType.divider.number,
         StoryType.documentLink.number,
+        StoryType.linkCard.number,
         StoryType.loading.number,
         StoryType.space.number,
         StoryType.onDragSpace.number,

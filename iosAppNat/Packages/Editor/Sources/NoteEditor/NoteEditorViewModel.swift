@@ -80,6 +80,9 @@ public final class NoteEditorViewModel {
 
     // Persistence and sync, like `registerForSync` of the Compose editor.
     @ObservationIgnored private var syncing: DocumentSyncing? { repository as? DocumentSyncing }
+    /// The backend AI that describes link cards; nil in the private space.
+    @ObservationIgnored private var linkDescribing: LinkCardDescribing? { repository as? LinkCardDescribing }
+    @ObservationIgnored private var linkCardTasks: [String: Task<Void, Never>] = [:]
     /// Steps as last saved on the device, to find what an edit changed.
     @ObservationIgnored private var savedSteps: [String: StoryStep] = [:]
     /// Steps as last sent to the backend.
@@ -140,6 +143,7 @@ public final class NoteEditorViewModel {
             writeopiaManager.onGenerateSection = { [weak self] stepId in self?.generateSection(stepId: stepId) }
             writeopiaManager.onListStarted = { [weak self] stepId in self?.suggestListItems(after: stepId) }
         }
+        writeopiaManager.onLinkCardCreated = { [weak self] card in self?.describeLinkCard(card) }
         switch presentations {
         case .cloud(let api):
             // The backend reads the document it has: the pending edits go first.
@@ -615,6 +619,36 @@ public final class NoteEditorViewModel {
         aiTask?.cancel()
         suggestionTask?.cancel()
         writingAgent?.executor.cancel()
+    }
+
+    // MARK: - Link cards
+
+    /// Asks the backend to describe the page of a link card that was just pasted. The card is
+    /// already in the editor; this only fills in its description. The pending edits go first,
+    /// so the backend has the card, and the described card comes back through the sync.
+    func describeLinkCard(_ card: StoryStep) {
+        guard let linkDescribing, !isDeleted else {
+            writeopiaManager.linkCardDescriptionFailed(stepId: card.id)
+            return
+        }
+
+        linkCardTasks[card.id]?.cancel()
+        linkCardTasks[card.id] = Task { [weak self] in
+            guard let self else { return }
+            defer { linkCardTasks[card.id] = nil }
+            await flush()
+            do {
+                let described = try await linkDescribing.describeLinkCard(documentId: documentId, step: card)
+                guard !Task.isCancelled, let description = described.text, !description.isEmpty else {
+                    writeopiaManager.linkCardDescriptionFailed(stepId: card.id)
+                    return
+                }
+                writeopiaManager.linkCardDescribed(stepId: card.id, description: description)
+                documentChanged()
+            } catch {
+                writeopiaManager.linkCardDescriptionFailed(stepId: card.id)
+            }
+        }
     }
 
     // MARK: - Persistence and sync

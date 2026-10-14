@@ -1647,37 +1647,22 @@ class WriteopiaStateManager(
 
     /**
      * Turns an empty line into a link card for [url]. The card has no description yet: the app
-     * asks the backend for one when [linkCardCreated] emits. A card can not be typed in, so the
-     * cursor moves to the line below it, which is created when there is none.
+     * asks the backend for one when [linkCardCreated] emits. The change is one synchronous
+     * state update, made by [WriteopiaManager.createLinkCard].
      */
     private fun createLinkCard(step: StoryStep, position: Double, url: String) {
-        val next = step.nextPosition?.let { nextPosition -> nextPosition to getStory(nextPosition) }
-        val nextIsText = next?.second?.type?.number == StoryTypes.TEXT.type.number
+        val current = _currentStory.value
+        val newState = writeopiaManager.createLinkCard(position, url, current)
+        val linkCard = newState.stories[position]
+            ?.takeIf { it.type.number == StoryTypes.LINK_CARD.type.number }
+            ?: return
 
-        if (!nextIsText) {
-            // An empty line break adds an empty text line after this one and focuses it.
-            onLineBreak(Action.LineBreak(step.copy(text = "\n", spans = emptySet()), position))
-        }
+        backStackManager.addState(current)
+        _currentStory.value = newState
+        cleanupOrphanCommentConversations()
+        _scrollToPosition.value = -1
 
-        val linkCard = (getStory(position) ?: step).copy(
-            type = StoryTypes.LINK_CARD.type,
-            url = url,
-            text = null,
-            tags = emptySet(),
-            spans = emptySet()
-        )
-
-        changeStoryState(Action.StoryStateChange(linkCard, position, preserveFocus = true))
-
-        if (getStory(position)?.type?.number != StoryTypes.LINK_CARD.type.number) return
-
-        if (nextIsText && next != null) {
-            _currentStory.value = _currentStory.value.copy(
-                focus = next.first,
-                selection = Selection.fromPosition(cursorPosition = 0, stepPosition = next.first)
-            )
-        }
-
+        println("LinkCard: created at $position for $url, cursor moved to ${newState.focus}")
         _linkCardCreated.tryEmit(LinkCardCreation(linkCard, position))
     }
 

@@ -204,8 +204,15 @@ public struct WrDocument: Codable, Identifiable, Equatable, Hashable, Sendable {
             StoryType.unorderedListItem.number, StoryType.aiAnswer.number,
         ]
         return bodySteps
-            .filter { textTypes.contains($0.type.number) }
-            .compactMap { $0.text?.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .compactMap { step -> String? in
+                if step.type.number == StoryType.linkCard.number {
+                    // The description of the page when the AI wrote it, else the address.
+                    let description = step.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                    return description.isEmpty ? step.url : description
+                }
+                guard textTypes.contains(step.type.number) else { return nil }
+                return step.text?.trimmingCharacters(in: .whitespacesAndNewlines)
+            }
             .filter { !$0.isEmpty }
             .prefix(3)
             .joined(separator: " ")

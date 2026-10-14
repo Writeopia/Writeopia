@@ -24,6 +24,10 @@ public enum DocumentToMarkdown {
         case StoryType.drawing.number:
             // The text of a drawing is its JSON, not something to read.
             return nil
+        case StoryType.linkCard.number:
+            let url = step.url ?? ""
+            let label = (step.text ?? "").isEmpty ? url : step.text!
+            return "[\(label)](\(url))"
         default:
             return step.text
         }
