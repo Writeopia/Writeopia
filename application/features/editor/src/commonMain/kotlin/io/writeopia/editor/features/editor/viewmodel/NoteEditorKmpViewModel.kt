@@ -877,9 +877,13 @@ class NoteEditorKmpViewModel(
     }
 
     /**
-     * Asks the backend to describe the page of a link card that was just pasted. The backend
-     * saves the description in the card first; then the document is synced from the time of
-     * the request on, which brings the described card to the editor and the local database.
+     * Asks the backend to describe the page of a link card that was just pasted. The card is
+     * already in the editor; this only fills in its description. The request runs as an AI
+     * task, so the tasks panel shows it while it is pending and says when it fails.
+     *
+     * The backend saves the description in the card first; then the document is synced from
+     * the time of the request on, which brings the described card to the editor and the local
+     * database.
      */
     private suspend fun describeLinkCard(creation: LinkCardCreation) {
         val api = documentsApi ?: return
@@ -888,9 +892,15 @@ class NoteEditorKmpViewModel(
 
         val workspaceId = authRepository.getWorkspace()?.id ?: return
         val documentId = writeopiaManager.documentInfo.value.id
-        val requestTimestamp = Clock.System.now().toEpochMilliseconds()
+        val url = creation.storyStep.url ?: return
 
-        try {
+        aiTaskManager.enqueueTask(
+            id = "editor-$documentId-link-${creation.storyStep.id}",
+            type = AiTaskType.LINK_DESCRIPTION,
+            description = "Describing $url..."
+        ) {
+            val requestTimestamp = Clock.System.now().toEpochMilliseconds()
+
             val described = api.describeLinkCard(
                 documentId = documentId,
                 workspaceId = workspaceId,
@@ -901,7 +911,9 @@ class NoteEditorKmpViewModel(
                 )
             )
 
-            if (described !is ResultData.Complete) return
+            if (described !is ResultData.Complete) {
+                return@enqueueTask Result.failure(Exception("The link could not be described"))
+            }
 
             // The backend has the description now: a sync from just before the request returns it.
             val response = syncApi(
@@ -917,10 +929,8 @@ class NoteEditorKmpViewModel(
 
             val synced = response.updatedSteps.map { stepApi -> stepApi.position to stepApi.toModel() }
             applyServerLinkCards(documentId, synced)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            println("error describing link card: ${e.message}")
+
+            Result.success(Unit)
         }
     }
 
