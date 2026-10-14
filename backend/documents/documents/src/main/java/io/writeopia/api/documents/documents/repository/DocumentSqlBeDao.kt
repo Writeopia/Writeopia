@@ -186,7 +186,7 @@ class DocumentSqlBeDao(
                 tags = tags.joinToString(separator = ",") { it.tag.label },
                 spans = spans.joinToString(separator = ",") { it.toText() },
                 link_to_document = documentLink?.id,
-                last_updated_at = lastUpdatedAt?.toInt()
+                last_updated_at = lastUpdatedAt
             )
 
             // Recursively save nested steps with parent_id set to this step's id
@@ -239,7 +239,7 @@ class DocumentSqlBeDao(
                         DocumentLink(docId, title)
                     },
                     dbPosition = entity.position.toDouble(),
-                    lastUpdatedAt = entity.last_updated_at?.toLong()
+                    lastUpdatedAt = entity.last_updated_at
                 )
             } ?: emptyList()
     }
@@ -1088,7 +1088,7 @@ class DocumentSqlBeDao(
                 tags = tags.joinToString(separator = ",") { it.tag.label },
                 spans = spans.joinToString(separator = ",") { it.toText() },
                 link_to_document = documentLink?.id,
-                last_updated_at = lastUpdatedAt.toInt()
+                last_updated_at = lastUpdatedAt
             )
         }
     }
@@ -1097,7 +1097,7 @@ class DocumentSqlBeDao(
      * Gets story steps for a document that were updated after the given timestamp.
      */
     fun getStoryStepsAfterTime(documentId: String, afterTime: Long): List<Pair<Double, StoryStep>> {
-        return storyStepQueries?.selectByDocumentIdAfterTime(documentId, afterTime.toInt())
+        return storyStepQueries?.selectByDocumentIdAfterTime(documentId, afterTime)
             ?.executeAsList()
             ?.map { entity ->
                 val storyStep = StoryStep(
@@ -1127,7 +1127,7 @@ class DocumentSqlBeDao(
                             ?.executeAsOneOrNull()
                         DocumentLink(docId, title)
                     },
-                    lastUpdatedAt = entity.last_updated_at?.toLong()
+                    lastUpdatedAt = entity.last_updated_at
                 )
                 entity.position.toDouble() to storyStep
             } ?: emptyList()
@@ -1167,7 +1167,7 @@ class DocumentSqlBeDao(
                             ?.executeAsOneOrNull()
                         DocumentLink(docId, title)
                     },
-                    lastUpdatedAt = entity.last_updated_at?.toLong()
+                    lastUpdatedAt = entity.last_updated_at
                 )
                 entity.position.toDouble() to storyStep
             }
@@ -1284,6 +1284,14 @@ class DocumentSqlBeDao(
     fun updateDocumentTitle(documentId: String, title: String) {
         val now = Clock.System.now().toEpochMilliseconds()
         documentQueries?.updateTitle(title, now, now, documentId)
+    }
+
+    /**
+     * Marks the document as changed at [lastUpdatedAt] (client time, compared by the clients)
+     * and synced at [lastSynced] (server time, the watermark of the folder diffs).
+     */
+    fun touchDocument(documentId: String, lastUpdatedAt: Long, lastSynced: Long) {
+        documentQueries?.touch(lastUpdatedAt, lastSynced, documentId)
     }
 
     /**

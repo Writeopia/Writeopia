@@ -160,7 +160,7 @@ fun PortraitMobile(
 
             if (showBottomBar) {
                 NavigationBar(
-                    containerColor = WriteopiaTheme.colorScheme.lightBackground,
+                    containerColor = MaterialTheme.colorScheme.background,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
                         .offset { IntOffset(0, offsetY.roundToPx()) }

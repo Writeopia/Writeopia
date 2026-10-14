@@ -185,6 +185,11 @@ UPDATE document_entity SET published = ?, last_updated_at = ? WHERE id = ?;
 updateTitle:
 UPDATE document_entity SET title = ?, last_updated_at = ?, last_synced = ? WHERE id = ?;
 
+-- Records a change of the document's steps, so folder diffs (last_synced) and the
+-- conflict handling of the clients (last_updated_at) see the document as changed.
+touch:
+UPDATE document_entity SET last_updated_at = ?, last_synced = ? WHERE id = ?;
+
 selectPublishedWithContentById:
 SELECT *
 FROM document_entity

@@ -291,6 +291,9 @@ internal class ChooseNoteKmpViewModel(
     private val _showAddMenuState = MutableStateFlow(false)
     override val showAddMenuState: StateFlow<Boolean> = _showAddMenuState
 
+    private val _isSyncingState = MutableStateFlow(false)
+    override val isSyncingState: StateFlow<Boolean> = _isSyncingState
+
     private val _showAiOptionsState = MutableStateFlow(false)
     override val showAiOptionsState: StateFlow<Boolean> = _showAiOptionsState.asStateFlow()
 
@@ -700,15 +703,20 @@ internal class ChooseNoteKmpViewModel(
                 authRepository.getUser().tier == Tier.PREMIUM &&
                 workspace != null
             ) {
-                // Apply deletions and moves made on other devices before pushing local
-                // folders, so a folder deleted elsewhere is removed here instead of re-sent.
-                eventSync?.syncEvents(workspace.id)
+                _isSyncingState.value = true
+                try {
+                    // Apply deletions and moves made on other devices before pushing local
+                    // folders, so a folder deleted elsewhere is removed here instead of re-sent.
+                    eventSync?.syncEvents(workspace.id)
 
-                folderSync.syncFolder(
-                    folderId = notesNavigation.id,
-                    workspaceId = workspace.id,
-                    orderBy = orderByState.value.type
-                )
+                    folderSync.syncFolder(
+                        folderId = notesNavigation.id,
+                        workspaceId = workspace.id,
+                        orderBy = orderByState.value.type
+                    )
+                } finally {
+                    _isSyncingState.value = false
+                }
             }
         }
     }

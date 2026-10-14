@@ -29,6 +29,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -158,6 +159,7 @@ internal fun MobileChooseNoteScreen(
                     TopBar(
                         titleState = chooseNoteViewModel.userName,
                         folderTitleState = chooseNoteViewModel.currentFolderTitle,
+                        isSyncingState = chooseNoteViewModel.isSyncingState,
                         folder = currentFolder,
                         folderTitleModifier = toolbarTitleModifier,
                         accountClick = navigateToAccount,
@@ -327,6 +329,7 @@ internal fun MobileChooseNoteScreen(
 private val TOUCH_COLOR_SIZE = 30.dp
 
 const val NAVIGATE_BACK_TEST_TAG = "NotesMenuNavigateBack"
+const val SYNCING_TEST_TAG = "NotesMenuSyncing"
 
 private enum class CurrentFolderDialog {
     EDIT,
@@ -340,6 +343,7 @@ private enum class CurrentFolderDialog {
 private fun TopBar(
     titleState: StateFlow<UserState<String>> = MutableStateFlow(UserState.ConnectedUser("Title")),
     folderTitleState: StateFlow<String?> = MutableStateFlow(null),
+    isSyncingState: StateFlow<Boolean> = MutableStateFlow(false),
     folder: Folder? = null,
     folderTitleModifier: Modifier = Modifier,
     accountClick: () -> Unit = {},
@@ -348,6 +352,7 @@ private fun TopBar(
 ) {
     val title = titleState.collectAsState().value
     val folderTitle = folderTitleState.collectAsState().value
+    val isSyncing = isSyncingState.collectAsState().value
 
     TopAppBar(
         navigationIcon = {
@@ -422,6 +427,18 @@ private fun TopBar(
             }
         },
         actions = {
+            // The folder is being synced with the backend.
+            if (isSyncing) {
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .semantics { testTag = SYNCING_TEST_TAG }
+                        .padding(end = 4.dp)
+                        .size(20.dp),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    strokeWidth = 2.dp
+                )
+            }
+
             Icon(
                 modifier = Modifier
                     .clip(CircleShape)

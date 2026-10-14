@@ -69,6 +69,9 @@ interface ChooseNoteViewModel : FolderController {
 
     val showCreateFolderDialogState: StateFlow<Boolean>
 
+    /** Whether the folder is being synced with the backend right now. */
+    val isSyncingState: StateFlow<Boolean>
+
     //    fun requestDocuments(force: Boolean)
     fun handleMenuItemTap(id: String): Boolean
 
