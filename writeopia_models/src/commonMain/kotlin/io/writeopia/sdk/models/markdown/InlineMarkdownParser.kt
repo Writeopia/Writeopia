@@ -47,14 +47,19 @@ object InlineMarkdownParser {
         // Process URLs - they don't modify text, just add spans
         processUrlPattern(processedText, URL_REGEX, newSpans)
 
-        return if (newSpans.isNotEmpty()) {
+        if (newSpans.isEmpty()) return storyStep
+
+        val mergedSpans = storyStep.spans + newSpans
+        // A URL that is already a link matches again on every edit. Keep the step's identity
+        // then: a new local id recreates the step in the editor and takes the focus away.
+        return if (processedText == originalText && mergedSpans == storyStep.spans) {
+            storyStep
+        } else {
             storyStep.copy(
                 text = processedText,
-                spans = storyStep.spans + newSpans,
-                localId = if (newSpans.isNotEmpty()) GenerateId.generate() else storyStep.localId
+                spans = mergedSpans,
+                localId = GenerateId.generate()
             )
-        } else {
-            storyStep
         }
     }
 

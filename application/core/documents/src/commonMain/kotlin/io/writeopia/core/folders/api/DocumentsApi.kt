@@ -18,6 +18,7 @@ import io.writeopia.sdk.models.document.DocumentTag
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.models.utils.ResultData
+import kotlinx.coroutines.CancellationException
 import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.data.FolderApi
 import io.writeopia.sdk.serialization.data.IconApi
@@ -333,15 +334,22 @@ class DocumentsApi(
     suspend fun getDocumentById(
         documentId: String,
         workspaceId: String
-    ): ResultData<Document> {
+    ): ResultData<Document> = try {
         val response = client.get("$baseUrl/api/docs/workspace/$workspaceId/document/$documentId")
 
-        return if (response.status.isSuccess()) {
+        if (response.status.isSuccess()) {
             ResultData.Complete(response.body<DocumentApi>().toModel())
         } else {
             println("error getting document by id: $response")
             ResultData.Error()
         }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        // No network (airplane mode), DNS failure, timeout: the document still opens from the
+        // local database.
+        println("error getting document by id: ${e.message}")
+        ResultData.Error(e)
     }
 
     suspend fun getPublishedDocument(documentId: String): ResultData<Document> {
@@ -386,16 +394,21 @@ class DocumentsApi(
     suspend fun isDocumentPublished(
         documentId: String,
         workspaceId: String
-    ): ResultData<Boolean> {
+    ): ResultData<Boolean> = try {
         val response = client.get("$baseUrl/api/docs/workspace/$workspaceId/document/$documentId/published")
 
-        return if (response.status.isSuccess()) {
+        if (response.status.isSuccess()) {
             val body = response.body<Map<String, Boolean>>()
             ResultData.Complete(body["published"] ?: false)
         } else {
             println("error checking document published status: $response")
             ResultData.Error()
         }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        println("error checking document published status: ${e.message}")
+        ResultData.Error(e)
     }
 
     suspend fun getEventsDiff(

@@ -80,6 +80,7 @@ import io.writeopia.writingagent.tags.WriteopiaDocumentTags
 import io.writeopia.app.dto.writingagent.TagCreateRequest
 import io.writeopia.writingagent.api.WritingAgentApi
 import io.writeopia.writingagent.controller.WritingAgentController
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -137,6 +138,7 @@ class NoteEditorKmpViewModel(
     presentationsApi: PresentationsApi? = null,
     presentationsStore: PresentationsStore? = null,
     private val writingAgentApi: WritingAgentApi? = null,
+    private val writingAgentStartsCollapsed: Boolean = false,
     /** The workspace tag catalogue. Null where the app has no tags. */
     private val documentTagRepository: DocumentTagRepository? = null,
 ) : NoteEditorViewModel,
@@ -191,6 +193,7 @@ class NoteEditorKmpViewModel(
         WritingAgentController(
             scope = viewModelScope,
             api = api,
+            startCollapsed = writingAgentStartsCollapsed,
             storyFlow = writeopiaManager.currentStory,
             documentIdFlow = writeopiaManager.documentInfo.map { info -> info.id },
             documentTitle = { writeopiaManager.documentInfo.value.title },
@@ -798,18 +801,25 @@ class NoteEditorKmpViewModel(
                 )
             }
 
-            // Step 3: Fetch document metadata from API if online
+            // Step 3: Fetch document metadata from API if online. A failure here (airplane
+            // mode, backend down) must not take the editor down: the local document is shown.
             if (!isDisconnected && documentsApi != null) {
-                // Fetch favorite status from backend
-                val docResult = documentsApi.getDocumentById(documentId, workspace.id)
-                if (docResult is ResultData.Complete) {
-                    writeopiaManager.setFavorite(docResult.data.favorite)
-                }
+                try {
+                    // Fetch favorite status from backend
+                    val docResult = documentsApi.getDocumentById(documentId, workspace.id)
+                    if (docResult is ResultData.Complete) {
+                        writeopiaManager.setFavorite(docResult.data.favorite)
+                    }
 
-                // Fetch published status
-                val publishedResult = documentsApi.isDocumentPublished(documentId, workspace.id)
-                if (publishedResult is ResultData.Complete) {
-                    _isDocumentPublished.value = publishedResult.data
+                    // Fetch published status
+                    val publishedResult = documentsApi.isDocumentPublished(documentId, workspace.id)
+                    if (publishedResult is ResultData.Complete) {
+                        _isDocumentPublished.value = publishedResult.data
+                    }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    println("error loading document metadata: ${e.message}")
                 }
             }
         }

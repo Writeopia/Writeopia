@@ -79,6 +79,7 @@ struct StepTextViewRepresentable: NSViewRepresentable {
         textView.allowsUndo = false
         textView.isContinuousSpellCheckingEnabled = true
         textView.isAutomaticSpellingCorrectionEnabled = true
+        textView.linkTextAttributes = TextStyles.linkTextAttributes
         textView.setAccessibilityIdentifier("step.\(step.type.name)")
         textView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         // Steps are reordered with a SwiftUI drag; the text view mustn't take dropped text.
@@ -260,6 +261,14 @@ struct StepTextViewRepresentable: NSViewRepresentable {
             if text.contains("\n"), let step = manager.step(withId: parent.step.id) {
                 parent.render(step, in: textView, coordinator: self)
             }
+        }
+
+        /// A click on a link opens it in the browser, like the Compose app.
+        func textView(_ textView: NSTextView, clickedOnLink link: Any, at charIndex: Int) -> Bool {
+            let url = (link as? URL) ?? (link as? String).flatMap(TextStyles.linkURL)
+            guard let url else { return false }
+            NSWorkspace.shared.open(url)
+            return true
         }
 
         func textViewDidChangeSelection(_ notification: Notification) {

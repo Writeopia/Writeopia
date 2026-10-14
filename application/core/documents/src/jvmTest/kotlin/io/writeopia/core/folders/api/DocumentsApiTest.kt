@@ -35,4 +35,16 @@ class DocumentsApiTest {
 
         assertIs<ResultData.Error<Unit>>(result)
     }
+
+    @Test
+    fun `document metadata requests report an error instead of throwing when offline`() = runTest {
+        // Ktor throws from the engine when there is no network, as in airplane mode.
+        val api = DocumentsApi(
+            client = HttpClient(MockEngine { throw java.net.UnknownHostException("api.example.com") }),
+            baseUrl = "https://api.example.com"
+        )
+
+        assertIs<ResultData.Error<Document>>(api.getDocumentById("doc", "workspace"))
+        assertIs<ResultData.Error<Boolean>>(api.isDocumentPublished("doc", "workspace"))
+    }
 }

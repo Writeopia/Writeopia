@@ -92,10 +92,32 @@ enum TextStyles {
             case "LINK":
                 text.addAttribute(.foregroundColor, value: accentColor, range: range)
                 text.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: range)
+                if let url = linkURL(span.extra) {
+                    text.addAttribute(.link, value: url, range: range)
+                }
             default:
                 break
             }
         }
+    }
+
+    /// The URL of a `LINK` span. Links written without a scheme open over `https`, as in the
+    /// Compose app; see `LinkInput`.
+    static func linkURL(_ extra: String?) -> URL? {
+        LinkInput.normalized(extra).flatMap(URL.init(string:))
+    }
+
+    /// Attributes `NSTextView` and `UITextView` draw over link ranges; the span's own color
+    /// and underline, so links look the same whether or not the view treats them as links.
+    static var linkTextAttributes: [NSAttributedString.Key: Any] {
+        var attributes: [NSAttributedString.Key: Any] = [
+            .foregroundColor: accentColor,
+            .underlineStyle: NSUnderlineStyle.single.rawValue,
+        ]
+        #if canImport(AppKit) && !canImport(UIKit)
+        attributes[.cursor] = NSCursor.pointingHand
+        #endif
+        return attributes
     }
 
     // MARK: - Platform

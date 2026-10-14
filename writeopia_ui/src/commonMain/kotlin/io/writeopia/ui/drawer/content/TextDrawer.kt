@@ -60,6 +60,7 @@ import io.writeopia.ui.model.EmptyErase
 import io.writeopia.ui.model.TextInput
 import io.writeopia.ui.spellcheck.SpellChecker
 import io.writeopia.ui.spellcheck.SpellCheckVisualTransformation
+import io.writeopia.ui.utils.AboveAnchorPositionProvider
 import io.writeopia.ui.utils.Spans
 import io.writeopia.ui.utils.defaultTextStyle
 import kotlinx.coroutines.delay
@@ -128,6 +129,10 @@ class TextDrawer(
             mutableStateOf<TextLayoutResult?>(null)
         }
 
+        // The field keeps its selection after the focus moves to another step, so the link
+        // popup must look at the focus too, not only at where the cursor was left.
+        var isFocused by remember { mutableStateOf(false) }
+
         // Spell checking state
         var misspelledRanges by remember { mutableStateOf<List<IntRange>>(emptyList()) }
 
@@ -173,12 +178,16 @@ class TextDrawer(
 
         val selectedLink by remember {
             derivedStateOf {
-                spans
-                    .filter { spanInfo -> spanInfo.span == Span.LINK }
-                    .firstOrNull { (start, end, _, _) ->
-                        selection.start in start..end
-                    }
-                    ?.extra
+                if (!isFocused) {
+                    null
+                } else {
+                    spans
+                        .filter { spanInfo -> spanInfo.span == Span.LINK }
+                        .firstOrNull { (start, end, _, _) ->
+                            selection.start in start..end
+                        }
+                        ?.extra
+                }
             }
         }
 
@@ -244,6 +253,7 @@ class TextDrawer(
                             )
                         }
                         .onFocusChanged { focusState ->
+                            isFocused = focusState.isFocused
                             onFocusChanged(drawInfo.position, focusState)
                         }
                         .testTag("MessageDrawer_${drawInfo.position}")
@@ -376,7 +386,7 @@ class TextDrawer(
             textToolbox(hasSelection)
 
             if (selectedLink != null) {
-                Popup(offset = IntOffset(0, -20)) {
+                Popup(popupPositionProvider = AboveAnchorPositionProvider) {
                     LinkHandler(selectedLink ?: "")
                 }
             }

@@ -130,7 +130,13 @@ private func waitForAi(_ viewModel: NoteEditorViewModel) async {
     @Test func addsSchemeWhenMissing() {
         #expect(NoteEditorView.normalizedURL(" writeopia.io ") == "https://writeopia.io")
         #expect(NoteEditorView.normalizedURL("http://x.io") == "http://x.io")
+        #expect(NoteEditorView.normalizedURL("localhost:8080") == "https://localhost:8080")
         #expect(NoteEditorView.normalizedURL("   ") == nil)
+    }
+
+    @Test func keepsExplicitSchemes() {
+        #expect(NoteEditorView.normalizedURL("mailto:hi@writeopia.io") == "mailto:hi@writeopia.io")
+        #expect(NoteEditorView.normalizedURL("tel:+5511999999999") == "tel:+5511999999999")
     }
 
     @Test func linkIsAppliedToTheSavedSelection() async {

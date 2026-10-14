@@ -7,11 +7,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.ui.components.EditionScreenForText
+import io.writeopia.ui.utils.AboveAnchorPositionProvider
 
 @Composable
 fun TextToolbox(
@@ -20,7 +20,7 @@ fun TextToolbox(
     onLinkClick: (String) -> Unit = {},
 ) {
     if (hasSelection) {
-        Popup(offset = IntOffset(0, -40)) {
+        Popup(popupPositionProvider = AboveAnchorPositionProvider) {
             EditionScreenForText(
                 modifier = Modifier
                     .shadow(elevation = 6.dp)
