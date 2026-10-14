@@ -1,10 +1,14 @@
 package io.writeopia.commonui.dialogs.confirmation
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Card
@@ -19,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import io.writeopia.common.utils.configuration.LocalPlatform
 import io.writeopia.resources.WrStrings
 
 @Composable
@@ -45,30 +50,82 @@ fun DeleteConfirmationDialog(
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                Row {
-                    Text(
-                        WrStrings.cancel(),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.clip(MaterialTheme.shapes.medium)
-                            .clickable(onClick = onCancel)
-                            .padding(6.dp)
-                    )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Text(
-                        WrStrings.delete(),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.Red,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.clip(MaterialTheme.shapes.medium)
-                            .clickable(onClick = onConfirmation)
-                            .padding(6.dp)
-                    )
+                if (LocalPlatform.current.isMobile()) {
+                    MobileActions(onConfirmation = onConfirmation, onCancel = onCancel)
+                } else {
+                    DesktopActions(onConfirmation = onConfirmation, onCancel = onCancel)
                 }
             }
         }
     }
 }
+
+@Composable
+private fun DesktopActions(onConfirmation: () -> Unit, onCancel: () -> Unit) {
+    Row {
+        Text(
+            WrStrings.cancel(),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onBackground,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.clip(MaterialTheme.shapes.medium)
+                .clickable(onClick = onCancel)
+                .padding(6.dp)
+        )
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        Text(
+            WrStrings.delete(),
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.Red,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.clip(MaterialTheme.shapes.medium)
+                .clickable(onClick = onConfirmation)
+                .padding(6.dp)
+        )
+    }
+}
+
+/**
+ * On a phone the two actions fill the width of the dialog as tall buttons, so each is an easy
+ * target for a finger. The destructive one is the only one in red.
+ */
+@Composable
+private fun MobileActions(onConfirmation: () -> Unit, onCancel: () -> Unit) {
+    Row(modifier = Modifier.fillMaxWidth()) {
+        MobileAction(
+            text = WrStrings.cancel(),
+            color = MaterialTheme.colorScheme.onBackground,
+            onClick = onCancel
+        )
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        MobileAction(
+            text = WrStrings.delete(),
+            color = Color.Red,
+            onClick = onConfirmation
+        )
+    }
+}
+
+@Composable
+private fun RowScope.MobileAction(text: String, color: Color, onClick: () -> Unit) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodyLarge,
+        color = color,
+        fontWeight = FontWeight.Bold,
+        textAlign = TextAlign.Center,
+        modifier = Modifier
+            .weight(1F)
+            .heightIn(min = MOBILE_ACTION_MIN_HEIGHT.dp)
+            .clip(MaterialTheme.shapes.medium)
+            .background(MaterialTheme.colorScheme.background)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 14.dp)
+    )
+}
+
+private const val MOBILE_ACTION_MIN_HEIGHT = 48

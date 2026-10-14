@@ -5,4 +5,7 @@ actual object EnvUtils {
 
     actual fun getLocalAiUrl(): String? =
         System.getenv("LOCAL_AI_URL")?.takeIf { it.isNotBlank() }
+
+    actual fun isMacOs(): Boolean =
+        System.getProperty("os.name")?.lowercase()?.contains("mac") == true
 }

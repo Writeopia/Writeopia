@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -31,9 +32,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import io.writeopia.common.utils.env.EnvUtils
 import io.writeopia.common.utils.icons.IconChange
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.dtos.MenuItemUi
@@ -45,6 +48,11 @@ import kotlinx.coroutines.flow.StateFlow
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 private const val FINAL_WIDTH = 300
+
+/** Clears the macOS window buttons, which sit over the top left of the full-content window. */
+private const val MAC_WINDOW_BUTTONS_WIDTH = 80
+
+const val SIDE_MENU_SYNCING_TAG = "SideMenuSyncing"
 
 @Composable
 fun SideGlobalMenu(
@@ -66,6 +74,7 @@ fun SideGlobalMenu(
     expandFolder: (String) -> Unit,
     changeIcon: (String, String, Int, IconChange) -> Unit,
     toggleMaxScreen: () -> Unit,
+    isSyncingState: StateFlow<Boolean> = MutableStateFlow(false),
 ) {
     val widthState by derivedStateOf { width }
 
@@ -95,7 +104,9 @@ fun SideGlobalMenu(
                     contentPadding = PaddingValues(bottom = 40.dp)
                 ) {
                     item {
-                        Spacer(
+                        // The strip under the window title bar, where a spinner shows while
+                        // the app syncs with the cloud.
+                        Box(
                             modifier = Modifier.height(48.dp).fillMaxWidth()
                                 .combinedClickable(
                                     interactionSource = remember { MutableInteractionSource() },
@@ -103,7 +114,19 @@ fun SideGlobalMenu(
                                     onDoubleClick = toggleMaxScreen,
                                     onClick = {}
                                 )
-                        )
+                        ) {
+                            SyncingIndicator(
+                                isSyncingState = isSyncingState,
+                                showContent = showContent,
+                                modifier = Modifier.align(
+                                    if (showContent == ShowContent.FULL) {
+                                        Alignment.CenterStart
+                                    } else {
+                                        Alignment.Center
+                                    }
+                                )
+                            )
+                        }
                     }
 
                     item {
@@ -296,6 +319,32 @@ private fun title(
             trailingContent()
         }
     }
+}
+
+/** A small spinner, shown only while a sync with the backend runs. */
+@Composable
+private fun SyncingIndicator(
+    isSyncingState: StateFlow<Boolean>,
+    showContent: ShowContent,
+    modifier: Modifier = Modifier
+) {
+    val isSyncing by isSyncingState.collectAsState()
+    if (!isSyncing) return
+
+    val startPadding = when {
+        showContent != ShowContent.FULL -> 0.dp
+        EnvUtils.isMacOs() -> MAC_WINDOW_BUTTONS_WIDTH.dp
+        else -> 16.dp
+    }
+
+    CircularProgressIndicator(
+        modifier = modifier
+            .padding(start = startPadding)
+            .size(14.dp)
+            .testTag(SIDE_MENU_SYNCING_TAG),
+        color = MaterialTheme.colorScheme.onBackground,
+        strokeWidth = 2.dp
+    )
 }
 
 @Preview

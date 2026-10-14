@@ -17,9 +17,9 @@ interface FolderCommonDao {
 
     suspend fun getLastUpdated(): List<Folder>
 
-    suspend fun getFolderByParentId(id: String): List<Folder>
+    suspend fun getFolderByParentId(id: String, workspaceId: String): List<Folder>
 
-    fun listenForFolderByParentId(id: String): Flow<List<Folder>>
+    fun listenForFolderByParentId(id: String, workspaceId: String): Flow<List<Folder>>
 
     /**
      * Soft delete: marks folder as deleted but keeps in database (scoped to workspace).

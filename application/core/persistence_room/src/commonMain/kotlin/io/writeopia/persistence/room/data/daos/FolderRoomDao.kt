@@ -36,11 +36,13 @@ interface FolderRoomDao {
     )
     suspend fun getOutdatedFoldersByWorkspaceId(workspaceId: String): List<FolderEntity>
 
-    @Query("SELECT * FROM $FOLDER_ENTITY WHERE parent_id = :id AND deleted = 0")
-    suspend fun getFolderByParentId(id: String): List<FolderEntity>
+    // Scoped to the workspace, like the documents: a folder made while offline must not show
+    // up in the cloud workspace after signing in (it couldn't be deleted from there).
+    @Query("SELECT * FROM $FOLDER_ENTITY WHERE parent_id = :id AND workspace_id = :workspaceId AND deleted = 0")
+    suspend fun getFolderByParentId(id: String, workspaceId: String): List<FolderEntity>
 
-    @Query("SELECT * FROM $FOLDER_ENTITY WHERE parent_id = :id AND deleted = 0")
-    fun listenForFolderByParentId(id: String): Flow<List<FolderEntity>>
+    @Query("SELECT * FROM $FOLDER_ENTITY WHERE parent_id = :id AND workspace_id = :workspaceId AND deleted = 0")
+    fun listenForFolderByParentId(id: String, workspaceId: String): Flow<List<FolderEntity>>
 
     // Soft delete: marks folder as deleted (scoped to workspace)
     @Query("UPDATE $FOLDER_ENTITY SET deleted = 1, last_updated_at = :lastUpdatedAt WHERE folder_id = :id AND workspace_id = :workspaceId")

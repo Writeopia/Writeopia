@@ -4,4 +4,6 @@ actual object EnvUtils {
     actual fun getAdminKey(): String? = null
 
     actual fun getLocalAiUrl(): String? = null
+
+    actual fun isMacOs(): Boolean = false
 }

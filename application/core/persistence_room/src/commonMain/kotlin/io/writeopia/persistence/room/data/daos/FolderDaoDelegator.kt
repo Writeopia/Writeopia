@@ -32,11 +32,11 @@ class FolderDaoDelegator(
     override suspend fun getLastUpdated(): List<Folder> =
         delegate.getLastUpdated().map { it.toCommonEntity().toModel(0) }
 
-    override suspend fun getFolderByParentId(id: String): List<Folder> =
-        delegate.getFolderByParentId(id).map { it.toCommonEntity().toModel(0) }
+    override suspend fun getFolderByParentId(id: String, workspaceId: String): List<Folder> =
+        delegate.getFolderByParentId(id, workspaceId).map { it.toCommonEntity().toModel(0) }
 
-    override fun listenForFolderByParentId(id: String): Flow<List<Folder>> =
-        delegate.listenForFolderByParentId(id).map { list ->
+    override fun listenForFolderByParentId(id: String, workspaceId: String): Flow<List<Folder>> =
+        delegate.listenForFolderByParentId(id, workspaceId).map { list ->
             list.map { it.toCommonEntity().toModel(0) }
         }
 

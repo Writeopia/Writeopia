@@ -408,7 +408,11 @@ internal fun NoteEditorScreen(
                     selectedState = noteEditorViewModel.fontFamily,
                     showPresentation = showPresentation,
                     onPresentationClick = onPresentationClick,
-                    onPublishClick = noteEditorViewModel::showPublishDialog
+                    onPublishClick = noteEditorViewModel::showPublishDialog,
+                    documentTagsState = noteEditorViewModel.documentTags,
+                    onViewTagsClick = noteEditorViewModel::showTagsDialog,
+                    onAddTagClick = noteEditorViewModel::showAddTagDialog,
+                    onRemoveTagClick = noteEditorViewModel::removeTagFromDocument,
                 )
             }
 

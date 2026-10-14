@@ -40,6 +40,9 @@ interface GlobalShellViewModel : FolderController, LocalAiConfigController {
 
     val lastWorkspaceSync: StateFlow<ResultData<String>>
 
+    /** Whether any sync with the backend is running, so the shell can show a spinner. */
+    val isSyncingState: StateFlow<Boolean>
+
     val isAutoSyncEnabled: StateFlow<Boolean>
 
     val availableWorkspaces: StateFlow<ResultData<List<Workspace>>>
