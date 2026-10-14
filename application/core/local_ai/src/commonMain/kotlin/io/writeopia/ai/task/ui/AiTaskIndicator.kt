@@ -1,12 +1,6 @@
 package io.writeopia.ai.task.ui
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -42,7 +36,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -272,21 +265,11 @@ private fun TaskStatusIcon(
 ) {
     when (status) {
         AiTaskStatus.QUEUED -> {
-            // Clock icon for queued
-            val infiniteTransition = rememberInfiniteTransition(label = "queuedRotation")
-            val rotation by infiniteTransition.animateFloat(
-                initialValue = 0f,
-                targetValue = 360f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(2000, easing = LinearEasing),
-                    repeatMode = RepeatMode.Restart
-                ),
-                label = "rotation"
-            )
+            // A still clock: the task is waiting for its turn, nothing is happening yet.
             Icon(
-                imageVector = WrIcons.sync,
+                imageVector = WrSdkIcons.clock,
                 contentDescription = "Queued",
-                modifier = modifier.size(14.dp).rotate(rotation),
+                modifier = modifier.size(14.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }

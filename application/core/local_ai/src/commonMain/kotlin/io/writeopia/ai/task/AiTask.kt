@@ -4,7 +4,10 @@ enum class AiTaskType {
     SUMMARIZATION,
     TEXT_GENERATION,
     PRESENTATION,
-    MODEL_DOWNLOAD
+    MODEL_DOWNLOAD,
+
+    /** The description of the page of a link card, written by the backend AI. */
+    LINK_DESCRIPTION
 }
 
 enum class AiTaskStatus {

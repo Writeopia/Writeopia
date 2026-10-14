@@ -51,6 +51,7 @@ import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.span.SpanInfo
+import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
 import io.writeopia.sdk.models.user.Tier
@@ -59,9 +60,12 @@ import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.persistence.core.sync.DocumentSyncManager
 import io.writeopia.sdk.persistence.core.tracker.OnUpdateDocumentTracker
 import io.writeopia.sdk.repository.DocumentRepository
+import io.writeopia.sdk.serialization.request.LinkCardDescriptionRequest
 import io.writeopia.sdk.serialization.request.StoryStepSyncRequest
 import io.writeopia.sdk.serialization.response.StoryStepSyncResponse
 import io.writeopia.sdk.serialization.extensions.toApi
+import io.writeopia.sdk.serialization.extensions.toModel
+import io.writeopia.ui.model.LinkCardCreation
 import io.writeopia.sdk.serialization.json.writeopiaJson
 import io.writeopia.sdk.serialization.request.wrapInRequest
 import io.writeopia.sdk.sharededition.SharedEditionManager
@@ -248,6 +252,12 @@ class NoteEditorKmpViewModel(
     }
 
     init {
+        viewModelScope.launch(Dispatchers.Default) {
+            writeopiaManager.linkCardCreated.collect { creation ->
+                launch { describeLinkCard(creation) }
+            }
+        }
+
         viewModelScope.launch(Dispatchers.Default) {
             keyboardEventFlow
                 .onEach { delay(60) }
@@ -756,7 +766,8 @@ class NoteEditorKmpViewModel(
                         documentId = documentId,
                         documentEditionFlow = writeopiaManager.documentEditionState,
                         workspaceIdFlow = writeopiaManager.workspaceIdFlow,
-                        syncApi = syncApi
+                        syncApi = syncApi,
+                        onServerUpdate = { steps, _ -> applyServerLinkCards(documentId, steps) }
                     )
                 }
             }
@@ -858,8 +869,95 @@ class NoteEditorKmpViewModel(
                     documentId = documentId,
                     documentEditionFlow = writeopiaManager.documentEditionState,
                     workspaceIdFlow = writeopiaManager.workspaceIdFlow,
-                    syncApi = syncApi
+                    syncApi = syncApi,
+                    onServerUpdate = { steps, _ -> applyServerLinkCards(documentId, steps) }
                 )
+            }
+        }
+    }
+
+    /**
+     * Asks the backend to describe the page of a link card that was just pasted. The card is
+     * already in the editor; this only fills in its description. The request runs as an AI
+     * task, so the tasks panel shows it while it is pending and says when it fails.
+     *
+     * The backend saves the description in the card first; then the document is synced from
+     * the time of the request on, which brings the described card to the editor and the local
+     * database.
+     */
+    private suspend fun describeLinkCard(creation: LinkCardCreation) {
+        val api = documentsApi ?: return
+        val syncApi = storyStepSyncApi ?: return
+        if (isWorkspaceDisconnected()) return
+
+        val workspaceId = authRepository.getWorkspace()?.id ?: return
+        val documentId = writeopiaManager.documentInfo.value.id
+        val url = creation.storyStep.url ?: return
+
+        aiTaskManager.enqueueTask(
+            id = "editor-$documentId-link-${creation.storyStep.id}",
+            type = AiTaskType.LINK_DESCRIPTION,
+            description = "Describing $url..."
+        ) {
+            val requestTimestamp = Clock.System.now().toEpochMilliseconds()
+
+            val described = api.describeLinkCard(
+                documentId = documentId,
+                workspaceId = workspaceId,
+                request = LinkCardDescriptionRequest(
+                    storyStep = creation.storyStep.toApi(creation.position),
+                    position = creation.position,
+                    requestTimestamp = requestTimestamp
+                )
+            )
+
+            if (described !is ResultData.Complete) {
+                return@enqueueTask Result.failure(Exception("The link could not be described"))
+            }
+
+            // The backend has the description now: a sync from just before the request returns it.
+            val response = syncApi(
+                StoryStepSyncRequest(
+                    documentId = documentId,
+                    workspaceId = workspaceId,
+                    lastSyncTimestamp = requestTimestamp - 1,
+                    requestTimestamp = Clock.System.now().toEpochMilliseconds(),
+                    changes = emptyList(),
+                    deletions = emptyList()
+                )
+            )
+
+            val synced = response.updatedSteps.map { stepApi -> stepApi.position to stepApi.toModel() }
+            applyServerLinkCards(documentId, synced)
+
+            Result.success(Unit)
+        }
+    }
+
+    /**
+     * Puts the link cards the backend described into the open document and the local database.
+     * Only cards that still have no description here are touched: anything else the user may
+     * be editing is left alone.
+     */
+    private suspend fun applyServerLinkCards(documentId: String, steps: List<Pair<Double, StoryStep>>) {
+        val stories = writeopiaManager.currentStory.value.stories
+
+        steps.forEach { (_, serverStep) ->
+            if (serverStep.type.number != StoryTypes.LINK_CARD.type.number) return@forEach
+            if (serverStep.text.isNullOrBlank()) return@forEach
+
+            val local = stories.entries.firstOrNull { (_, step) -> step.id == serverStep.id }
+                ?: return@forEach
+            if (!local.value.text.isNullOrBlank()) return@forEach
+
+            val described = local.value.copy(
+                text = serverStep.text,
+                url = serverStep.url ?: local.value.url,
+                lastUpdatedAt = serverStep.lastUpdatedAt
+            )
+
+            if (writeopiaManager.applyServerStoryStep(described)) {
+                documentRepository.saveStoryStep(described, local.key, documentId)
             }
         }
     }

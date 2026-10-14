@@ -2,6 +2,7 @@ package io.writeopia.sdk.manager
 
 import io.writeopia.sdk.model.action.Action
 import io.writeopia.sdk.model.story.LastEdit
+import io.writeopia.sdk.model.story.Selection
 import io.writeopia.sdk.model.story.StoryState
 import io.writeopia.sdk.models.command.CommandInfo
 import io.writeopia.sdk.models.command.CommandTrigger
@@ -212,6 +213,60 @@ class ContentHandler(
             )
 
         return mutable
+    }
+
+    /**
+     * Turns the text step at [position] into a link card for [url]. A card can not be typed in,
+     * so the cursor goes to the text line below it, which is added when there is none. The
+     * description of the page stays empty: the app asks the backend for it.
+     *
+     * When a line is added, the result carries a [LastEdit.LineBreakEdition] with the card and
+     * the new line, so both are saved and synced together.
+     *
+     * @return the new state, or null when there is no step at [position].
+     */
+    fun createLinkCard(
+        currentStory: Map<Double, StoryStep>,
+        position: Double,
+        url: String
+    ): StoryState? {
+        val step = currentStory[position] ?: return null
+        val linkCard = step.copy(
+            localId = GenerateId.generate(),
+            type = StoryTypes.LINK_CARD.type,
+            url = url,
+            text = null,
+            tags = emptySet(),
+            spans = emptySet()
+        )
+
+        val next = step.nextPosition
+        val nextStory = next?.let { currentStory[it] }
+
+        if (next != null && nextStory?.type?.number == StoryTypes.TEXT.type.number) {
+            val stories = currentStory.toSortedMutableMap().apply { this[position] = linkCard }
+
+            return StoryState(
+                stories = stories,
+                lastEdit = LastEdit.LineEdition(position, linkCard),
+                focus = next,
+                selection = Selection.fromPosition(cursorPosition = 0, stepPosition = next)
+            )
+        }
+
+        // An empty line break of the text line adds an empty text line below it; then the
+        // line becomes the card.
+        val (_, broken) = onLineBreak(
+            currentStory,
+            Action.LineBreak(step.copy(text = "\n", spans = emptySet()), position)
+        )
+        val cardWithLinks = linkCard.copy(nextPosition = broken.stories[position]?.nextPosition)
+        val stories = broken.stories.toSortedMutableMap().apply { this[position] = cardWithLinks }
+        val lastEdit = (broken.lastEdit as? LastEdit.LineBreakEdition)
+            ?.copy(originalStep = position to cardWithLinks)
+            ?: LastEdit.LineEdition(position, cardWithLinks)
+
+        return broken.copy(stories = stories, lastEdit = lastEdit, selection = Selection.start())
     }
 
     fun addNewContentBulk(

@@ -112,7 +112,29 @@ object DocumentToMarkdown : DocumentWriter {
                 content to "- $text"
             }
 
+            StoryTypes.LINK_CARD.type.number -> {
+                val url = storyStep.url ?: ""
+                val label = storyStep.text?.takeIf { it.isNotBlank() } ?: url
+
+                ContentAdd.NOTHING to "[${markdownLinkLabel(label)}](${markdownLinkDestination(url)})"
+            }
+
             else -> ContentAdd.NOTHING to storyStep.text
+        }
+
+    /** [label] with the characters that would end or break a link label escaped. */
+    private fun markdownLinkLabel(label: String): String =
+        label.replace("\\", "\\\\").replace("[", "\\[").replace("]", "\\]")
+
+    /**
+     * [url] as a link destination: as is when it is plain, inside angle brackets when it has
+     * spaces or parentheses, which would end the link early.
+     */
+    private fun markdownLinkDestination(url: String): String =
+        if (url.any { it.isWhitespace() || it == '(' || it == ')' }) {
+            "<${url.replace("<", "\\<").replace(">", "\\>")}>"
+        } else {
+            url
         }
 
     private fun parseTextWithTags(storyStep: StoryStep): Pair<ContentAdd, String?> =

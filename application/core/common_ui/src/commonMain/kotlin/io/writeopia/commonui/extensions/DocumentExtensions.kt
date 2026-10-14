@@ -20,6 +20,7 @@ fun Folder.toFolderUi(
         selected = selected,
         isFavorite = favorite,
         itemsCount = itemCount,
+        lastUpdatedAt = lastUpdatedAt.toEpochMilliseconds(),
         expanded = expanded,
         parentId = parentId,
         highlighted = highlighted,

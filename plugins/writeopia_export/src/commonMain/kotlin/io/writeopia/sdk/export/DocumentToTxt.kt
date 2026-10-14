@@ -51,6 +51,11 @@ object DocumentToTxt : DocumentWriter {
 
             StoryTypes.UNORDERED_LIST_ITEM.type.number -> storyStep.text?.let { "- $it" }
 
+            StoryTypes.LINK_CARD.type.number ->
+                listOfNotNull(storyStep.url, storyStep.text?.takeIf { it.isNotBlank() })
+                    .joinToString(" - ")
+                    .takeIf { it.isNotBlank() }
+
             else -> storyStep.text
         }
 }

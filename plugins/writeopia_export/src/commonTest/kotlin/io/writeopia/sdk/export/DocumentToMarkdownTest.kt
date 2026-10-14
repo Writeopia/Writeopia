@@ -74,4 +74,23 @@ class DocumentToMarkdownTest {
 
         assertEquals(expected, parsedContent)
     }
+
+    @Test
+    fun `link cards become links, with labels and addresses that can not break them`() {
+        val content = mapOf(
+            0.0 to StoryStep(type = StoryTypes.LINK_CARD.type, url = "https://writeopia.io", text = "A text editor."),
+            1.0 to StoryStep(type = StoryTypes.LINK_CARD.type, url = "https://writeopia.io"),
+            2.0 to StoryStep(type = StoryTypes.LINK_CARD.type, url = "https://writeopia.io", text = "Editor [beta] done"),
+            3.0 to StoryStep(type = StoryTypes.LINK_CARD.type, url = "https://w.io/a b(c)", text = "Odd address")
+        )
+
+        val expected = buildString {
+            appendLine("[A text editor.](https://writeopia.io)")
+            appendLine("[https://writeopia.io](https://writeopia.io)")
+            appendLine("[Editor \\[beta\\] done](https://writeopia.io)")
+            appendLine("[Odd address](<https://w.io/a b(c)>)")
+        }
+
+        assertEquals(expected, DocumentToMarkdown.parse(content))
+    }
 }

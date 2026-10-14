@@ -11,6 +11,24 @@ public enum DocumentToMarkdown {
             .joined()
     }
 
+    /// `label` with the characters that would end or break a link label escaped.
+    private static func linkLabel(_ label: String) -> String {
+        label
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "[", with: "\\[")
+            .replacingOccurrences(of: "]", with: "\\]")
+    }
+
+    /// `url` as a link destination: as is when plain, inside angle brackets when it has spaces
+    /// or parentheses, which would end the link early.
+    private static func linkDestination(_ url: String) -> String {
+        guard url.contains(where: { $0.isWhitespace || $0 == "(" || $0 == ")" }) else { return url }
+        let escaped = url
+            .replacingOccurrences(of: "<", with: "\\<")
+            .replacingOccurrences(of: ">", with: "\\>")
+        return "<\(escaped)>"
+    }
+
     private static func line(_ step: StoryStep) -> String? {
         switch step.type.number {
         case StoryType.title.number:
@@ -24,6 +42,10 @@ public enum DocumentToMarkdown {
         case StoryType.drawing.number:
             // The text of a drawing is its JSON, not something to read.
             return nil
+        case StoryType.linkCard.number:
+            let url = step.url ?? ""
+            let label = (step.text ?? "").isEmpty ? url : step.text!
+            return "[\(linkLabel(label))](\(linkDestination(url)))"
         default:
             return step.text
         }

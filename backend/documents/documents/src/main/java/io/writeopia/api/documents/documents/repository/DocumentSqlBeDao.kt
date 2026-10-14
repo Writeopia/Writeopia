@@ -1174,6 +1174,14 @@ class DocumentSqlBeDao(
     }
 
     /**
+     * The id of the document the StoryStep with [storyStepId] belongs to, or null when there is
+     * no such step.
+     */
+    fun getStoryStepDocumentId(storyStepId: String): String? {
+        return storyStepQueries?.selectDocumentIdById(storyStepId)?.executeAsOneOrNull()
+    }
+
+    /**
      * Deletes a StoryStep by ID.
      */
     fun deleteStoryStepById(storyStepId: String) {

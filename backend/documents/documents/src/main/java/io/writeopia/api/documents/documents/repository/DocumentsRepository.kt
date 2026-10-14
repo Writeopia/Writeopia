@@ -173,6 +173,13 @@ fun WriteopiaDbBackend.getStoryStepById(storyStepId: String): Pair<Double, Story
 }
 
 /**
+ * The id of the document that holds the StoryStep with [storyStepId], or null when there is none.
+ */
+fun WriteopiaDbBackend.getStoryStepDocumentId(storyStepId: String): String? {
+    return getDocumentDaoFn().getStoryStepDocumentId(storyStepId)
+}
+
+/**
  * Deletes a StoryStep by its ID.
  */
 fun WriteopiaDbBackend.deleteStoryStepById(storyStepId: String) {

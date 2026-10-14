@@ -167,13 +167,20 @@ public struct NoteEditorView: View {
         return actions
     }
 
-    /// Hardware keyboard shortcuts of the desktop app: Cmd+K sends the line with the cursor to the
-    /// AI, Esc stops the AI and removes its suggestions.
-    /// The shortcuts of the Compose desktop app. Cmd+Z is left to the text views for now.
+    /// The shortcuts of the Compose desktop app: Cmd+K sends the line with the cursor to the AI,
+    /// Esc stops the AI and removes its suggestions, Cmd+Z and Cmd+Shift+Z undo and redo through
+    /// the history of the document (the text views have no history of their own).
     private var keyboardShortcuts: some View {
         let manager = viewModel.writeopiaManager
         let canEdit = viewModel.hasLoaded && !viewModel.isLocked
         return ZStack {
+            Button("Undo") { manager.undo() }
+                .keyboardShortcut("z", modifiers: .command)
+                .disabled(!canEdit || !manager.canUndo)
+            Button("Redo") { manager.redo() }
+                .keyboardShortcut("z", modifiers: [.command, .shift])
+                .disabled(!canEdit || !manager.canRedo)
+
             Button("Ask AI") {
                 viewModel.runAi(.prompt, mode: .cursor)
             }

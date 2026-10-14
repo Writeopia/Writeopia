@@ -241,6 +241,13 @@ class WriteopiaManager(
         contentHandler.onLineBreak(storyState.stories, lineBreak)
 
     /**
+     * Turns the text step at [position] into a link card for [url], with the cursor on the
+     * line below it. See [ContentHandler.createLinkCard].
+     */
+    fun createLinkCard(position: Double, url: String, storyState: StoryState): StoryState =
+        contentHandler.createLinkCard(storyState.stories, position, url) ?: storyState
+
+    /**
      * Deletes a [StoryStep]
      *
      * @param deleteStory [Action.DeleteStory]

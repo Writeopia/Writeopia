@@ -96,6 +96,10 @@ struct StoryStepDrawer: View {
             DraggableStep(step: step, position: draw.position, manager: manager) {
                 DocumentLinkDrawer(step: step, manager: manager)
             }
+        case StoryType.linkCard.number:
+            DraggableStep(step: step, position: draw.position, manager: manager) {
+                LinkCardDrawer(step: step, manager: manager)
+            }
         case StoryType.divider.number:
             DraggableStep(step: step, position: draw.position, manager: manager) {
                 DividerDrawer()
@@ -582,6 +586,110 @@ struct DocumentLinkDrawer: View {
     }
 }
 
+/// A card for a pasted web address: the link icon, the address and, once the backend AI wrote
+/// it, a short description of the page. It can not be edited; a tap opens the address, and the
+/// button at its end copies it.
+struct LinkCardDrawer: View {
+    let step: StoryStep
+    let manager: WriteopiaStateManager
+    @Environment(\.openURL) private var openURL
+    /// True for a moment after the address was copied; the button shows a check mark.
+    @State private var copied = false
+    @State private var copiedFeedback: Task<Void, Never>?
+
+    private var address: String { step.url ?? "" }
+    private var description: String? {
+        let text = step.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return text.isEmpty ? nil : text
+    }
+    private var isDescribing: Bool { manager.describingLinkStepIds.contains(step.id) }
+
+    var body: some View {
+        Button {
+            if let url = URL(string: address) {
+                openURL(url)
+            }
+        } label: {
+            HStack(alignment: .center, spacing: 12) {
+                Image(systemName: "link")
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(WrColors.textLighter)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(address)
+                        .font(.body.weight(.medium))
+                        .foregroundStyle(WrColors.textLight)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+
+                    if let description {
+                        Text(description)
+                            .font(.footnote)
+                            .foregroundStyle(WrColors.textLighter)
+                            .lineLimit(4)
+                            .multilineTextAlignment(.leading)
+                    } else if isDescribing {
+                        HStack(spacing: 6) {
+                            ProgressView()
+                                .controlSize(.mini)
+                            Text("Describing the page...")
+                                .font(.footnote)
+                                .foregroundStyle(WrColors.textLighter)
+                        }
+                    }
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.leading, 14)
+            // Room for the copy button, which floats over the trailing end.
+            .padding(.trailing, address.isEmpty ? 14 : 48)
+            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(WrColors.secondaryFill, in: RoundedRectangle(cornerRadius: 12))
+            .padding(.vertical, 4)
+        }
+        .buttonStyle(.plain)
+        .disabled(URL(string: address) == nil)
+        .accessibilityLabel(Text("Link card \(address)"))
+        // A button inside the card's button wouldn't get the taps on the Mac; over it, it does.
+        .overlay(alignment: .trailing) {
+            if !address.isEmpty {
+                copyButton
+                    .padding(.trailing, 8)
+            }
+        }
+        .contextMenu {
+            if manager.isEditable {
+                Button("Delete link", systemImage: "trash", role: .destructive) {
+                    manager.removeStep(stepId: step.id)
+                }
+            }
+        }
+    }
+
+    private var copyButton: some View {
+        Button {
+            SystemPasteboard.copy(address)
+            copiedFeedback?.cancel()
+            withAnimation(.snappy(duration: 0.15)) { copied = true }
+            copiedFeedback = Task {
+                try? await Task.sleep(for: .seconds(1.5))
+                guard !Task.isCancelled else { return }
+                withAnimation(.snappy(duration: 0.15)) { copied = false }
+            }
+        } label: {
+            Image(systemName: copied ? "checkmark" : "doc.on.doc")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(copied ? WrColors.accent : WrColors.textLighter)
+                .frame(width: 32, height: 32)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(copied ? Text("Copied") : Text("Copy link"))
+        .accessibilityIdentifier("step.link_card.copy")
+    }
+}
+
 struct DividerDrawer: View {
     var body: some View {
         // `Divider` would be vertical inside the gutter's HStack, so draw the line directly.
@@ -663,6 +771,7 @@ struct DragPreview: View {
 
     private var previewText: String {
         if step.type.number == StoryType.divider.number { return String(localized: "Divider") }
+        if step.type.number == StoryType.linkCard.number { return step.url ?? String(localized: "Link") }
         let text = step.documentLink?.title ?? step.text ?? ""
         return text.isEmpty ? String(localized: "Empty line") : text
     }

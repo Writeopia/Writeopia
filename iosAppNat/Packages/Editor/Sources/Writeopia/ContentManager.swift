@@ -251,6 +251,39 @@ public struct ContentManager {
 
     // MARK: - Helpers
 
+    /// Turns the text step at `position` into a link card for `url`, like `createLinkCard` of
+    /// the Kotlin SDK. A card can not be typed in, so the cursor goes to the text line below
+    /// it, which is added when there is none. The description of the page stays empty: the app
+    /// asks the backend for it.
+    public func createLinkCard(url: String, at position: Double, in stories: [Double: StoryStep]) -> StoryState {
+        var ordered = orderedSteps(stories).map(\.step)
+        guard let index = ordered.firstIndex(where: { $0.position == position }) else {
+            return StoryState(stories: stories)
+        }
+
+        var card = ordered[index]
+        card.type = .linkCard
+        card.url = url
+        card.text = nil
+        card.tags = []
+        card.spans = []
+        ordered[index] = card
+
+        let below = index + 1
+        let belowIsText = below < ordered.count && ordered[below].type.number == StoryType.text.number
+        if !belowIsText {
+            ordered.insert(StoryStep(type: .text, text: "", position: 0), at: below)
+        }
+
+        let focus = Double(below)
+        return StoryState(
+            stories: renumber(ordered),
+            lastEdit: .whole,
+            focus: focus,
+            selection: .cursor(0, at: focus)
+        )
+    }
+
     private func orderedSteps(_ stories: [Double: StoryStep]) -> [(position: Double, step: StoryStep)] {
         stories.keys.sorted().map { ($0, stories[$0]!) }
     }

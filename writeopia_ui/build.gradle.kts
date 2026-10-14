@@ -1,6 +1,7 @@
 @file:OptIn(ExperimentalWasmDsl::class)
 
 import com.vanniktech.maven.publish.SonatypeHost
+import org.jetbrains.compose.compose
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -149,6 +150,8 @@ kotlin {
         val jvmTest by getting {
             dependencies {
                 implementation(libs.kotlin.test)
+                implementation(compose("org.jetbrains.compose.ui:ui-test-junit4"))
+                implementation(compose.desktop.currentOs)
             }
         }
     }

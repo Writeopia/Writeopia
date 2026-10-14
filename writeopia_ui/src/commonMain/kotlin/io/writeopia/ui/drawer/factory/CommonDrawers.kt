@@ -29,6 +29,7 @@ import io.writeopia.ui.drawer.content.DocumentLinkDrawer
 import io.writeopia.ui.drawer.content.EquationDrawer
 import io.writeopia.ui.drawer.content.ImageDrawer
 import io.writeopia.ui.drawer.content.LastEmptySpace
+import io.writeopia.ui.drawer.content.LinkCardDrawer
 import io.writeopia.ui.drawer.content.LoadingDrawer
 import io.writeopia.ui.drawer.content.RowGroupDrawer
 import io.writeopia.ui.drawer.content.SlashCommand
@@ -198,6 +199,19 @@ object CommonDrawers {
             onClick = onDocumentLinkClick
         )
 
+        val linkCardDrawer = LinkCardDrawer(
+            dragIconWidth = dragIconWidth,
+            config = drawConfig,
+            enabled = editable,
+            paddingValues = PaddingValues(start = 4.dp, top = 0.dp, bottom = 0.dp),
+            receiveExternalFile = receiveExternalFile,
+            onSelected = manager::onSelected,
+            onDragHover = manager::onDragHover,
+            onDragStart = manager::onDragStart,
+            onDragStop = manager::onDragStop,
+            moveRequest = manager::moveRequest
+        )
+
         val checkItemDrawer = checkItemDrawer(
             manager = manager,
             isDesktop = isDesktop,
@@ -318,6 +332,7 @@ object CommonDrawers {
             put(StoryTypes.LOADING.type.number, loadingDrawer)
             put(StoryTypes.DOCUMENT_LINK.type.number, documentLinkDrawer)
             put(StoryTypes.DIVIDER.type.number, dividerDrawer)
+            put(StoryTypes.LINK_CARD.type.number, linkCardDrawer)
             put(StoryTypes.EQUATION.type.number, equationsDrawer)
             put(
                 StoryTypes.SPREADSHEET.type.number,

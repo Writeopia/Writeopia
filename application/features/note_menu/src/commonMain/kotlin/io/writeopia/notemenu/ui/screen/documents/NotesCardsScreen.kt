@@ -79,6 +79,7 @@ import io.writeopia.ui.drawer.StoryStepDrawer
 import io.writeopia.ui.drawer.preview.AiAnswerPreviewDrawer
 import io.writeopia.ui.drawer.preview.CheckItemPreviewDrawer
 import io.writeopia.ui.drawer.preview.DocumentLinkPreviewDrawer
+import io.writeopia.ui.drawer.preview.LinkCardPreviewDrawer
 import io.writeopia.ui.drawer.preview.HeaderPreviewDrawer
 import io.writeopia.ui.drawer.preview.ImagePreviewDrawer
 import io.writeopia.ui.drawer.preview.TextPreviewDrawer
@@ -87,6 +88,7 @@ import io.writeopia.ui.drawer.preview.VideoPreviewDrawer
 import io.writeopia.ui.model.DrawInfo
 import io.writeopia.common.utils.configuration.LocalPlatform
 import io.writeopia.common.utils.configuration.PlatformType
+import io.writeopia.common.utils.date.formatRelativeTime
 import kotlinx.coroutines.flow.StateFlow
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -654,7 +656,7 @@ private fun FolderItem(
                         Spacer(modifier = Modifier.height(4.dp))
 
                         Text(
-                            text = "${folderUi.itemsCount} items",
+                            text = formatRelativeTime(folderUi.lastUpdatedAt),
                             color = textColor,
                             style = MaterialTheme.typography.bodySmall
                         )
@@ -845,6 +847,7 @@ private fun previewDrawers(isDarkTheme: Boolean): Map<Int, StoryStepDrawer> {
         StoryTypes.CHECK_ITEM.type.number to CheckItemPreviewDrawer(),
         StoryTypes.TEXT.type.number to TextPreviewDrawer(isDarkTheme = isDarkTheme),
         StoryTypes.DOCUMENT_LINK.type.number to DocumentLinkPreviewDrawer(),
+        StoryTypes.LINK_CARD.type.number to LinkCardPreviewDrawer(),
         StoryTypes.UNORDERED_LIST_ITEM.type.number to unOrderedListItemPreviewDrawer,
         StoryTypes.IMAGE.type.number to ImagePreviewDrawer(),
         StoryTypes.AI_ANSWER.type.number to AiAnswerPreviewDrawer(),

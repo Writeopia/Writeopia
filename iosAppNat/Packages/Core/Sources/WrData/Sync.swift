@@ -233,6 +233,36 @@ public final class SyncAPI {
         }
     }
 
+    public struct LinkCardDescriptionResponse: Decodable {
+        public let storyStep: StoryStep?
+        public let error: String?
+    }
+
+    /// Asks the backend to describe the page of a link card with the AI and to save the
+    /// description in the card, like `DocumentsApi.describeLinkCard` of the Compose app. The
+    /// backend is updated before this answers, so a sync from `requestTimestamp` on returns the
+    /// described card.
+    public func describeLinkCard(
+        documentId: String,
+        step: StoryStep,
+        requestTimestamp: Int64
+    ) async throws -> StoryStep {
+        struct Body: Encodable {
+            let storyStep: StoryStep
+            let position: Double
+            let requestTimestamp: Int64
+        }
+        let response: LinkCardDescriptionResponse = try await client.send(
+            .post,
+            "api/docs/workspace/\(workspaceId)/document/\(documentId)/link-card/describe",
+            body: Body(storyStep: step, position: step.position, requestTimestamp: requestTimestamp)
+        )
+        guard let described = response.storyStep else {
+            throw APIError.badRequest(response.error ?? "The link could not be described")
+        }
+        return described
+    }
+
     /// Sends the steps changed and deleted while editing, like `StoryStepSyncApi`.
     public func syncSteps(
         documentId: String,
@@ -282,9 +312,17 @@ public protocol DocumentSyncing: AnyObject {
     ) async throws -> Int64
 }
 
+/// Documents whose link cards the backend AI can describe.
+public protocol LinkCardDescribing: AnyObject {
+    /// Has the backend describe the page of `step`, a link card of the document, and save the
+    /// description in the card; then syncs the document from the time of the request on and
+    /// returns the card as the backend has it, with the description as its text.
+    func describeLinkCard(documentId: String, step: StoryStep) async throws -> StoryStep
+}
+
 /// The open space: everything is read from and written to the local cache first, then synced
 /// with the backend.
-public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSyncing, StepStore, PresentationsStore {
+public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSyncing, StepStore, PresentationsStore, LinkCardDescribing {
     public let local: LocalDocumentsRepository
     private let remote: RemoteDocumentsRepository
     private let api: SyncAPI
@@ -652,6 +690,21 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
             try local.store(stored)
         }
         return response.serverTimestamp
+    }
+
+    public func describeLinkCard(documentId: String, step: StoryStep) async throws -> StoryStep {
+        let requestTimestamp = Date.nowMillis
+        let described = try await api.describeLinkCard(documentId: documentId, step: step, requestTimestamp: requestTimestamp)
+
+        // The backend has the description now: a sync from just before the request returns it.
+        let synced = try await api.syncSteps(
+            documentId: documentId,
+            lastSyncTimestamp: requestTimestamp - 1,
+            requestTimestamp: Date.nowMillis,
+            changes: [],
+            deletions: []
+        )
+        return synced.updatedSteps.first { $0.id == step.id && !($0.text ?? "").isEmpty } ?? described
     }
 
     /// Sends the outdated documents and folders that aren't in `folderId`, resolving each

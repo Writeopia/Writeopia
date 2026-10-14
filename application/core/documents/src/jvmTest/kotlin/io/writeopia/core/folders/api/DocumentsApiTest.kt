@@ -5,7 +5,12 @@ package io.writeopia.core.folders.api
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.story.StoryStep
+import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.utils.ResultData
+import io.writeopia.sdk.models.workspace.Workspace
+import io.writeopia.sdk.serialization.extensions.toApi
+import io.writeopia.sdk.serialization.request.LinkCardDescriptionRequest
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertIs
@@ -34,6 +39,23 @@ class DocumentsApiTest {
         )
 
         assertIs<ResultData.Error<Unit>>(result)
+    }
+
+    @Test
+    fun `describeLinkCard does not call the backend for the disconnected workspace`() = runTest {
+        val api = DocumentsApi(
+            client = HttpClient(MockEngine { error("HTTP request should not be sent") }),
+            baseUrl = "https://api.example.com"
+        )
+        val card = StoryStep(type = StoryTypes.LINK_CARD.type, url = "https://writeopia.io")
+
+        val result = api.describeLinkCard(
+            documentId = "doc",
+            workspaceId = Workspace.disconnectedWorkspace().id,
+            request = LinkCardDescriptionRequest(storyStep = card.toApi(1.0), position = 1.0, requestTimestamp = 1L)
+        )
+
+        assertIs<ResultData.Error<StoryStep>>(result)
     }
 
     @Test
