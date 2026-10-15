@@ -15,8 +15,17 @@ sealed class HeaderImageGeneration {
 
     data object Generating : HeaderImageGeneration()
 
-    /** A drawn picture, already on the CDN, waiting for the user to approve it. */
-    data class Candidate(val url: String) : HeaderImageGeneration()
+    /**
+     * A drawn picture, already on the CDN, waiting for the user to approve it. While [isSaving]
+     * it is being kept with the workspace. [saveFailed] when that failed, to approve again;
+     * [saveError] says why when the backend said so.
+     */
+    data class Candidate(
+        val url: String,
+        val isSaving: Boolean = false,
+        val saveFailed: Boolean = false,
+        val saveError: String? = null,
+    ) : HeaderImageGeneration()
 
     /** The AI drew nothing; [message] says why when the backend said so. */
     data class Failed(val message: String?) : HeaderImageGeneration()

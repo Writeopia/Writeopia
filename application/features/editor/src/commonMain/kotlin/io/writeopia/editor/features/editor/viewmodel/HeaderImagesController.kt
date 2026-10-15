@@ -2,6 +2,7 @@ package io.writeopia.editor.features.editor.viewmodel
 
 import io.writeopia.ai.HeaderImages
 import io.writeopia.sdk.models.utils.ResultData
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -60,17 +61,23 @@ class HeaderImagesController(
         _state.update { state -> state.copy(generation = HeaderImageGeneration.Generating) }
 
         generationJob = scope.launch {
-            val source = resolveHeaderImages()
-            val workspaceId = workspaceId()
+            val generation = try {
+                val source = resolveHeaderImages()
+                val workspaceId = workspaceId()
 
-            val generation = if (source == null || workspaceId == null) {
-                HeaderImageGeneration.Failed(null)
-            } else {
-                when (val result = source.generate(workspaceId, documentTitle(), documentText())) {
-                    is ResultData.Complete -> HeaderImageGeneration.Candidate(result.data)
-                    is ResultData.Error -> HeaderImageGeneration.Failed(result.exception?.message)
-                    else -> HeaderImageGeneration.Failed(null)
+                if (source == null || workspaceId == null) {
+                    HeaderImageGeneration.Failed(null)
+                } else {
+                    when (val result = source.generate(workspaceId, documentTitle(), documentText())) {
+                        is ResultData.Complete -> HeaderImageGeneration.Candidate(result.data)
+                        is ResultData.Error -> HeaderImageGeneration.Failed(result.exception?.message)
+                        else -> HeaderImageGeneration.Failed(null)
+                    }
                 }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                HeaderImageGeneration.Failed(e.message)
             }
 
             // Discarded while drawing: the answer is dropped.
@@ -80,21 +87,49 @@ class HeaderImagesController(
         }
     }
 
-    /** Puts the candidate in the header and keeps it with the pictures of the workspace. */
+    /**
+     * Keeps the candidate with the pictures of the workspace and, once the backend has it, puts
+     * it in the header. When saving fails the candidate stays, with the reason, to approve again.
+     */
     fun approve() {
-        val candidate = (_state.value.generation as? HeaderImageGeneration.Candidate)?.url ?: return
+        val candidate = _state.value.generation as? HeaderImageGeneration.Candidate ?: return
+        if (candidate.isSaving) return
 
-        onApproved(candidate)
+        val url = candidate.url
         _state.update { state ->
-            state.copy(
-                images = listOf(candidate) + state.images.filterNot { url -> url == candidate },
-                generation = HeaderImageGeneration.Idle
-            )
+            state.copy(generation = candidate.copy(isSaving = true, saveFailed = false, saveError = null))
         }
 
         scope.launch {
-            val workspaceId = workspaceId() ?: return@launch
-            resolveHeaderImages()?.save(workspaceId, candidate)
+            val result: ResultData<Unit> = try {
+                val source = resolveHeaderImages()
+                val workspaceId = workspaceId()
+
+                if (source == null || workspaceId == null) ResultData.Error() else source.save(workspaceId, url)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                ResultData.Error(e)
+            }
+
+            // Discarded while saving: the candidate is gone, nothing changes.
+            val current = _state.value.generation
+            if (current !is HeaderImageGeneration.Candidate || current.url != url) return@launch
+
+            if (result is ResultData.Complete) {
+                onApproved(url)
+                _state.update { state ->
+                    state.copy(
+                        images = listOf(url) + state.images.filterNot { image -> image == url },
+                        generation = HeaderImageGeneration.Idle
+                    )
+                }
+            } else {
+                val message = (result as? ResultData.Error)?.exception?.message
+                _state.update { state ->
+                    state.copy(generation = current.copy(isSaving = false, saveFailed = true, saveError = message))
+                }
+            }
         }
     }
 

@@ -252,4 +252,5 @@
   <string name="header_discard">Descartar</string>
   <string name="header_image_failed">A IA não conseguiu desenhar um cabeçalho. Tente novamente.</string>
   <string name="header_image_cost">Usa seus tokens de IA</string>
+  <string name="header_image_save_failed">Não foi possível salvar a imagem no workspace. Tente novamente.</string>
 </resources>

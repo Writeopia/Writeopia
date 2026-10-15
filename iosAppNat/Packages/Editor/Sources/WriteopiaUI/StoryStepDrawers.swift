@@ -471,6 +471,12 @@ struct HeaderImagesSection: View {
             .frame(maxWidth: 420)
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
+            if model.saveFailed {
+                Text(model.saveError ?? String(localized: "The image could not be saved to the workspace. Try again."))
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
+
             Text("Uses your AI tokens")
                 .font(.caption2)
                 .foregroundStyle(.secondary)
@@ -482,12 +488,22 @@ struct HeaderImagesSection: View {
                 if !model.isGenerating {
                     Button("Try another") { model.generate() }
                         .buttonStyle(.bordered)
+                        .disabled(model.isSaving)
                         .accessibilityIdentifier("editor.header.retryImage")
                 }
                 if case .candidate = model.generation {
-                    Button("Use this image") { withAnimation(.snappy) { model.approve() } }
-                        .buttonStyle(.borderedProminent)
-                        .accessibilityIdentifier("editor.header.useImage")
+                    Button {
+                        Task { await model.approve() }
+                    } label: {
+                        if model.isSaving {
+                            ProgressView().controlSize(.small)
+                        } else {
+                            Text("Use this image")
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(model.isSaving)
+                    .accessibilityIdentifier("editor.header.useImage")
                 }
             }
             .frame(maxWidth: 420)

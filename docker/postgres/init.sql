@@ -237,7 +237,7 @@ CREATE INDEX idx_folder_workspace_id ON folder_entity(workspace_id);
 CREATE INDEX idx_folder_parent_id ON folder_entity(parent_id);
 CREATE INDEX idx_document_tag_workspace_id ON document_tag_entity(workspace_id);
 CREATE INDEX idx_document_tag_link_document_id ON document_tag_link(document_id);
-CREATE INDEX idx_workspace_header_image_workspace_id ON workspace_header_image_entity(workspace_id);
+CREATE UNIQUE INDEX idx_workspace_header_image_workspace_url ON workspace_header_image_entity(workspace_id, url);
 CREATE INDEX idx_story_step_document_id ON story_step_entity(document_id);
 CREATE INDEX idx_workspace_to_user_user_id ON workspace_to_user(user_id);
 CREATE INDEX idx_sync_event_workspace_id ON sync_event(workspace_id);

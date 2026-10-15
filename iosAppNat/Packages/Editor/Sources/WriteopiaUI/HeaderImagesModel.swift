@@ -29,6 +29,11 @@ public enum HeaderImageGeneration: Equatable {
 public final class HeaderImagesModel {
     public private(set) var images: [String] = []
     public private(set) var generation: HeaderImageGeneration = .idle
+    /// The candidate is being kept with the workspace.
+    public private(set) var isSaving = false
+    /// Keeping the candidate failed; it stays, to approve again. The message, when there is one.
+    public private(set) var saveFailed = false
+    public private(set) var saveError: String?
 
     @ObservationIgnored private let service: HeaderImageServing
     @ObservationIgnored private let documentTitle: () -> String
@@ -59,8 +64,10 @@ public final class HeaderImagesModel {
 
     /// Draws a picture for the document, or a different one in place of the candidate.
     public func generate() {
-        guard !isGenerating else { return }
+        guard !isGenerating, !isSaving else { return }
         generation = .generating
+        saveFailed = false
+        saveError = nil
         let title = documentTitle()
         let text = documentText()
 
@@ -77,13 +84,29 @@ public final class HeaderImagesModel {
         }
     }
 
-    /// Puts the candidate in the header and keeps it with the pictures of the workspace.
-    public func approve() {
-        guard case .candidate(let url) = generation else { return }
+    /// Keeps the candidate with the pictures of the workspace and, once the backend has it, puts
+    /// it in the header. When saving fails the candidate stays, with the reason, to approve again.
+    public func approve() async {
+        guard case .candidate(let url) = generation, !isSaving else { return }
+        isSaving = true
+        saveFailed = false
+        saveError = nil
+        defer { isSaving = false }
+
+        do {
+            try await service.saveHeaderImage(url: url)
+        } catch {
+            // Discarded while saving: the candidate is gone, nothing to report.
+            guard generation == .candidate(url) else { return }
+            saveFailed = true
+            saveError = error.localizedDescription
+            return
+        }
+
+        guard generation == .candidate(url) else { return }
         onApproved(url)
         images = [url] + images.filter { $0 != url }
         generation = .idle
-        Task { [service] in try? await service.saveHeaderImage(url: url) }
     }
 
     /// Drops the candidate, or stops drawing it.
@@ -91,6 +114,8 @@ public final class HeaderImagesModel {
         generationTask?.cancel()
         generationTask = nil
         generation = .idle
+        saveFailed = false
+        saveError = nil
     }
 
     /// Waits for the picture being drawn, for the tests.

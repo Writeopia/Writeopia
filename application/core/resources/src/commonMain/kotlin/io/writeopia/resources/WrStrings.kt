@@ -337,6 +337,7 @@ import writeopia.application.core.resources.generated.resources.header_try_anoth
 import writeopia.application.core.resources.generated.resources.header_discard
 import writeopia.application.core.resources.generated.resources.header_image_failed
 import writeopia.application.core.resources.generated.resources.header_image_cost
+import writeopia.application.core.resources.generated.resources.header_image_save_failed
 
 object WrStrings {
 
@@ -1349,4 +1350,7 @@ object WrStrings {
 
     @Composable
     fun headerImageCost() = stringResource(Res.string.header_image_cost)
+
+    @Composable
+    fun headerImageSaveFailed() = stringResource(Res.string.header_image_save_failed)
 }

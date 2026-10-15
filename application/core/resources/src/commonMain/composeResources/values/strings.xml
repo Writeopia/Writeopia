@@ -356,4 +356,5 @@
   <string name="header_discard">Discard</string>
   <string name="header_image_failed">The AI could not draw a header. Try again.</string>
   <string name="header_image_cost">Uses your AI tokens</string>
+  <string name="header_image_save_failed">The image could not be saved to the workspace. Try again.</string>
 </resources>

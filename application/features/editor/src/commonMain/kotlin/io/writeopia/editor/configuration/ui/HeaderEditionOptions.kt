@@ -280,6 +280,16 @@ private fun GenerationPanel(
 
         Spacer(modifier = Modifier.height(6.dp))
 
+        if (generation is HeaderImageGeneration.Candidate && generation.saveFailed) {
+            Text(
+                text = generation.saveError ?: WrStrings.headerImageSaveFailed(),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+        }
+
         Text(
             text = WrStrings.headerImageCost(),
             style = MaterialTheme.typography.labelSmall,
@@ -297,15 +307,21 @@ private fun GenerationPanel(
                 Text(WrStrings.headerDiscard())
             }
 
+            val isSaving = generation is HeaderImageGeneration.Candidate && generation.isSaving
+
             if (generation !is HeaderImageGeneration.Generating) {
-                OutlinedButton(onClick = onGenerateImage) {
+                OutlinedButton(onClick = onGenerateImage, enabled = !isSaving) {
                     Text(WrStrings.headerTryAnother())
                 }
             }
 
             if (generation is HeaderImageGeneration.Candidate) {
-                Button(onClick = onApproveImage) {
-                    Text(WrStrings.headerUseImage())
+                Button(onClick = onApproveImage, enabled = !isSaving) {
+                    if (isSaving) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                    } else {
+                        Text(WrStrings.headerUseImage())
+                    }
                 }
             }
         }

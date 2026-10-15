@@ -15,6 +15,7 @@ import kotlin.test.assertTrue
 private class FakeHeaderImages(
     val saved: MutableList<String> = mutableListOf(),
     var failure: String? = null,
+    var saveFailure: String? = null,
 ) : HeaderImages {
     val generatedFor = mutableListOf<Pair<String, String>>()
     var gate: CompletableDeferred<Unit>? = null
@@ -33,6 +34,7 @@ private class FakeHeaderImages(
     override suspend fun images(workspaceId: String): ResultData<List<String>> = ResultData.Complete(saved.toList())
 
     override suspend fun save(workspaceId: String, imageUrl: String): ResultData<Unit> {
+        saveFailure?.let { message -> return ResultData.Error(Exception(message)) }
         saved.add(0, imageUrl)
         return ResultData.Complete(Unit)
     }
@@ -43,10 +45,11 @@ class HeaderImagesControllerTest {
     private fun TestScope.controller(
         images: FakeHeaderImages?,
         approved: MutableList<String> = mutableListOf(),
+        workspaceId: suspend () -> String? = { "workspace" },
     ) = HeaderImagesController(
         scope = backgroundScope,
         resolveHeaderImages = { images },
-        workspaceId = { "workspace" },
+        workspaceId = workspaceId,
         documentTitle = { "Coastal Journal" },
         documentText = { "The lighthouse stood alone." },
         onApproved = approved::add,
@@ -169,5 +172,47 @@ class HeaderImagesControllerTest {
         controller.generate()
 
         assertEquals(HeaderImageGeneration.Failed("Monthly AI quota exceeded"), controller.state.value.generation)
+    }
+
+    @Test
+    fun `a picture the backend did not keep stays a candidate, out of the header and the workspace`() =
+        runTest(UnconfinedTestDispatcher()) {
+            val images = FakeHeaderImages(saveFailure = "Service unavailable")
+            val approved = mutableListOf<String>()
+            val controller = controller(images, approved)
+            controller.load()
+
+            controller.generate()
+            controller.approve()
+
+            val url = "https://cdn.test/header-images/workspace/1.png"
+            assertEquals(
+                HeaderImageGeneration.Candidate(url, saveFailed = true, saveError = "Service unavailable"),
+                controller.state.value.generation
+            )
+            assertTrue(approved.isEmpty())
+            assertTrue(controller.state.value.images.isEmpty())
+
+            // Opening the menu again doesn't bring it in either.
+            controller.load()
+            assertTrue(controller.state.value.images.isEmpty())
+
+            // Approving again, once the backend answers, keeps it.
+            images.saveFailure = null
+            controller.approve()
+            assertEquals(listOf(url), approved)
+            assertEquals(listOf(url), controller.state.value.images)
+            assertEquals(HeaderImageGeneration.Idle, controller.state.value.generation)
+        }
+
+    @Test
+    fun `a failure finding the workspace ends the drawing`() = runTest(UnconfinedTestDispatcher()) {
+        val images = FakeHeaderImages()
+        val controller = controller(images, workspaceId = { throw IllegalStateException("Database closed") })
+
+        controller.generate()
+
+        assertEquals(HeaderImageGeneration.Failed("Database closed"), controller.state.value.generation)
+        assertTrue(images.generatedFor.isEmpty())
     }
 }

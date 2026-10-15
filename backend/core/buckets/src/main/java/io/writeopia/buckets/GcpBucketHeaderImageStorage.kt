@@ -46,8 +46,23 @@ object GcpBucketHeaderImageStorage : HeaderImageStorage {
         if (debugMode) {
             url.startsWith(DEBUG_IMAGE_URL)
         } else {
-            url.startsWith("${BucketConfig.headerImagesBaseUrl(debugMode).trimEnd('/')}/${prefixOf(workspaceId)}")
+            isHeaderImageUrl(url, BucketConfig.headerImagesBaseUrl(debugMode), workspaceId)
         }
+
+    /**
+     * Whether [url] names one picture [store] wrote for [workspaceId]: the CDN host, the folder of
+     * the workspace, then a single object name as [store] makes it (`<uuid>.<extension>`). Anything
+     * else, like `..` segments, encoded separators, a query or a deeper path, is refused, so a
+     * workspace keeps only its own pictures.
+     */
+    fun isHeaderImageUrl(url: String, baseUrl: String, workspaceId: String): Boolean {
+        val prefix = "${baseUrl.trimEnd('/')}/${prefixOf(workspaceId)}"
+        if (!url.startsWith(prefix)) return false
+
+        return OBJECT_NAME.matches(url.removePrefix(prefix))
+    }
+
+    private val OBJECT_NAME = Regex("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\\.(png|jpg|webp)")
 
     private fun prefixOf(workspaceId: String) = "$FOLDER/$workspaceId/"
 

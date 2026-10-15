@@ -12,31 +12,22 @@ fun WriteopiaDbBackend.getHeaderImages(workspaceId: String): List<HeaderImageApi
         .map { entity -> HeaderImageApi(id = entity.id, url = entity.url, createdAt = entity.created_at) }
 
 /**
- * Keeps [url] with the header pictures of [workspaceId]. Approving the same picture twice keeps
- * it once.
+ * Keeps [url] with the header pictures of [workspaceId]. Approving the same picture twice, even
+ * at the same time from two devices, keeps it once: the unique index on (workspace_id, url)
+ * drops the second insert, and the picture as stored is returned.
  */
-fun WriteopiaDbBackend.saveHeaderImage(workspaceId: String, url: String, userId: String): HeaderImageApi =
-    transactionWithResult {
-        val existing = workspaceHeaderImageEntityQueries.selectByWorkspaceAndUrl(workspaceId, url).executeAsOneOrNull()
+fun WriteopiaDbBackend.saveHeaderImage(workspaceId: String, url: String, userId: String): HeaderImageApi {
+    workspaceHeaderImageEntityQueries.insert(
+        id = UUID.randomUUID().toString(),
+        workspace_id = workspaceId,
+        url = url,
+        created_by = userId,
+        created_at = Clock.System.now().toEpochMilliseconds()
+    )
 
-        if (existing != null) {
-            HeaderImageApi(id = existing.id, url = existing.url, createdAt = existing.created_at)
-        } else {
-            val image = HeaderImageApi(
-                id = UUID.randomUUID().toString(),
-                url = url,
-                createdAt = Clock.System.now().toEpochMilliseconds()
-            )
-            workspaceHeaderImageEntityQueries.insert(
-                id = image.id,
-                workspace_id = workspaceId,
-                url = image.url,
-                created_by = userId,
-                created_at = image.createdAt
-            )
-            image
-        }
-    }
+    val stored = workspaceHeaderImageEntityQueries.selectByWorkspaceAndUrl(workspaceId, url).executeAsOne()
+    return HeaderImageApi(id = stored.id, url = stored.url, createdAt = stored.created_at)
+}
 
 /**
  * Whether [userId] is a member of [workspaceId], like `isUserInWorkspace` of the workspaces: a

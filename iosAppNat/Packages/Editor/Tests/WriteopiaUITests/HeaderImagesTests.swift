@@ -11,11 +11,13 @@ private func document(_ steps: [StoryStep]) -> WrDocument {
 private final class FakeHeaderImages: HeaderImageServing {
     var saved: [String]
     var failure: String?
+    var saveFailure: String?
     var generatedFor: [(String, String)] = []
 
-    init(saved: [String] = [], failure: String? = nil) {
+    init(saved: [String] = [], failure: String? = nil, saveFailure: String? = nil) {
         self.saved = saved
         self.failure = failure
+        self.saveFailure = saveFailure
     }
 
     func generateHeaderImage(documentTitle: String, documentText: String) async throws -> String {
@@ -26,7 +28,10 @@ private final class FakeHeaderImages: HeaderImageServing {
 
     func headerImages() async throws -> [String] { saved }
 
-    func saveHeaderImage(url: String) async throws { saved.insert(url, at: 0) }
+    func saveHeaderImage(url: String) async throws {
+        if let saveFailure { throw FakeError(message: saveFailure) }
+        saved.insert(url, at: 0)
+    }
 }
 
 private struct FakeError: LocalizedError {
@@ -89,7 +94,8 @@ private struct FakeError: LocalizedError {
         #expect(service.generatedFor.count == 2)
         #expect(service.generatedFor.first?.0 == "Coastal Journal")
 
-        model.approve()
+        await model.approve()
+        #expect(service.saved == ["https://cdn.test/header-images/w/2.png", "https://cdn.test/old.png"])
         #expect(approved == ["https://cdn.test/header-images/w/2.png"])
         #expect(model.images == ["https://cdn.test/header-images/w/2.png", "https://cdn.test/old.png"])
         #expect(model.generation == .idle)
@@ -126,5 +132,39 @@ private struct FakeError: LocalizedError {
         await model.waitForGeneration()
 
         #expect(model.generation == .failed("Monthly AI quota exceeded"))
+    }
+
+    @Test func aPictureTheBackendDidNotKeepStaysACandidate() async {
+        let service = FakeHeaderImages(saveFailure: "Service unavailable")
+        var approved: [String] = []
+        let model = HeaderImagesModel(
+            service: service,
+            documentTitle: { "" },
+            documentText: { "" },
+            onApproved: { approved.append($0) }
+        )
+
+        model.generate()
+        await model.waitForGeneration()
+        await model.approve()
+
+        #expect(model.generation == .candidate("https://cdn.test/header-images/w/1.png"))
+        #expect(model.saveFailed)
+        #expect(model.saveError == "Service unavailable")
+        #expect(!model.isSaving)
+        #expect(approved.isEmpty)
+        #expect(model.images.isEmpty)
+
+        // Opening the menu again doesn't bring it in either.
+        await model.load()
+        #expect(model.images.isEmpty)
+
+        // Approving again, once the backend answers, keeps it.
+        service.saveFailure = nil
+        await model.approve()
+        #expect(approved == ["https://cdn.test/header-images/w/1.png"])
+        #expect(model.images == ["https://cdn.test/header-images/w/1.png"])
+        #expect(model.generation == .idle)
+        #expect(!model.saveFailed)
     }
 }
