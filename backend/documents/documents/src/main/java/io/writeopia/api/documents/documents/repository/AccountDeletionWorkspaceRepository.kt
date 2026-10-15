@@ -70,6 +70,7 @@ fun WriteopiaDbBackend.hardDeleteWorkspaceContents(workspaceId: String) {
     this.folderEntityQueries.deleteByWorkspace(workspaceId)
     this.documentTagLinkEntityQueries.deleteByWorkspace(workspaceId)
     this.documentTagEntityQueries.deleteByWorkspace(workspaceId)
+    this.workspaceHeaderImageEntityQueries.deleteByWorkspace(workspaceId)
     this.userFavoriteEntityQueries.deleteByWorkspace(workspaceId)
     this.workspaceTutorialStatusQueries.deleteByWorkspace(workspaceId)
     this.workspaceToUserQueries.deleteByWorkspaceId(workspaceId)

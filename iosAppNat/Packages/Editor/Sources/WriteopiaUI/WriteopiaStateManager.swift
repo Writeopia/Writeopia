@@ -245,6 +245,8 @@ public final class WriteopiaStateManager {
     public func setHeaderColor(_ argb: Int?) {
         guard isEditable, var title = currentStory.stories[0], title.isTitle else { return }
         title.decoration = argb.map { Decoration(backgroundColor: $0) }
+        // A color, or none, takes the place of the picture of the header.
+        title.url = nil
         var stories = currentStory.stories
         stories[0] = title
         var state = currentStory
@@ -252,6 +254,32 @@ public final class WriteopiaStateManager {
         state.lastEdit = .lineEdition(position: 0, storyStep: title)
         apply(state)
     }
+
+    /// The picture of the header (the `url` of the title), nil for none.
+    public var headerImageUrl: String? {
+        currentStory.stories[0]?.url.flatMap { $0.isEmpty ? nil : $0 }
+    }
+
+    /// Puts a picture in the header, like `onHeaderImageSelection` of the Compose app. The
+    /// header has a picture or a color, so the color goes away.
+    public func setHeaderImage(_ url: String?) {
+        guard isEditable, var title = currentStory.stories[0], title.isTitle else { return }
+        title.url = url
+        if url != nil { title.decoration = nil }
+        var stories = currentStory.stories
+        stories[0] = title
+        var state = currentStory
+        state.stories = stories
+        state.lastEdit = .lineEdition(position: 0, storyStep: title)
+        apply(state)
+    }
+
+    /// The header pictures of the workspace; nil where the cloud can't draw them.
+    public var headerImages: HeaderImagesModel?
+
+    /// The icon of the document, shown on the left of the title like `HeaderDrawer` of the
+    /// Compose app. It's chosen in the sidebar, not in the editor.
+    public var documentIcon: IconInfo?
 
     /// Backspace with the cursor at the start of a step.
     public func onErase(stepId: String) {

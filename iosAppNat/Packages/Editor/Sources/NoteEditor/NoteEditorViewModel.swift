@@ -124,6 +124,7 @@ public final class NoteEditorViewModel {
         presentations: PresentationsSource? = nil,
         writingAgent: WritingAgentServing? = nil,
         imageGenerator: AiImageGenerating? = nil,
+        headerImages: HeaderImageServing? = nil,
         defaults: UserDefaults = .standard,
         writeopiaManager: WriteopiaStateManager = WriteopiaStateManager()
     ) {
@@ -144,6 +145,16 @@ public final class NoteEditorViewModel {
             writeopiaManager.onListStarted = { [weak self] stepId in self?.suggestListItems(after: stepId) }
         }
         writeopiaManager.onLinkCardCreated = { [weak self] card in self?.describeLinkCard(card) }
+        if let headerImages {
+            writeopiaManager.headerImages = HeaderImagesModel(
+                service: headerImages,
+                documentTitle: { [weak writeopiaManager] in writeopiaManager?.title ?? "" },
+                documentText: { [weak writeopiaManager] in
+                    String((writeopiaManager?.documentTextWithTitle ?? "").prefix(WritingActionExecutor.imageContextLimit))
+                },
+                onApproved: { [weak writeopiaManager] url in writeopiaManager?.setHeaderImage(url) }
+            )
+        }
         switch presentations {
         case .cloud(let api):
             // The backend reads the document it has: the pending edits go first.
@@ -651,11 +662,19 @@ public final class NoteEditorViewModel {
         }
     }
 
+    /// The sidebar gave the document another icon while it's open: it shows by the title now.
+    public func documentIconChanged(id: String, icon: IconInfo?) {
+        guard id == documentId else { return }
+        loadedDocument?.icon = icon
+        writeopiaManager.documentIcon = icon
+    }
+
     // MARK: - Persistence and sync
 
     private func show(_ document: WrDocument) {
         loadedDocument = document
         tagIds = document.tagIds
+        writeopiaManager.documentIcon = document.icon
         writeopiaManager.loadDocument(document)
         changeCountAtLoad = writeopiaManager.changeCount
         savedSteps = Dictionary(writeopiaManager.documentContent.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })

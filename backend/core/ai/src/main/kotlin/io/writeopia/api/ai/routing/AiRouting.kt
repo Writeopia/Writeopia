@@ -28,6 +28,7 @@ import io.writeopia.databse.HikariCp
 import io.writeopia.api.typesafe.service.FolderSuggestionsService
 import io.writeopia.api.typesafe.service.TagSuggestionsService
 import io.writeopia.api.typesafe.service.WritingSuggestionsService
+import io.writeopia.buckets.GcpBucketHeaderImageStorage
 import io.writeopia.buckets.GcpBucketImageStorageService
 import io.writeopia.connection.logger
 import io.writeopia.connection.startOfMonth
@@ -90,6 +91,9 @@ fun Routing.aiRoute(
 
     // The pictures the writing agent offers, drawn by Gemini and kept with the user's media.
     aiImageRoute(genAiService, GcpBucketImageStorageService, debugMode, writeopiaDb)
+
+    // The header pictures of the documents, drawn by Gemini and served by the CDN.
+    headerImageRoute(genAiService, GcpBucketHeaderImageStorage, debugMode, writeopiaDb)
 
     authenticate("auth-jwt", optional = debugMode) {
         get("/api/ai/status") {

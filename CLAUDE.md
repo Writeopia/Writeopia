@@ -212,7 +212,7 @@ Writeopia uses a custom JSON format for documents (`.wrdoc.json` files). Each do
 ### StoryStep Types
 
 Common types used in document content:
-- `title` (number: 11) - Document title (first element)
+- `title` (number: 11) - Document title (first element). Its `decoration.backgroundColor` colors the header; its `url` holds an AI-generated header image (CDN), which takes the place of the color
 - `message` (number: 0) - Regular paragraph
 - `unordered_list_item` (number: 16) - Bullet point
 - `check_item` (number: 10) - Checkbox with `checked` field

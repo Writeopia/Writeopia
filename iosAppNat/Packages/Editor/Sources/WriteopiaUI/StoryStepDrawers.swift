@@ -171,9 +171,24 @@ struct TitleDrawer: View {
     @State private var showsColors = false
     @Environment(\.isSlideLayout) private var isSlideLayout
 
-    private var headerColor: Color? {
-        step.decoration?.backgroundColor.map { Color(argb: $0) }
+    /// The picture of the header, which takes the place of its color.
+    private var headerImageURL: URL? {
+        step.url.flatMap { $0.isEmpty ? nil : URL(string: $0) }
     }
+
+    private var headerColor: Color? {
+        guard headerImageURL == nil else { return nil }
+        return step.decoration?.backgroundColor.map { Color(argb: $0) }
+    }
+
+    /// The height of the picture of the header. The Mac window is taller, like the colored band.
+    private static let headerImageHeight: CGFloat = {
+        #if os(macOS)
+        240
+        #else
+        200
+        #endif
+    }()
 
     /// Space above the title inside a colored header. The Compose app uses 114; the Mac window
     /// is taller, so the band gets a little more room there.
@@ -186,26 +201,17 @@ struct TitleDrawer: View {
     }()
 
     var body: some View {
-        StepTextView(step: step, manager: manager)
-            .overlay(alignment: .topLeading) {
-                if (step.text ?? "").isEmpty {
-                    Text("Untitled")
-                        .font(manager.fontFamily.font(size: 34, weight: .bold))
-                        .foregroundStyle(.quaternary)
-                        .allowsHitTesting(false)
-                }
+        VStack(spacing: 0) {
+            // A picture sits as a band above the title, like `HeaderDrawer` of the SDK.
+            if let headerImageURL {
+                HeaderImageView(url: headerImageURL)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: Self.headerImageHeight)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .transition(.opacity)
             }
-            // In a slide the title lines up with the text below, which has no gutter.
-            .padding(.leading, isSlideLayout ? 4 : EditorLayout.gutter + 4)
-            .padding(.trailing, 12)
-            .padding(.top, headerColor == nil ? 8 : Self.coloredHeaderTopPadding)
-            .padding(.bottom, 8)
-            .background {
-                if let headerColor {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(headerColor)
-                }
-            }
+            titleText
+        }
             .overlay(alignment: .topTrailing) {
                 if manager.isEditable, showsEditButton {
                     Button {
@@ -230,6 +236,41 @@ struct TitleDrawer: View {
             .onHover { isHovered = $0 }
             .animation(.easeInOut(duration: 0.15), value: isHovered)
             .animation(.snappy, value: headerColor == nil)
+            .animation(.snappy, value: headerImageURL)
+    }
+
+    private var titleText: some View {
+        HStack(alignment: .center, spacing: 10) {
+            // The icon of the document, chosen in the sidebar, like `HeaderDrawer` of the SDK.
+            if let icon = manager.documentIcon {
+                DocumentIconImage(icon: icon, defaultColor: .primary)
+                    .font(.system(size: 30, weight: .regular))
+                    .frame(width: 40)
+                    .transition(.opacity)
+            }
+
+            StepTextView(step: step, manager: manager)
+                .overlay(alignment: .topLeading) {
+                    if (step.text ?? "").isEmpty {
+                        Text("Untitled")
+                            .font(manager.fontFamily.font(size: 34, weight: .bold))
+                            .foregroundStyle(.quaternary)
+                            .allowsHitTesting(false)
+                    }
+                }
+        }
+            .animation(.snappy, value: manager.documentIcon)
+            // In a slide the title lines up with the text below, which has no gutter.
+            .padding(.leading, isSlideLayout ? 4 : EditorLayout.gutter + 4)
+            .padding(.trailing, 12)
+            .padding(.top, headerColor == nil ? 8 : Self.coloredHeaderTopPadding)
+            .padding(.bottom, 8)
+            .background {
+                if let headerColor {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(headerColor)
+                }
+            }
     }
 
     /// On the Mac the pencil shows on hover; on touch screens it stays, like the Compose app.
@@ -254,13 +295,16 @@ private extension View {
         }
         #else
         sheet(isPresented: isPresented) {
-            HeaderColorPicker(manager: manager)
-                .padding(.horizontal, 20)
-                .padding(.top, 24)
-                .padding(.bottom, 16)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                .presentationDetents([.height(220)])
-                .presentationDragIndicator(.visible)
+            ScrollView {
+                HeaderColorPicker(manager: manager)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 24)
+                    .padding(.bottom, 16)
+                    .frame(maxWidth: .infinity, alignment: .top)
+            }
+            // The pictures need room for the one the AI draws; the colors alone fit a short sheet.
+            .presentationDetents(manager.headerImages == nil ? [.height(220)] : [.medium, .large])
+            .presentationDragIndicator(.visible)
         }
         #endif
     }
@@ -285,26 +329,36 @@ struct HeaderColorPicker: View {
             Text("Header")
                 .font(.headline)
 
-            if Self.wrapsSwatches {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 44), spacing: 10)], alignment: .leading, spacing: 10) {
-                    swatch(nil)
-                    ForEach(WriteopiaStateManager.headerColors, id: \.self) { color in
-                        swatch(color)
-                    }
+            colors
+
+            if let images = manager.headerImages {
+                HeaderImagesSection(manager: manager, model: images)
+                    .padding(.top, 8)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var colors: some View {
+        if Self.wrapsSwatches {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 44), spacing: 10)], alignment: .leading, spacing: 10) {
+                swatch(nil)
+                ForEach(WriteopiaStateManager.headerColors, id: \.self) { color in
+                    swatch(color)
                 }
-            } else {
-                HStack(spacing: 10) {
-                    swatch(nil)
-                    ForEach(WriteopiaStateManager.headerColors, id: \.self) { color in
-                        swatch(color)
-                    }
+            }
+        } else {
+            HStack(spacing: 10) {
+                swatch(nil)
+                ForEach(WriteopiaStateManager.headerColors, id: \.self) { color in
+                    swatch(color)
                 }
             }
         }
     }
 
     private func swatch(_ argb: Int?) -> some View {
-        let isSelected = manager.headerColor == argb
+        let isSelected = manager.headerImageUrl == nil && manager.headerColor == argb
         let shape = RoundedRectangle(cornerRadius: isSelected ? 10 : 20, style: .continuous)
         return Button {
             withAnimation(.snappy) { manager.setHeaderColor(argb) }
@@ -326,6 +380,172 @@ struct HeaderColorPicker: View {
         .accessibilityLabel(argb == nil ? "No color" : "Header color")
         .accessibilityAddTraits(isSelected ? .isSelected : [])
         .animation(.snappy, value: isSelected)
+    }
+}
+
+/// The pictures of the header: a button to draw one with the AI, the pictures of the workspace,
+/// and the one being drawn, shown to be approved or drawn again, like `HeaderEditionOptions` of
+/// the Compose app.
+struct HeaderImagesSection: View {
+    let manager: WriteopiaStateManager
+    let model: HeaderImagesModel
+
+    private static let tileSize = CGSize(width: 88, height: 56)
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Images")
+                .font(.subheadline.weight(.semibold))
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    generateTile
+                    ForEach(model.images, id: \.self) { url in
+                        imageTile(url)
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+
+            if model.generation != .idle {
+                generationPanel
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .animation(.snappy, value: model.generation)
+        .task { await model.load() }
+    }
+
+    private var generateTile: some View {
+        Button {
+            model.generate()
+        } label: {
+            VStack(spacing: 4) {
+                Image(systemName: "sparkles")
+                    .foregroundStyle(WrColors.accent)
+                Text("Generate with AI")
+                    .font(.caption2)
+                    .lineLimit(1)
+            }
+            .frame(width: Self.tileSize.width + 24, height: Self.tileSize.height)
+            .background(WrColors.secondaryFill, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(WrColors.divider))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(model.isGenerating)
+        .accessibilityIdentifier("editor.header.generateImage")
+    }
+
+    private func imageTile(_ url: String) -> some View {
+        let isSelected = manager.headerImageUrl == url
+        let shape = RoundedRectangle(cornerRadius: 12, style: .continuous)
+        return Button {
+            withAnimation(.snappy) { manager.setHeaderImage(url) }
+        } label: {
+            HeaderImageView(url: URL(string: url))
+                .frame(width: Self.tileSize.width, height: Self.tileSize.height)
+                .clipShape(shape)
+                .overlay(shape.strokeBorder(isSelected ? WrColors.accent : WrColors.divider, lineWidth: isSelected ? 2 : 1))
+                .contentShape(shape)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Header image")
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    private var generationPanel: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(WrColors.secondaryFill)
+
+                switch model.generation {
+                case .candidate(let url):
+                    HeaderImageView(url: URL(string: url))
+                case .failed(let message):
+                    Text(message ?? String(localized: "The AI could not draw a header. Try again."))
+                        .font(.callout)
+                        .foregroundStyle(.red)
+                        .multilineTextAlignment(.center)
+                        .padding()
+                default:
+                    VStack(spacing: 8) {
+                        ProgressView()
+                        Text("Drawing your header…")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .aspectRatio(16 / 9, contentMode: .fit)
+            .frame(maxWidth: 420)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+            if model.saveFailed {
+                Text(model.saveError ?? String(localized: "The image could not be saved to the workspace. Try again."))
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
+
+            Text("Uses your AI tokens")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+
+            HStack(spacing: 8) {
+                Spacer()
+                Button("Discard", role: .cancel) { model.discard() }
+                    .accessibilityIdentifier("editor.header.discardImage")
+                if !model.isGenerating {
+                    Button("Try another") { model.generate() }
+                        .buttonStyle(.bordered)
+                        .disabled(model.isSaving)
+                        .accessibilityIdentifier("editor.header.retryImage")
+                }
+                if case .candidate = model.generation {
+                    Button {
+                        Task { await model.approve() }
+                    } label: {
+                        if model.isSaving {
+                            ProgressView().controlSize(.small)
+                        } else {
+                            Text("Use this image")
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(model.isSaving)
+                    .accessibilityIdentifier("editor.header.useImage")
+                }
+            }
+            .frame(maxWidth: 420)
+        }
+    }
+}
+
+/// A header picture from the CDN, cropped to fill its frame, with a quiet placeholder while it
+/// loads.
+public struct HeaderImageView: View {
+    let url: URL?
+
+    public init(url: URL?) {
+        self.url = url
+    }
+
+    public var body: some View {
+        AsyncImage(url: url) { phase in
+            switch phase {
+            case .success(let image):
+                image
+                    .resizable()
+                    .scaledToFill()
+            case .failure:
+                WrColors.secondaryFill
+                    .overlay(Image(systemName: "photo").foregroundStyle(.secondary))
+            default:
+                WrColors.secondaryFill
+            }
+        }
+        .accessibilityLabel("Header image")
     }
 }
 

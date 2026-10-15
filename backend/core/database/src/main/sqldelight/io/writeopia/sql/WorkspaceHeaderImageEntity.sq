@@ -1,0 +1,34 @@
+-- The header pictures of a workspace, drawn by the AI and approved by a member. Any document of
+-- the workspace can use them; the picture itself lives on the CDN, at url.
+CREATE TABLE workspace_header_image_entity (
+  id TEXT PRIMARY KEY,
+  workspace_id TEXT NOT NULL,
+  url TEXT NOT NULL,
+  created_by TEXT NOT NULL,
+  created_at BIGINT NOT NULL
+);
+
+-- A picture joins a workspace once; the index also serves the lookups by workspace.
+CREATE UNIQUE INDEX idx_workspace_header_image_workspace_url ON workspace_header_image_entity(workspace_id, url);
+
+selectByWorkspace:
+SELECT *
+FROM workspace_header_image_entity
+WHERE workspace_id = ?
+ORDER BY created_at DESC;
+
+selectByWorkspaceAndUrl:
+SELECT *
+FROM workspace_header_image_entity
+WHERE workspace_id = ? AND url = ?
+LIMIT 1;
+
+insert:
+INSERT INTO workspace_header_image_entity(id, workspace_id, url, created_by, created_at)
+VALUES (?, ?, ?, ?, ?)
+ON CONFLICT(workspace_id, url) DO NOTHING;
+
+deleteByWorkspace:
+DELETE
+FROM workspace_header_image_entity
+WHERE workspace_id = ?;

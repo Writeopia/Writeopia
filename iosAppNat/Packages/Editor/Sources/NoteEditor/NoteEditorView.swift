@@ -74,6 +74,7 @@ public struct NoteEditorView: View {
         presentations: PresentationsSource? = nil,
         writingAgent: WritingAgentServing? = nil,
         imageGenerator: AiImageGenerating? = nil,
+        headerImages: HeaderImagesAPI? = nil,
         openDocumentLink: @escaping (DocumentLink) -> Void = { _ in }
     ) {
         _viewModel = State(initialValue: NoteEditorViewModel(
@@ -85,7 +86,8 @@ public struct NoteEditorView: View {
             isPremium: isPremium,
             presentations: presentations,
             writingAgent: writingAgent,
-            imageGenerator: imageGenerator
+            imageGenerator: imageGenerator,
+            headerImages: headerImages.map(HeaderImagesService.init(api:))
         ))
         fallbackTitle = title
         self.openDocumentLink = openDocumentLink
@@ -551,6 +553,10 @@ public struct NoteEditorView: View {
             .frame(minWidth: 800, minHeight: 560)
         }
         #endif
+        .onReceive(NotificationCenter.default.publisher(for: .documentIconChanged)) { note in
+            guard let id = note.object as? String else { return }
+            viewModel.documentIconChanged(id: id, icon: note.userInfo?["icon"] as? IconInfo)
+        }
         .onAppear { openEditors?.opened() }
         .onDisappear {
             openEditors?.closed()

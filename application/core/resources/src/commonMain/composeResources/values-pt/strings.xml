@@ -242,4 +242,15 @@
   <string name="local_folder_setup_title">Escolha uma pasta local</string>
   <string name="local_folder_setup_description">Escolha uma pasta no seu computador para guardar uma cópia do seu workspace, ou pule e faça isso depois nas Configurações.</string>
   <string name="local_folder_description">Escolha uma pasta no seu computador para guardar uma cópia do seu workspace.</string>
+  <string name="header_title">Cabeçalho</string>
+  <string name="header_colors">Cores</string>
+  <string name="header_images">Imagens</string>
+  <string name="header_generate_image">Gerar com IA</string>
+  <string name="header_generating_image">Desenhando seu cabeçalho…</string>
+  <string name="header_use_image">Usar esta imagem</string>
+  <string name="header_try_another">Tentar outra</string>
+  <string name="header_discard">Descartar</string>
+  <string name="header_image_failed">A IA não conseguiu desenhar um cabeçalho. Tente novamente.</string>
+  <string name="header_image_cost">Usa seus tokens de IA</string>
+  <string name="header_image_save_failed">Não foi possível salvar a imagem no workspace. Tente novamente.</string>
 </resources>

@@ -1,6 +1,7 @@
 package io.writeopia.genai.repository
 
 import io.writeopia.app.dto.ai.AiImageRequest
+import io.writeopia.sdk.serialization.request.HeaderImageGenerateRequest
 import io.writeopia.sdk.ai.AiClient
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.genai.api.GenAiApi
@@ -123,6 +124,33 @@ class GenAiRepository(
                     ResultData.Error(Exception(result.data.error ?: "The AI drew no picture"))
                 }
             }
+            is ResultData.Error -> ResultData.Error(result.exception)
+            else -> ResultData.Error()
+        }
+
+    /**
+     * A header picture for a document of [workspaceId], drawn by the backend and served by the
+     * CDN. It costs tokens of the user. The result is the URL of the picture.
+     */
+    suspend fun generateHeaderImage(
+        workspaceId: String,
+        documentTitle: String,
+        documentText: String
+    ): ResultData<String> =
+        genAiApi.generateHeaderImage(HeaderImageGenerateRequest(workspaceId, documentTitle, documentText))
+
+    /** The URLs of the header pictures of [workspaceId], the newest first. */
+    suspend fun headerImages(workspaceId: String): ResultData<List<String>> =
+        when (val result = genAiApi.headerImages(workspaceId)) {
+            is ResultData.Complete -> ResultData.Complete(result.data.map { image -> image.url })
+            is ResultData.Error -> ResultData.Error(result.exception)
+            else -> ResultData.Error()
+        }
+
+    /** Keeps an approved header picture with the pictures of [workspaceId]. */
+    suspend fun saveHeaderImage(workspaceId: String, imageUrl: String): ResultData<Unit> =
+        when (val result = genAiApi.saveHeaderImage(workspaceId, imageUrl)) {
+            is ResultData.Complete -> ResultData.Complete(Unit)
             is ResultData.Error -> ResultData.Error(result.exception)
             else -> ResultData.Error()
         }

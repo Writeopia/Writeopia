@@ -25,6 +25,9 @@ public protocol DocumentsRepository: AnyObject {
     /// Stores a new title or icon of the folder, and sends it to the backend when there's one.
     @discardableResult
     func updateFolder(_ folder: Folder) async throws -> Folder
+    /// Stores the icon of a document, chosen in the sidebar like the icon picker of the Compose
+    /// app; nil removes it. It goes to the backend with the next sync of the document.
+    func updateDocumentIcon(id: String, icon: IconInfo?) async throws
 
     // Selection menu of the documents list (Compose `NotesSelectionMenu`).
 
@@ -118,6 +121,8 @@ extension DocumentsRepository {
 
     @discardableResult
     public func updateFolder(_ folder: Folder) async throws -> Folder { throw APIError.notFound }
+
+    public func updateDocumentIcon(id: String, icon: IconInfo?) async throws { throw APIError.notFound }
 
     /// The folders from the root down to `folderId`, the folder included. Empty for the root.
     public func folderPath(to folderId: String) async throws -> [Folder] {
@@ -268,4 +273,10 @@ public final class RemoteDocumentsRepository: DocumentsRepository {
     private struct MoveBody: Encodable {
         let targetParentId: String
     }
+}
+
+public extension Notification.Name {
+    /// Posted when a document gets a new icon, with the id of the document as the object and the
+    /// new `IconInfo` (absent when removed) under "icon", so an open editor shows it by the title.
+    static let documentIconChanged = Notification.Name("io.writeopia.documentIconChanged")
 }

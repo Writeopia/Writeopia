@@ -17,9 +17,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
 import io.writeopia.ui.model.DrawInfo
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
@@ -42,9 +44,9 @@ class HeaderPreviewDrawer(
             modifier = modifier
                 .padding(bottom = 16.dp)
                 .fillMaxWidth()
-                .defaultMinSize(minHeight = if (hasContent(step, drawInfo)) 70.dp else 20.dp)
+                .defaultMinSize(minHeight = if (hasContent(step, drawInfo) || !step.url.isNullOrBlank()) 70.dp else 20.dp)
                 .let { modifierLet ->
-                    val backgroundColor = step.decoration.backgroundColor
+                    val backgroundColor = step.decoration.backgroundColor.takeIf { step.url.isNullOrBlank() }
                     if (backgroundColor != null) {
                         modifierLet.background(Color(backgroundColor))
                     } else {
@@ -52,6 +54,17 @@ class HeaderPreviewDrawer(
                     }
                 }
         ) {
+            // The picture of the header fills the band, like its color does.
+            val imageUrl = step.url?.takeIf { it.isNotBlank() }
+            if (imageUrl != null) {
+                AsyncImage(
+                    model = imageUrl,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.matchParentSize()
+                )
+            }
+
             if (hasContent(step, drawInfo)) {
                 Row(
                     modifier = Modifier

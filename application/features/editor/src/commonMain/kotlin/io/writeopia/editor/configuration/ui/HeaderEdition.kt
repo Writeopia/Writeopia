@@ -1,80 +1,71 @@
 package io.writeopia.editor.configuration.ui
 
-// import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.CornerSize
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import io.writeopia.commonui.SlideInBox
+import io.writeopia.common.utils.colors.ColorUtils
+import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.theme.WriteopiaTheme
 
-// This screen could live in a module for extra Composables
+/**
+ * The header menu of the phones: a bottom sheet with the colors and the pictures of the header.
+ * It opens fully expanded, so the picture the AI draws is in view without dragging the sheet.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BoxScope.HeaderEdition(
-    modifier: Modifier = Modifier,
-    availableColors: List<Int>,
-    selectedColor: Int?,
-    onColorSelection: (Int?) -> Unit,
+fun HeaderEdition(
+    noteEditorViewModel: NoteEditorViewModel,
     visibilityState: Boolean,
-    outsideClick: () -> Unit,
+    onDismissRequest: () -> Unit,
 ) {
-    val topCorner = CornerSize(16.dp)
-    val bottomCorner = CornerSize(0.dp)
+    if (!visibilityState) return
 
-    SlideInBox(
-        modifier = modifier.align(Alignment.BottomCenter),
-        editState = visibilityState,
-        outsideClick = outsideClick,
-        animationLabel = "HeaderEditionAnimation",
+    ModalBottomSheet(
+        onDismissRequest = onDismissRequest,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        containerColor = WriteopiaTheme.colorScheme.lightBackground,
     ) {
         Column(
             modifier = Modifier
-                .widthIn(max = 500.dp)
-                .clip(
-                    RoundedCornerShape(
-                        topCorner,
-                        topCorner,
-                        bottomCorner,
-                        bottomCorner
-                    )
-                )
-                .background(WriteopiaTheme.colorScheme.lightBackground)
-                .padding(vertical = 16.dp)
+                .verticalScroll(rememberScrollState())
+                .navigationBarsPadding()
+                .padding(bottom = 16.dp)
         ) {
-            HeaderEditionOptions(availableColors, selectedColor, onColorSelection)
+            HeaderEditionContent(noteEditorViewModel)
 
             Spacer(modifier = Modifier.height(12.dp))
         }
     }
 }
 
-// @Preview
-// @Composable
-// fun HeaderEditionPreview() {
-//    val colors = listOf(
-//        Color.Blue.toArgb(),
-//        Color.White.toArgb(),
-//        Color.Cyan.toArgb(),
-//        Color.LightGray.toArgb(),
-//        Color.Red.toArgb(),
-//    )
-//
-//    Box(modifier = Modifier.background(Color.White)) {
-//        HeaderEdition(
-//            availableColors = colors,
-//            onColorSelection = {},
-//            outsideClick = {},
-//            visibilityState = true
-//        )
-//    }
-// }
+/** The header options bound to the editor: what the header has now, and the pictures. */
+@Composable
+fun HeaderEditionContent(noteEditorViewModel: NoteEditorViewModel) {
+    val currentStory by noteEditorViewModel.writeopiaManager.currentStory.collectAsState()
+    val headerImages by noteEditorViewModel.headerImages.collectAsState()
+    val header = currentStory.stories[0.0]
+
+    HeaderEditionOptions(
+        availableColors = ColorUtils.headerColors(),
+        selectedColor = header?.decoration?.backgroundColor,
+        onColorSelection = noteEditorViewModel::onHeaderColorSelection,
+        headerImages = headerImages,
+        selectedImageUrl = header?.url,
+        onImageSelection = noteEditorViewModel::onHeaderImageSelection,
+        onGenerateImage = noteEditorViewModel::generateHeaderImage,
+        onApproveImage = noteEditorViewModel::approveHeaderImage,
+        onDiscardImage = noteEditorViewModel::discardHeaderImage,
+    )
+}

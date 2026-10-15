@@ -10,6 +10,7 @@ import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.repository.DocumentRepository
 import io.writeopia.sdk.serialization.extensions.toModel
+import kotlinx.coroutines.CancellationException
 import kotlin.time.Clock
 import kotlin.time.Instant
 import kotlin.time.Duration
@@ -151,8 +152,12 @@ class FolderSync(
 
                 lastSuccessfulSync = syncTime
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
-            // Sync failed, will retry on next sync
+            // Sync failed, will retry on next sync. Said out loud: a silent failure here hides
+            // a device that never syncs.
+            println("Error syncing folder $folderId: ${e.message}")
         }
     }
 }

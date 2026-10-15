@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import io.writeopia.LocalAiRepository
 import io.writeopia.ai.AiClients
 import io.writeopia.ai.AiCommand
+import io.writeopia.ai.HeaderImages
 import io.writeopia.ai.UiConfigurationAiProviderStore
 import io.writeopia.ai.task.AiTaskManager
 import io.writeopia.ai.task.AiTaskType
@@ -145,6 +146,8 @@ class NoteEditorKmpViewModel(
     private val writingAgentStartsCollapsed: Boolean = false,
     /** The workspace tag catalogue. Null where the app has no tags. */
     private val documentTagRepository: DocumentTagRepository? = null,
+    /** The header pictures of the cloud; null when it can't answer right now. */
+    private val resolveHeaderImages: suspend () -> HeaderImages? = { aiClients.headerImages() },
 ) : NoteEditorViewModel,
     ViewModel(),
     BackstackInform by writeopiaManager,
@@ -739,6 +742,56 @@ class NoteEditorKmpViewModel(
     override fun onHeaderClick() {
         if (!isEditable.value) return
         _editHeader.value = true
+        loadHeaderImages()
+    }
+
+    private val headerImagesController = HeaderImagesController(
+        scope = viewModelScope,
+        resolveHeaderImages = resolveHeaderImages,
+        workspaceId = { authRepository.getWorkspace()?.id },
+        documentTitle = { writeopiaManager.documentInfo.value.title },
+        documentText = { writeopiaManager.getDocumentText().take(WritingAgentController.DOCUMENT_TEXT_LIMIT) },
+        onApproved = ::onHeaderImageSelection,
+    )
+
+    override val headerImages: StateFlow<HeaderImagesState> = headerImagesController.state
+
+    /** The pictures of the workspace, fetched again each time the header menu opens. */
+    private fun loadHeaderImages() {
+        headerImagesController.load()
+    }
+
+    override fun generateHeaderImage() {
+        if (!isEditable.value) return
+        headerImagesController.generate()
+    }
+
+    override fun approveHeaderImage() {
+        if (!isEditable.value) return
+        headerImagesController.approve()
+    }
+
+    override fun discardHeaderImage() {
+        headerImagesController.discard()
+    }
+
+    /** A picture in the header replaces its color: the header has one or the other. */
+    override fun onHeaderImageSelection(url: String?) {
+        if (!isEditable.value) return
+
+        writeopiaManager.currentStory.value.stories[0.0]?.let { storyStep ->
+            val action = Action.StoryStateChange(
+                storyStep = storyStep.copy(
+                    url = url,
+                    decoration = storyStep.decoration.copy(
+                        backgroundColor = if (url != null) null else storyStep.decoration.backgroundColor
+                    )
+                ),
+                position = 0.0,
+                preserveFocus = true
+            )
+            writeopiaManager.changeStoryState(action)
+        }
     }
 
     override fun createNewDocument(documentId: String, title: String) {
@@ -971,8 +1024,10 @@ class NoteEditorKmpViewModel(
         if (!isEditable.value) return
 
         writeopiaManager.currentStory.value.stories[0.0]?.let { storyStep ->
+            // A color, or none, takes the place of the picture of the header.
             val action = Action.StoryStateChange(
                 storyStep = storyStep.copy(
+                    url = null,
                     decoration = storyStep.decoration.copy(
                         backgroundColor = color
                     )

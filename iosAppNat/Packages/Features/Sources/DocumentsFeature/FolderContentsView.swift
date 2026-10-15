@@ -525,7 +525,8 @@ private struct DocumentsNavigation: View {
                             isPremium: session.user?.isPremium ?? false,
                             presentations: session.presentationsSource,
                             writingAgent: session.writingAgent,
-                            imageGenerator: session.writingAgent
+                            imageGenerator: session.writingAgent,
+                            headerImages: session.headerImages
                         ) { link in
                             router.path.append(DocumentsRoute.document(id: link.id, title: link.title ?? "Untitled"))
                         }
@@ -1127,14 +1128,26 @@ struct ItemCard: View {
 
     private var card: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // A document with a colored header shows it across the top of the card, with the
-            // title on it, like `HeaderPreviewDrawer` of the Compose app.
-            if let headerColor {
-                coloredHeader(headerColor)
+            // A document with a header, a picture or a color, shows it across the top of the
+            // card, with the title on it, like `HeaderPreviewDrawer` of the Compose app.
+            if let headerImageURL {
+                header {
+                    HeaderImageView(url: headerImageURL)
+                        // A soft fade under the title keeps it readable on any picture.
+                        .overlay {
+                            LinearGradient(
+                                colors: [.clear, WrColors.background.opacity(0.75)],
+                                startPoint: .center,
+                                endPoint: .bottom
+                            )
+                        }
+                }
+            } else if let headerColor {
+                header { headerColor }
             }
 
             VStack(alignment: .leading, spacing: 8) {
-                if headerColor == nil {
+                if !hasHeader {
                     HStack(alignment: .top) {
                         iconImage
                             .font(.title2)
@@ -1167,15 +1180,16 @@ struct ItemCard: View {
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
     }
 
-    private func coloredHeader(_ color: Color) -> some View {
+    private func header<Background: View>(@ViewBuilder background: () -> Background) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
             iconImage
                 .font(.title3)
             titleText
         }
         .padding(14)
-        .frame(maxWidth: .infinity, minHeight: 70, alignment: .bottomLeading)
-        .background(color)
+        .frame(maxWidth: .infinity, minHeight: headerImageURL == nil ? 70 : 96, alignment: .bottomLeading)
+        .background(background())
+        .clipped()
         .overlay(alignment: .topTrailing) {
             badges
                 .padding(8)
@@ -1258,9 +1272,8 @@ struct ItemCard: View {
         switch item {
         case .folder(let folder):
             FolderIconImage(icon: folder.icon, isDropTarget: isDropTarget)
-        case .document:
-            Image(systemName: "doc.text")
-                .foregroundStyle(WrColors.textLighter)
+        case .document(let document):
+            DocumentIconImage(icon: document.icon)
         }
     }
 
@@ -1291,6 +1304,12 @@ struct ItemCard: View {
     private var headerColor: Color? {
         if case .document(let document) = item { document.headerColor.map { Color(argb: $0) } } else { nil }
     }
+
+    private var headerImageURL: URL? {
+        if case .document(let document) = item { document.headerImageURL } else { nil }
+    }
+
+    private var hasHeader: Bool { headerImageURL != nil || headerColor != nil }
 
     @ViewBuilder
     private var footer: some View {

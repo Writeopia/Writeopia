@@ -4,6 +4,7 @@ import io.writeopia.sdk.models.presentation.PresentationPrompt
 import com.google.genai.Client
 import com.google.genai.types.EmbedContentConfig
 import com.google.genai.types.GenerateContentConfig
+import com.google.genai.types.ImageConfig
 import com.google.genai.types.Tool
 import com.google.genai.types.UrlContext
 import io.writeopia.api.genai.model.AiGenerateResponse
@@ -332,9 +333,13 @@ class GenAiService(
      * Asks [imageModel] for one picture of [prompt]. Gemini's image models answer through the
      * same generateContent call as the text ones, with the picture as inline data, and report
      * the tokens of the picture in the usage metadata, so the image counts in the quota like
-     * text does.
+     * text does. [aspectRatio], like "16:9", shapes the picture; null leaves it to the model.
      */
-    suspend fun generateImageWithUsage(prompt: String, modelName: String? = null): ImageGeneration =
+    suspend fun generateImageWithUsage(
+        prompt: String,
+        modelName: String? = null,
+        aspectRatio: String? = null
+    ): ImageGeneration =
         withContext(Dispatchers.IO) {
             try {
                 if (!isAvailable()) {
@@ -346,6 +351,9 @@ class GenAiService(
                 val targetModel = modelName?.takeIf { it.isNotBlank() } ?: imageModel
                 val config = GenerateContentConfig.builder()
                     .responseModalities("TEXT", "IMAGE")
+                    .apply {
+                        if (aspectRatio != null) imageConfig(ImageConfig.builder().aspectRatio(aspectRatio))
+                    }
                     .build()
 
                 val response = getClient().models.generateContent(targetModel, prompt, config)

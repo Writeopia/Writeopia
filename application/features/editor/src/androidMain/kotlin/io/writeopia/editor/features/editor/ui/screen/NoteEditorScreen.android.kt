@@ -60,7 +60,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import io.writeopia.common.utils.colors.ColorUtils
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.dialogs.confirmation.DeleteConfirmationDialog
 import io.writeopia.editor.configuration.ui.HeaderEdition
@@ -371,16 +370,11 @@ internal fun NoteEditorScreen(
             }
 
             val headerEdition by noteEditorViewModel.editHeader.collectAsState()
-            val currentStory by noteEditorViewModel.writeopiaManager.currentStory.collectAsState()
-            val selectedHeaderColor = currentStory.stories[0.0]?.decoration?.backgroundColor
 
             HeaderEdition(
-                modifier = Modifier.fillMaxWidth(),
-                availableColors = ColorUtils.headerColors(),
-                selectedColor = selectedHeaderColor,
-                onColorSelection = noteEditorViewModel::onHeaderColorSelection,
-                outsideClick = noteEditorViewModel::onHeaderEditionCancel,
-                visibilityState = headerEdition
+                noteEditorViewModel = noteEditorViewModel,
+                visibilityState = headerEdition,
+                onDismissRequest = noteEditorViewModel::onHeaderEditionCancel
             )
 
             val showGlobalMenu by noteEditorViewModel.showGlobalMenu.collectAsState()

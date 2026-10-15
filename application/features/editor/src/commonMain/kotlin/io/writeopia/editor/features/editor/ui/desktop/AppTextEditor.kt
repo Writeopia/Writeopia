@@ -16,8 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import io.writeopia.common.utils.colors.ColorUtils
-import io.writeopia.editor.configuration.ui.HeaderEditionOptions
+import io.writeopia.editor.configuration.ui.HeaderEditionContent
 import io.writeopia.editor.features.editor.ui.TextEditor
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.sdk.models.id.GenerateId
@@ -63,8 +62,6 @@ fun AppTextEditor(
         )
 
         val isEditionHeader by viewModel.editHeader.collectAsState()
-        val currentStory by viewModel.writeopiaManager.currentStory.collectAsState()
-        val selectedHeaderColor = currentStory.stories[0.0]?.decoration?.backgroundColor
 
         if (isEditionHeader) {
             Dialog(onDismissRequest = viewModel::onHeaderEditionCancel) {
@@ -74,11 +71,7 @@ fun AppTextEditor(
                 ) {
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    HeaderEditionOptions(
-                        ColorUtils.headerColors(),
-                        selectedHeaderColor,
-                        viewModel::onHeaderColorSelection
-                    )
+                    HeaderEditionContent(viewModel)
 
                     Spacer(modifier = Modifier.height(40.dp))
                 }

@@ -18,4 +18,6 @@ dependencies {
     implementation(libs.google.cloud.storage)
 
     implementation(libs.ktor.client.core)
+
+    testImplementation(libs.kotlin.test)
 }

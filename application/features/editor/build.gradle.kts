@@ -77,6 +77,9 @@ kotlin {
                 implementation(project(":application:features:writing_agent"))
                 implementation(project(":common:endpoints"))
 
+                // The header pictures of the workspace in the header menu.
+                implementation(libs.coil.compose)
+
                 implementation(libs.kotlinx.serialization.json)
                 //
 
