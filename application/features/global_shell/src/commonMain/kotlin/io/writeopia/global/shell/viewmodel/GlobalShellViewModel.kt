@@ -1,6 +1,7 @@
 package io.writeopia.global.shell.viewmodel
 
 import io.writeopia.account.ui.CloudAiUsageState
+import io.writeopia.app.dto.SearchUserApi
 import io.writeopia.common.utils.download.DownloadState
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.controller.LocalAiConfigController
@@ -116,7 +117,9 @@ interface GlobalShellViewModel : FolderController, LocalAiConfigController {
 
     fun deleteAccount(sideEffect: () -> Unit)
 
-    fun addUserToTeam(userEmail: String)
+    fun addUserToTeam(username: String)
+
+    suspend fun searchUsers(workspaceId: String, query: String): List<SearchUserApi>
 
     fun selectWorkspaceToManage(workspaceId: String)
 

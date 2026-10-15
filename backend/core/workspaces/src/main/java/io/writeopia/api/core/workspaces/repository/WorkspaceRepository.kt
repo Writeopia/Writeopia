@@ -132,10 +132,10 @@ internal fun WriteopiaDbBackend.countUsersInWorkspace(workspaceId: String): Long
 
 internal fun WriteopiaDbBackend.getUserInWorkspace(
     workspaceId: String,
-    userEmail: String
+    username: String
 ): WorkspaceUser? =
     this.workspaceToUserQueries
-        .getUserInWorkspace(workspaceId, userEmail)
+        .getUserInWorkspace(workspaceId, username)
         .executeAsOneOrNull()
         ?.let { workspaceToUser ->
             WorkspaceUser(

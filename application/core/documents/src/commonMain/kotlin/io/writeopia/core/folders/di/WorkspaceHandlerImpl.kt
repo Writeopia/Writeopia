@@ -2,6 +2,7 @@
 
 package io.writeopia.core.folders.di
 
+import io.writeopia.app.dto.SearchUserApi
 import io.writeopia.auth.core.data.WorkspaceApi
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.auth.core.manager.WorkspaceHandler
@@ -9,6 +10,7 @@ import io.writeopia.core.folders.sync.ConfigFileWatcher
 import io.writeopia.core.folders.sync.WorkspaceSync
 import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
 import io.writeopia.sdk.models.utils.ResultData
+import io.writeopia.sdk.models.utils.map
 import io.writeopia.sdk.models.workspace.Workspace
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -137,12 +139,12 @@ class WorkspaceHandlerImpl(
         }
     }
 
-    override fun addUserToWorkspace(userEmail: String) {
+    override fun addUserToWorkspace(username: String) {
         coroutineScope.launch {
             val workspaceId = _selectedWorkspaceId.value
 
             if (workspaceId != null) {
-                val result = workspaceApi.addUserToWorkspace(workspaceId, userEmail)
+                val result = workspaceApi.addUserToWorkspace(workspaceId, username)
 
                 if (result is ResultData.Complete) {
                     workspaceApi.refreshUsersInWorkspace(workspaceId)
@@ -150,6 +152,13 @@ class WorkspaceHandlerImpl(
             }
         }
     }
+
+    override suspend fun searchUsers(workspaceId: String, query: String): ResultData<List<SearchUserApi>> = workspaceApi.searchUsers(
+        workspaceId = workspaceId,
+        usernameQuery = query,
+        pageSize = 5
+    )
+        .map { it.users }
 
     override fun changeWorkspaceLocalPath(path: String) {
         coroutineScope.launch(Dispatchers.Default) {

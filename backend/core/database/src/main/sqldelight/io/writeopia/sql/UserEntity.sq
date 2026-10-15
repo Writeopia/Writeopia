@@ -99,11 +99,16 @@ FROM user_entity
 WHERE email = ?
 LIMIT 1;
 
-searchUsersByEmail:
-SELECT id, name, email
+
+searchUsersByUsernameNotInWorkspace:
+SELECT user_entity.id, user_entity.name, user_entity.username
 FROM user_entity
-WHERE email ILIKE '%' || ? || '%' AND status = 'ACTIVE'
-ORDER BY email ASC
+LEFT JOIN workspace_to_user
+  ON workspace_to_user.workspace_id = ? AND workspace_to_user.user_id = user_entity.id
+WHERE user_entity.username ILIKE '%' || ? || '%' ESCAPE '\'
+  AND user_entity.status = 'ACTIVE'
+  AND workspace_to_user.user_id IS NULL
+ORDER BY user_entity.username ASC
 LIMIT ?
 OFFSET ?;
 

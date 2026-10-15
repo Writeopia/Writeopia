@@ -241,7 +241,7 @@ private fun SearchResultItem(
                 color = MaterialTheme.colorScheme.onBackground
             )
             Text(
-                text = user.email,
+                text = "@${user.username}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
             )

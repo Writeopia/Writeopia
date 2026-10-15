@@ -8,7 +8,7 @@ import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.put
-import io.writeopia.api.core.auth.repository.searchUsersByEmail
+import io.writeopia.api.core.auth.repository.searchUsersByUsernameNotInWorkspace
 import io.writeopia.api.core.auth.routing.adminUserFn
 import io.writeopia.api.core.auth.utils.getUserIdFromApiGateway
 import io.writeopia.api.core.workspaces.models.AddUserResult
@@ -35,6 +35,9 @@ import io.writeopia.sql.WriteopiaDbBackend
 import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("WorkspaceRouting")
+private const val DEFAULT_PAGE_SIZE = 20
+private const val DEFAULT_SEARCH_PAGE_SIZE = 5
+private const val MAX_PAGE_SIZE = 100
 
 fun Routing.workspaceRoute(
     apiKey: String?,
@@ -122,20 +125,20 @@ fun Routing.workspaceRoute(
         call.respond(HttpStatusCode.Created, ServerResponse("Workspace created"))
     }
 
-    get("/api/workspace/{workspaceId}/user/{userEmail}") {
+    get("/api/workspace/{workspaceId}/user/{username}") {
         val userId = call.getUserIdFromApiGateway(debugMode) ?: run {
             call.respond(HttpStatusCode.Unauthorized, ServerResponse("Authentication required"))
             return@get
         }
         val workspaceId = call.pathParameters["workspaceId"]
             ?: throw IllegalArgumentException("Workspace id is required")
-        val userEmail = call.pathParameters["userEmail"]
-            ?: throw IllegalArgumentException("User email is required")
+        val username = call.pathParameters["username"]
+            ?: throw IllegalArgumentException("Username is required")
 
         runIfAdmin(userId, workspaceId, writeopiaDb, debugMode) {
             val user = WorkspaceService.getUserInWorkspace(
                 workspaceId = workspaceId,
-                userEmail = userEmail,
+                username = username,
                 writeopiaDb = writeopiaDb
             )
 
@@ -175,8 +178,9 @@ fun Routing.workspaceRoute(
         }
         val workspaceId = call.pathParameters["workspaceId"]
             ?: throw IllegalArgumentException("Workspace id is required")
-        val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
-        val pageSize = call.request.queryParameters["pageSize"]?.toIntOrNull() ?: 20
+        val page = (call.request.queryParameters["page"]?.toIntOrNull() ?: 1).coerceAtLeast(1)
+        val pageSize = (call.request.queryParameters["pageSize"]?.toIntOrNull() ?: DEFAULT_PAGE_SIZE)
+            .coerceIn(1, MAX_PAGE_SIZE)
 
         runIfAdmin(currentUserId, workspaceId, writeopiaDb, debugMode) {
             val paginatedUsers = WorkspaceService
@@ -202,12 +206,16 @@ fun Routing.workspaceRoute(
         }
         val workspaceId = call.pathParameters["workspaceId"]
             ?: throw IllegalArgumentException("Workspace id is required")
-        val emailQuery = call.request.queryParameters["email"] ?: ""
-        val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
-        val pageSize = call.request.queryParameters["pageSize"]?.toIntOrNull() ?: 20
+        val usernameQuery = call.request.queryParameters["username"]
+            ?: call.request.queryParameters["query"]
+            ?: call.request.queryParameters["email"]
+            ?: ""
+        val page = (call.request.queryParameters["page"]?.toIntOrNull() ?: 1).coerceAtLeast(1)
+        val pageSize = (call.request.queryParameters["pageSize"]?.toIntOrNull() ?: DEFAULT_SEARCH_PAGE_SIZE)
+            .coerceIn(1, MAX_PAGE_SIZE)
 
-        if (emailQuery.length < 2) {
-            call.respond(HttpStatusCode.BadRequest, ServerResponse("Email query must be at least 2 characters"))
+        if (usernameQuery.length < 2) {
+            call.respond(HttpStatusCode.BadRequest, ServerResponse("Username query must be at least 2 characters"))
             return@get
         }
 
@@ -215,14 +223,14 @@ fun Routing.workspaceRoute(
             val offset = ((page - 1) * pageSize).toLong()
             val limit = (pageSize + 1).toLong() // Request one extra to check if there's a next page
 
-            val results = writeopiaDb.searchUsersByEmail(emailQuery, limit, offset)
+            val results = writeopiaDb.searchUsersByUsernameNotInWorkspace(workspaceId, usernameQuery, limit, offset)
 
             val hasNextPage = results.size > pageSize
             val users = results.take(pageSize).map { user ->
                 SearchUserApi(
                     id = user.id,
                     name = user.name,
-                    email = user.email
+                    username = user.username,
                 )
             }
 
@@ -243,15 +251,15 @@ fun Routing.workspaceRoute(
             return@post
         }
         println("adding user to workspace")
-        val (userEmail, workspaceId, role) = request
+        val (username, workspaceId, role) = request
 
         runIfAdmin(userId, workspaceId, writeopiaDb, debugMode) {
             val result = WorkspaceService.addUserToWorkspaceSecure(
                 workspaceOwnerId = userId,
-                userEmail,
-                workspaceId,
-                role,
-                writeopiaDb
+                username = username,
+                workspaceId = workspaceId,
+                role = role,
+                writeopiaDb = writeopiaDb
             )
 
             when (result) {
@@ -272,12 +280,12 @@ fun Routing.workspaceRoute(
         val providedKey = if (debugMode) "debug" else call.request.header("X-Admin-Key")
 
         adminUserFn(apiKey, providedKey, debugMode) {
-            val (userEmail, workspaceId, role) = request
+            val (username, workspaceId, role) = request
             val result = WorkspaceService.addUserToWorkspaceAdmin(
-                userEmail,
-                workspaceId,
-                role,
-                writeopiaDb
+                username = username,
+                workspaceId = workspaceId,
+                role = role,
+                writeopiaDb = writeopiaDb
             )
 
             if (result) {

@@ -10,6 +10,7 @@ import io.writeopia.ai.AiClients
 import io.writeopia.ai.UiConfigurationAiProviderStore
 import io.writeopia.model.AiProvider
 import io.writeopia.account.ui.CloudAiUsageState
+import io.writeopia.app.dto.SearchUserApi
 import io.writeopia.api.LocalAiAutoConfigApi
 import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.auth.core.manager.AuthRepository
@@ -881,8 +882,13 @@ class GlobalShellKmpViewModel(
         }
     }
 
-    override fun addUserToTeam(userEmail: String) {
-        workspaceHandler.addUserToWorkspace(userEmail)
+    override fun addUserToTeam(username: String) {
+        workspaceHandler.addUserToWorkspace(username)
+    }
+
+    override suspend fun searchUsers(workspaceId: String, query: String): List<SearchUserApi> {
+        val result = workspaceHandler.searchUsers(workspaceId, query)
+        return if (result is io.writeopia.sdk.models.utils.ResultData.Complete) result.data else emptyList()
     }
 
     override fun selectWorkspaceToManage(workspaceId: String) {
