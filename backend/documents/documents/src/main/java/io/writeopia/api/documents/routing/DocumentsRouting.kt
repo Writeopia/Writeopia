@@ -24,6 +24,7 @@ import io.writeopia.api.documents.documents.repository.getPresentationById
 import io.writeopia.api.documents.documents.repository.getPresentationsByDocumentId
 import io.writeopia.api.documents.documents.repository.searchPresentations
 import io.writeopia.api.documents.documents.repository.getDocumentsByParentId
+import io.writeopia.api.documents.documents.repository.getDocumentsPreviewByParentId
 import io.writeopia.api.documents.documents.repository.getFoldersByParentId
 import io.writeopia.api.documents.documents.repository.getIdsByParentId
 import io.writeopia.api.documents.documents.repository.getSyncEventsAfterTime
@@ -301,6 +302,63 @@ fun Routing.documentsRoute(
                 )
             } catch (e: Exception) {
                 logger.error("Error loading folder contents - folderId: $folderId, workspaceId: $workspaceId", e)
+                call.respond(
+                    status = HttpStatusCode.InternalServerError,
+                    message = "${e.message}"
+                )
+            }
+        }
+    }
+
+    // The contents of a folder for the web app: each document carries only its first story
+    // steps (7 unless `steps` says otherwise), enough for a preview. The full document is
+    // loaded when it is opened. Scoped to the workspace, the root included.
+    get("/api/docs/workspace/{workspaceId}/folder/{folderId}/contents/preview") {
+        val userId = call.requirePremiumUserId(writeopiaDb, debug) ?: return@get
+        val folderId = call.pathParameters["folderId"]!!
+        val workspaceId = call.pathParameters["workspaceId"] ?: ""
+
+        val stepsParam = call.request.queryParameters["steps"]
+        val steps = stepsParam?.toIntOrNull() ?: DEFAULT_PREVIEW_STEPS
+        if ((stepsParam != null && stepsParam.toIntOrNull() == null) || steps !in 0..MAX_PREVIEW_STEPS) {
+            call.respond(
+                status = HttpStatusCode.BadRequest,
+                message = "steps must be a number from 0 to $MAX_PREVIEW_STEPS"
+            )
+            return@get
+        }
+
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            try {
+                val folders = writeopiaDb.getFoldersByParentId(folderId, workspaceId)
+                val documents = writeopiaDb.getDocumentsPreviewByParentId(folderId, workspaceId, steps)
+
+                val userFavoriteIds = DocumentsService.getUserFavoriteDocumentIds(
+                    userId, workspaceId, writeopiaDb
+                ).toSet()
+
+                val documentsWithFavorites = documents.map { doc ->
+                    doc.copy(favorite = userFavoriteIds.contains(doc.id))
+                }
+
+                logger.info(
+                    "Folder contents preview - folderId: $folderId, workspaceId: $workspaceId, steps: $steps, " +
+                        "returning ${folders.size} subfolders and ${documentsWithFavorites.size} documents"
+                )
+
+                call.respond(
+                    status = HttpStatusCode.OK,
+                    message = FolderContentResponse(
+                        folders = folders.map { it.toApi() },
+                        documents = documentsWithFavorites.map { it.toApi() },
+                        tags = writeopiaDb.allDocumentTagsByWorkspaceId(workspaceId).map { it.toApi() },
+                    )
+                )
+            } catch (e: Exception) {
+                logger.error(
+                    "Error loading folder contents preview - folderId: $folderId, workspaceId: $workspaceId",
+                    e
+                )
                 call.respond(
                     status = HttpStatusCode.InternalServerError,
                     message = "${e.message}"
@@ -1376,3 +1434,8 @@ fun Routing.documentsRoute(
         }
     }
 }
+
+/** Story steps per document in the folder contents preview, unless the request asks otherwise. */
+private const val DEFAULT_PREVIEW_STEPS = 7
+
+private const val MAX_PREVIEW_STEPS = 100

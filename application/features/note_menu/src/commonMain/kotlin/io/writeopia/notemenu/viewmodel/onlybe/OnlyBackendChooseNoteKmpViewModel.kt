@@ -531,7 +531,7 @@ internal class OnlyBackendChooseNoteKmpViewModel(
 
             if (result is ResultData.Complete) {
                 // Fetch the contents of the newly created folder
-                documentsApi.getFolderContents(result.data.id, workspace.id)
+                documentsApi.getFolderContentsPreview(result.data.id, workspace.id)
                 // Refresh the parent folder contents
                 loadFolderContents()
             }
@@ -550,7 +550,7 @@ internal class OnlyBackendChooseNoteKmpViewModel(
             )
 
             if (result is ResultData.Complete) {
-                documentsApi.getFolderContents(result.data.id, workspace.id)
+                documentsApi.getFolderContentsPreview(result.data.id, workspace.id)
                 loadFolderContents()
             }
         }

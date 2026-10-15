@@ -70,6 +70,14 @@ DELETE
 FROM story_step_entity
 WHERE id IN ?;
 
+-- The first top-level steps of a document, for previews.
+selectTopLevelByDocumentIdLimited:
+SELECT *
+FROM story_step_entity
+WHERE document_id = ? AND parent_id IS NULL
+ORDER BY position
+LIMIT ?;
+
 selectByParentId:
 SELECT *
 FROM story_step_entity

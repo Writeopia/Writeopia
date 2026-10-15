@@ -22,6 +22,7 @@ import io.writeopia.sql.Document_tag_entity
 import io.writeopia.sql.FolderEntityQueries
 import io.writeopia.sql.Folder_entity
 import io.writeopia.sql.StoryStepEntityQueries
+import io.writeopia.sql.Story_step_entity
 import io.writeopia.sql.UserFavoriteEntityQueries
 import java.math.BigDecimal
 import kotlin.time.Clock
@@ -203,45 +204,45 @@ class DocumentSqlBeDao(
     private fun loadChildSteps(parentId: String): List<StoryStep> {
         return storyStepQueries?.selectByParentId(parentId)
             ?.executeAsList()
-            ?.map { entity ->
-                val childSteps = if (entity.has_inner_steps) {
-                    loadChildSteps(entity.id)
-                } else {
-                    emptyList()
-                }
+            ?.map { entity -> entity.toStoryStep() }
+            ?: emptyList()
+    }
 
-                StoryStep(
-                    id = entity.id,
-                    localId = entity.local_id,
-                    type = StoryTypes.fromNumber(entity.type).type,
-                    parentId = entity.parent_id,
-                    url = entity.url,
-                    path = entity.path,
-                    text = entity.text,
-                    checked = entity.checked,
-                    steps = childSteps,
-                    decoration = Decoration(
-                        backgroundColor = entity.background_color,
-                    ),
-                    tags = entity.tags
-                        .split(",")
-                        .filter { it.isNotEmpty() }
-                        .mapNotNull(TagInfo.Companion::fromString)
-                        .toSet(),
-                    spans = entity.spans
-                        .split(",")
-                        .filter { it.isNotEmpty() }
-                        .map(SpanInfo::fromString)
-                        .toSet(),
-                    documentLink = entity.link_to_document?.let { docId ->
-                        val title = documentQueries?.selectTitleByDocumentId(docId)
-                            ?.executeAsOneOrNull()
-                        DocumentLink(docId, title)
-                    },
-                    dbPosition = entity.position.toDouble(),
-                    lastUpdatedAt = entity.last_updated_at
-                )
-            } ?: emptyList()
+    /** Maps a step row, loading its nested steps recursively. */
+    private fun Story_step_entity.toStoryStep(): StoryStep {
+        val childSteps = if (has_inner_steps) loadChildSteps(id) else emptyList()
+
+        return StoryStep(
+            id = id,
+            localId = local_id,
+            type = StoryTypes.fromNumber(type).type,
+            parentId = parent_id,
+            url = url,
+            path = path,
+            text = text,
+            checked = checked,
+            steps = childSteps,
+            decoration = Decoration(
+                backgroundColor = background_color,
+            ),
+            tags = tags
+                .split(",")
+                .filter { it.isNotEmpty() }
+                .mapNotNull(TagInfo.Companion::fromString)
+                .toSet(),
+            spans = spans
+                .split(",")
+                .filter { it.isNotEmpty() }
+                .map(SpanInfo::fromString)
+                .toSet(),
+            documentLink = link_to_document?.let { docId ->
+                val title = documentQueries?.selectTitleByDocumentId(docId)
+                    ?.executeAsOneOrNull()
+                DocumentLink(docId, title)
+            },
+            dbPosition = position.toDouble(),
+            lastUpdatedAt = last_updated_at
+        )
     }
 
     /**
@@ -1000,6 +1001,54 @@ class DocumentSqlBeDao(
             ?.map { it.toModel(0) }
             ?: emptyList()
     }
+
+    /**
+     * The documents of a folder with only their first [stepsPerDocument] top-level steps (nested
+     * steps of those come along). Meant for listings, like the web app's folder view, that show
+     * a preview and load the full document only when it is opened.
+     */
+    fun loadDocumentsPreviewByParentId(
+        parentId: String,
+        workspaceId: String,
+        stepsPerDocument: Int
+    ): List<Document> {
+        val documents = documentQueries?.selectByParentIdAndWorkspace(parentId, workspaceId)
+            ?.executeAsList()
+            ?: return emptyList()
+
+        return attachTagIds(
+            documents.map { entity ->
+                val content = if (stepsPerDocument > 0) {
+                    storyStepQueries?.selectTopLevelByDocumentIdLimited(entity.id, stepsPerDocument.toLong())
+                        ?.executeAsList()
+                        ?.associate { step -> step.position.toDouble() to step.toStoryStep() }
+                        ?: emptyMap()
+                } else {
+                    emptyMap()
+                }
+
+                Document(
+                    id = entity.id,
+                    title = entity.title,
+                    content = content,
+                    createdAt = Instant.fromEpochMilliseconds(entity.created_at),
+                    lastUpdatedAt = Instant.fromEpochMilliseconds(entity.last_updated_at),
+                    lastSyncedAt = Instant.fromEpochMilliseconds(entity.last_synced),
+                    workspaceId = entity.workspace_id,
+                    favorite = entity.favorite,
+                    parentId = entity.parent_document_id,
+                    icon = entity.icon?.let { MenuItem.Icon(it, entity.icon_tint) },
+                    isLocked = entity.is_locked
+                )
+            }
+        )
+    }
+
+    fun loadFoldersByParentId(parentId: String, workspaceId: String): List<Folder> =
+        foldersQueries?.selectChildrenFolderByWorkspace(parentId, workspaceId)
+            ?.executeAsList()
+            ?.map { it.toModel(0) }
+            ?: emptyList()
 
     fun loadFoldersByParentId(parentId: String): List<Folder> {
         return foldersQueries?.selectChildrenFolder(parentId)

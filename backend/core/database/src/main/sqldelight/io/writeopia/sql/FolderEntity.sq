@@ -55,6 +55,12 @@ SELECT *
 FROM folder_entity
 WHERE folder_entity.parent_id = ? AND deleted = FALSE;
 
+-- Scoped to the workspace: the root is shared by every workspace.
+selectChildrenFolderByWorkspace:
+SELECT *
+FROM folder_entity
+WHERE folder_entity.parent_id = ? AND workspace_id = ? AND deleted = FALSE;
+
 selectFolderById:
 SELECT *
 FROM folder_entity
