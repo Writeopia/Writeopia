@@ -220,7 +220,31 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
     }
 
     public func save(_ document: WrDocument) async throws {
-        try store(document)
+        try store(keepingStoredIcon(document))
+    }
+
+    /// The editor's copy with the icon that is stored: the icon is chosen in the sidebar, maybe
+    /// while the document is open, and saving the editor's older copy must not undo it.
+    func keepingStoredIcon(_ document: WrDocument) throws -> WrDocument {
+        guard let stored = try storedDocument(id: document.id) else { return document }
+        var document = document
+        document.icon = stored.icon
+        return document
+    }
+
+    public func updateDocumentIcon(id: String, icon: IconInfo?) async throws {
+        guard let stored = try storedDocument(id: id), !stored.deleted else { throw APIError.notFound }
+        // Newer than its last sync, so the next sync sends it, like the Compose app.
+        let changedAt = max(Date.nowMillis, (stored.lastSyncedAt ?? 0) + 1, stored.lastUpdatedAt + 1)
+        try db.run(
+            "UPDATE document SET icon = ?, icon_tint = ?, last_updated_at = ? WHERE id = ?",
+            [.text(icon?.label), .integer(icon?.tint.map(Int64.init)), .integer(changedAt), .text(id)]
+        )
+        NotificationCenter.default.post(
+            name: .documentIconChanged,
+            object: id,
+            userInfo: icon.map { ["icon": $0] } ?? [:]
+        )
     }
 
     /// The private space has nothing to sync, so the document is removed for good.
@@ -359,6 +383,7 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
     // MARK: - StepStore
 
     public func saveEdit(document: WrDocument, changedSteps: [StoryStep], deletedStepIds: [String]) throws {
+        let document = try keepingStoredIcon(document)
         try db.transaction {
             try writeMetadata(document)
             for step in changedSteps {

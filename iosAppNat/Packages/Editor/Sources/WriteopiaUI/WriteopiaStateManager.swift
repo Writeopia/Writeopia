@@ -277,6 +277,10 @@ public final class WriteopiaStateManager {
     /// The header pictures of the workspace; nil where the cloud can't draw them.
     public var headerImages: HeaderImagesModel?
 
+    /// The icon of the document, shown on the left of the title like `HeaderDrawer` of the
+    /// Compose app. It's chosen in the sidebar, not in the editor.
+    public var documentIcon: IconInfo?
+
     /// Backspace with the cursor at the start of a step.
     public func onErase(stepId: String) {
         dismissAiSuggestions()

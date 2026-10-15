@@ -553,6 +553,10 @@ public struct NoteEditorView: View {
             .frame(minWidth: 800, minHeight: 560)
         }
         #endif
+        .onReceive(NotificationCenter.default.publisher(for: .documentIconChanged)) { note in
+            guard let id = note.object as? String else { return }
+            viewModel.documentIconChanged(id: id, icon: note.userInfo?["icon"] as? IconInfo)
+        }
         .onAppear { openEditors?.opened() }
         .onDisappear {
             openEditors?.closed()

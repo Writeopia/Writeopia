@@ -199,7 +199,13 @@ private struct FolderTreeLevel: View {
                 }
             }
             ForEach(sortedDocuments) { document in
-                row(title: document.displayTitle, icon: { Image(systemName: "doc.text") }) {
+                row(
+                    title: document.displayTitle,
+                    icon: { DocumentIconImage(icon: document.icon, defaultColor: .secondary) },
+                    iconButton: {
+                        DocumentIconButton(icon: document.icon) { icon in changeIcon(of: document.id, to: icon) }
+                    }
+                ) {
                     open(.document(document))
                 }
             }
@@ -232,6 +238,20 @@ private struct FolderTreeLevel: View {
         toggle: @escaping () -> Void = {},
         action: @escaping () -> Void
     ) -> some View {
+        row(title: title, icon: icon, iconButton: { EmptyView() }, hasIconButton: false, isExpanded: isExpanded, toggle: toggle, action: action)
+    }
+
+    /// A row whose icon is a button of its own (the icon picker of a document): it sits before
+    /// the title, outside the button that opens the row, so a click on it doesn't open the row.
+    private func row<Icon: View, IconButton: View>(
+        title: String,
+        @ViewBuilder icon: () -> Icon,
+        @ViewBuilder iconButton: () -> IconButton,
+        hasIconButton: Bool = true,
+        isExpanded: Bool? = nil,
+        toggle: @escaping () -> Void = {},
+        action: @escaping () -> Void
+    ) -> some View {
         HStack(spacing: 4) {
             // Expands a folder; documents keep the space so titles line up.
             Button(action: toggle) {
@@ -247,20 +267,35 @@ private struct FolderTreeLevel: View {
             .disabled(isExpanded == nil)
             .accessibilityLabel(isExpanded == true ? "Collapse" : "Expand")
 
-            Button(action: action) {
-                Label {
+            if hasIconButton {
+                iconButton()
+                    .font(.subheadline)
+
+                Button(action: action) {
                     Text(title.isEmpty ? String(localized: "Untitled") : title)
                         .lineLimit(1)
                         .foregroundStyle(WrColors.textLight)
-                } icon: {
-                    icon()
-                        .foregroundStyle(.secondary)
+                        .font(.subheadline)
+                        .frame(maxWidth: .infinity, minHeight: 32, alignment: .leading)
+                        .contentShape(Rectangle())
                 }
-                .font(.subheadline)
-                .frame(maxWidth: .infinity, minHeight: 32, alignment: .leading)
-                .contentShape(Rectangle())
+                .buttonStyle(.plain)
+            } else {
+                Button(action: action) {
+                    Label {
+                        Text(title.isEmpty ? String(localized: "Untitled") : title)
+                            .lineLimit(1)
+                            .foregroundStyle(WrColors.textLight)
+                    } icon: {
+                        icon()
+                            .foregroundStyle(.secondary)
+                    }
+                    .font(.subheadline)
+                    .frame(maxWidth: .infinity, minHeight: 32, alignment: .leading)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
         }
         .padding(.leading, CGFloat(depth) * 14 + 4)
     }
@@ -268,5 +303,16 @@ private struct FolderTreeLevel: View {
     private func load() async {
         guard let loaded = try? await session.documents.folderContents(folderId: parentId) else { return }
         contents = loaded
+    }
+
+    /// Shown here right away; the list of the folder reloads to show it on the card too.
+    private func changeIcon(of documentId: String, to icon: IconInfo?) {
+        if let index = contents.documents.firstIndex(where: { $0.id == documentId }) {
+            contents.documents[index].icon = icon
+        }
+        Task {
+            try? await session.documents.updateDocumentIcon(id: documentId, icon: icon)
+            router.contentsChanged()
+        }
     }
 }

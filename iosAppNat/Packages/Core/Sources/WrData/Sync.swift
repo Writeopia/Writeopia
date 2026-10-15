@@ -476,6 +476,13 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
         try await local.folder(id: id)
     }
 
+    /// Stored here and sent with the next sync of the document, which resolves it against the
+    /// backend copy, like the Compose app: sending the whole document right away could put an
+    /// older copy of its content over a newer one.
+    public func updateDocumentIcon(id: String, icon: IconInfo?) async throws {
+        try await local.updateDocumentIcon(id: id, icon: icon)
+    }
+
     /// Stored here first; when the backend can't be reached, the next sync of the parent folder
     /// sends it (it's newer than its last sync).
     @discardableResult
@@ -504,6 +511,8 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
         if let stored = try local.storedDocument(id: document.id) {
             document.lastSyncedAt = max(stored.lastSyncedAt ?? 0, document.lastSyncedAt ?? 0)
             document.deleted = stored.deleted
+            // Chosen in the sidebar, maybe while the editor had the document open.
+            document.icon = stored.icon
         }
         document.workspaceId = workspaceId
         try local.store(document)
@@ -566,6 +575,7 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
         if let stored = try local.storedDocument(id: document.id) {
             document.lastSyncedAt = max(stored.lastSyncedAt ?? 0, document.lastSyncedAt ?? 0)
             document.deleted = stored.deleted
+            document.icon = stored.icon
         }
         document.workspaceId = workspaceId
         try local.saveEdit(document: document, changedSteps: changedSteps, deletedStepIds: deletedStepIds)

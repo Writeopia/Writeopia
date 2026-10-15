@@ -662,11 +662,19 @@ public final class NoteEditorViewModel {
         }
     }
 
+    /// The sidebar gave the document another icon while it's open: it shows by the title now.
+    public func documentIconChanged(id: String, icon: IconInfo?) {
+        guard id == documentId else { return }
+        loadedDocument?.icon = icon
+        writeopiaManager.documentIcon = icon
+    }
+
     // MARK: - Persistence and sync
 
     private func show(_ document: WrDocument) {
         loadedDocument = document
         tagIds = document.tagIds
+        writeopiaManager.documentIcon = document.icon
         writeopiaManager.loadDocument(document)
         changeCountAtLoad = writeopiaManager.changeCount
         savedSteps = Dictionary(writeopiaManager.documentContent.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })

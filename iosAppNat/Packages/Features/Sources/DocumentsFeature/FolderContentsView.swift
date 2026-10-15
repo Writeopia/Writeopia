@@ -1272,9 +1272,8 @@ struct ItemCard: View {
         switch item {
         case .folder(let folder):
             FolderIconImage(icon: folder.icon, isDropTarget: isDropTarget)
-        case .document:
-            Image(systemName: "doc.text")
-                .foregroundStyle(WrColors.textLighter)
+        case .document(let document):
+            DocumentIconImage(icon: document.icon)
         }
     }
 

@@ -240,15 +240,26 @@ struct TitleDrawer: View {
     }
 
     private var titleText: some View {
-        StepTextView(step: step, manager: manager)
-            .overlay(alignment: .topLeading) {
-                if (step.text ?? "").isEmpty {
-                    Text("Untitled")
-                        .font(manager.fontFamily.font(size: 34, weight: .bold))
-                        .foregroundStyle(.quaternary)
-                        .allowsHitTesting(false)
-                }
+        HStack(alignment: .center, spacing: 10) {
+            // The icon of the document, chosen in the sidebar, like `HeaderDrawer` of the SDK.
+            if let icon = manager.documentIcon {
+                DocumentIconImage(icon: icon, defaultColor: .primary)
+                    .font(.system(size: 30, weight: .regular))
+                    .frame(width: 40)
+                    .transition(.opacity)
             }
+
+            StepTextView(step: step, manager: manager)
+                .overlay(alignment: .topLeading) {
+                    if (step.text ?? "").isEmpty {
+                        Text("Untitled")
+                            .font(manager.fontFamily.font(size: 34, weight: .bold))
+                            .foregroundStyle(.quaternary)
+                            .allowsHitTesting(false)
+                    }
+                }
+        }
+            .animation(.snappy, value: manager.documentIcon)
             // In a slide the title lines up with the text below, which has no gutter.
             .padding(.leading, isSlideLayout ? 4 : EditorLayout.gutter + 4)
             .padding(.trailing, 12)
