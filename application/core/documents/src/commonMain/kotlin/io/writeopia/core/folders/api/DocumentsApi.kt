@@ -6,6 +6,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
+import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
@@ -233,6 +234,27 @@ class DocumentsApi(
             ResultData.Complete(response.body<FolderContentResponse>())
         } else {
             println("error getting folder contents: $response")
+            ResultData.Error()
+        }
+    }
+
+    /**
+     * The contents of a folder with each document carrying only its first [steps] story steps,
+     * enough for a preview. Used by the web app, which loads a full document when it is opened.
+     */
+    suspend fun getFolderContentsPreview(
+        folderId: String,
+        workspaceId: String,
+        steps: Int = DEFAULT_FOLDER_PREVIEW_STEPS
+    ): ResultData<FolderContentResponse> {
+        val response = client.get("$baseUrl/api/docs/workspace/$workspaceId/folder/$folderId/contents/preview") {
+            parameter("steps", steps)
+        }
+
+        return if (response.status.isSuccess()) {
+            ResultData.Complete(response.body<FolderContentResponse>())
+        } else {
+            println("error getting folder contents preview: $response")
             ResultData.Error()
         }
     }
@@ -537,6 +559,11 @@ class DocumentsApi(
         }
     } catch (e: Exception) {
         GenerateSummaryApiResult.Error(e.message ?: "Network or deserialization error")
+    }
+
+    companion object {
+        /** Story steps per document when a folder's contents are loaded for a preview. */
+        const val DEFAULT_FOLDER_PREVIEW_STEPS = 7
     }
 }
 

@@ -61,11 +61,10 @@ class FolderSync(
             val now = Clock.System.now()
             if (!force && now - lastSuccessfulSync < minSyncInternal) return
 
-            val existingFolder = folderRepository.getFolderById(folderId)
-
-            // Use the existing folder's lastSyncedAt, or DISTANT_PAST if folder doesn't exist
-            // We don't create a fallback folder to avoid creating unwanted "root" folders
-            val lastSync = existingFolder?.lastSyncedAt
+            // The contents watermark, not the folder's lastSyncedAt: a folder received inside its
+            // parent is stamped as synced, but its documents were never fetched. The root keeps
+            // its watermark the same way, without needing a folder row.
+            val lastSync = folderRepository.getContentSyncedAt(folderId, workspaceId)
 
             // First, receive the documents and subfolders from the backend.
             val response = documentsApi.getFolderNewData(
@@ -142,6 +141,10 @@ class FolderSync(
                 tagsNotSent.forEach { tag ->
                     documentTagRepository?.upsertTag(tag.copy(lastSyncedAt = syncTime))
                 }
+
+                // The contents of this folder are now on this device. The watermark is the time
+                // taken before the request, so whatever changed while it ran comes again next time.
+                folderRepository.setContentSyncedAt(folderId, workspaceId, now)
 
                 documentRepository.refreshDocuments()
                 folderRepository.refreshFolders()

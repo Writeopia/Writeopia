@@ -14,7 +14,9 @@ import kotlinx.coroutines.flow.asStateFlow
  * Both the sidebar and center menu can observe this data source.
  */
 class MenuItemsRepository(
-    private val documentsApi: DocumentsApi
+    private val documentsApi: DocumentsApi,
+    /** Story steps each document brings when a folder is loaded; the rest comes on opening it. */
+    private val previewSteps: Int = DocumentsApi.DEFAULT_FOLDER_PREVIEW_STEPS,
 ) {
     private val _menuItemsPerFolderId = MutableStateFlow<Map<String, List<MenuItem>>>(emptyMap())
     val menuItemsPerFolderId: StateFlow<Map<String, List<MenuItem>>> = _menuItemsPerFolderId.asStateFlow()
@@ -23,7 +25,7 @@ class MenuItemsRepository(
         folderId: String,
         workspaceId: String
     ): ResultData<List<MenuItem>> {
-        val result = documentsApi.getFolderContents(folderId, workspaceId)
+        val result = documentsApi.getFolderContentsPreview(folderId, workspaceId, previewSteps)
 
         return if (result is ResultData.Complete) {
             val contents = result.data

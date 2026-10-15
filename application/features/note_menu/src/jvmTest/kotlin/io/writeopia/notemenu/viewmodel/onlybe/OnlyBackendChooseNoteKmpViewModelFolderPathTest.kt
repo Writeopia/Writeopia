@@ -44,7 +44,7 @@ class OnlyBackendChooseNoteKmpViewModelFolderPathTest {
     fun setUp() {
         Dispatchers.setMain(UnconfinedTestDispatcher())
         coEvery { authRepository.getWorkspace() } returns workspace
-        coEvery { documentsApi.getFolderContents(any(), any()) } returns
+        coEvery { documentsApi.getFolderContentsPreview(any(), any(), any()) } returns
             ResultData.Complete(FolderContentResponse())
     }
 
@@ -67,11 +67,11 @@ class OnlyBackendChooseNoteKmpViewModelFolderPathTest {
     fun `when the backend fails the path falls back to the folders already visited`() = runBlocking {
         coEvery { documentsApi.getFolderPath("c", workspace.id) } returns ResultData.Error()
         val repository = MenuItemsRepository(documentsApi)
-        coEvery { documentsApi.getFolderContents("b", workspace.id) } returns
+        coEvery { documentsApi.getFolderContentsPreview("b", workspace.id, any()) } returns
             ResultData.Complete(FolderContentResponse(folders = listOf(path[2].toApi())))
-        coEvery { documentsApi.getFolderContents("a", workspace.id) } returns
+        coEvery { documentsApi.getFolderContentsPreview("a", workspace.id, any()) } returns
             ResultData.Complete(FolderContentResponse(folders = listOf(path[1].toApi())))
-        coEvery { documentsApi.getFolderContents(Folder.ROOT_PATH, workspace.id) } returns
+        coEvery { documentsApi.getFolderContentsPreview(Folder.ROOT_PATH, workspace.id, any()) } returns
             ResultData.Complete(FolderContentResponse(folders = listOf(path[0].toApi())))
         // The user opened a, then b, before landing in c.
         repository.loadFolderContents(Folder.ROOT_PATH, workspace.id)

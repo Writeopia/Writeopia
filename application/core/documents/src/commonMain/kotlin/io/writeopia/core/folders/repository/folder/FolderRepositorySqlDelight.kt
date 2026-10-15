@@ -99,6 +99,13 @@ class FolderRepositorySqlDelight(
         folderDao.refreshFolders()
     }
 
+    override suspend fun getContentSyncedAt(folderId: String, workspaceId: String): Instant? =
+        folderDao.getContentSyncedAt(folderId, workspaceId)?.let(Instant::fromEpochMilliseconds)
+
+    override suspend fun setContentSyncedAt(folderId: String, workspaceId: String, contentSyncedAt: Instant) {
+        folderDao.setContentSyncedAt(folderId, workspaceId, contentSyncedAt.toEpochMilliseconds())
+    }
+
     override suspend fun moveToFolder(documentId: String, parentId: String) {
         folderDao.moveToFolder(documentId = documentId, parentId = parentId)
         refreshFolders()

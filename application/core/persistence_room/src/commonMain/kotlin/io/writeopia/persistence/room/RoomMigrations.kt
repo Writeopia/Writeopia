@@ -78,3 +78,20 @@ val MIGRATION_32_33 = object : Migration(32, 33) {
         )
     }
 }
+
+// When this device last received the contents of each folder, the root included. Starts
+// empty, so every folder fetches its contents again once.
+val MIGRATION_33_34 = object : Migration(33, 34) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS FOLDER_CONTENT_SYNC_TABLE (
+                folder_id TEXT NOT NULL,
+                workspace_id TEXT NOT NULL,
+                content_synced_at INTEGER NOT NULL,
+                PRIMARY KEY(folder_id, workspace_id)
+            )
+            """.trimIndent()
+        )
+    }
+}

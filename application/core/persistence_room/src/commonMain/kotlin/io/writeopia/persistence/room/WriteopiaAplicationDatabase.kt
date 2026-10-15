@@ -13,6 +13,7 @@ import io.writeopia.persistence.room.data.daos.UiConfigurationRoomDao
 import io.writeopia.persistence.room.data.daos.UserDao
 import io.writeopia.persistence.room.data.daos.WorkspaceDao
 import io.writeopia.persistence.room.data.entities.DocumentTagRoomEntity
+import io.writeopia.persistence.room.data.entities.FolderContentSyncEntity
 import io.writeopia.persistence.room.data.entities.FolderEntity
 import io.writeopia.persistence.room.data.entities.NotesConfigurationEntity
 import io.writeopia.persistence.room.data.entities.TokenEntity
@@ -44,12 +45,13 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<WriteopiaApplicat
         DocumentTagRoomEntity::class,
         NotesConfigurationEntity::class,
         FolderEntity::class,
+        FolderContentSyncEntity::class,
         UiConfigurationRoomEntity::class,
         UserEntity::class,
         TokenEntity::class,
         WorkspaceEntity::class
     ],
-    version = 33,
+    version = 34,
     exportSchema = false
 )
 @TypeConverters(IdListConverter::class)
@@ -91,7 +93,7 @@ abstract class WriteopiaApplicationDatabase : RoomDatabase() {
         ): WriteopiaApplicationDatabase =
             databaseBuilder
 //                    .createFromAsset("WriteopiaDatabase.db")
-                .addMigrations(MIGRATION_29_30, MIGRATION_30_31, MIGRATION_31_32, MIGRATION_32_33)
+                .addMigrations(MIGRATION_29_30, MIGRATION_30_31, MIGRATION_31_32, MIGRATION_32_33, MIGRATION_33_34)
                 .fallbackToDestructiveMigration(dropAllTables = true)
                 .build()
                 .also { database ->

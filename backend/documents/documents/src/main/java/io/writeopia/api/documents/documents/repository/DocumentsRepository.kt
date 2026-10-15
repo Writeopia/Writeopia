@@ -96,6 +96,16 @@ suspend fun WriteopiaDbBackend.getFolderById(id: String = "test", workspaceId: S
 suspend fun WriteopiaDbBackend.getIdsByParentId(parentId: String = "root"): List<String> =
     getDocumentDaoFn().loadDocumentIdsByParentId(parentId)
 
+/** The documents of a folder with only their first [stepsPerDocument] top-level steps. */
+fun WriteopiaDbBackend.getDocumentsPreviewByParentId(
+    parentId: String,
+    workspaceId: String,
+    stepsPerDocument: Int
+): List<Document> = getDocumentDaoFn().loadDocumentsPreviewByParentId(parentId, workspaceId, stepsPerDocument)
+
+fun WriteopiaDbBackend.getFoldersByParentId(parentId: String, workspaceId: String): List<Folder> =
+    getDocumentDaoFn().loadFoldersByParentId(parentId, workspaceId)
+
 fun WriteopiaDbBackend.getFoldersByParentId(parentId: String = "root"): List<Folder> =
     getDocumentDaoFn().loadFoldersByParentId(parentId)
 

@@ -39,4 +39,9 @@ interface FolderCommonDao {
      * Use this to find folders that need to be synced to backend for deletion.
      */
     suspend fun getSoftDeletedByWorkspace(workspaceId: String): List<Folder>
+
+    /** When this device last received the contents of the folder, in epoch milliseconds. */
+    suspend fun getContentSyncedAt(folderId: String, workspaceId: String): Long?
+
+    suspend fun setContentSyncedAt(folderId: String, workspaceId: String, contentSyncedAt: Long)
 }

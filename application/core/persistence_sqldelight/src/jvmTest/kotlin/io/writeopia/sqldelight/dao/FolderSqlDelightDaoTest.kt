@@ -10,6 +10,7 @@ import io.writeopia.app.sql.FolderEntity
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.ExperimentalTime
@@ -44,6 +45,23 @@ class FolderSqlDelightDaoTest {
         val outdated = dao.selectOutdatedByWorkspaceId(workspaceId).map { it.id }.sorted()
 
         assertEquals(listOf("changed", "never"), outdated)
+    }
+
+    @Test
+    fun `each folder keeps its own contents watermark per workspace, the root included`() = runTest {
+        val dao = FolderSqlDelightDao(createDatabase(DriverFactory(), JdbcSqliteDriver.IN_MEMORY))
+
+        assertNull(dao.getContentSyncedAt("root", workspaceId))
+
+        dao.setContentSyncedAt("root", workspaceId, 100L)
+        dao.setContentSyncedAt("folder", workspaceId, 200L)
+        dao.setContentSyncedAt("root", "otherWs", 300L)
+        dao.setContentSyncedAt("root", workspaceId, 400L)
+
+        assertEquals(400L, dao.getContentSyncedAt("root", workspaceId))
+        assertEquals(200L, dao.getContentSyncedAt("folder", workspaceId))
+        assertEquals(300L, dao.getContentSyncedAt("root", "otherWs"))
+        assertNull(dao.getContentSyncedAt("folder", "otherWs"))
     }
 
     private fun Folder.toEntity() = FolderEntity(
