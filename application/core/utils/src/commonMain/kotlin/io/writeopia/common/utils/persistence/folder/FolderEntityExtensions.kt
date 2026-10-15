@@ -22,7 +22,6 @@ fun FolderCommonEntity.toModel(itemCount: Long): Folder =
         itemCount = itemCount,
         icon = icon.let { MenuItem.Icon(it, iconTint.toInt()) },
         deleted = deleted,
-        contentSyncedAt = contentSyncedAt?.let(Instant::fromEpochMilliseconds),
     )
 
 fun Folder.toRoomEntity(): FolderCommonEntity =
@@ -37,6 +36,5 @@ fun Folder.toRoomEntity(): FolderCommonEntity =
         favorite = favorite,
         icon = icon?.label ?: "",
         iconTint = icon?.tint?.toLong() ?: 0L,
-        deleted = deleted,
-        contentSyncedAt = contentSyncedAt?.toEpochMilliseconds(),
+        deleted = deleted
     )

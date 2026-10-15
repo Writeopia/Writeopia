@@ -79,13 +79,19 @@ val MIGRATION_32_33 = object : Migration(32, 33) {
     }
 }
 
-// The time this device last received a folder's contents, kept apart from last_synced_at.
-// Starts empty, so every folder fetches its contents again once, which also repairs folders
-// that were marked as synced without their contents ever being received.
+// When this device last received the contents of each folder, the root included. Starts
+// empty, so every folder fetches its contents again once.
 val MIGRATION_33_34 = object : Migration(33, 34) {
     override fun migrate(connection: SQLiteConnection) {
         connection.execSQL(
-            "ALTER TABLE FOLDER_ENTITY_TABLE ADD COLUMN content_synced_at INTEGER"
+            """
+            CREATE TABLE IF NOT EXISTS FOLDER_CONTENT_SYNC_TABLE (
+                folder_id TEXT NOT NULL,
+                workspace_id TEXT NOT NULL,
+                content_synced_at INTEGER NOT NULL,
+                PRIMARY KEY(folder_id, workspace_id)
+            )
+            """.trimIndent()
         )
     }
 }

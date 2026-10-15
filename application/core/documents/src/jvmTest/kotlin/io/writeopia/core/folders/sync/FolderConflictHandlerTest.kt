@@ -12,7 +12,6 @@ import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.hours
@@ -37,46 +36,6 @@ class FolderConflictHandlerTest {
         assertEquals("external", created.captured.id)
         assertNotNull(created.captured.lastSyncedAt)
         assertTrue(toSend.isEmpty())
-    }
-
-    @Test
-    fun `a folder received inside its parent has its contents not yet synced`() = runBlocking {
-        val folderRepository = mockk<FolderRepository>(relaxed = true)
-        coEvery { folderRepository.getFolderById(any()) } returns null
-        val handler = FolderConflictHandler(folderRepository)
-
-        val subfolder = Folder.fromName("Subfolder", workspaceId).copy(id = "sub", parentId = "parent")
-
-        handler.handleConflict(localFolders = emptyList(), externalFolders = listOf(subfolder))
-
-        val created = slot<Folder>()
-        coVerify { folderRepository.createFolder(capture(created)) }
-        assertNotNull(created.captured.lastSyncedAt)
-        assertNull(created.captured.contentSyncedAt)
-    }
-
-    @Test
-    fun `receiving a folder again keeps the time its contents were synced`() = runBlocking {
-        val folderRepository = mockk<FolderRepository>(relaxed = true)
-        val now = Clock.System.now()
-        val contentSyncedAt = now - 3.hours
-        val existing = Folder.fromName("Opened before", workspaceId).copy(
-            id = "opened",
-            lastUpdatedAt = now - 4.hours,
-            lastSyncedAt = now - 4.hours,
-            contentSyncedAt = contentSyncedAt
-        )
-        // The backend copy never carries the contents watermark.
-        val external = existing.copy(title = "Renamed elsewhere", lastUpdatedAt = now - 1.hours, contentSyncedAt = null)
-        coEvery { folderRepository.getFolderById("opened") } returns existing
-        val handler = FolderConflictHandler(folderRepository)
-
-        handler.handleConflict(localFolders = emptyList(), externalFolders = listOf(external))
-
-        val updated = slot<Folder>()
-        coVerify { folderRepository.updateFolder(capture(updated)) }
-        assertEquals("Renamed elsewhere", updated.captured.title)
-        assertEquals(contentSyncedAt, updated.captured.contentSyncedAt)
     }
 
     @Test

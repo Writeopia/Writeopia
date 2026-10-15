@@ -13,6 +13,7 @@ import io.writeopia.persistence.room.data.daos.UiConfigurationRoomDao
 import io.writeopia.persistence.room.data.daos.UserDao
 import io.writeopia.persistence.room.data.daos.WorkspaceDao
 import io.writeopia.persistence.room.data.entities.DocumentTagRoomEntity
+import io.writeopia.persistence.room.data.entities.FolderContentSyncEntity
 import io.writeopia.persistence.room.data.entities.FolderEntity
 import io.writeopia.persistence.room.data.entities.NotesConfigurationEntity
 import io.writeopia.persistence.room.data.entities.TokenEntity
@@ -44,6 +45,7 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<WriteopiaApplicat
         DocumentTagRoomEntity::class,
         NotesConfigurationEntity::class,
         FolderEntity::class,
+        FolderContentSyncEntity::class,
         UiConfigurationRoomEntity::class,
         UserEntity::class,
         TokenEntity::class,

@@ -73,6 +73,13 @@ class InMemoryFolderRepository : FolderRepository {
 
     override suspend fun getFolderById(id: String): Folder? = null
 
+    // Nothing is stored locally, so every folder asks the backend for all its contents.
+    override suspend fun getContentSyncedAt(folderId: String, workspaceId: String): Instant? = null
+
+    override suspend fun setContentSyncedAt(folderId: String, workspaceId: String, contentSyncedAt: Instant) {
+        // No-op: webapp uses backend data only
+    }
+
     override suspend fun getFolderByParentId(parentId: String, workspaceId: String): List<Folder> =
         emptyList()
 

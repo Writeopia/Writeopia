@@ -97,6 +97,13 @@ class RoomFolderRepository(
     override suspend fun localOutDatedFolders(workspaceId: String): List<Folder> =
         folderRoomDao.getOutdatedFoldersForWorkspace(workspaceId)
 
+    override suspend fun getContentSyncedAt(folderId: String, workspaceId: String): Instant? =
+        folderRoomDao.getContentSyncedAt(folderId, workspaceId)?.let(Instant::fromEpochMilliseconds)
+
+    override suspend fun setContentSyncedAt(folderId: String, workspaceId: String, contentSyncedAt: Instant) {
+        folderRoomDao.setContentSyncedAt(folderId, workspaceId, contentSyncedAt.toEpochMilliseconds())
+    }
+
     override suspend fun search(query: String, workspaceId: String): List<Folder> =
         folderRoomDao.search(query, workspaceId)
 

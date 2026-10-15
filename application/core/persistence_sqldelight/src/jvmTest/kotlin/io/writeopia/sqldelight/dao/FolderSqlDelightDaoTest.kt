@@ -7,7 +7,6 @@ import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sqldelight.database.DatabaseFactory.createDatabase
 import io.writeopia.sqldelight.database.driver.DriverFactory
 import io.writeopia.app.sql.FolderEntity
-import io.writeopia.sqldelight.extensions.toModel
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -49,23 +48,20 @@ class FolderSqlDelightDaoTest {
     }
 
     @Test
-    fun `the time a folder's contents were synced is stored apart from its own sync time`() = runTest {
+    fun `each folder keeps its own contents watermark per workspace, the root included`() = runTest {
         val dao = FolderSqlDelightDao(createDatabase(DriverFactory(), JdbcSqliteDriver.IN_MEMORY))
-        val now = Clock.System.now()
-        val folder = Folder.fromName("opened", workspaceId).copy(
-            id = "opened",
-            lastSyncedAt = now - 1.hours,
-            contentSyncedAt = null
-        )
 
-        dao.createFolder(folder.toEntity())
-        assertNull(dao.getFolderById("opened")?.toModel(0)?.contentSyncedAt)
+        assertNull(dao.getContentSyncedAt("root", workspaceId))
 
-        dao.updateFolder(folder.copy(contentSyncedAt = now).toEntity())
-        val stored = dao.getFolderById("opened")?.toModel(0)
+        dao.setContentSyncedAt("root", workspaceId, 100L)
+        dao.setContentSyncedAt("folder", workspaceId, 200L)
+        dao.setContentSyncedAt("root", "otherWs", 300L)
+        dao.setContentSyncedAt("root", workspaceId, 400L)
 
-        assertEquals(now.toEpochMilliseconds(), stored?.contentSyncedAt?.toEpochMilliseconds())
-        assertEquals((now - 1.hours).toEpochMilliseconds(), stored?.lastSyncedAt?.toEpochMilliseconds())
+        assertEquals(400L, dao.getContentSyncedAt("root", workspaceId))
+        assertEquals(200L, dao.getContentSyncedAt("folder", workspaceId))
+        assertEquals(300L, dao.getContentSyncedAt("root", "otherWs"))
+        assertNull(dao.getContentSyncedAt("folder", "otherWs"))
     }
 
     private fun Folder.toEntity() = FolderEntity(
@@ -79,7 +75,6 @@ class FolderSqlDelightDaoTest {
         favorite = 0L,
         icon = null,
         icon_tint = null,
-        deleted = if (deleted) 1L else 0L,
-        content_synced_at = contentSyncedAt?.toEpochMilliseconds()
+        deleted = if (deleted) 1L else 0L
     )
 }

@@ -56,4 +56,12 @@ interface FolderRepository {
     suspend fun stopListeningForFoldersByParentId(parentId: String, workspaceId: String)
 
     suspend fun localOutDatedFolders(workspaceId: String): List<Folder>
+
+    /**
+     * When this device last received the contents (documents and subfolders) of a folder, or
+     * null if never. Works the same for the root, which has no folder row of its own.
+     */
+    suspend fun getContentSyncedAt(folderId: String, workspaceId: String): Instant?
+
+    suspend fun setContentSyncedAt(folderId: String, workspaceId: String, contentSyncedAt: Instant)
 }

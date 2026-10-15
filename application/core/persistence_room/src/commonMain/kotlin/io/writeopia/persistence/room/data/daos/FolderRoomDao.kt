@@ -3,7 +3,9 @@ package io.writeopia.persistence.room.data.daos
 import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Upsert
+import io.writeopia.persistence.room.data.entities.FOLDER_CONTENT_SYNC_ENTITY
 import io.writeopia.persistence.room.data.entities.FOLDER_ENTITY
+import io.writeopia.persistence.room.data.entities.FolderContentSyncEntity
 import io.writeopia.persistence.room.data.entities.FolderEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -62,4 +64,13 @@ interface FolderRoomDao {
     // Get soft-deleted folders for a workspace (for syncing deletions to backend)
     @Query("SELECT * FROM $FOLDER_ENTITY WHERE workspace_id = :workspaceId AND deleted = 1")
     suspend fun getSoftDeletedByWorkspace(workspaceId: String): List<FolderEntity>
+
+    @Query(
+        "SELECT content_synced_at FROM $FOLDER_CONTENT_SYNC_ENTITY " +
+            "WHERE folder_id = :folderId AND workspace_id = :workspaceId"
+    )
+    suspend fun getContentSyncedAt(folderId: String, workspaceId: String): Long?
+
+    @Upsert
+    suspend fun upsertContentSync(entity: FolderContentSyncEntity)
 }

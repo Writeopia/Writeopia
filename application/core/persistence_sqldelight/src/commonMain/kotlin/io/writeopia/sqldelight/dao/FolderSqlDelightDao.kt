@@ -36,8 +36,7 @@ class FolderSqlDelightDao(database: WriteopiaDb?) : FolderSearch {
             icon = folder.icon,
             icon_tint = folder.icon_tint,
             last_synced_at = folder.last_synced_at,
-            deleted = folder.deleted,
-            content_synced_at = folder.content_synced_at
+            deleted = folder.deleted
         )
         refreshFolders()
     }
@@ -65,8 +64,7 @@ class FolderSqlDelightDao(database: WriteopiaDb?) : FolderSearch {
             icon = folder.icon,
             icon_tint = folder.icon_tint,
             last_synced_at = folder.last_synced_at,
-            deleted = folder.deleted,
-            content_synced_at = folder.content_synced_at
+            deleted = folder.deleted
         )
         refreshFolders()
     }
@@ -89,6 +87,13 @@ class FolderSqlDelightDao(database: WriteopiaDb?) : FolderSearch {
             ?.executeAsList()
             ?.map { it.toModel(0) }
             ?: emptyList()
+
+    suspend fun getContentSyncedAt(folderId: String, workspaceId: String): Long? =
+        folderEntityQueries?.selectContentSyncedAt(folderId, workspaceId)?.executeAsOneOrNull()
+
+    suspend fun setContentSyncedAt(folderId: String, workspaceId: String, contentSyncedAt: Long) {
+        folderEntityQueries?.upsertContentSyncedAt(folderId, workspaceId, contentSyncedAt)
+    }
 
     suspend fun setLastUpdate(id: String, lastUpdateTimeStamp: Long) {
         folderEntityQueries?.setLastUpdate(lastUpdateTimeStamp, id)

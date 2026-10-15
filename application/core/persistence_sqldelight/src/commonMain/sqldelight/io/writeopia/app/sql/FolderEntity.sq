@@ -9,8 +9,17 @@ CREATE TABLE folderEntity (
   favorite INTEGER NOT NULL,
   icon TEXT,
   icon_tint INTEGER,
-  deleted INTEGER NOT NULL DEFAULT 0,
-  content_synced_at INTEGER
+  deleted INTEGER NOT NULL DEFAULT 0
+);
+
+-- When this device last received the contents (documents and subfolders) of a folder.
+-- Kept apart from folderEntity: the root has no folder row, and a folder received inside its
+-- parent is in sync itself while its contents have not been fetched yet.
+CREATE TABLE folderContentSyncEntity (
+  folder_id TEXT NOT NULL,
+  workspace_id TEXT NOT NULL,
+  content_synced_at INTEGER NOT NULL,
+  PRIMARY KEY (folder_id, workspace_id)
 );
 
 query:
@@ -72,13 +81,12 @@ WHERE deleted = 0
 GROUP BY parent_document_id;
 
 insert:
-INSERT INTO folderEntity(id, parent_id, workspace_id, title, created_at, last_updated_at, favorite, icon, icon_tint, last_synced_at, deleted, content_synced_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+INSERT INTO folderEntity(id, parent_id, workspace_id, title, created_at, last_updated_at, favorite, icon, icon_tint, last_synced_at, deleted)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(id) DO
 UPDATE SET id=excluded.id, parent_id=excluded.parent_id, workspace_id=excluded.workspace_id, title=excluded.title,
 created_at=excluded.created_at, last_updated_at=excluded.last_updated_at, favorite=excluded.favorite,
-icon=excluded.icon, icon_tint=excluded.icon_tint, last_synced_at=excluded.last_synced_at, deleted=excluded.deleted,
-content_synced_at=excluded.content_synced_at;
+icon=excluded.icon, icon_tint=excluded.icon_tint, last_synced_at=excluded.last_synced_at, deleted=excluded.deleted;
 
 -- update:
 -- UPDATE(title, parent_id, update_at): SET title=title, parent_id=parent_id, update_at=update_at;
@@ -120,3 +128,14 @@ FROM documentEntity
 LEFT JOIN storyStepEntity ON documentEntity.id=storyStepEntity.document_id
 WHERE documentEntity.workspace_id = ? AND (documentEntity.last_synced_at IS NULL OR documentEntity.last_updated_at > documentEntity.last_synced_at)
 ORDER BY position;
+
+selectContentSyncedAt:
+SELECT content_synced_at
+FROM folderContentSyncEntity
+WHERE folder_id = ? AND workspace_id = ?;
+
+upsertContentSyncedAt:
+INSERT INTO folderContentSyncEntity(folder_id, workspace_id, content_synced_at)
+VALUES (?, ?, ?)
+ON CONFLICT(folder_id, workspace_id) DO
+UPDATE SET content_synced_at = excluded.content_synced_at;

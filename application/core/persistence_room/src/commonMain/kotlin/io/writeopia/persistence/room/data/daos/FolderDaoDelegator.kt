@@ -4,6 +4,7 @@ import io.writeopia.common.utils.persistence.daos.FolderCommonDao
 import io.writeopia.common.utils.persistence.folder.toModel
 import io.writeopia.common.utils.persistence.folder.toRoomEntity
 import io.writeopia.sdk.models.document.Folder
+import io.writeopia.persistence.room.data.entities.FolderContentSyncEntity
 import io.writeopia.persistence.room.extensions.toEntity
 import io.writeopia.persistence.room.extensions.toCommonEntity
 import kotlinx.coroutines.flow.Flow
@@ -51,4 +52,11 @@ class FolderDaoDelegator(
 
     override suspend fun getSoftDeletedByWorkspace(workspaceId: String): List<Folder> =
         delegate.getSoftDeletedByWorkspace(workspaceId).map { it.toCommonEntity().toModel(0) }
+
+    override suspend fun getContentSyncedAt(folderId: String, workspaceId: String): Long? =
+        delegate.getContentSyncedAt(folderId, workspaceId)
+
+    override suspend fun setContentSyncedAt(folderId: String, workspaceId: String, contentSyncedAt: Long) {
+        delegate.upsertContentSync(FolderContentSyncEntity(folderId, workspaceId, contentSyncedAt))
+    }
 }

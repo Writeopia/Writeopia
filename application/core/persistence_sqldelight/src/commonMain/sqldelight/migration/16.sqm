@@ -1,3 +1,8 @@
--- The time this device last received a folder's contents, kept apart from last_synced_at.
+-- When this device last received the contents of a folder, the root included.
 -- Starts empty, so every folder fetches its contents again once.
-ALTER TABLE folderEntity ADD COLUMN content_synced_at INTEGER;
+CREATE TABLE folderContentSyncEntity (
+  folder_id TEXT NOT NULL,
+  workspace_id TEXT NOT NULL,
+  content_synced_at INTEGER NOT NULL,
+  PRIMARY KEY (folder_id, workspace_id)
+);

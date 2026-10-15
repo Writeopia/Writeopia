@@ -18,6 +18,5 @@ fun Folder.toEntity() = FolderEntity(
     icon = icon?.label,
     icon_tint = icon?.tint?.toLong(),
     last_synced_at = lastSyncedAt?.toEpochMilliseconds(),
-    deleted = deleted.toLong(),
-    content_synced_at = contentSyncedAt?.toEpochMilliseconds()
+    deleted = deleted.toLong()
 )
