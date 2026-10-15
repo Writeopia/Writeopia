@@ -245,6 +245,13 @@ public final class AppSession {
         return WritingAgentAPI(client: client)
     }
 
+    /// The header pictures of the current workspace, drawn by the cloud; nil outside an online
+    /// workspace, since only the backend draws and keeps them.
+    public var headerImages: HeaderImagesAPI? {
+        guard isOnline, let workspace, workspace.id != Workspace.localId else { return nil }
+        return HeaderImagesAPI(client: client, workspaceId: workspace.id)
+    }
+
     /// Publishing for documents of the current workspace; nil outside the open space.
     public var publishing: DocumentPublishing? {
         guard isOnline, let workspace, workspace.id != Workspace.localId else { return nil }

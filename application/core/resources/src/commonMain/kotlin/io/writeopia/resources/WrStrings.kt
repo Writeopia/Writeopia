@@ -327,6 +327,16 @@ import writeopia.application.core.resources.generated.resources.comment
 import writeopia.application.core.resources.generated.resources.comments_count
 import writeopia.application.core.resources.generated.resources.delete_thread
 import writeopia.application.core.resources.generated.resources.reply
+import writeopia.application.core.resources.generated.resources.header_title
+import writeopia.application.core.resources.generated.resources.header_colors
+import writeopia.application.core.resources.generated.resources.header_images
+import writeopia.application.core.resources.generated.resources.header_generate_image
+import writeopia.application.core.resources.generated.resources.header_generating_image
+import writeopia.application.core.resources.generated.resources.header_use_image
+import writeopia.application.core.resources.generated.resources.header_try_another
+import writeopia.application.core.resources.generated.resources.header_discard
+import writeopia.application.core.resources.generated.resources.header_image_failed
+import writeopia.application.core.resources.generated.resources.header_image_cost
 
 object WrStrings {
 
@@ -1309,4 +1319,34 @@ object WrStrings {
 
     @Composable
     fun documentTagCancel() = stringResource(Res.string.document_tag_cancel)
+
+    @Composable
+    fun headerTitle() = stringResource(Res.string.header_title)
+
+    @Composable
+    fun headerColors() = stringResource(Res.string.header_colors)
+
+    @Composable
+    fun headerImages() = stringResource(Res.string.header_images)
+
+    @Composable
+    fun headerGenerateImage() = stringResource(Res.string.header_generate_image)
+
+    @Composable
+    fun headerGeneratingImage() = stringResource(Res.string.header_generating_image)
+
+    @Composable
+    fun headerUseImage() = stringResource(Res.string.header_use_image)
+
+    @Composable
+    fun headerTryAnother() = stringResource(Res.string.header_try_another)
+
+    @Composable
+    fun headerDiscard() = stringResource(Res.string.header_discard)
+
+    @Composable
+    fun headerImageFailed() = stringResource(Res.string.header_image_failed)
+
+    @Composable
+    fun headerImageCost() = stringResource(Res.string.header_image_cost)
 }

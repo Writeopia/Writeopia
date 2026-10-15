@@ -346,4 +346,14 @@
   <string name="document_tag_creating_with_ai">Asking the AI…</string>
   <string name="document_tag_ai_failed">The AI could not suggest a tag. Try again or write one.</string>
   <string name="document_tag_cancel">Cancel</string>
+  <string name="header_title">Header</string>
+  <string name="header_colors">Colors</string>
+  <string name="header_images">Images</string>
+  <string name="header_generate_image">Generate with AI</string>
+  <string name="header_generating_image">Drawing your header…</string>
+  <string name="header_use_image">Use this image</string>
+  <string name="header_try_another">Try another</string>
+  <string name="header_discard">Discard</string>
+  <string name="header_image_failed">The AI could not draw a header. Try again.</string>
+  <string name="header_image_cost">Uses your AI tokens</string>
 </resources>

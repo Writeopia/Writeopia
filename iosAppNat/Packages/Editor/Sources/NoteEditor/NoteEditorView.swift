@@ -74,6 +74,7 @@ public struct NoteEditorView: View {
         presentations: PresentationsSource? = nil,
         writingAgent: WritingAgentServing? = nil,
         imageGenerator: AiImageGenerating? = nil,
+        headerImages: HeaderImagesAPI? = nil,
         openDocumentLink: @escaping (DocumentLink) -> Void = { _ in }
     ) {
         _viewModel = State(initialValue: NoteEditorViewModel(
@@ -85,7 +86,8 @@ public struct NoteEditorView: View {
             isPremium: isPremium,
             presentations: presentations,
             writingAgent: writingAgent,
-            imageGenerator: imageGenerator
+            imageGenerator: imageGenerator,
+            headerImages: headerImages.map(HeaderImagesService.init(api:))
         ))
         fallbackTitle = title
         self.openDocumentLink = openDocumentLink

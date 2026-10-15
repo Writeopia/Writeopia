@@ -9,9 +9,11 @@ import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -31,12 +33,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
 import io.writeopia.sdk.models.story.Decoration
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
@@ -78,74 +82,90 @@ class HeaderDrawer(
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Step(step: StoryStep, drawInfo: DrawInfo) {
-        val backgroundColor = step.decoration.backgroundColor
+        // A picture in the header takes the place of its color.
+        val imageUrl = step.url?.takeIf { it.isNotBlank() }
+        val backgroundColor = step.decoration.backgroundColor.takeIf { imageUrl == null }
         val focusRequester = remember { FocusRequester() }
 
         val interactionSource = remember { MutableInteractionSource() }
         val isHovered by interactionSource.collectIsHoveredAsState()
 
         Box(modifier = Modifier.hoverable(interactionSource).padding(bottom = 16.dp)) {
-            Row(
-                modifier = modifier
-                    .let { modifierLet ->
-                        if (backgroundColor != null) {
-                            modifierLet
-                                .background(Color(backgroundColor))
-                                .padding(top = 114.dp)
-                        } else {
-                            modifierLet.padding(top = 14.dp)
-                        }
-                    }
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                val interactionSource = remember { MutableInteractionSource() }
-
-                val extraData = drawInfo.extraData
-
-                if (extraData.containsKey("imageVector")) {
-                    val imageVector = extraData["imageVector"] as ImageVector
-
-                    val tint = if (extraData.containsKey("imageVectorTint")) {
-                        val tintColor = extraData["imageVectorTint"] as Int
-                        Color(tintColor)
-                    } else {
-                        MaterialTheme.colorScheme.onBackground
-                    }
-
-                    Spacer(modifier = Modifier.width(20.dp))
-
-                    Icon(
-                        imageVector = imageVector,
-                        "header icon",
-                        tint = tint,
-                        modifier = Modifier.size(42.dp)
+            Column {
+                if (imageUrl != null) {
+                    AsyncImage(
+                        model = imageUrl,
+                        contentDescription = "Header image",
+                        contentScale = ContentScale.Crop,
+                        modifier = modifier
+                            .fillMaxWidth()
+                            .height(HEADER_IMAGE_HEIGHT)
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
                     )
                 }
 
-                textDrawer().Text(
-                    step = step,
-                    drawInfo = drawInfo,
-                    interactionSource = interactionSource,
-                    focusRequester = focusRequester,
-                    decorationBox = @Composable { innerTextField ->
-                        TextFieldDefaults.DecorationBox(
-                            value = step.text ?: "",
-                            innerTextField = innerTextField,
-                            enabled = true,
-                            singleLine = false,
-                            visualTransformation = VisualTransformation.None,
-                            interactionSource = interactionSource,
-                            placeholder = {
-                                Text(
-                                    text = stringResource(Res.string.title),
-                                    style = placeHolderStyle(),
-                                )
-                            },
-                            colors = transparentTextInputColors(),
+                Row(
+                    modifier = (if (imageUrl != null) Modifier else modifier)
+                        .let { modifierLet ->
+                            if (backgroundColor != null) {
+                                modifierLet
+                                    .background(Color(backgroundColor))
+                                    .padding(top = 114.dp)
+                            } else {
+                                modifierLet.padding(top = 14.dp)
+                            }
+                        }
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val interactionSource = remember { MutableInteractionSource() }
+
+                    val extraData = drawInfo.extraData
+
+                    if (extraData.containsKey("imageVector")) {
+                        val imageVector = extraData["imageVector"] as ImageVector
+
+                        val tint = if (extraData.containsKey("imageVectorTint")) {
+                            val tintColor = extraData["imageVectorTint"] as Int
+                            Color(tintColor)
+                        } else {
+                            MaterialTheme.colorScheme.onBackground
+                        }
+
+                        Spacer(modifier = Modifier.width(20.dp))
+
+                        Icon(
+                            imageVector = imageVector,
+                            "header icon",
+                            tint = tint,
+                            modifier = Modifier.size(42.dp)
                         )
-                    },
-                )
+                    }
+
+                    textDrawer().Text(
+                        step = step,
+                        drawInfo = drawInfo,
+                        interactionSource = interactionSource,
+                        focusRequester = focusRequester,
+                        decorationBox = @Composable { innerTextField ->
+                            TextFieldDefaults.DecorationBox(
+                                value = step.text ?: "",
+                                innerTextField = innerTextField,
+                                enabled = true,
+                                singleLine = false,
+                                visualTransformation = VisualTransformation.None,
+                                interactionSource = interactionSource,
+                                placeholder = {
+                                    Text(
+                                        text = stringResource(Res.string.title),
+                                        style = placeHolderStyle(),
+                                    )
+                                },
+                                colors = transparentTextInputColors(),
+                            )
+                        },
+                    )
+                }
             }
 
             AnimatedVisibility(
@@ -175,6 +195,9 @@ class HeaderDrawer(
         }
     }
 }
+
+/** The height of the picture of a header, a band above the title. */
+private val HEADER_IMAGE_HEIGHT = 200.dp
 
 fun headerDrawer(
     manager: WriteopiaStateManager,

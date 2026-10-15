@@ -9,10 +9,16 @@ import io.ktor.client.request.setBody
 import io.ktor.client.request.url
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
+import io.ktor.http.isSuccess
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.readUTF8Line
 import io.writeopia.app.dto.ai.AiImageRequest
 import io.writeopia.app.dto.ai.AiImageResponse
+import io.writeopia.sdk.serialization.response.HeaderImageApi
+import io.writeopia.sdk.serialization.request.HeaderImageGenerateRequest
+import io.writeopia.sdk.serialization.response.HeaderImageGenerateResponse
+import io.writeopia.sdk.serialization.request.HeaderImageSaveRequest
+import io.writeopia.sdk.serialization.response.HeaderImagesResponse
 import io.writeopia.app.endpoints.EndPoints
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.serialization.response.AiUsageResponse
@@ -160,6 +166,59 @@ class GenAiApi(
             ResultData.Complete(body)
         } else {
             ResultData.Error(GenAiException(body.error ?: "The AI drew no picture (${response.status})"))
+        }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        ResultData.Error(e)
+    }
+
+    /** Asks the backend to draw a header for a document. The answer carries its CDN URL. */
+    suspend fun generateHeaderImage(request: HeaderImageGenerateRequest): ResultData<String> = try {
+        val response = client.post("$baseUrl/${EndPoints.aiHeaderImage()}") {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
+        val body = response.body<HeaderImageGenerateResponse>()
+        val url = body.imageUrl
+
+        if (url != null) {
+            ResultData.Complete(url)
+        } else {
+            ResultData.Error(GenAiException(body.error ?: "The AI drew no picture (${response.status})"))
+        }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        ResultData.Error(e)
+    }
+
+    /** The header pictures of [workspaceId], the newest first. */
+    suspend fun headerImages(workspaceId: String): ResultData<List<HeaderImageApi>> = try {
+        val response = client.get("$baseUrl/${EndPoints.workspaceHeaderImages(workspaceId)}")
+
+        if (response.status.isSuccess()) {
+            ResultData.Complete(response.body<HeaderImagesResponse>().images)
+        } else {
+            ResultData.Error(GenAiException("The header pictures could not be loaded (${response.status})"))
+        }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        ResultData.Error(e)
+    }
+
+    /** Keeps an approved header with the pictures of [workspaceId]. */
+    suspend fun saveHeaderImage(workspaceId: String, imageUrl: String): ResultData<HeaderImageApi> = try {
+        val response = client.post("$baseUrl/${EndPoints.workspaceHeaderImages(workspaceId)}") {
+            contentType(ContentType.Application.Json)
+            setBody(HeaderImageSaveRequest(imageUrl))
+        }
+
+        if (response.status.isSuccess()) {
+            ResultData.Complete(response.body())
+        } else {
+            ResultData.Error(GenAiException("The header picture could not be saved (${response.status})"))
         }
     } catch (e: CancellationException) {
         throw e

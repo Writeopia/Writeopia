@@ -94,6 +94,12 @@ class AiClients(
         return if (isCloudAiReady()) CloudImageGenerator(repository) else null
     }
 
+    /** The header pictures of the cloud, when it can answer right now; null otherwise. */
+    suspend fun headerImages(): HeaderImages? {
+        val repository = genAiRepository ?: return null
+        return if (isCloudAiReady()) CloudHeaderImages(repository) else null
+    }
+
     private suspend fun localAi(userId: String): ResolvedAi.Local? {
         val repository = localAiRepository ?: return null
         val url = repository.getConfiguredUrl(userId)?.trim()?.takeIf { it.isNotEmpty() } ?: return null

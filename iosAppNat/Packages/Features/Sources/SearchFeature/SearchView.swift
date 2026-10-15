@@ -77,6 +77,7 @@ public struct SearchRootView: View {
             isPremium: session.user?.isPremium ?? false,
             presentations: session.presentationsSource,
             writingAgent: session.writingAgent,
+            headerImages: session.headerImages,
             loadPresentation: { id in await session.presentation(id: id) }
         )
             .id("\(session.workspace?.id ?? "")-\(session.documentsVersion)")
@@ -93,6 +94,7 @@ struct SearchView: View {
     private let isPremium: Bool
     private let presentations: PresentationsSource?
     private let writingAgent: WritingAgentAPI?
+    private let headerImages: HeaderImagesAPI?
     private let loadPresentation: (String) async -> Presentation?
     /// The presentation shown full screen (the phones; the Mac opens a window).
     @State private var presentationShown: Presentation?
@@ -106,6 +108,7 @@ struct SearchView: View {
         isPremium: Bool,
         presentations: PresentationsSource? = nil,
         writingAgent: WritingAgentAPI? = nil,
+        headerImages: HeaderImagesAPI? = nil,
         loadPresentation: @escaping (String) async -> Presentation? = { _ in nil }
     ) {
         self.repository = repository
@@ -115,6 +118,7 @@ struct SearchView: View {
         self.isPremium = isPremium
         self.presentations = presentations
         self.writingAgent = writingAgent
+        self.headerImages = headerImages
         self.loadPresentation = loadPresentation
         _viewModel = State(initialValue: SearchViewModel(repository: repository))
     }
@@ -163,7 +167,8 @@ struct SearchView: View {
                         isPremium: isPremium,
                         presentations: presentations,
                         writingAgent: writingAgent,
-                        imageGenerator: writingAgent
+                        imageGenerator: writingAgent,
+                        headerImages: headerImages
                     ) { link in
                         path.append(.document(id: link.id, title: link.title ?? "Untitled"))
                     }

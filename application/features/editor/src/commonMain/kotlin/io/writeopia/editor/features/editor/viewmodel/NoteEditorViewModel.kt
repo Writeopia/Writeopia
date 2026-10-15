@@ -147,6 +147,21 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 
     fun onHeaderColorSelection(color: Int?)
 
+    /** The header pictures of the workspace and the one the AI is drawing, for the header menu. */
+    val headerImages: StateFlow<HeaderImagesState>
+
+    /** Puts a picture of the workspace in the header; null removes it. */
+    fun onHeaderImageSelection(url: String?)
+
+    /** Asks the AI for a header picture, or for a different one. It costs tokens of the user. */
+    fun generateHeaderImage()
+
+    /** Puts the drawn picture in the header and keeps it with the pictures of the workspace. */
+    fun approveHeaderImage()
+
+    /** Drops the drawn picture, or stops drawing it. */
+    fun discardHeaderImage()
+
     fun onHeaderEditionCancel()
 
     fun onMoreOptionsClick()
