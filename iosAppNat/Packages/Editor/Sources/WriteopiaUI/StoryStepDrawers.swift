@@ -497,10 +497,14 @@ struct HeaderImagesSection: View {
 
 /// A header picture from the CDN, cropped to fill its frame, with a quiet placeholder while it
 /// loads.
-struct HeaderImageView: View {
+public struct HeaderImageView: View {
     let url: URL?
 
-    var body: some View {
+    public init(url: URL?) {
+        self.url = url
+    }
+
+    public var body: some View {
         AsyncImage(url: url) { phase in
             switch phase {
             case .success(let image):

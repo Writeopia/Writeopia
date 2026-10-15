@@ -184,9 +184,17 @@ public struct WrDocument: Codable, Identifiable, Equatable, Hashable, Sendable {
         Date(timeIntervalSince1970: TimeInterval(lastUpdatedAt) / 1000)
     }
 
-    /// ARGB color of the document header, when the title has one.
+    /// ARGB color of the document header, when the title has one and no picture.
     public var headerColor: Int? {
-        content.first { $0.type.number == StoryType.title.number }?.decoration?.backgroundColor
+        guard headerImageURL == nil else { return nil }
+        return content.first { $0.type.number == StoryType.title.number }?.decoration?.backgroundColor
+    }
+
+    /// The picture of the document header (the `url` of the title), which takes the place of its
+    /// color, like `HeaderPreviewDrawer` of the Compose app.
+    public var headerImageURL: URL? {
+        content.first { $0.type.number == StoryType.title.number }?.url
+            .flatMap { $0.isEmpty ? nil : URL(string: $0) }
     }
 
     /// Steps sorted by position, without the title step (which is shown as the navigation title).

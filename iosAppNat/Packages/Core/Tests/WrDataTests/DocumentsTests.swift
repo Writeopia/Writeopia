@@ -199,3 +199,29 @@ final class RecordingTransport: HTTPTransport {
         #expect(Set(step.keys).isSubset(of: allowedStep))
     }
 }
+
+@Suite struct DocumentHeaderTests {
+    private func document(title: StoryStep) -> WrDocument {
+        WrDocument(id: "d", title: "Doc", workspaceId: "w", content: [title])
+    }
+
+    @Test func aPictureTakesThePlaceOfTheColorOfTheHeader() {
+        let url = "https://writeopia.io/header-images/w/a.png"
+        let withBoth = document(title: StoryStep(
+            id: "t", type: .title, text: "Doc", url: url, position: 0,
+            decoration: Decoration(backgroundColor: -7829368)
+        ))
+        #expect(withBoth.headerImageURL == URL(string: url))
+        #expect(withBoth.headerColor == nil)
+
+        let colorOnly = document(title: StoryStep(
+            id: "t", type: .title, text: "Doc", position: 0,
+            decoration: Decoration(backgroundColor: -7829368)
+        ))
+        #expect(colorOnly.headerImageURL == nil)
+        #expect(colorOnly.headerColor == -7829368)
+
+        let emptyUrl = document(title: StoryStep(id: "t", type: .title, text: "Doc", url: "", position: 0))
+        #expect(emptyUrl.headerImageURL == nil)
+    }
+}
