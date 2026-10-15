@@ -1,0 +1,3 @@
+-- The time this device last received a folder's contents, kept apart from last_synced_at.
+-- Starts empty, so every folder fetches its contents again once.
+ALTER TABLE folderEntity ADD COLUMN content_synced_at INTEGER;

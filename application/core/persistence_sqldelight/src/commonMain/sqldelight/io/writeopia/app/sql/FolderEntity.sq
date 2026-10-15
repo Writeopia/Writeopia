@@ -9,7 +9,8 @@ CREATE TABLE folderEntity (
   favorite INTEGER NOT NULL,
   icon TEXT,
   icon_tint INTEGER,
-  deleted INTEGER NOT NULL DEFAULT 0
+  deleted INTEGER NOT NULL DEFAULT 0,
+  content_synced_at INTEGER
 );
 
 query:
@@ -71,12 +72,13 @@ WHERE deleted = 0
 GROUP BY parent_document_id;
 
 insert:
-INSERT INTO folderEntity(id, parent_id, workspace_id, title, created_at, last_updated_at, favorite, icon, icon_tint, last_synced_at, deleted)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+INSERT INTO folderEntity(id, parent_id, workspace_id, title, created_at, last_updated_at, favorite, icon, icon_tint, last_synced_at, deleted, content_synced_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(id) DO
 UPDATE SET id=excluded.id, parent_id=excluded.parent_id, workspace_id=excluded.workspace_id, title=excluded.title,
 created_at=excluded.created_at, last_updated_at=excluded.last_updated_at, favorite=excluded.favorite,
-icon=excluded.icon, icon_tint=excluded.icon_tint, last_synced_at=excluded.last_synced_at, deleted=excluded.deleted;
+icon=excluded.icon, icon_tint=excluded.icon_tint, last_synced_at=excluded.last_synced_at, deleted=excluded.deleted,
+content_synced_at=excluded.content_synced_at;
 
 -- update:
 -- UPDATE(title, parent_id, update_at): SET title=title, parent_id=parent_id, update_at=update_at;

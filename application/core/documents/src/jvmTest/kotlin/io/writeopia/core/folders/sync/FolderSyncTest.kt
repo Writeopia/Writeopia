@@ -21,6 +21,8 @@ import io.writeopia.sdk.serialization.response.FolderContentResponse
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
@@ -359,11 +361,104 @@ class FolderSyncTest {
 
         // Verify NO local timestamp updates - lastSyncedAt must come from server
         coVerify(exactly = 0) { documentRepository.saveDocumentMetadata(any()) }
-        coVerify(exactly = 0) { folderRepository.updateFolder(any()) }
+        // The only folder write is the contents watermark of the synced folder itself.
+        coVerify(exactly = 1) { folderRepository.updateFolder(any()) }
+        coVerify(exactly = 1) {
+            folderRepository.updateFolder(
+                match { it.id == folderId && it.lastSyncedAt == existingFolder.lastSyncedAt && it.contentSyncedAt != null }
+            )
+        }
 
         // Verify refresh was called (twice: once after conflict resolution, once after sending)
         coVerify(atLeast = 2) { documentRepository.refreshDocuments() }
         coVerify(atLeast = 2) { folderRepository.refreshFolders() }
+    }
+
+    @Test
+    fun `syncFolder asks for everything in a folder whose contents were never synced`() = runBlocking {
+        val documentRepository = mockk<DocumentRepository>(relaxed = true)
+        val documentsApi = mockk<DocumentsApi>()
+        val documentConflictHandler = mockk<DocumentConflictHandler>()
+        val folderConflictHandler = mockk<FolderConflictHandler>()
+        val folderRepository = mockk<FolderRepository>(relaxed = true)
+        val authRepository = mockk<AuthRepository>()
+
+        // Received inside its parent: the folder itself is in sync, its contents are not.
+        val receivedFolder = Folder.fromName("Received", workspaceId).copy(
+            id = folderId,
+            lastSyncedAt = Clock.System.now(),
+            contentSyncedAt = null
+        )
+
+        coEvery { folderRepository.getFolderById(folderId) } returns receivedFolder
+        coEvery {
+            documentsApi.getFolderNewData(folderId, workspaceId, any(), any())
+        } returns ResultData.Complete(FolderContentResponse())
+        coEvery { documentRepository.loadOutdatedDocumentsForWorkspace(workspaceId) } returns emptyList()
+        coEvery { folderRepository.localOutDatedFolders(workspaceId) } returns emptyList()
+        coEvery { documentConflictHandler.handleConflict(any(), any()) } returns emptyList()
+        coEvery { folderConflictHandler.handleConflict(any(), any()) } returns emptyList()
+        coEvery { documentsApi.sendDocuments(any(), workspaceId) } returns ResultData.Complete(Unit)
+        coEvery { documentsApi.sendFolders(any(), workspaceId) } returns ResultData.Complete(Unit)
+
+        val folderSync = FolderSync(
+            documentRepository = documentRepository,
+            documentsApi = documentsApi,
+            documentConflictHandler = documentConflictHandler,
+            folderConflictHandler = folderConflictHandler,
+            folderRepository = folderRepository,
+            authRepository = authRepository,
+            minSyncInternal = 0.milliseconds
+        )
+
+        val before = Clock.System.now()
+        folderSync.syncFolder(folderId, workspaceId, force = true)
+
+        coVerify { documentsApi.getFolderNewData(folderId, workspaceId, Instant.DISTANT_PAST, any()) }
+
+        val saved = slot<Folder>()
+        coVerify { folderRepository.updateFolder(capture(saved)) }
+        val contentSyncedAt = assertNotNull(saved.captured.contentSyncedAt)
+        assertTrue(contentSyncedAt >= before)
+        assertEquals(receivedFolder.lastSyncedAt, saved.captured.lastSyncedAt)
+    }
+
+    @Test
+    fun `syncFolder asks only for what changed since the folder contents were synced`() = runBlocking {
+        val documentRepository = mockk<DocumentRepository>(relaxed = true)
+        val documentsApi = mockk<DocumentsApi>()
+        val documentConflictHandler = mockk<DocumentConflictHandler>()
+        val folderConflictHandler = mockk<FolderConflictHandler>()
+        val folderRepository = mockk<FolderRepository>(relaxed = true)
+        val authRepository = mockk<AuthRepository>()
+
+        val contentSyncedAt = Instant.fromEpochMilliseconds(1_000_000)
+        val openedFolder = Folder.fromName("Opened", workspaceId).copy(
+            id = folderId,
+            lastSyncedAt = Clock.System.now(),
+            contentSyncedAt = contentSyncedAt
+        )
+
+        coEvery { folderRepository.getFolderById(folderId) } returns openedFolder
+        coEvery {
+            documentsApi.getFolderNewData(folderId, workspaceId, any(), any())
+        } returns ResultData.Error()
+
+        val folderSync = FolderSync(
+            documentRepository = documentRepository,
+            documentsApi = documentsApi,
+            documentConflictHandler = documentConflictHandler,
+            folderConflictHandler = folderConflictHandler,
+            folderRepository = folderRepository,
+            authRepository = authRepository,
+            minSyncInternal = 0.milliseconds
+        )
+
+        folderSync.syncFolder(folderId, workspaceId, force = true)
+
+        coVerify { documentsApi.getFolderNewData(folderId, workspaceId, contentSyncedAt, any()) }
+        // The request failed, so the contents watermark must not move.
+        coVerify(exactly = 0) { folderRepository.updateFolder(any()) }
     }
 
     @Test

@@ -19,7 +19,14 @@ data class Folder(
     val itemCount: Long,
     val documentList: List<Document> = emptyList(),
     val lastSyncedAt: Instant? = null,
-    val deleted: Boolean = false
+    val deleted: Boolean = false,
+    /**
+     * When this device last received the contents of this folder (its documents and subfolders).
+     * It differs from [lastSyncedAt], which only says the folder itself (its name, place, icon)
+     * matches the backend. A folder received inside its parent is in sync, but its contents
+     * have not been fetched yet, so this stays null until the folder itself is synced.
+     */
+    val contentSyncedAt: Instant? = null,
 ) : MenuItem {
     companion object {
         const val ROOT_PATH = "root"

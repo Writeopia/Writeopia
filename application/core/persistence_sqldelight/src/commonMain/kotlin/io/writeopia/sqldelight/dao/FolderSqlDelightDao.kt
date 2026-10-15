@@ -36,7 +36,8 @@ class FolderSqlDelightDao(database: WriteopiaDb?) : FolderSearch {
             icon = folder.icon,
             icon_tint = folder.icon_tint,
             last_synced_at = folder.last_synced_at,
-            deleted = folder.deleted
+            deleted = folder.deleted,
+            content_synced_at = folder.content_synced_at
         )
         refreshFolders()
     }
@@ -64,7 +65,8 @@ class FolderSqlDelightDao(database: WriteopiaDb?) : FolderSearch {
             icon = folder.icon,
             icon_tint = folder.icon_tint,
             last_synced_at = folder.last_synced_at,
-            deleted = folder.deleted
+            deleted = folder.deleted,
+            content_synced_at = folder.content_synced_at
         )
         refreshFolders()
     }

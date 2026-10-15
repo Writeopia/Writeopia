@@ -47,6 +47,8 @@ class FolderConflictHandler(
             val outdatedLocal = outdatedLocalById[externalFolder.id]
 
             when {
+                // A new folder is in sync, but its contents are not: contentSyncedAt stays null
+                // so the first time it is opened, everything inside it is fetched.
                 existingFolder == null -> folderRepository.createFolder(syncedExternal)
 
                 outdatedLocal != null && outdatedLocal.lastUpdatedAt >= externalFolder.lastUpdatedAt -> {
@@ -55,7 +57,11 @@ class FolderConflictHandler(
                     folderRepository.updateFolder(outdatedLocal)
                 }
 
-                else -> folderRepository.updateFolder(syncedExternal)
+                // Keep this device's contents watermark: the backend knows nothing about it, and
+                // receiving the folder itself says nothing about whether its contents were fetched.
+                else -> folderRepository.updateFolder(
+                    syncedExternal.copy(contentSyncedAt = existingFolder.contentSyncedAt)
+                )
             }
         }
 

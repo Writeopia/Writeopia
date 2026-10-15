@@ -19,4 +19,5 @@ class FolderEntity(
     @ColumnInfo(name = "icon") val icon: String,
     @ColumnInfo(name = "icon_tint") val iconTint: Long,
     @ColumnInfo(name = "deleted", defaultValue = "0") val deleted: Boolean = false,
+    @ColumnInfo(name = "content_synced_at") val contentSyncedAt: Long? = null,
 )

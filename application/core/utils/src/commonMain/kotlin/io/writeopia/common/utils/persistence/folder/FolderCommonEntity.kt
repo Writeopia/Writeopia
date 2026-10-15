@@ -12,4 +12,5 @@ data class FolderCommonEntity(
     val icon: String,
     val iconTint: Long,
     val deleted: Boolean = false,
+    val contentSyncedAt: Long? = null,
 )

@@ -28,5 +28,6 @@ fun FolderEntity.toModel(count: Long) =
         } else {
             null
         },
-        deleted = deleted.toBoolean()
+        deleted = deleted.toBoolean(),
+        contentSyncedAt = content_synced_at?.let(Instant::fromEpochMilliseconds)
     )

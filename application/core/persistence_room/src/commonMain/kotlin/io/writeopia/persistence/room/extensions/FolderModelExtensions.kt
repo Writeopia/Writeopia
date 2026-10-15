@@ -16,6 +16,7 @@ fun FolderEntity.toCommonEntity(): FolderCommonEntity {
         icon = this.icon,
         iconTint = this.iconTint,
         deleted = this.deleted,
+        contentSyncedAt = this.contentSyncedAt,
     )
 }
 
@@ -32,5 +33,6 @@ fun FolderCommonEntity.toEntity(): FolderEntity {
         icon = this.icon,
         iconTint = this.iconTint,
         deleted = this.deleted,
+        contentSyncedAt = this.contentSyncedAt,
     )
 }
