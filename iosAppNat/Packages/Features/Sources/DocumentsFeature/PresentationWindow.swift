@@ -21,7 +21,7 @@ public struct PresentationWindowScene: Scene {
             if let ref {
                 PresentationWindowView(presentationId: ref.presentationId)
                     .environment(session)
-                    .preferredColorScheme(session.colorTheme.colorScheme)
+                    .colorTheme(session.colorTheme)
                     .frame(minWidth: 800, minHeight: 500)
             }
         }

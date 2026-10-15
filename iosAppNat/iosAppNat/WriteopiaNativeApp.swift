@@ -12,7 +12,7 @@ struct WriteopiaNativeApp: App {
         WindowGroup {
             RootView()
                 .environment(session)
-                .preferredColorScheme(session.colorTheme.colorScheme)
+                .colorTheme(session.colorTheme)
                 .frame(minWidth: 900, minHeight: 600)
         }
         .defaultSize(width: 1100, height: 800)
@@ -25,7 +25,7 @@ struct WriteopiaNativeApp: App {
         WindowGroup {
             RootView()
                 .environment(session)
-                .preferredColorScheme(session.colorTheme.colorScheme)
+                .colorTheme(session.colorTheme)
         }
         #endif
     }
