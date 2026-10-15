@@ -1,0 +1,10 @@
+-- 16.sqm first added a content_synced_at column to folderEntity, and was then rewritten to
+-- create this table instead. A database migrated by that first version is at version 17
+-- without the table, so every folder sync failed on it. Creating it here, only when missing,
+-- heals those databases and changes nothing for the others.
+CREATE TABLE IF NOT EXISTS folderContentSyncEntity (
+  folder_id TEXT NOT NULL,
+  workspace_id TEXT NOT NULL,
+  content_synced_at INTEGER NOT NULL,
+  PRIMARY KEY (folder_id, workspace_id)
+);
