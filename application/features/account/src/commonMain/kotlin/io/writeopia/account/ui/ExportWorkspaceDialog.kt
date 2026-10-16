@@ -101,7 +101,7 @@ internal fun ExportWorkspaceDialog(
                         }
                     }
 
-                    is ResultData.Loading -> {
+                    is ResultData.Idle, is ResultData.Loading, is ResultData.InProgress -> {
                         CircularProgressIndicator()
                     }
 
@@ -113,8 +113,6 @@ internal fun ExportWorkspaceDialog(
                             textAlign = TextAlign.Center
                         )
                     }
-
-                    else -> {}
                 }
 
                 if (isSuccess) {

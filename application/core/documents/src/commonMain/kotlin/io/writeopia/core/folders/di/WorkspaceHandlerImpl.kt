@@ -95,6 +95,11 @@ class WorkspaceHandlerImpl(
     override val exportWorkspaceState: StateFlow<ResultData<Unit>> = _exportWorkspaceState.asStateFlow()
 
     override fun loadAvailableWorkspaces() {
+        // A reload keeps showing the workspaces already loaded instead of a loading state.
+        if (_availableWorkspaces.value !is ResultData.Complete) {
+            _availableWorkspaces.value = ResultData.Loading()
+        }
+
         coroutineScope.launch {
             // The private space has no account, so there are no cloud workspaces to list and the
             // backend isn't contacted at all.
@@ -209,7 +214,9 @@ class WorkspaceHandlerImpl(
     }
 
     override fun clearWorkspaces() {
-        _availableWorkspaces.value = ResultData.Idle()
+        // Called on logout: without an account there are no cloud workspaces, so the list is
+        // known to be empty (the offline workspace) rather than not loaded yet.
+        _availableWorkspaces.value = ResultData.Complete(emptyList())
         _selectedWorkspaceId.value = null
     }
 }
