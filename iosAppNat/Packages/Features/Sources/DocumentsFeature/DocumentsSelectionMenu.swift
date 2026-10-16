@@ -29,6 +29,15 @@ struct DocumentsSelectionMenu: View {
             }
             button("arrow.forward.folder", label: "Move to…", id: "move", action: onMove)
             button("trash", label: "Delete", id: "delete", tint: .red) { confirmsDelete = true }
+                // Backspace and the forward delete key ask to delete the selection, like the Finder.
+                // A button holds one shortcut, so the forward delete key gets an invisible one.
+                .keyboardShortcut(.delete, modifiers: [])
+                .background {
+                    Button("") { confirmsDelete = true }
+                        .keyboardShortcut(.deleteForward, modifiers: [])
+                        .opacity(0)
+                        .accessibilityHidden(true)
+                }
                 // Attached to the button so the confirmation shows right above it.
                 .confirmationDialog(
                     count == 1 ? String(localized: "Delete this item?") : String(localized: "Delete \(count) items?"),
@@ -60,6 +69,8 @@ struct DocumentsSelectionMenu: View {
                 .animation(.snappy, value: count)
             }
             .buttonStyle(.plain)
+            // Esc unselects, like the Compose desktop app. An open sheet or dialog takes Esc first.
+            .keyboardShortcut(.cancelAction)
             .accessibilityLabel(Text("Unselect \(count) items"))
             .accessibilityIdentifier("documents.selection.close")
         }

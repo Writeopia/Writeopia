@@ -76,6 +76,16 @@
   <string name="lock_document">Bloquear edição</string>
   <string name="move_to">Move para...</string>
   <string name="move_to_home">Move home</string>
+  <string name="move">Mover</string>
+  <string name="move_here">Mover para cá</string>
+  <string name="move_already_here">Os itens já estão aqui</string>
+  <string name="move_items_are_here">Os itens estão aqui</string>
+  <string name="move_location_current">Os itens estão aqui. Abra uma pasta para movê-los para ela.</string>
+  <string name="move_location_hint">Mova para cá ou abra uma pasta para mover os itens para ela.</string>
+  <string name="move_no_folders_here">Nenhuma pasta aqui</string>
+  <string name="move_no_folders_found">Nenhuma pasta encontrada</string>
+  <string name="search_folders">Buscar pastas</string>
+  <string name="move_selection_confirmation">Mover os itens selecionados para \"%1$s\"?</string>
   <string name="text">Texto</string>
   <string name="insert">Inserir</string>
   <string name="box">Caixa</string>

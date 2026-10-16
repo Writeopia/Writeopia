@@ -147,6 +147,9 @@ interface ChooseNoteViewModel : FolderController {
      */
     suspend fun currentFolderMoveDestinations(): List<FolderDestination>
 
+    /** Every folder of the workspace, for the picker of where the selected items go. */
+    suspend fun workspaceFolders(): List<Folder>
+
     fun moveCurrentFolder(parentId: String)
 }
 
