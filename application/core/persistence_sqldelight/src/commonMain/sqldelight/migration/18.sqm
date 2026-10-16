@@ -1,0 +1,91 @@
+-- Schema changes made in the .sq files since apps-alpha47 that no migration covered yet.
+-- SqlDelight reads SELECT * results by column index, so a column added in the middle of a
+-- table needs the table rebuilt; ALTER TABLE ADD COLUMN would only append it at the end.
+
+-- token_entity: token became access_token, plus the refresh token and its expiration.
+ALTER TABLE token_entity RENAME COLUMN token TO access_token;
+ALTER TABLE token_entity ADD COLUMN refresh_token TEXT;
+ALTER TABLE token_entity ADD COLUMN access_token_expires_at INTEGER;
+
+-- uiConfigurationEntity: accent_color, between color_theme_option and side_menu_width.
+CREATE TABLE uiConfigurationEntity_new (
+  user_id TEXT PRIMARY KEY,
+  color_theme_option TEXT,
+  accent_color TEXT DEFAULT 'purple',
+  side_menu_width INTEGER DEFAULT 280,
+  font_family TEXT NOT NULL,
+  ai_provider TEXT
+);
+INSERT INTO uiConfigurationEntity_new(user_id, color_theme_option, side_menu_width, font_family, ai_provider)
+SELECT user_id, color_theme_option, side_menu_width, font_family, ai_provider
+FROM uiConfigurationEntity;
+DROP TABLE uiConfigurationEntity;
+ALTER TABLE uiConfigurationEntity_new RENAME TO uiConfigurationEntity;
+
+-- workspace_entity: last_event_sync_at, between last_synced_at and icon.
+CREATE TABLE workspace_entity_new (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  last_synced_at INTEGER NOT NULL,
+  last_event_sync_at INTEGER NOT NULL DEFAULT 0,
+  icon TEXT,
+  icon_tint INTEGER,
+  selected INTEGER NOT NULL
+);
+INSERT INTO workspace_entity_new(id, user_id, name, last_synced_at, icon, icon_tint, selected)
+SELECT id, user_id, name, last_synced_at, icon, icon_tint, selected
+FROM workspace_entity;
+DROP TABLE workspace_entity;
+ALTER TABLE workspace_entity_new RENAME TO workspace_entity;
+
+-- documentEntity: company_id was removed.
+CREATE TABLE documentEntity_new (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  last_updated_at INTEGER NOT NULL,
+  last_synced_at INTEGER,
+  workspace_id TEXT NOT NULL,
+  favorite INTEGER NOT NULL,
+  parent_document_id TEXT NOT NULL,
+  icon TEXT,
+  icon_tint INTEGER,
+  is_locked INTEGER NOT NULL,
+  deleted INTEGER NOT NULL
+);
+INSERT INTO documentEntity_new(id, title, created_at, last_updated_at, last_synced_at, workspace_id,
+  favorite, parent_document_id, icon, icon_tint, is_locked, deleted)
+SELECT id, title, created_at, last_updated_at, last_synced_at, workspace_id,
+  favorite, parent_document_id, icon, icon_tint, is_locked, deleted
+FROM documentEntity;
+DROP TABLE documentEntity;
+ALTER TABLE documentEntity_new RENAME TO documentEntity;
+
+-- storyStepEntity: position went from INTEGER to REAL, and last_updated_at was added.
+CREATE TABLE storyStepEntity_new (
+  id TEXT PRIMARY KEY,
+  local_id TEXT NOT NULL,
+  type INTEGER NOT NULL,
+  parent_id TEXT,
+  url TEXT,
+  path TEXT,
+  text TEXT,
+  checked INTEGER NOT NULL,
+  position REAL NOT NULL,
+  document_id TEXT NOT NULL,
+  is_group INTEGER NOT NULL,
+  has_inner_steps INTEGER NOT NULL,
+  background_color INTEGER,
+  tags TEXT NOT NULL,
+  spans TEXT NOT NULL,
+  link_to_document TEXT,
+  last_updated_at INTEGER
+);
+INSERT INTO storyStepEntity_new(id, local_id, type, parent_id, url, path, text, checked, position,
+  document_id, is_group, has_inner_steps, background_color, tags, spans, link_to_document)
+SELECT id, local_id, type, parent_id, url, path, text, checked, position,
+  document_id, is_group, has_inner_steps, background_color, tags, spans, link_to_document
+FROM storyStepEntity;
+DROP TABLE storyStepEntity;
+ALTER TABLE storyStepEntity_new RENAME TO storyStepEntity;
