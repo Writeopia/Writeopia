@@ -74,6 +74,7 @@ fun Navigation(
     graphNavigateBack: (() -> Unit)? = null,
     graphBottomBarPadding: Dp = 0.dp,
     graphTouchControls: Boolean = false,
+    settingsAsTab: Boolean = false,
     sideMenuKmpInjector: SideMenuKmpInjector? = null,
     notesMenuWideLayout: Boolean = false,
     editorInjector: TextEditorInjector,
@@ -238,6 +239,7 @@ fun Navigation(
                     navController.navigate(Destinations.AUTH_RESET_PASSWORD.id)
                 },
                 navigationClick = navController::navigateUp,
+                showSettingsBackArrow = !settingsAsTab,
                 navigateToSettingsTeams = navController::navigateToSettingsTeams,
                 navigateToSettingsAppearance = navController::navigateToSettingsAppearance,
                 navigateToSettingsAccount = navController::navigateToSettingsAccount,

@@ -50,7 +50,7 @@ import io.writeopia.navigation.Navigation
 import io.writeopia.navigation.NavigationViewModel
 import io.writeopia.sdk.models.drawing.DrawingData
 import io.writeopia.navigation.notes.navigateToNoteMenu
-import io.writeopia.navigation.notifications.navigateToNotifications
+import io.writeopia.navigation.notes.navigateToAccount
 import io.writeopia.navigation.search.navigateToSearch
 import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
 import io.writeopia.documents.graph.di.DocumentsGraphInjection
@@ -119,6 +119,8 @@ fun PortraitMobile(
                 graphNavigateBack = navController::navigateUp,
                 graphBottomBarPadding = if (scrollAwareState.isVisible && !isWideScreen) 80.dp else 0.dp,
                 graphTouchControls = true,
+                // In portrait Settings is a tab of the bottom bar, so it has no way back.
+                settingsAsTab = !isWideScreen,
                 selectedColorTheme = colorThemeState,
                 selectedAccentColor = accentColorState,
                 selectColorTheme = uiConfigViewModel::changeColorTheme,
@@ -237,7 +239,7 @@ fun NavHostController.navigateToItem(
     when (navItem) {
         NavItemName.HOME -> this.navigateToNoteMenu(NotesNavigation.Root, builder)
         NavItemName.SEARCH -> this.navigateToSearch(builder)
-        NavItemName.NOTIFICATIONS -> this.navigateToNotifications(builder)
+        NavItemName.SETTINGS -> this.navigateToAccount(builder)
     }
 }
 
@@ -245,5 +247,5 @@ fun NavItemName.iconForNavItem(): ImageVector =
     when (this) {
         NavItemName.HOME -> WrIcons.home
         NavItemName.SEARCH -> WrIcons.search
-        NavItemName.NOTIFICATIONS -> WrIcons.notifications
+        NavItemName.SETTINGS -> WrIcons.settings
     }

@@ -23,8 +23,8 @@ class MobileNavigationViewModel : ViewModel(), NavigationViewModel {
                 destination = Destinations.SEARCH.id,
             ),
             BottomBarItem(
-                navItemName = NavItemName.NOTIFICATIONS,
-                destination = Destinations.NOTIFICATIONS.id,
+                navItemName = NavItemName.SETTINGS,
+                destination = Destinations.ACCOUNT.id,
             ),
         )
 }

@@ -111,6 +111,7 @@ fun NavGraphBuilder.accountMenuNavigation(
     navigateToSpaceChoice: () -> Unit,
     resetPassword: () -> Unit,
     navigationClick: () -> Unit,
+    showSettingsBackArrow: Boolean = true,
     navigateToSettingsTeams: () -> Unit,
     navigateToSettingsAppearance: () -> Unit,
     navigateToSettingsAccount: () -> Unit,
@@ -155,19 +156,21 @@ fun NavGraphBuilder.accountMenuNavigation(
                             )
                         },
                         navigationIcon = {
-                            Row(
-                                modifier = Modifier.fillMaxHeight(),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    modifier = Modifier
-                                        .clip(CircleShape)
-                                        .clickable(onClick = navigationClick)
-                                        .padding(10.dp),
-                                    imageVector = WrIcons.backArrowMobile,
-                                    contentDescription = "",
-                                    tint = MaterialTheme.colorScheme.onPrimary
-                                )
+                            if (showSettingsBackArrow) {
+                                Row(
+                                    modifier = Modifier.fillMaxHeight(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        modifier = Modifier
+                                            .clip(CircleShape)
+                                            .clickable(onClick = navigationClick)
+                                            .padding(10.dp),
+                                        imageVector = WrIcons.backArrowMobile,
+                                        contentDescription = "",
+                                        tint = MaterialTheme.colorScheme.onPrimary
+                                    )
+                                }
                             }
                         }
                     )

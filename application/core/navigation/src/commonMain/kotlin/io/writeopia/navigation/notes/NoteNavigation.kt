@@ -1,6 +1,7 @@
 package io.writeopia.navigation.notes
 
 import androidx.navigation.NavController
+import androidx.navigation.NavOptionsBuilder
 import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.encoding.encodeForNavigation
@@ -39,8 +40,8 @@ fun NavController.navigateToNoteWithPresentation(documentId: String, presentatio
     navigate("${Destinations.EDITOR.id}/$documentId/${title.encodeForNavigation()}?presentationId=$presentationId")
 }
 
-fun NavController.navigateToAccount() {
-    navigate(Destinations.ACCOUNT.id)
+fun NavController.navigateToAccount(builder: NavOptionsBuilder.() -> Unit = {}) {
+    navigate(Destinations.ACCOUNT.id, builder)
 }
 
 fun NavController.navigateToFolder(navigation: NotesNavigation) {
