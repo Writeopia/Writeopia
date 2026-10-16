@@ -30,10 +30,12 @@ struct ComposeDatabase {
         let content: String
     }
 
+    #if os(macOS)
     /// Where the Compose desktop app keeps its database.
     static var defaultLocation: URL {
         FileManager.default.homeDirectoryForCurrentUser.appending(path: ".writeopia/writeopia_1.db")
     }
+    #endif
 
     private let db: SQLiteDatabase
 
