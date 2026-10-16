@@ -684,6 +684,13 @@ private fun TeamsSection(
             is ResultData.Complete -> {
                 val workspaces = (workspaces as ResultData.Complete<List<Workspace>>).data
 
+                if (workspaces.isEmpty()) {
+                    BasicText(
+                        text = WrStrings.youAreOffline(),
+                        style = MaterialTheme.typography.bodySmall.copy(color = titleColor)
+                    )
+                }
+
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     items(workspaces) { workspace ->
                         CommonButton(text = workspace.name) {
@@ -712,18 +719,8 @@ private fun TeamsSection(
                 )
             }
 
-            is ResultData.Idle -> {
-                BasicText(
-                    text = WrStrings.youAreOffline(),
-                    style = MaterialTheme.typography.bodySmall.copy(color = titleColor)
-                )
-            }
-
-            is ResultData.InProgress -> {
-                CircularProgressIndicator()
-            }
-
-            is ResultData.Loading -> {
+            // Idle means the workspaces were not loaded yet, so it is a loading state too.
+            is ResultData.Idle, is ResultData.InProgress, is ResultData.Loading -> {
                 CircularProgressIndicator()
             }
         }

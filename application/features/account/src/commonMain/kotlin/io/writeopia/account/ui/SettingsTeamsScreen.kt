@@ -75,7 +75,8 @@ fun SettingsTeamsScreen(
                 }
             }
 
-            is ResultData.Loading, is ResultData.InProgress -> {
+            // Idle means the workspaces were not loaded yet, so it is a loading state too.
+            is ResultData.Idle, is ResultData.Loading, is ResultData.InProgress -> {
                 CircularProgressIndicator(modifier = Modifier.size(24.dp))
             }
 
@@ -84,14 +85,6 @@ fun SettingsTeamsScreen(
                     text = WrStrings.errorLoadingTeams(),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.error
-                )
-            }
-
-            is ResultData.Idle -> {
-                Text(
-                    text = WrStrings.youAreOffline(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onBackground
                 )
             }
         }

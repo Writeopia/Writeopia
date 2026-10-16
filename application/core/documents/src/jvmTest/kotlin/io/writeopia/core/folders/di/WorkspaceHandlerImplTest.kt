@@ -208,7 +208,7 @@ class WorkspaceHandlerImplTest {
         handler.initScope(scope)
 
         handler.loadAvailableWorkspaces()
-        val result = handler.availableWorkspaces.first { it !is ResultData.Idle }
+        val result = handler.availableWorkspaces.first { it is ResultData.Complete }
 
         assertEquals(ResultData.Complete(emptyList()), result)
         coVerify(exactly = 0) { workspaceApi.getAvailableWorkspaces() }
@@ -226,7 +226,7 @@ class WorkspaceHandlerImplTest {
         handler.initScope(scope)
 
         handler.loadAvailableWorkspaces()
-        val result = handler.availableWorkspaces.first { it !is ResultData.Idle }
+        val result = handler.availableWorkspaces.first { it is ResultData.Complete }
 
         assertEquals(ResultData.Complete(workspaces), result)
     }
