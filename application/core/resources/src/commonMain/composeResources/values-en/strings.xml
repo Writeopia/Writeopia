@@ -86,6 +86,7 @@
   <string name="move_location_hint">Move here, or open a folder to move the items into it.</string>
   <string name="move_no_folders_here">No folders here</string>
   <string name="move_no_folders_found">No folders found</string>
+  <string name="move_error_loading_folders">Error loading folders</string>
   <string name="search_folders">Search folders</string>
   <string name="move_selection_confirmation">Move the selected items to \"%1$s\"?</string>
   <string name="text">Text</string>

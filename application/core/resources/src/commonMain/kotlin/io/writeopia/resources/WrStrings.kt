@@ -184,6 +184,7 @@ import writeopia.application.core.resources.generated.resources.move_location_cu
 import writeopia.application.core.resources.generated.resources.move_location_hint
 import writeopia.application.core.resources.generated.resources.move_no_folders_here
 import writeopia.application.core.resources.generated.resources.move_no_folders_found
+import writeopia.application.core.resources.generated.resources.move_error_loading_folders
 import writeopia.application.core.resources.generated.resources.search_folders
 import writeopia.application.core.resources.generated.resources.move_selection_confirmation
 import writeopia.application.core.resources.generated.resources.name
@@ -508,6 +509,9 @@ object WrStrings {
 
     @Composable
     fun moveNoFoldersFound() = stringResource(Res.string.move_no_folders_found)
+
+    @Composable
+    fun moveErrorLoadingFolders() = stringResource(Res.string.move_error_loading_folders)
 
     @Composable
     fun searchFolders() = stringResource(Res.string.search_folders)

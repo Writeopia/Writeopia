@@ -84,6 +84,7 @@
   <string name="move_location_hint">Mova para cá ou abra uma pasta para mover os itens para ela.</string>
   <string name="move_no_folders_here">Nenhuma pasta aqui</string>
   <string name="move_no_folders_found">Nenhuma pasta encontrada</string>
+  <string name="move_error_loading_folders">Erro ao carregar as pastas</string>
   <string name="search_folders">Buscar pastas</string>
   <string name="move_selection_confirmation">Mover os itens selecionados para \"%1$s\"?</string>
   <string name="text">Texto</string>

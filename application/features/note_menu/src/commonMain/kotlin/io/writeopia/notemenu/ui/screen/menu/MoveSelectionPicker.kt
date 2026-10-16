@@ -2,6 +2,7 @@ package io.writeopia.notemenu.ui.screen.menu
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -57,6 +58,7 @@ import io.writeopia.notemenu.viewmodel.MoveFolderTree
 import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
+import kotlinx.coroutines.CancellationException
 
 /** The folder picker in a bottom sheet, for touch screens. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -125,8 +127,20 @@ private fun MoveSelectionPicker(
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val folders by produceState<List<Folder>?>(null) {
-        value = loadFolders()
+    // Bumped by the retry button, to load the folders again.
+    var loadAttempt by remember { mutableStateOf(0) }
+    var loadFailed by remember { mutableStateOf(false) }
+    val folders by produceState<List<Folder>?>(null, loadAttempt) {
+        value = null
+        loadFailed = false
+        value = try {
+            loadFolders()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            loadFailed = true
+            null
+        }
     }
     val rootTitle = WrStrings.home()
     val tree = remember(folders, excludedIds, rootTitle) {
@@ -163,6 +177,22 @@ private fun MoveSelectionPicker(
         HorizontalDivider()
 
         when {
+            tree == null && loadFailed -> Column(
+                modifier = Modifier.fillMaxWidth().weight(1F).padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Text(
+                    text = WrStrings.moveErrorLoadingFolders(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                TextButton(onClick = { loadAttempt++ }) {
+                    Text(WrStrings.retry())
+                }
+            }
+
             tree == null -> Box(modifier = Modifier.fillMaxWidth().weight(1F)) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
