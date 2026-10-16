@@ -31,6 +31,7 @@ import io.writeopia.common.utils.configuration.PlatformType
 import io.writeopia.common.utils.file.directoryChooserSave
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.common.utils.NotesNavigation
+import io.writeopia.resources.WrStrings
 import io.writeopia.notemenu.ui.screen.menu.TagHeader
 import io.writeopia.notemenu.ui.screen.actions.DesktopNoteActionsMenu
 import io.writeopia.notemenu.ui.screen.configuration.molecules.NotesConfigurationMenu
@@ -99,7 +100,12 @@ fun DesktopNotesMenu(
                     modifier = Modifier.padding(start = 40.dp)
                 ) {
                     NotesCardsScreen(
-                        showTapToStart = currentTag == null,
+                        showTapToStart = chooseNoteViewModel.currentFolderId == NotesNavigation.Root.id,
+                        emptyMessage = if (currentTag != null) {
+                            WrStrings.tagScreenEmpty()
+                        } else {
+                            WrStrings.folderScreenEmpty()
+                        },
                         isDarkTheme = isDarkTheme,
                         documents = chooseNoteViewModel.documentsState.collectAsState().value,
                         showAddMenuState = chooseNoteViewModel.showAddMenuState,

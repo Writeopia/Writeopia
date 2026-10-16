@@ -51,6 +51,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import io.writeopia.common.utils.NotesNavigation
+import io.writeopia.resources.WrStrings
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.notemenu.ui.screen.FolderSharedKeys
 import io.writeopia.notemenu.ui.screen.configuration.molecules.MobileConfigurationsMenu
@@ -554,7 +555,12 @@ private fun Content(
             currentTag?.let { tag -> TagHeader(tag) }
 
             NotesCardsScreen(
-                showTapToStart = currentTag == null,
+                showTapToStart = chooseNoteViewModel.currentFolderId == NotesNavigation.Root.id,
+                emptyMessage = if (currentTag != null) {
+                    WrStrings.tagScreenEmpty()
+                } else {
+                    WrStrings.folderScreenEmpty()
+                },
                 isDarkTheme = isDarkTheme,
                 documents = chooseNoteViewModel.documentsState.collectAsState().value,
                 showAddMenuState = chooseNoteViewModel.showAddMenuState,

@@ -115,8 +115,10 @@ fun NotesCardsScreen(
     hideShowMenu: () -> Unit,
     editFolder: (MenuItemUi.FolderUi) -> Unit,
     modifier: Modifier = Modifier,
-    /** False on screens where a new note wouldn't land here, like a tag's documents. */
+    /** Only true in the root folder: inside a folder or a tag, the new note button is enough. */
     showTapToStart: Boolean = true,
+    /** Shown instead of the tap to start button when the screen is empty and it is hidden. */
+    emptyMessage: String = "",
 ) {
     when (documents) {
         is ResultData.Complete -> {
@@ -126,7 +128,7 @@ fun NotesCardsScreen(
 
                     if (isEmpty && !showTapToStart) {
                         Text(
-                            text = WrStrings.tagScreenEmpty(),
+                            text = emptyMessage,
                             modifier = Modifier.fillMaxWidth().padding(24.dp),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,

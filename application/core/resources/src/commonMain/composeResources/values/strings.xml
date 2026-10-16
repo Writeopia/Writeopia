@@ -333,6 +333,7 @@
   <string name="graph_card_open_folder">Open folder</string>
   <string name="graph_card_show_documents">Show its documents</string>
   <string name="tag_screen_empty">No documents carry this tag yet.</string>
+  <string name="folder_screen_empty">This folder is empty.</string>
   <string name="documents_graph">Documents graph</string>
   <string name="document_tag_add_dialog_title">Add a tag</string>
   <string name="document_tag_add_existing">Pick a tag</string>

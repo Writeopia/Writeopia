@@ -40,6 +40,7 @@ import writeopia.application.core.resources.generated.resources.document_tags_no
 import writeopia.application.core.resources.generated.resources.document_tags_more
 import writeopia.application.core.resources.generated.resources.graph_grouping_folders
 import writeopia.application.core.resources.generated.resources.tag_screen_empty
+import writeopia.application.core.resources.generated.resources.folder_screen_empty
 import writeopia.application.core.resources.generated.resources.documents_graph
 import writeopia.application.core.resources.generated.resources.untitled
 import writeopia.application.core.resources.generated.resources.graph_card_kind_document
@@ -1281,6 +1282,9 @@ object WrStrings {
 
     @Composable
     fun tagScreenEmpty() = stringResource(Res.string.tag_screen_empty)
+
+    @Composable
+    fun folderScreenEmpty() = stringResource(Res.string.folder_screen_empty)
 
     @Composable
     fun documentsGraph() = stringResource(Res.string.documents_graph)
