@@ -32,6 +32,13 @@ final class SQLiteDatabase {
         try execute("PRAGMA foreign_keys = ON")
     }
 
+    /// Opens an existing database without writing to it, like the one of another app.
+    init(readingOnly url: URL) throws {
+        guard sqlite3_open_v2(url.path(percentEncoded: false), &handle, SQLITE_OPEN_READONLY, nil) == SQLITE_OK else {
+            throw SQLiteError(description: "Could not open the database: \(String(cString: sqlite3_errmsg(handle)))")
+        }
+    }
+
     deinit {
         for statement in statements.values {
             sqlite3_finalize(statement)

@@ -293,7 +293,7 @@ public final class AppSession {
     public func setPrivateSpaceFolder(_ url: URL?) throws {
         guard let url else {
             preferences.remove(.privateSpaceFolderBookmark)
-            localDocuments = LocalDocumentsRepository()
+            localDocuments = LocalDocumentsRepository(composeDatabase: LocalDocumentsRepository.composeDatabaseLocation)
             privateSpaceFolder = nil
             documentsVersion += 1
             return
@@ -301,7 +301,10 @@ public final class AppSession {
 
         let bookmark = try PrivateSpaceFolder.bookmark(for: url)
         guard let resolved = PrivateSpaceFolder.resolve(bookmark) else { throw PrivateSpaceFolder.UnreadableFolder() }
-        let repository = try LocalDocumentsRepository.inUserFolder(resolved.url)
+        let repository = try LocalDocumentsRepository.inUserFolder(
+            resolved.url,
+            composeDatabase: LocalDocumentsRepository.composeDatabaseLocation
+        )
         preferences.set(bookmark, for: .privateSpaceFolderBookmark)
         localDocuments = repository
         privateSpaceFolder = resolved.url
@@ -414,13 +417,16 @@ public final class AppSession {
                 if resolved.isStale, let fresh = try? PrivateSpaceFolder.bookmark(for: resolved.url) {
                     preferences.set(fresh, for: .privateSpaceFolderBookmark)
                 }
-                if let repository = try? LocalDocumentsRepository.inUserFolder(resolved.url) {
+                if let repository = try? LocalDocumentsRepository.inUserFolder(
+                    resolved.url,
+                    composeDatabase: LocalDocumentsRepository.composeDatabaseLocation
+                ) {
                     return (repository, resolved.url)
                 }
             }
             preferences.remove(.privateSpaceFolderBookmark)
         }
-        return (LocalDocumentsRepository(), nil)
+        return (LocalDocumentsRepository(composeDatabase: LocalDocumentsRepository.composeDatabaseLocation), nil)
     }
 
     private func resolvePhase() -> Phase {

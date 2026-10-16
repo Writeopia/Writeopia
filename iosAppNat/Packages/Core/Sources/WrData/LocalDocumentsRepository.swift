@@ -25,7 +25,8 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
     public convenience init(
         directory: URL = LocalDocumentsRepository.defaultDirectory,
         workspaceId: String = Workspace.localId,
-        seedsWelcome: Bool = true
+        seedsWelcome: Bool = true,
+        composeDatabase: URL? = nil
     ) {
         do {
             try self.init(
@@ -33,7 +34,8 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
                 workspaceId: workspaceId,
                 seedsWelcome: seedsWelcome,
                 importsLegacyJson: true,
-                journalMode: .wal
+                journalMode: .wal,
+                composeDatabase: composeDatabase
             )
         } catch {
             fatalError("Could not open the documents database: \(error)")
@@ -44,14 +46,25 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
     /// is: JSON files already there are not imported nor moved, and the database uses a single
     /// file so folders synced by iCloud Drive or Dropbox stay consistent. Throws when the folder
     /// can't be written, so a stale choice can fall back to the default location.
-    public static func inUserFolder(_ directory: URL) throws -> LocalDocumentsRepository {
+    public static func inUserFolder(_ directory: URL, composeDatabase: URL? = nil) throws -> LocalDocumentsRepository {
         try LocalDocumentsRepository(
             opening: directory,
             workspaceId: Workspace.localId,
             seedsWelcome: true,
             importsLegacyJson: false,
-            journalMode: .delete
+            journalMode: .delete,
+            composeDatabase: composeDatabase
         )
+    }
+
+    /// The database of the Compose desktop app, whose offline space the private space of the
+    /// Mac app takes over. Nil on iOS.
+    public static var composeDatabaseLocation: URL? {
+        #if os(macOS)
+        ComposeDatabase.defaultLocation
+        #else
+        nil
+        #endif
     }
 
     init(
@@ -59,7 +72,8 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
         workspaceId: String,
         seedsWelcome: Bool,
         importsLegacyJson: Bool,
-        journalMode: SQLiteDatabase.JournalMode
+        journalMode: SQLiteDatabase.JournalMode,
+        composeDatabase: URL? = nil
     ) throws {
         self.directory = directory
         self.workspaceId = workspaceId
@@ -68,6 +82,10 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
         try createSchema()
         if importsLegacyJson {
             try importJsonFilesIfNeeded()
+        }
+        if let composeDatabase {
+            // An unreadable database is tried again on the next launch; the app opens anyway.
+            try? importComposeDatabaseIfNeeded(from: composeDatabase)
         }
     }
 
@@ -936,6 +954,57 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
         try? fileManager.createDirectory(at: archive, withIntermediateDirectories: true)
         for url in jsonFiles {
             try? fileManager.moveItem(at: url, to: archive.appending(path: url.lastPathComponent))
+        }
+    }
+
+    /// Brings over, once, the offline space of the Compose desktop app. Its database is left as
+    /// it is. A document or folder that is already here and was changed later is kept.
+    func importComposeDatabaseIfNeeded(from url: URL) throws {
+        guard try meta("compose_db_imported") == nil else { return }
+        guard let compose = try ComposeDatabase(url: url) else {
+            try setMeta("compose_db_imported", "1")
+            return
+        }
+        let contents = try compose.contents(workspaceId: workspaceId)
+
+        try db.transaction {
+            for folder in contents.folders {
+                if let stored = try storedFolder(id: folder.id),
+                   (stored.lastUpdatedAt ?? .distantPast) >= (folder.lastUpdatedAt ?? .distantPast) {
+                    continue
+                }
+                try store(folder)
+            }
+            for tag in contents.tags where try storedTag(id: tag.id) == nil {
+                try storeTag(tag)
+            }
+            for document in contents.documents {
+                if let stored = try storedDocument(id: document.id), stored.lastUpdatedAt >= document.lastUpdatedAt {
+                    continue
+                }
+                try writeMetadata(document)
+                try db.run("DELETE FROM story_step WHERE document_id = ?", [.text(document.id)])
+                for step in document.content {
+                    try writeStep(step, documentId: document.id)
+                }
+            }
+            for presentation in contents.presentations {
+                try db.run(
+                    "INSERT OR IGNORE INTO presentation (id, document_id, title, created_at) VALUES (?, ?, ?, ?)",
+                    [.text(presentation.id), .text(presentation.documentId), .text(presentation.title), .integer(presentation.createdAt)]
+                )
+            }
+            for step in contents.presentationSteps {
+                try db.run(
+                    "INSERT OR IGNORE INTO presentation_step (id, presentation_id, slide_index, position, content) VALUES (?, ?, ?, ?, ?)",
+                    [.text(step.id), .text(step.presentationId), .integer(step.slideIndex), .real(step.position), .text(step.content)]
+                )
+            }
+            // The Compose app already gave this space its tutorials.
+            if !contents.isEmpty {
+                try setMeta("seeded", "1")
+            }
+            try setMeta("compose_db_imported", "1")
         }
     }
 
