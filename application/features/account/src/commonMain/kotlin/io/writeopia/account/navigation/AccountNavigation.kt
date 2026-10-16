@@ -43,7 +43,6 @@ import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.model.AccentColor
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.resources.WrStrings
-import io.writeopia.theme.WriteopiaTheme
 import kotlinx.coroutines.flow.StateFlow
 
 fun NavController.navigateToSettingsTeams() {
@@ -111,6 +110,7 @@ fun NavGraphBuilder.accountMenuNavigation(
     navigateToSpaceChoice: () -> Unit,
     resetPassword: () -> Unit,
     navigationClick: () -> Unit,
+    showSettingsBackArrow: Boolean = true,
     navigateToSettingsTeams: () -> Unit,
     navigateToSettingsAppearance: () -> Unit,
     navigateToSettingsAccount: () -> Unit,
@@ -155,19 +155,21 @@ fun NavGraphBuilder.accountMenuNavigation(
                             )
                         },
                         navigationIcon = {
-                            Row(
-                                modifier = Modifier.fillMaxHeight(),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    modifier = Modifier
-                                        .clip(CircleShape)
-                                        .clickable(onClick = navigationClick)
-                                        .padding(10.dp),
-                                    imageVector = WrIcons.backArrowMobile,
-                                    contentDescription = "",
-                                    tint = MaterialTheme.colorScheme.onPrimary
-                                )
+                            if (showSettingsBackArrow) {
+                                Row(
+                                    modifier = Modifier.fillMaxHeight(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        modifier = Modifier
+                                            .clip(CircleShape)
+                                            .clickable(onClick = navigationClick)
+                                            .padding(10.dp),
+                                        imageVector = WrIcons.backArrowMobile,
+                                        contentDescription = "",
+                                        tint = MaterialTheme.colorScheme.onPrimary
+                                    )
+                                }
                             }
                         }
                     )
@@ -175,7 +177,7 @@ fun NavGraphBuilder.accountMenuNavigation(
             }
         ) { paddingValues ->
             AccountMenuScreen(
-                modifier = Modifier.background(WriteopiaTheme.colorScheme.lightBackground)
+                modifier = Modifier.background(MaterialTheme.colorScheme.background)
                     .padding(paddingValues),
                 navigateToAppearance = navigateToSettingsAppearance,
                 navigateToTeams = navigateToSettingsTeams,
@@ -236,7 +238,7 @@ fun NavGraphBuilder.accountMenuNavigation(
             }
         ) { paddingValues ->
             SettingsTeamsScreen(
-                modifier = Modifier.background(WriteopiaTheme.colorScheme.lightBackground)
+                modifier = Modifier.background(MaterialTheme.colorScheme.background)
                     .padding(paddingValues),
                 workspacesState = accountMenuViewModel.availableWorkspaces,
                 onWorkspaceClick = { workspaceId, workspaceName ->
@@ -309,7 +311,7 @@ fun NavGraphBuilder.accountMenuNavigation(
             }
         ) { paddingValues ->
             WorkspaceUsersScreen(
-                modifier = Modifier.background(WriteopiaTheme.colorScheme.lightBackground)
+                modifier = Modifier.background(MaterialTheme.colorScheme.background)
                     .padding(paddingValues),
                 workspaceName = viewModel.getWorkspaceName(),
                 usersState = viewModel.users,
@@ -386,7 +388,7 @@ fun NavGraphBuilder.accountMenuNavigation(
             }
         ) { paddingValues ->
             UserSearchScreen(
-                modifier = Modifier.background(WriteopiaTheme.colorScheme.lightBackground)
+                modifier = Modifier.background(MaterialTheme.colorScheme.background)
                     .padding(paddingValues),
                 workspaceName = viewModel.getWorkspaceName(),
                 searchQuery = viewModel.searchQuery,
@@ -467,7 +469,7 @@ fun NavGraphBuilder.accountMenuNavigation(
             }
         ) { paddingValues ->
             UserAddScreen(
-                modifier = Modifier.background(WriteopiaTheme.colorScheme.lightBackground)
+                modifier = Modifier.background(MaterialTheme.colorScheme.background)
                     .padding(paddingValues),
                 workspaceName = viewModel.getWorkspaceName(),
                 userName = viewModel.getUserName(),
@@ -550,7 +552,7 @@ fun NavGraphBuilder.accountMenuNavigation(
             }
         ) { paddingValues ->
             UserEditScreen(
-                modifier = Modifier.background(WriteopiaTheme.colorScheme.lightBackground)
+                modifier = Modifier.background(MaterialTheme.colorScheme.background)
                     .padding(paddingValues),
                 workspaceName = viewModel.getWorkspaceName(),
                 userName = viewModel.getUserName(),
@@ -616,7 +618,7 @@ fun NavGraphBuilder.accountMenuNavigation(
             }
         ) { paddingValues ->
             SettingsAppearanceScreen(
-                modifier = Modifier.background(WriteopiaTheme.colorScheme.lightBackground)
+                modifier = Modifier.background(MaterialTheme.colorScheme.background)
                     .padding(paddingValues),
                 selectedColorTheme = selectedColorTheme,
                 selectedAccentColor = selectedAccentColor,
@@ -677,7 +679,7 @@ fun NavGraphBuilder.accountMenuNavigation(
             }
         ) { paddingValues ->
             SettingsAccountScreen(
-                modifier = Modifier.background(WriteopiaTheme.colorScheme.lightBackground)
+                modifier = Modifier.background(MaterialTheme.colorScheme.background)
                     .padding(paddingValues),
                 isLoggedInState = accountMenuViewModel.isLoggedIn,
                 workspacesState = accountMenuViewModel.availableWorkspaces,
@@ -760,7 +762,7 @@ fun NavGraphBuilder.accountMenuNavigation(
                 aiProviderChoices = aiSettingsViewModel.aiProviderChoices,
                 isOnlineState = aiSettingsViewModel.isOnline,
                 selectAiProvider = aiSettingsViewModel::selectAiProvider,
-                modifier = Modifier.background(WriteopiaTheme.colorScheme.lightBackground)
+                modifier = Modifier.background(MaterialTheme.colorScheme.background)
                     .padding(paddingValues),
                 navigateToCloudAi = navigateToSettingsCloudAi
             )
@@ -818,7 +820,7 @@ fun NavGraphBuilder.accountMenuNavigation(
             }
         ) { paddingValues ->
             SettingsCloudAiScreen(
-                modifier = Modifier.background(WriteopiaTheme.colorScheme.lightBackground)
+                modifier = Modifier.background(MaterialTheme.colorScheme.background)
                     .padding(paddingValues),
                 usageState = cloudAiViewModel.usageState
             )

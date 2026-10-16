@@ -5,7 +5,7 @@ import io.writeopia.common.utils.Destinations
 enum class NavItemName(val value: String) {
     HOME("Home"),
     SEARCH("io.writeopia.common.utils.icons.all.getSearch"),
-    NOTIFICATIONS("Notifications");
+    SETTINGS("Settings");
 
     companion object {
         fun selectRoute(route: String): NavItemName {
