@@ -175,6 +175,18 @@ import writeopia.application.core.resources.generated.resources.manage_teams
 import writeopia.application.core.resources.generated.resources.markdown
 import writeopia.application.core.resources.generated.resources.move_to
 import writeopia.application.core.resources.generated.resources.move_to_home
+import writeopia.application.core.resources.generated.resources.back
+import writeopia.application.core.resources.generated.resources.move
+import writeopia.application.core.resources.generated.resources.move_here
+import writeopia.application.core.resources.generated.resources.move_already_here
+import writeopia.application.core.resources.generated.resources.move_items_are_here
+import writeopia.application.core.resources.generated.resources.move_location_current
+import writeopia.application.core.resources.generated.resources.move_location_hint
+import writeopia.application.core.resources.generated.resources.move_no_folders_here
+import writeopia.application.core.resources.generated.resources.move_no_folders_found
+import writeopia.application.core.resources.generated.resources.move_error_loading_folders
+import writeopia.application.core.resources.generated.resources.search_folders
+import writeopia.application.core.resources.generated.resources.move_selection_confirmation
 import writeopia.application.core.resources.generated.resources.name
 import writeopia.application.core.resources.generated.resources.new_password
 import writeopia.application.core.resources.generated.resources.new_version_available
@@ -470,6 +482,43 @@ object WrStrings {
 
     @Composable
     fun moveToHome() = stringResource(Res.string.move_to_home)
+
+    @Composable
+    fun back() = stringResource(Res.string.back)
+
+    @Composable
+    fun move() = stringResource(Res.string.move)
+
+    @Composable
+    fun moveHere() = stringResource(Res.string.move_here)
+
+    @Composable
+    fun moveAlreadyHere() = stringResource(Res.string.move_already_here)
+
+    @Composable
+    fun moveItemsAreHere() = stringResource(Res.string.move_items_are_here)
+
+    @Composable
+    fun moveLocationCurrent() = stringResource(Res.string.move_location_current)
+
+    @Composable
+    fun moveLocationHint() = stringResource(Res.string.move_location_hint)
+
+    @Composable
+    fun moveNoFoldersHere() = stringResource(Res.string.move_no_folders_here)
+
+    @Composable
+    fun moveNoFoldersFound() = stringResource(Res.string.move_no_folders_found)
+
+    @Composable
+    fun moveErrorLoadingFolders() = stringResource(Res.string.move_error_loading_folders)
+
+    @Composable
+    fun searchFolders() = stringResource(Res.string.search_folders)
+
+    @Composable
+    fun moveSelectionConfirmation(folderTitle: String) =
+        stringResource(Res.string.move_selection_confirmation, folderTitle)
 
     @Composable
     fun text() = stringResource(Res.string.text)

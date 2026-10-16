@@ -46,7 +46,7 @@ import io.writeopia.notemenu.ui.screen.documents.NotesCardsScreen
 import io.writeopia.notemenu.ui.screen.file.fileChooserLoad
 import io.writeopia.notemenu.ui.screen.menu.CreateFolderDialog
 import io.writeopia.notemenu.ui.screen.menu.EditFileDialog
-import io.writeopia.notemenu.ui.screen.menu.MoveToFolderDialog
+import io.writeopia.notemenu.ui.screen.menu.MoveSelectionDialog
 import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
 import io.writeopia.notemenu.viewmodel.ConfigState
 import io.writeopia.notemenu.viewmodel.getPath
@@ -239,14 +239,13 @@ fun DesktopNotesMenu(
             val showMoveSelection by chooseNoteViewModel.moveSelectionState.collectAsState()
 
             if (showMoveSelection) {
-                val itemsPerFolderId by chooseNoteViewModel.menuItemsPerFolderId.collectAsState()
                 val selectedNotes by chooseNoteViewModel.selectedNotes.collectAsState()
 
-                MoveToFolderDialog(
-                    itemsPerFolderId = itemsPerFolderId,
+                MoveSelectionDialog(
+                    loadFolders = chooseNoteViewModel::workspaceFolders,
                     excludedIds = selectedNotes,
                     currentParentId = chooseNoteViewModel.currentFolderId,
-                    onPick = chooseNoteViewModel::moveSelectionTo,
+                    onMove = chooseNoteViewModel::moveSelectionTo,
                     onDismissRequest = chooseNoteViewModel::hideMoveSelection
                 )
             }

@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -288,8 +289,10 @@ internal fun MobileChooseNoteScreen(
                 }
 
                 NotesSelectionMenu(
+                    // Narrow, so it covers less of the notes: the actions scroll inside it.
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
+                        .widthIn(max = 340.dp)
                         .padding(
                             start = 8.dp,
                             end = 8.dp,
@@ -310,14 +313,13 @@ internal fun MobileChooseNoteScreen(
                 val showMoveSelection by chooseNoteViewModel.moveSelectionState.collectAsState()
 
                 if (showMoveSelection) {
-                    val itemsPerFolderId by chooseNoteViewModel.menuItemsPerFolderId.collectAsState()
                     val selectedNotes by chooseNoteViewModel.selectedNotes.collectAsState()
 
-                    MoveToFolderDialog(
-                        itemsPerFolderId = itemsPerFolderId,
+                    MoveSelectionSheet(
+                        loadFolders = chooseNoteViewModel::workspaceFolders,
                         excludedIds = selectedNotes,
                         currentParentId = chooseNoteViewModel.currentFolderId,
-                        onPick = chooseNoteViewModel::moveSelectionTo,
+                        onMove = chooseNoteViewModel::moveSelectionTo,
                         onDismissRequest = chooseNoteViewModel::hideMoveSelection
                     )
                 }

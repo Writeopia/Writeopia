@@ -23,7 +23,7 @@ interface FolderController {
 
     fun moveToFolder(menuItemUi: MenuItemUi, parentId: String)
 
-    /** Whether the dialog to move the selected items to another folder is shown. */
+    /** Whether the picker of the folder to move the selected items to is shown. */
     val moveSelectionState: StateFlow<Boolean>
 
     fun showMoveSelection()

@@ -376,6 +376,9 @@ internal class ChooseNoteKmpViewModel(
         return moveDestinations(folder, notesUseCase.loadFoldersForWorkspace(getWorkspaceId()))
     }
 
+    override suspend fun workspaceFolders(): List<Folder> =
+        notesUseCase.loadFoldersForWorkspace(getWorkspaceId())
+
     override fun moveCurrentFolder(parentId: String) {
         val folderId = (notesNavigation as? NotesNavigation.Folder)?.id ?: return
 

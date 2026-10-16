@@ -78,6 +78,17 @@
   <string name="lock_document">Lock document</string>
   <string name="move_to">Move to...</string>
   <string name="move_to_home">Move home</string>
+  <string name="move">Move</string>
+  <string name="move_here">Move here</string>
+  <string name="move_already_here">It's already here</string>
+  <string name="move_items_are_here">The items are here</string>
+  <string name="move_location_current">The items are here. Open a folder to move them into it.</string>
+  <string name="move_location_hint">Move here, or open a folder to move the items into it.</string>
+  <string name="move_no_folders_here">No folders here</string>
+  <string name="move_no_folders_found">No folders found</string>
+  <string name="move_error_loading_folders">Error loading folders</string>
+  <string name="search_folders">Search folders</string>
+  <string name="move_selection_confirmation">Move the selected items to \"%1$s\"?</string>
   <string name="text">Text</string>
   <string name="insert">Insert</string>
   <string name="decoration">Decoration</string>

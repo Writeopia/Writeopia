@@ -295,6 +295,10 @@ internal class OnlyBackendChooseNoteKmpViewModel(
 
     override fun moveCurrentFolder(parentId: String) {}
 
+    // Only the folders loaded so far are known here: this ViewModel has no local database.
+    override suspend fun workspaceFolders(): List<Folder> =
+        menuItemsPerFolderId.value.values.flatten().filterIsInstance<Folder>()
+
     override fun showEditMenu() {
         _editState.value = true
     }

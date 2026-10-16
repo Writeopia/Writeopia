@@ -6,6 +6,10 @@ import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,7 +21,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.IntOffset
@@ -72,80 +79,58 @@ internal fun NotesSelectionMenu(
                 .clip(shape)
                 .background(MaterialTheme.colorScheme.primary),
         ) {
-            Row {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 val tintColor = MaterialTheme.colorScheme.onPrimary
 
-                if (showCopy) {
-                    Icon(
+                // The actions scroll when they don't fit; close always stays at the end. When
+                // they fit, they spread over the width like before.
+                BoxWithConstraints(modifier = Modifier.weight(1F)) {
+                    Row(
                         modifier = Modifier
-                            .clickable(onClick = onCopy)
-                            .weight(1F)
-                            .padding(vertical = 25.dp),
-                        imageVector = WrSdkIcons.copy,
-                        contentDescription = "Copy note",
-                        tint = tintColor
-                    )
+                            .horizontalScroll(rememberScrollState())
+                            .widthIn(min = maxWidth),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        if (showCopy) {
+                            SelectionAction(WrSdkIcons.copy, "Copy note", tintColor, onCopy)
+                        }
+
+                        SelectionAction(WrIcons.favorites, "favorite", tintColor, onFavorite)
+
+                        if (onSummary != null) {
+                            SelectionAction(WrSdkIcons.ai, "AI Summary", tintColor, onSummary)
+                        }
+
+                        if (onMove != null) {
+                            SelectionAction(WrIcons.moveToFolder, "Move to folder", tintColor, onMove)
+                        }
+
+                        SelectionAction(WrIcons.delete, "Delete", tintColor, onDelete)
+                    }
                 }
 
-                Icon(
-                    modifier = Modifier
-                        .clickable(onClick = onFavorite)
-                        .weight(1F)
-                        .padding(vertical = 25.dp),
-                    imageVector = WrIcons.favorites,
-                    contentDescription = "favorite",
-//                    stringResource(R.string.favorite),
-                    tint = tintColor
-                )
-
-                if (onSummary != null) {
-                    Icon(
-                        modifier = Modifier
-                            .clickable(onClick = onSummary)
-                            .weight(1F)
-                            .padding(vertical = 25.dp),
-                        imageVector = WrSdkIcons.ai,
-                        contentDescription = "AI Summary",
-                        tint = tintColor
-                    )
-                }
-
-                if (onMove != null) {
-                    Icon(
-                        modifier = Modifier
-                            .clickable(onClick = onMove)
-                            .weight(1F)
-                            .padding(vertical = 25.dp),
-                        imageVector = WrIcons.moveToFolder,
-                        contentDescription = "Move to folder",
-                        tint = tintColor
-                    )
-                }
-
-                Icon(
-                    modifier = Modifier
-                        .clickable(onClick = onDelete)
-                        .weight(1F)
-                        .padding(vertical = 25.dp),
-                    imageVector = WrIcons.delete,
-                    contentDescription = "Delete",
-//                    stringResource(R.string.delete),
-                    tint = tintColor
-                )
-
-                Icon(
-                    modifier = Modifier
-                        .clickable(onClick = onClose)
-                        .weight(1F)
-                        .padding(vertical = 25.dp),
-                    imageVector = WrIcons.close,
-                    contentDescription = "Close",
-//                    stringResource(R.string.delete),
-                    tint = tintColor
-                )
+                SelectionAction(WrIcons.close, "Close", tintColor, onClose)
             }
         }
     }
+}
+
+@Composable
+private fun SelectionAction(
+    icon: ImageVector,
+    contentDescription: String,
+    tint: Color,
+    onClick: () -> Unit,
+) {
+    Icon(
+        modifier = Modifier
+            .clickable(onClick = onClick)
+            .widthIn(min = 60.dp)
+            .padding(vertical = 25.dp),
+        imageVector = icon,
+        contentDescription = contentDescription,
+        tint = tint
+    )
 }
 
 @Preview
