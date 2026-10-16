@@ -5,6 +5,7 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.navigation.NavBackStackEntry
@@ -76,6 +77,8 @@ fun NavGraphBuilder.notesMenuNavigation(
             notesMenuInjection.provideChooseNoteViewModel(notesNavigation = notesNavigation)
         val localAiConfigController = localAiConfigInjector?.provideLocalAiConfigController()
 
+        ClearSelectionOnEnter(chooseNoteViewModel)
+
         NotesMenuScreen(
             isDarkTheme = isDarkTheme,
             folderId = notesNavigation.id,
@@ -108,6 +111,8 @@ fun NavGraphBuilder.notesMenuNavigation(
             notesMenuInjection.provideChooseNoteViewModel(notesNavigation = notesNavigation)
         val localAiConfigController = localAiConfigInjector?.provideLocalAiConfigController()
 
+        ClearSelectionOnEnter(chooseNoteViewModel)
+
         NotesMenuScreen(
             isDarkTheme = isDarkTheme,
             folderId = notesNavigation.id,
@@ -131,6 +136,17 @@ fun NavGraphBuilder.notesMenuNavigation(
             sideMenuContent = sideMenuContent,
             modifier = Modifier.background(MaterialTheme.colorScheme.background)
         )
+    }
+}
+
+/**
+ * The selection is shared by every notes screen, so it would follow the user into another
+ * folder or back to the previous one. It's dropped each time a notes screen is shown.
+ */
+@Composable
+private fun ClearSelectionOnEnter(chooseNoteViewModel: ChooseNoteViewModel) {
+    LaunchedEffect(Unit) {
+        chooseNoteViewModel.clearSelection()
     }
 }
 
