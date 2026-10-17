@@ -21,6 +21,12 @@ class TextCommandHandler(
         commandsMap.keys.forEach { trie.insert(it) }
     }
 
+    /**
+     * Whether [text] is, as a whole, a command (e.g. "[]" or "---").
+     */
+    fun isExactCommand(text: String, step: StoryStep): Boolean =
+        !excludeTypes.contains(step.type.number) && trie.search(text)
+
     fun handleCommand(text: String, step: StoryStep, position: Double): Boolean {
         if (excludeTypes.contains(step.type.number)) return false
 

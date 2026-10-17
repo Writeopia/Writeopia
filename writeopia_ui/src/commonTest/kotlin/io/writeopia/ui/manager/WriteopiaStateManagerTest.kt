@@ -1266,6 +1266,44 @@ class WriteopiaStateManagerTest {
         assertEquals(stories[0.0]!!.spans.first().span, Span.BOLD)
     }
 
+    @Test
+    fun typingSquareBracketsShouldCreateAnEmptyCheckItem() = runTest {
+        val now = Clock.System.now()
+
+        val storyManager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        )
+        storyManager.loadDocument(
+            Document(
+                content = mapOf(0.0 to StoryStep(type = StoryTypes.TEXT.type, text = "")),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+            )
+        )
+
+        storyManager.handleTextInput(
+            TextInput("[", start = 1, end = 1, spans = emptySet()),
+            position = 0.0,
+            lineBreakByContent = false
+        )
+        storyManager.handleTextInput(
+            TextInput("[]", start = 2, end = 2, spans = emptySet()),
+            position = 0.0,
+            lineBreakByContent = false
+        )
+        advanceUntilIdle()
+
+        val story = storyManager.currentStory.value.stories[0.0]!!
+
+        assertEquals(StoryTypes.CHECK_ITEM.type, story.type)
+        assertEquals("", story.text)
+    }
+
     // Tests for acceptStoryStep with markdown processing
 
     @Test

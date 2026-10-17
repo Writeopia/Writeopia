@@ -1626,6 +1626,15 @@ class WriteopiaStateManager(
         } else {
             val newText = text.replace("\n", "")
             val newStep = step.copy(text = newText, spans = input.spans)
+
+            // The command removes its text from the line in the state, which still holds the
+            // previous keystroke ("[" when "[]" was typed). It needs the whole command to remove it.
+            if (commandHandler.isExactCommand(text, step)) {
+                _currentStory.value = _currentStory.value.copy(
+                    stories = _currentStory.value.stories + (position to newStep)
+                )
+            }
+
             val handled = commandHandler.handleCommand(text, newStep, position)
 
             if (!handled) {
