@@ -2,6 +2,7 @@ import Observation
 import SwiftUI
 import WrData
 import WrModels
+import WrSession
 
 /// Navigation of the Documents tab, shared with the side menu of landscape so it can open a
 /// folder or a document from anywhere in the tree.
@@ -28,19 +29,32 @@ public final class DocumentsRouter {
         path.append(DocumentsRoute.document(id: document.id, title: document.displayTitle))
     }
 
+    /// Shows an item of the sidebar: a folder with its ancestors behind it, a document right
+    /// under the root.
+    @MainActor
+    public func open(_ item: SidebarItem, session: AppSession) async {
+        switch item.item {
+        case .folder(let folder):
+            await open(folder: folder, repository: session.documents)
+        case .document(let document):
+            favoritesOpened = false
+            path = NavigationPath([DocumentsRoute.document(id: document.id, title: document.displayTitle)])
+        }
+    }
+
     /// Shows the documents carrying `tag`, like a folder.
     func open(tag: DocumentTag) {
         path.append(DocumentsRoute.tag(tag))
     }
 
     /// Shows the documents graph, right under the root.
-    func openGraph() {
+    public func openGraph() {
         favoritesOpened = false
         path = NavigationPath([DocumentsRoute.graph])
     }
 
     /// Shows every favorite of the workspace, right under the root.
-    func openFavorites() {
+    public func openFavorites() {
         favoritesOpened = true
         path = NavigationPath([DocumentsRoute.favorites])
     }
@@ -52,7 +66,7 @@ public final class DocumentsRouter {
     /// side menu's highlight. Going back to the root with the back button leaves it too.
     public var showsFavorites: Bool { favoritesOpened && !path.isEmpty }
 
-    func reset() {
+    public func reset() {
         favoritesOpened = false
         path = NavigationPath()
     }
