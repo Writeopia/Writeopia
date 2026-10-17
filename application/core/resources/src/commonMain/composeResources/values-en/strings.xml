@@ -26,7 +26,7 @@
   <string name="export_json">Export as Json</string>
   <string name="export_md">Export as Markdown</string>
   <string name="export">Export</string>
-  <string name="name_space">%s Workspace</string>
+  <string name="name_space">%1$s Workspace</string>
   <string name="offline_workspace">Offline Workspace</string>
   <string name="disconnected">Disconnected</string>
   <string name="email">Email</string>
@@ -180,12 +180,12 @@
   <string name="register_enter_email">Enter your email to receive a verification code</string>
   <string name="send_verification_code">Send Verification Code</string>
   <string name="verify_your_email">Verify Your Email</string>
-  <string name="we_sent_verification_code_to">We sent a verification code to %s</string>
+  <string name="we_sent_verification_code_to">We sent a verification code to %1$s</string>
   <string name="verification_code_failed">Could not send the verification code. Please try again.</string>
   <string name="create_workspace">Create workspace</string>
   <string name="create">Create</string>
   <string name="create_workspace_failed">Failed to create workspace</string>
-  <string name="add_user_to_workspace">Add user to %s</string>
+  <string name="add_user_to_workspace">Add user to %1$s</string>
   <string name="search_by_email">Search by email</string>
   <string name="enter_at_least_2_chars">Enter at least 2 characters to search</string>
   <string name="no_users_found">No users found</string>
