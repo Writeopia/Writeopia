@@ -56,6 +56,54 @@ private let sample = document([
         #expect(!manager.toDraw.contains { $0.id == "sheet" })
         #expect(manager.documentContent.map(\.id) == ["t", "sheet"])
     }
+
+    @Test func consecutiveStepsOfABlockGetTheirPositionAndTheSpacesBetweenThemAreInside() {
+        let box = [TagInfo(tag: BlockTag.box.rawValue)]
+        let manager = WriteopiaStateManager()
+        manager.loadDocument(document([
+            StoryStep(id: "t", type: .title, text: "Doc", position: 0),
+            StoryStep(id: "c1", type: .codeBlock, text: "let a = 1", position: 1),
+            StoryStep(id: "c2", type: .codeBlock, text: "let b = 2", position: 2),
+            StoryStep(id: "c3", type: .codeBlock, text: "let c = 3", position: 3),
+            StoryStep(id: "p", type: .text, text: "Plain", position: 4),
+            StoryStep(id: "b1", type: .text, text: "Boxed", tags: box, position: 5),
+            StoryStep(id: "b2", type: .text, text: "Boxed too", tags: box, position: 6),
+            StoryStep(id: "c4", type: .codeBlock, text: "alone", position: 7),
+        ]))
+
+        func draw(_ id: String) -> DrawStory? { manager.toDraw.first { $0.id == id } }
+
+        #expect(draw("c1")?.block == BlockInfo(kind: .code, position: .first, lineNumber: 1))
+        #expect(draw("c2")?.block == BlockInfo(kind: .code, position: .middle, lineNumber: 2))
+        #expect(draw("c3")?.block == BlockInfo(kind: .code, position: .last, lineNumber: 3))
+        #expect(draw("p")?.block == nil)
+        #expect(draw("b1")?.block == BlockInfo(kind: .box, position: .first))
+        #expect(draw("b2")?.block == BlockInfo(kind: .box, position: .last))
+        // A new block starts counting lines again.
+        #expect(draw("c4")?.block == BlockInfo(kind: .code, position: .single, lineNumber: 1))
+
+        #expect(draw("space-c1")?.insideBlock == nil)
+        #expect(draw("space-c2")?.insideBlock == .code)
+        #expect(draw("space-c3")?.insideBlock == .code)
+        #expect(draw("space-p")?.insideBlock == nil)
+        #expect(draw("space-b2")?.insideBlock == .box)
+        #expect(draw("space-c4")?.insideBlock == nil)
+    }
+
+    @Test func aBoxNextToACardIsASeparateBlock() {
+        let manager = WriteopiaStateManager()
+        manager.loadDocument(document([
+            StoryStep(id: "t", type: .title, text: "Doc", position: 0),
+            StoryStep(id: "b", type: .text, text: "Box", tags: [TagInfo(tag: BlockTag.box.rawValue)], position: 1),
+            StoryStep(id: "c", type: .text, text: "Card", tags: [TagInfo(tag: BlockTag.card.rawValue)], position: 2),
+        ]))
+
+        func draw(_ id: String) -> DrawStory? { manager.toDraw.first { $0.id == id } }
+
+        #expect(draw("b")?.block == BlockInfo(kind: .box, position: .single))
+        #expect(draw("c")?.block == BlockInfo(kind: .card, position: .single))
+        #expect(draw("space-c")?.insideBlock == nil)
+    }
 }
 
 @Suite struct WriteopiaStateManagerTests {
