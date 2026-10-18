@@ -72,7 +72,7 @@ public final class NoteEditorViewModel {
     @ObservationIgnored private let publishing: DocumentPublishing?
     @ObservationIgnored private let imageUploader: ImageUploading?
     /// Holds while the document opens, so the side menu can show it; nil when nothing shows it.
-    @ObservationIgnored private let loadActivity: DocumentLoadActivity?
+    @ObservationIgnored private let loadActivity: ContentLoadActivity?
     @ObservationIgnored private let isPremium: Bool
     @ObservationIgnored private let tagAgent: WritingAgentServing?
     @ObservationIgnored private let defaults: UserDefaults
@@ -127,7 +127,7 @@ public final class NoteEditorViewModel {
         writingAgent: WritingAgentServing? = nil,
         imageGenerator: AiImageGenerating? = nil,
         headerImages: HeaderImageServing? = nil,
-        loadActivity: DocumentLoadActivity? = nil,
+        loadActivity: ContentLoadActivity? = nil,
         defaults: UserDefaults = .standard,
         writeopiaManager: WriteopiaStateManager = WriteopiaStateManager()
     ) {

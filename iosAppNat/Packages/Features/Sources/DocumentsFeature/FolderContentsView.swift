@@ -527,7 +527,7 @@ private struct DocumentsNavigation: View {
                             writingAgent: session.writingAgent,
                             imageGenerator: session.writingAgent,
                             headerImages: session.headerImages,
-                            loadActivity: session.documentLoad
+                            loadActivity: session.contentLoad
                         ) { link in
                             router.path.append(DocumentsRoute.document(id: link.id, title: link.title ?? "Untitled"))
                         }

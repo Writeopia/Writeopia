@@ -16,7 +16,7 @@ import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.genai.repository.GenAiRepository
 import io.writeopia.common.utils.collections.toNodeTree
 import io.writeopia.core.folders.api.DocumentsApi
-import io.writeopia.core.folders.sync.DocumentLoadActivity
+import io.writeopia.core.folders.sync.ContentLoadActivity
 import io.writeopia.core.presentations.PresentationsStore
 import io.writeopia.core.presentations.api.PresentationsApi
 import io.writeopia.editor.features.presentation.repository.CloudPresentationsSaver
@@ -832,14 +832,14 @@ class NoteEditorKmpViewModel(
 
     /**
      * Opens the document: the copy in the database is shown right away, then the backend copy
-     * is fetched and merged into it. [DocumentLoadActivity] holds while both run, so the side
+     * is fetched and merged into it. [ContentLoadActivity] holds while both run, so the side
      * menu shows a spinner by its folders until the content is final.
      */
     override fun loadDocument(documentId: String) {
         if (writeopiaManager.isInitialized()) return
 
         viewModelScope.launch(Dispatchers.Default) {
-            DocumentLoadActivity.track { openDocument(documentId) }
+            ContentLoadActivity.track { openDocument(documentId) }
         }
     }
 

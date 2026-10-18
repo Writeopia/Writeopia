@@ -83,6 +83,7 @@ class SideMenuKmpInjector(
                 useBackendOnly = useBackendOnly,
                 menuItemsRepository = menuItemsRepository,
                 genAiApi = genAiInjection?.provideGenAiApi(),
+                folderSync = workspaceInjection.provideFolderSync(),
                 aiClients = AiClients(
                     localAiRepository = localAiInjection.provideRepository(),
                     genAiRepository = genAiInjection?.provideRepository(),

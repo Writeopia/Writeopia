@@ -75,7 +75,7 @@ public struct NoteEditorView: View {
         writingAgent: WritingAgentServing? = nil,
         imageGenerator: AiImageGenerating? = nil,
         headerImages: HeaderImagesAPI? = nil,
-        loadActivity: DocumentLoadActivity? = nil,
+        loadActivity: ContentLoadActivity? = nil,
         openDocumentLink: @escaping (DocumentLink) -> Void = { _ in }
     ) {
         _viewModel = State(initialValue: NoteEditorViewModel(

@@ -45,9 +45,9 @@ private let document = WrDocument(id: "d", title: "Plan", workspaceId: "w", cont
     StoryStep(id: "t", type: .title, text: "Plan", position: 0),
 ])
 
-@Suite struct DocumentLoadActivityTests {
+@Suite struct ContentLoadActivityTests {
     @Test func theActivityHoldsFromTheLocalLoadUntilTheBackendMerge() async {
-        let activity = DocumentLoadActivity()
+        let activity = ContentLoadActivity()
         let repository = GatedSyncingRepository(document)
         let viewModel = NoteEditorViewModel(documentId: "d", repository: repository, loadActivity: activity)
         #expect(!activity.isLoading)
@@ -65,7 +65,7 @@ private let document = WrDocument(id: "d", title: "Plan", workspaceId: "w", cont
     }
 
     @Test func overlappingLoadsKeepTheActivityUntilTheLastOneEnds() async {
-        let activity = DocumentLoadActivity()
+        let activity = ContentLoadActivity()
         let first = GatedSyncingRepository(document)
         let second = GatedSyncingRepository(document)
         let firstOpen = Task { await NoteEditorViewModel(documentId: "d", repository: first, loadActivity: activity).open() }

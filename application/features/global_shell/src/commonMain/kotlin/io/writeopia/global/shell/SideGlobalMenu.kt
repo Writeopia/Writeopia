@@ -53,7 +53,7 @@ private const val FINAL_WIDTH = 300
 private const val MAC_WINDOW_BUTTONS_WIDTH = 80
 
 const val SIDE_MENU_SYNCING_TAG = "SideMenuSyncing"
-const val SIDE_MENU_LOADING_DOCUMENT_TAG = "SideMenuLoadingDocument"
+const val SIDE_MENU_LOADING_CONTENT_TAG = "SideMenuLoadingContent"
 
 @Composable
 fun SideGlobalMenu(
@@ -76,7 +76,7 @@ fun SideGlobalMenu(
     changeIcon: (String, String, Int, IconChange) -> Unit,
     toggleMaxScreen: () -> Unit,
     isSyncingState: StateFlow<Boolean> = MutableStateFlow(false),
-    isLoadingDocumentState: StateFlow<Boolean> = MutableStateFlow(false),
+    isLoadingContentState: StateFlow<Boolean> = MutableStateFlow(false),
 ) {
     val widthState by derivedStateOf { width }
 
@@ -185,11 +185,11 @@ fun SideGlobalMenu(
 
                     if (showContent == ShowContent.FULL) {
                         item {
-                            val isLoadingDocument by isLoadingDocumentState.collectAsState()
+                            val isLoadingContent by isLoadingContentState.collectAsState()
 
                             title(
                                 text = WrStrings.folder(),
-                                isLoading = isLoadingDocument,
+                                isLoading = isLoadingContent,
                                 trailingContent = {
                                     Icon(
                                         imageVector = WrIcons.target,
@@ -326,7 +326,7 @@ private fun title(
                 modifier = Modifier
                     .padding(start = 8.dp)
                     .size(12.dp)
-                    .testTag(SIDE_MENU_LOADING_DOCUMENT_TAG),
+                    .testTag(SIDE_MENU_LOADING_CONTENT_TAG),
                 color = MaterialTheme.colorScheme.onBackground,
                 strokeWidth = 2.dp
             )

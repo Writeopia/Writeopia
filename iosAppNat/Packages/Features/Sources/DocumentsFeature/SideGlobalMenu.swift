@@ -146,8 +146,8 @@ public struct SidebarFolders: View {
                     .font(SideMenuStyle.sectionFont)
                     .foregroundStyle(.secondary)
                     .textCase(SideMenuStyle.sectionCase)
-                // Shows while an editor opens a document, from the device and then the backend.
-                if session.documentLoad.isLoading {
+                // Shows while a document opens or a folder expands, from the device and then the backend.
+                if session.contentLoad.isLoading {
                     ProgressView()
                         .controlSize(.mini)
                         .padding(.leading, 6)
@@ -349,7 +349,20 @@ private struct FolderTreeLevel: View {
         .padding(.leading, CGFloat(depth) * 14 + 4)
     }
 
+    /// Shows what is on the device right away, then fetches the children from the backend: a
+    /// folder received inside its parent has its contents on the backend only until it is
+    /// opened somewhere. The root is synced by the Home screen already.
     private func load() async {
+        await loadLocal()
+        guard depth > 0, let syncing = session.documents as? DocumentSyncing else { return }
+        await session.contentLoad.track {
+            // Offline or the backend failed: what's on the device is still shown.
+            guard (try? await syncing.syncFolder(parentId)) != nil else { return }
+            await loadLocal()
+        }
+    }
+
+    private func loadLocal() async {
         guard let loaded = try? await session.documents.folderContents(folderId: parentId) else { return }
         contents = loaded
     }

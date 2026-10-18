@@ -137,7 +137,7 @@ fun Navigation(
                     changeIcon = globalShellViewModel::changeIcons,
                     toggleMaxScreen = {},
                     isSyncingState = globalShellViewModel.isSyncingState,
-                    isLoadingDocumentState = globalShellViewModel.isLoadingDocumentState
+                    isLoadingContentState = globalShellViewModel.isLoadingContentState
                 )
 
                 Box(

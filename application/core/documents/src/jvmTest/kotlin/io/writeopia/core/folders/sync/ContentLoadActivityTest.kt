@@ -8,26 +8,26 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class DocumentLoadActivityTest {
+class ContentLoadActivityTest {
 
     @Test
-    fun `it is loading while a document opens and not after`() = runTest {
+    fun `it is loading while content loads and not after`() = runTest {
         val gate = CompletableDeferred<Unit>()
 
-        val load = async { DocumentLoadActivity.track { gate.await() } }
+        val load = async { ContentLoadActivity.track { gate.await() } }
         testScheduler.runCurrent()
-        assertTrue(DocumentLoadActivity.isLoading.value)
+        assertTrue(ContentLoadActivity.isLoading.value)
 
         gate.complete(Unit)
         load.await()
-        assertFalse(DocumentLoadActivity.isLoading.value)
+        assertFalse(ContentLoadActivity.isLoading.value)
     }
 
     @Test
-    fun `a document load is not a sync`() = runTest {
+    fun `a content load is not a sync`() = runTest {
         val gate = CompletableDeferred<Unit>()
 
-        val load = async { DocumentLoadActivity.track { gate.await() } }
+        val load = async { ContentLoadActivity.track { gate.await() } }
         testScheduler.runCurrent()
         assertFalse(SyncActivity.isSyncing.value)
 
@@ -38,10 +38,10 @@ class DocumentLoadActivityTest {
     @Test
     fun `a failing load stops the loading state and rethrows`() = runTest {
         val error = runCatching {
-            DocumentLoadActivity.track<Unit> { throw IllegalStateException("boom") }
+            ContentLoadActivity.track<Unit> { throw IllegalStateException("boom") }
         }.exceptionOrNull()
 
         assertEquals("boom", error?.message)
-        assertFalse(DocumentLoadActivity.isLoading.value)
+        assertFalse(ContentLoadActivity.isLoading.value)
     }
 }
