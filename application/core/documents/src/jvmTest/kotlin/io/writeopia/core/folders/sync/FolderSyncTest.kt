@@ -370,11 +370,65 @@ class FolderSyncTest {
         coVerify(atLeast = 2) { folderRepository.refreshFolders() }
     }
 
+    @Test
+    fun `a sent document is stamped as synced without writing its content back`() = runBlocking {
+        val documentRepository = mockk<DocumentRepository>(relaxed = true)
+        val folderRepository = mockk<FolderRepository>(relaxed = true)
+        val sentAt = Instant.fromEpochMilliseconds(1_000)
+        val sent = Document(
+            id = "doc1",
+            title = "Sent",
+            createdAt = sentAt,
+            lastUpdatedAt = sentAt,
+            lastSyncedAt = null,
+            workspaceId = workspaceId,
+            parentId = folderId
+        )
+        coEvery { documentRepository.loadDocumentById(sent.id, workspaceId) } returns sent
+        val (folderSync, _) = successfulSync(folderRepository, documentRepository = documentRepository, sending = listOf(sent))
+
+        folderSync.syncFolder(folderId, workspaceId, force = true)
+
+        val stamped = slot<Document>()
+        coVerify(exactly = 1) { documentRepository.saveDocumentMetadata(capture(stamped)) }
+        assertEquals(sent.id, stamped.captured.id)
+        assertEquals(sentAt, stamped.captured.lastUpdatedAt)
+        assertNotNull(stamped.captured.lastSyncedAt)
+        coVerify(exactly = 0) { documentRepository.saveDocument(any()) }
+    }
+
+    @Test
+    fun `a document edited while it was being sent is not stamped as synced`() = runBlocking {
+        val documentRepository = mockk<DocumentRepository>(relaxed = true)
+        val folderRepository = mockk<FolderRepository>(relaxed = true)
+        val sent = Document(
+            id = "doc1",
+            title = "Sent",
+            createdAt = Instant.fromEpochMilliseconds(1_000),
+            lastUpdatedAt = Instant.fromEpochMilliseconds(1_000),
+            lastSyncedAt = null,
+            workspaceId = workspaceId,
+            parentId = folderId
+        )
+        // The editor saved again during the send.
+        val edited = sent.copy(title = "Sent, then edited", lastUpdatedAt = Instant.fromEpochMilliseconds(2_000))
+        coEvery { documentRepository.loadDocumentById(sent.id, workspaceId) } returns edited
+        val (folderSync, _) = successfulSync(folderRepository, documentRepository = documentRepository, sending = listOf(sent))
+
+        folderSync.syncFolder(folderId, workspaceId, force = true)
+
+        // Still outdated: it goes with the next sync, with its newer content.
+        coVerify(exactly = 0) { documentRepository.saveDocumentMetadata(any()) }
+        coVerify(exactly = 0) { documentRepository.saveDocument(any()) }
+    }
+
     private fun successfulSync(
         folderRepository: FolderRepository,
         documentsApi: DocumentsApi = mockk(),
         documentRepository: DocumentRepository = mockk(relaxed = true),
         syncedFolderId: String = folderId,
+        /** The documents the conflict handler hands over to be sent. */
+        sending: List<Document> = emptyList(),
     ): Pair<FolderSync, DocumentsApi> {
         val documentConflictHandler = mockk<DocumentConflictHandler>()
         val folderConflictHandler = mockk<FolderConflictHandler>()
@@ -384,7 +438,7 @@ class FolderSyncTest {
         } returns ResultData.Complete(FolderContentResponse())
         coEvery { documentRepository.loadOutdatedDocumentsForWorkspace(workspaceId) } returns emptyList()
         coEvery { folderRepository.localOutDatedFolders(workspaceId) } returns emptyList()
-        coEvery { documentConflictHandler.handleConflict(any(), any()) } returns emptyList()
+        coEvery { documentConflictHandler.handleConflict(any(), any()) } returns sending
         coEvery { folderConflictHandler.handleConflict(any(), any()) } returns emptyList()
         coEvery { documentsApi.sendDocuments(any(), workspaceId) } returns ResultData.Complete(Unit)
         coEvery { documentsApi.sendFolders(any(), workspaceId) } returns ResultData.Complete(Unit)
