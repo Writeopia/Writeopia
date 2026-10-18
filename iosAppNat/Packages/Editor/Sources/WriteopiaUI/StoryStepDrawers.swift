@@ -55,7 +55,7 @@ struct StoryStepDrawer: View {
         case StoryType.title.number:
             TitleDrawer(step: step, manager: manager)
         case StoryType.text.number:
-            DraggableStep(step: step, position: draw.position, manager: manager) {
+            DraggableStep(step: step, position: draw.position, manager: manager, block: draw.block) {
                 StepTextView(step: step, manager: manager)
                     .overlay(alignment: .trailing) {
                         SectionWandButton(step: step, position: draw.position, manager: manager)
@@ -65,24 +65,24 @@ struct StoryStepDrawer: View {
             if step.isAiSuggestion {
                 AiSuggestionDrawer(step: step, manager: manager)
             } else if step.type.number == StoryType.checkItem.number {
-                DraggableStep(step: step, position: draw.position, manager: manager) {
+                DraggableStep(step: step, position: draw.position, manager: manager, block: draw.block) {
                     CheckItemDrawer(step: step, manager: manager)
                 }
             } else {
-                DraggableStep(step: step, position: draw.position, manager: manager) {
+                DraggableStep(step: step, position: draw.position, manager: manager, block: draw.block) {
                     UnorderedListItemDrawer(step: step, manager: manager)
                 }
             }
         case StoryType.codeBlock.number:
-            DraggableStep(step: step, position: draw.position, manager: manager) {
-                CodeBlockDrawer(step: step, manager: manager)
+            DraggableStep(step: step, position: draw.position, manager: manager, block: draw.block) {
+                CodeBlockDrawer(step: step, manager: manager, lineNumber: draw.block?.lineNumber ?? 1)
             }
         case StoryType.aiAnswer.number:
-            DraggableStep(step: step, position: draw.position, manager: manager) {
+            DraggableStep(step: step, position: draw.position, manager: manager, block: draw.block) {
                 AiAnswerDrawer(step: step, manager: manager)
             }
         case StoryType.image.number:
-            DraggableStep(step: step, position: draw.position, manager: manager) {
+            DraggableStep(step: step, position: draw.position, manager: manager, block: draw.block) {
                 ImageDrawer(step: step, isUploading: manager.uploadingStepIds.contains(step.id))
                     .contextMenu {
                         if manager.isEditable {
@@ -93,15 +93,15 @@ struct StoryStepDrawer: View {
                     }
             }
         case StoryType.documentLink.number:
-            DraggableStep(step: step, position: draw.position, manager: manager) {
+            DraggableStep(step: step, position: draw.position, manager: manager, block: draw.block) {
                 DocumentLinkDrawer(step: step, manager: manager)
             }
         case StoryType.linkCard.number:
-            DraggableStep(step: step, position: draw.position, manager: manager) {
+            DraggableStep(step: step, position: draw.position, manager: manager, block: draw.block) {
                 LinkCardDrawer(step: step, manager: manager)
             }
         case StoryType.divider.number:
-            DraggableStep(step: step, position: draw.position, manager: manager) {
+            DraggableStep(step: step, position: draw.position, manager: manager, block: draw.block) {
                 DividerDrawer()
             }
         case StoryType.loading.number:
@@ -112,7 +112,7 @@ struct StoryStepDrawer: View {
             LastSpaceDrawer(draw: draw, manager: manager)
         default:
             if let custom = customDrawers[step.type.number] {
-                DraggableStep(step: step, position: draw.position, manager: manager) {
+                DraggableStep(step: step, position: draw.position, manager: manager, block: draw.block) {
                     custom(step)
                 }
             }
@@ -122,11 +122,13 @@ struct StoryStepDrawer: View {
 
 /// Leading gutter shared by every step. The grip shows while the cursor is in the step, and
 /// holding it starts a drag to reorder the step. The gutter keeps its width when the grip is
-/// hidden so the text doesn't shift.
+/// hidden so the text doesn't shift. `block` paints the code block, box or card the step is part
+/// of around the content.
 struct DraggableStep<Content: View>: View {
     let step: StoryStep
     let position: Double
     let manager: WriteopiaStateManager
+    var block: BlockInfo? = nil
     var alignment: VerticalAlignment = .center
     @ViewBuilder let content: Content
     @State private var isHovered = false
@@ -145,7 +147,10 @@ struct DraggableStep<Content: View>: View {
 
             content
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .blockDecoration(step)
+                .blockInsets(block)
+                // The block itself is painted by the editor, as one piece from its first step
+                // to its last (see `BlockPainter`).
+                .blockPiece(block)
         }
         .swipeToSelect(step, manager: manager)
         .selectableByDrag(id: step.id)
@@ -549,41 +554,29 @@ public struct HeaderImageView: View {
     }
 }
 
-/// Monospaced text on a tinted background, like `CodeBlockDrawer` of the SDK.
+/// A line of code with its number, like `CodeBlockDrawer` of the SDK. The tinted background of
+/// the block is painted by `DraggableStep`, so consecutive lines share it.
 struct CodeBlockDrawer: View {
     let step: StoryStep
     let manager: WriteopiaStateManager
+    var lineNumber: Int = 1
+
+    /// What the number, the divider and their spacing add beside the text.
+    static let gutterWidth: CGFloat = 24 + 8 + 1 + 8
 
     var body: some View {
-        StepTextView(step: step, manager: manager)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .background(WrColors.secondaryFill, in: RoundedRectangle(cornerRadius: 8))
-    }
-}
-
-extension View {
-    /// Box (`HIGH_LIGHT_BLOCK`) and card (`CARD_BLOCK`) decorations of a step.
-    @ViewBuilder
-    func blockDecoration(_ step: StoryStep) -> some View {
-        if step.hasTag(BlockTag.box.rawValue) {
-            padding(10)
-                .background(WrColors.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 10)
-                        .strokeBorder(WrColors.accent.opacity(0.35))
-                }
-        } else if step.hasTag(BlockTag.card.rawValue) {
-            // A raised surface with an edge and a shadow, so it reads as a card on any background.
-            padding(12)
-                .background(WrColors.secondaryBackground, in: RoundedRectangle(cornerRadius: 12))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 12)
-                        .strokeBorder(WrColors.divider)
-                }
-                .shadow(color: .black.opacity(0.18), radius: 8, y: 3)
-        } else {
-            self
+        // The text view has no baseline for SwiftUI to align to, so the number sits on the
+        // first line by hand, like the bullet of a list item.
+        HStack(alignment: .top, spacing: 8) {
+            Text(String(lineNumber))
+                .font(.system(size: 12, design: .monospaced))
+                .foregroundStyle(.secondary)
+                .frame(width: 24, alignment: .trailing)
+                .frame(height: TextStyles.lineHeight(of: TextStyles.baseFont(for: step, family: manager.fontFamily)))
+            Rectangle()
+                .fill(WrColors.divider)
+                .frame(width: 1)
+            StepTextView(step: step, manager: manager)
         }
     }
 }
@@ -933,6 +926,8 @@ struct LoadingDrawer: View {
 
 /// Gap between steps. While a step is dragged over it, it turns into the `ON_DRAG_SPACE`
 /// highlight that shows where the step will land.
+/// The gap between two steps. Inside a code block, box or card the block is painted through it
+/// by the editor (see `BlockPainter`).
 struct SpaceDrawer: View {
     let draw: DrawStory
     let manager: WriteopiaStateManager

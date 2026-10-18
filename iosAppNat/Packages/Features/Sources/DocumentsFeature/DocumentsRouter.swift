@@ -34,13 +34,13 @@ public final class DocumentsRouter {
     }
 
     /// Shows the documents graph, right under the root.
-    func openGraph() {
+    public func openGraph() {
         favoritesOpened = false
         path = NavigationPath([DocumentsRoute.graph])
     }
 
     /// Shows every favorite of the workspace, right under the root.
-    func openFavorites() {
+    public func openFavorites() {
         favoritesOpened = true
         path = NavigationPath([DocumentsRoute.favorites])
     }
@@ -52,7 +52,7 @@ public final class DocumentsRouter {
     /// side menu's highlight. Going back to the root with the back button leaves it too.
     public var showsFavorites: Bool { favoritesOpened && !path.isEmpty }
 
-    func reset() {
+    public func reset() {
         favoritesOpened = false
         path = NavigationPath()
     }

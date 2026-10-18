@@ -67,15 +67,18 @@ public struct WriteopiaEditor: View {
         return ceil(rect.width)
     }
 
-    /// What the drawers add beside the text of a step: the paddings of the title, a checkbox
-    /// or a bullet.
+    /// What the drawers add beside the text of a step: the paddings of the title, a checkbox,
+    /// a bullet, the number of a line of code and the insets of its block.
     private static func decorationWidth(of step: StoryStep) -> CGFloat {
-        switch step.type.number {
+        let drawer: CGFloat = switch step.type.number {
         case StoryType.title.number: 16
         case StoryType.checkItem.number: 36
         case StoryType.unorderedListItem.number: 24
+        case StoryType.codeBlock.number: CodeBlockDrawer.gutterWidth
         default: 0
         }
+        let block = BlockKind(of: step).map { BlockStyle(kind: $0).horizontalInsets } ?? 0
+        return drawer + block
     }
 
     /// The dragged step, floating under the finger.
@@ -100,6 +103,9 @@ public struct WriteopiaEditor: View {
                                 .id(draw.id)
                         }
                     }
+                    // The code blocks, boxes and cards, each painted as one piece behind its
+                    // steps and the spaces between them.
+                    .backgroundPreferenceValue(BlockPiecesKey.self) { BlockPainter(pieces: $0) }
                     .coordinateSpace(.named(ReorderCoordinator.coordinateSpace))
                     .overlay(alignment: .topLeading) { reorderPreview }
                     .padding(.top, 8)
