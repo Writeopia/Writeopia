@@ -37,6 +37,8 @@ public final class AppSession {
     public private(set) var privateSpaceFolder: URL?
     /// Bumped when the private space moves, so screens holding a repository reload.
     public private(set) var documentsVersion = 0
+    /// Whether an editor is opening a document, for the spinner by the folders of the side menu.
+    public let documentLoad = DocumentLoadActivity()
     public var colorTheme: ColorTheme {
         didSet { preferences.set(colorTheme.rawValue, for: .colorTheme) }
     }

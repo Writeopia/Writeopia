@@ -27,6 +27,7 @@ import io.writeopia.commonui.extensions.toUiCard
 import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.repository.MenuItemsRepository
 import io.writeopia.core.folders.repository.folder.NotesUseCase
+import io.writeopia.core.folders.sync.DocumentLoadActivity
 import io.writeopia.core.folders.sync.SyncActivity
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.model.LocalAiWizardState
@@ -127,6 +128,8 @@ class GlobalShellKmpViewModel(
     override val lastWorkspaceSync: StateFlow<ResultData<String>> = workspaceHandler.lastWorkspaceSync
 
     override val isSyncingState: StateFlow<Boolean> = SyncActivity.isSyncing
+
+    override val isLoadingDocumentState: StateFlow<Boolean> = DocumentLoadActivity.isLoading
 
     override val isAutoSyncEnabled: StateFlow<Boolean> = workspaceHandler.isAutoSyncEnabled
 

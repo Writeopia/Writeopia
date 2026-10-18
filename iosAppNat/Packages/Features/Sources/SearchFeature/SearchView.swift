@@ -78,6 +78,7 @@ public struct SearchRootView: View {
             presentations: session.presentationsSource,
             writingAgent: session.writingAgent,
             headerImages: session.headerImages,
+            loadActivity: session.documentLoad,
             loadPresentation: { id in await session.presentation(id: id) }
         )
             .id("\(session.workspace?.id ?? "")-\(session.documentsVersion)")
@@ -95,6 +96,7 @@ struct SearchView: View {
     private let presentations: PresentationsSource?
     private let writingAgent: WritingAgentAPI?
     private let headerImages: HeaderImagesAPI?
+    private let loadActivity: DocumentLoadActivity?
     private let loadPresentation: (String) async -> Presentation?
     /// The presentation shown full screen (the phones; the Mac opens a window).
     @State private var presentationShown: Presentation?
@@ -109,6 +111,7 @@ struct SearchView: View {
         presentations: PresentationsSource? = nil,
         writingAgent: WritingAgentAPI? = nil,
         headerImages: HeaderImagesAPI? = nil,
+        loadActivity: DocumentLoadActivity? = nil,
         loadPresentation: @escaping (String) async -> Presentation? = { _ in nil }
     ) {
         self.repository = repository
@@ -119,6 +122,7 @@ struct SearchView: View {
         self.presentations = presentations
         self.writingAgent = writingAgent
         self.headerImages = headerImages
+        self.loadActivity = loadActivity
         self.loadPresentation = loadPresentation
         _viewModel = State(initialValue: SearchViewModel(repository: repository))
     }
@@ -168,7 +172,8 @@ struct SearchView: View {
                         presentations: presentations,
                         writingAgent: writingAgent,
                         imageGenerator: writingAgent,
-                        headerImages: headerImages
+                        headerImages: headerImages,
+                        loadActivity: loadActivity
                     ) { link in
                         path.append(.document(id: link.id, title: link.title ?? "Untitled"))
                     }

@@ -146,6 +146,14 @@ public struct SidebarFolders: View {
                     .font(SideMenuStyle.sectionFont)
                     .foregroundStyle(.secondary)
                     .textCase(SideMenuStyle.sectionCase)
+                // Shows while an editor opens a document, from the device and then the backend.
+                if session.documentLoad.isLoading {
+                    ProgressView()
+                        .controlSize(.mini)
+                        .padding(.leading, 6)
+                        .accessibilityLabel("Loading document")
+                        .accessibilityIdentifier("sideMenu.loadingDocument")
+                }
                 Spacer()
                 Button {
                     newFolderTitle = ""

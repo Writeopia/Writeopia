@@ -75,6 +75,7 @@ public struct NoteEditorView: View {
         writingAgent: WritingAgentServing? = nil,
         imageGenerator: AiImageGenerating? = nil,
         headerImages: HeaderImagesAPI? = nil,
+        loadActivity: DocumentLoadActivity? = nil,
         openDocumentLink: @escaping (DocumentLink) -> Void = { _ in }
     ) {
         _viewModel = State(initialValue: NoteEditorViewModel(
@@ -87,7 +88,8 @@ public struct NoteEditorView: View {
             presentations: presentations,
             writingAgent: writingAgent,
             imageGenerator: imageGenerator,
-            headerImages: headerImages.map(HeaderImagesService.init(api:))
+            headerImages: headerImages.map(HeaderImagesService.init(api:)),
+            loadActivity: loadActivity
         ))
         fallbackTitle = title
         self.openDocumentLink = openDocumentLink
@@ -583,12 +585,12 @@ public struct NoteEditorView: View {
                     viewModel.writeopiaManager.clearLineSelection()
                 }
             }
-            await viewModel.loadDocument()
-            // A document that was just created has nothing yet: the title is ready to be typed.
-            if viewModel.hasLoaded, viewModel.title.isEmpty, viewModel.writeopiaManager.documentContent.count <= 1 {
-                viewModel.writeopiaManager.focusTitle()
+            await viewModel.open {
+                // A document that was just created has nothing yet: the title is ready to be typed.
+                if viewModel.hasLoaded, viewModel.title.isEmpty, viewModel.writeopiaManager.documentContent.count <= 1 {
+                    viewModel.writeopiaManager.focusTitle()
+                }
             }
-            await viewModel.mergeFromBackend()
             await viewModel.loadPublishState()
         }
         .onChange(of: viewModel.writeopiaManager.changeCount) {

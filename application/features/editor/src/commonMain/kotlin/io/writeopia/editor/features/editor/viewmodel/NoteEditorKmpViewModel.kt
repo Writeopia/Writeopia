@@ -16,6 +16,7 @@ import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.genai.repository.GenAiRepository
 import io.writeopia.common.utils.collections.toNodeTree
 import io.writeopia.core.folders.api.DocumentsApi
+import io.writeopia.core.folders.sync.DocumentLoadActivity
 import io.writeopia.core.presentations.PresentationsStore
 import io.writeopia.core.presentations.api.PresentationsApi
 import io.writeopia.editor.features.presentation.repository.CloudPresentationsSaver
@@ -829,62 +830,71 @@ class NoteEditorKmpViewModel(
 //        writeopiaManager.liveSync(sharedEditionManager)
     }
 
+    /**
+     * Opens the document: the copy in the database is shown right away, then the backend copy
+     * is fetched and merged into it. [DocumentLoadActivity] holds while both run, so the side
+     * menu shows a spinner by its folders until the content is final.
+     */
     override fun loadDocument(documentId: String) {
         if (writeopiaManager.isInitialized()) return
 
         viewModelScope.launch(Dispatchers.Default) {
-            val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
-            val isDisconnected = workspace.id == Workspace.disconnectedWorkspace().id
+            DocumentLoadActivity.track { openDocument(documentId) }
+        }
+    }
 
-            // Step 1: Load from local database immediately (fast path)
-            val localDocument = documentRepository.loadDocumentById(documentId, workspace.id)
+    private suspend fun openDocument(documentId: String) {
+        val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
+        val isDisconnected = workspace.id == Workspace.disconnectedWorkspace().id
 
-            if (localDocument != null) {
-                writeopiaManager.loadDocument(localDocument)
-                registerForSync(documentId, isDisconnected)
-                // Set initial published state from local document
-                _isDocumentPublished.value = localDocument.published
-            }
+        // Step 1: Load from local database immediately (fast path)
+        val localDocument = documentRepository.loadDocumentById(documentId, workspace.id)
 
-            // Step 2: If online, fetch from backend in background and merge
-            if (!isDisconnected && documentLoadUseCase != null) {
-                documentLoadUseCase.fetchAndMergeFromBackend(
-                    documentId = documentId,
-                    workspaceId = workspace.id,
-                    onMergeComplete = { mergedDocument ->
-                        // Update the document in the manager with merged content
-                        writeopiaManager.updateDocument(mergedDocument)
-                        // Update published state from merged document
-                        _isDocumentPublished.value = mergedDocument.published
+        if (localDocument != null) {
+            writeopiaManager.loadDocument(localDocument)
+            registerForSync(documentId, isDisconnected)
+            // Set initial published state from local document
+            _isDocumentPublished.value = localDocument.published
+        }
 
-                        // Register for sync if this is the first load (backend-only document)
-                        if (localDocument == null) {
-                            registerForSync(documentId, isDisconnected)
-                        }
+        // Step 2: If online, fetch from backend in background and merge
+        if (!isDisconnected && documentLoadUseCase != null) {
+            documentLoadUseCase.fetchAndMergeFromBackend(
+                documentId = documentId,
+                workspaceId = workspace.id,
+                onMergeComplete = { mergedDocument ->
+                    // Update the document in the manager with merged content
+                    writeopiaManager.updateDocument(mergedDocument)
+                    // Update published state from merged document
+                    _isDocumentPublished.value = mergedDocument.published
+
+                    // Register for sync if this is the first load (backend-only document)
+                    if (localDocument == null) {
+                        registerForSync(documentId, isDisconnected)
                     }
-                )
-            }
-
-            // Step 3: Fetch document metadata from API if online. A failure here (airplane
-            // mode, backend down) must not take the editor down: the local document is shown.
-            if (!isDisconnected && documentsApi != null) {
-                try {
-                    // Fetch favorite status from backend
-                    val docResult = documentsApi.getDocumentById(documentId, workspace.id)
-                    if (docResult is ResultData.Complete) {
-                        writeopiaManager.setFavorite(docResult.data.favorite)
-                    }
-
-                    // Fetch published status
-                    val publishedResult = documentsApi.isDocumentPublished(documentId, workspace.id)
-                    if (publishedResult is ResultData.Complete) {
-                        _isDocumentPublished.value = publishedResult.data
-                    }
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    println("error loading document metadata: ${e.message}")
                 }
+            )
+        }
+
+        // Step 3: Fetch document metadata from API if online. A failure here (airplane
+        // mode, backend down) must not take the editor down: the local document is shown.
+        if (!isDisconnected && documentsApi != null) {
+            try {
+                // Fetch favorite status from backend
+                val docResult = documentsApi.getDocumentById(documentId, workspace.id)
+                if (docResult is ResultData.Complete) {
+                    writeopiaManager.setFavorite(docResult.data.favorite)
+                }
+
+                // Fetch published status
+                val publishedResult = documentsApi.isDocumentPublished(documentId, workspace.id)
+                if (publishedResult is ResultData.Complete) {
+                    _isDocumentPublished.value = publishedResult.data
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                println("error loading document metadata: ${e.message}")
             }
         }
     }
