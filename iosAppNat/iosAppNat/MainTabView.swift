@@ -31,6 +31,9 @@ private struct MainLayout: View {
     @State private var selection: MainTab = .folders
     @State private var router = DocumentsRouter()
     @State private var openEditors = OpenEditors()
+    /// Set while the folder tree moves the selection to the Folders tab: the tree has routed
+    /// the documents itself, so that change mustn't reset them.
+    @State private var isOpeningFromTree = false
 
     var body: some View {
         TabView(selection: $selection) {
@@ -62,8 +65,11 @@ private struct MainLayout: View {
         }
         .tabViewSidebarFooter {
             // The tree expands in place, which the rows of a tab section can't do.
-            SidebarFolders(router: router) { selection = .folders }
-                .padding(.top, 12)
+            SidebarFolders(router: router) {
+                isOpeningFromTree = selection != .folders
+                selection = .folders
+            }
+            .padding(.top, 12)
         }
         .environment(\.openEditors, openEditors)
         .onChange(of: selection) { _, tab in route(to: tab) }
@@ -85,7 +91,12 @@ private struct MainLayout: View {
     private func route(to tab: MainTab) {
         switch tab {
         case .folders:
-            router.reset()
+            // A tap on the tab shows the root; the tree picked a folder or a document instead.
+            if isOpeningFromTree {
+                isOpeningFromTree = false
+            } else {
+                router.reset()
+            }
         case .favorites:
             router.openFavorites()
         case .search, .settings:
