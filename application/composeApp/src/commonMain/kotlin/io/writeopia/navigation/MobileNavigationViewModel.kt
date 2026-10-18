@@ -19,6 +19,10 @@ class MobileNavigationViewModel : ViewModel(), NavigationViewModel {
                 destination = "${Destinations.CHOOSE_NOTE.id}/{type}/{path}",
             ),
             BottomBarItem(
+                navItemName = NavItemName.FAVORITES,
+                destination = "${Destinations.CHOOSE_NOTE.id}/{type}/{path}",
+            ),
+            BottomBarItem(
                 navItemName = NavItemName.SEARCH,
                 destination = Destinations.SEARCH.id,
             ),

@@ -4,6 +4,7 @@ import io.writeopia.common.utils.Destinations
 
 enum class NavItemName(val value: String) {
     HOME("Home"),
+    FAVORITES("Favorites"),
     SEARCH("io.writeopia.common.utils.icons.all.getSearch"),
     SETTINGS("Settings");
 

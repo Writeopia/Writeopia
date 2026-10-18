@@ -49,7 +49,6 @@ import io.writeopia.navigation.NavItemName
 import io.writeopia.navigation.Navigation
 import io.writeopia.navigation.NavigationViewModel
 import io.writeopia.sdk.models.drawing.DrawingData
-import io.writeopia.navigation.notes.navigateToNoteMenu
 import io.writeopia.navigation.notes.navigateToAccount
 import io.writeopia.navigation.search.navigateToSearch
 import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
@@ -58,6 +57,9 @@ import io.writeopia.notemenu.di.NotesMenuInjection
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.notemenu.navigation.NAVIGATION_PATH
 import io.writeopia.notemenu.navigation.NAVIGATION_TYPE
+import io.writeopia.notemenu.navigation.NoteMenuDestiny
+import io.writeopia.notemenu.navigation.navigateBackToNotes
+import io.writeopia.notemenu.navigation.navigateToNotes
 import io.writeopia.theme.WriteopiaTheme
 import io.writeopia.viewmodel.UiConfigurationViewModel
 
@@ -167,13 +169,26 @@ fun PortraitMobile(
                         .align(Alignment.BottomCenter)
                         .offset { IntOffset(0, offsetY.roundToPx()) }
                 ) {
+                    // The home and the favorites share the notes screen, so the route alone
+                    // can't tell them apart: the favorites are told by the navigation type.
+                    val isFavoritesScreen = navBackStackEntry
+                        ?.takeIf { entry -> entry.destination.route == NoteMenuDestiny.noteMenu() }
+                        ?.savedStateHandle
+                        ?.get<String?>(NAVIGATION_TYPE) == NotesNavigationType.FAVORITES.type
+
                     navigationItems.forEach { item ->
-                        val isSelected =
+                        val matchesRoute =
                             currentDestination?.hierarchy?.any { destination ->
                                 destination.route?.let {
                                     NavItemName.selectRoute(it)
                                 }?.value == item.navItemName.value
                             } ?: false
+
+                        val isSelected = when (item.navItemName) {
+                            NavItemName.FAVORITES -> isFavoritesScreen
+                            NavItemName.HOME -> matchesRoute && !isFavoritesScreen
+                            else -> matchesRoute
+                        }
 
                         val iconSize by animateDpAsState(
                             targetValue = if (isSelected) 28.dp else 24.dp,
@@ -237,7 +252,14 @@ fun NavHostController.navigateToItem(
     builder: NavOptionsBuilder.() -> Unit
 ) {
     when (navItem) {
-        NavItemName.HOME -> this.navigateToNoteMenu(NotesNavigation.Root, builder)
+        // The home and the favorites are the same destination with different arguments, so a
+        // single-top navigation between them would reuse the entry and keep the screen shown.
+        // Both pop back to the home instead, and the favorites are opened right over it.
+        NavItemName.HOME -> this.navigateBackToNotes(NotesNavigation.Root)
+        NavItemName.FAVORITES -> {
+            this.navigateBackToNotes(NotesNavigation.Root)
+            this.navigateToNotes(NotesNavigation.Favorites)
+        }
         NavItemName.SEARCH -> this.navigateToSearch(builder)
         NavItemName.SETTINGS -> this.navigateToAccount(builder)
     }
@@ -246,6 +268,7 @@ fun NavHostController.navigateToItem(
 fun NavItemName.iconForNavItem(): ImageVector =
     when (this) {
         NavItemName.HOME -> WrIcons.home
+        NavItemName.FAVORITES -> WrIcons.favorites
         NavItemName.SEARCH -> WrIcons.search
         NavItemName.SETTINGS -> WrIcons.settings
     }
