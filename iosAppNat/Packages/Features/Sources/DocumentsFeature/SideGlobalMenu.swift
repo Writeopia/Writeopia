@@ -18,8 +18,6 @@ public struct SideGlobalMenu: View {
     private let router: DocumentsRouter
     private let fixedWidth: Bool
     @Environment(AppSession.self) private var session
-    @State private var newFolderTitle = ""
-    @State private var asksNewFolderTitle = false
 
     /// `fixedWidth` keeps the menu at the width of the landscape layout; the Mac sidebar column
     /// sizes it instead and paints its own material behind it.
@@ -44,30 +42,8 @@ public struct SideGlobalMenu: View {
                 graphRow
                 destinationRow(.settings, title: "Settings", systemImage: "gearshape")
 
-                HStack {
-                    Text("Folders")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .textCase(.uppercase)
-                    Spacer()
-                    Button {
-                        newFolderTitle = ""
-                        asksNewFolderTitle = true
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(.caption.weight(.bold))
-                            .frame(width: 28, height: 28)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("New folder")
-                    .accessibilityIdentifier("sideMenu.newFolder")
-                }
-                .padding(.leading, 12)
-                .padding(.trailing, 4)
-                .padding(.top, 20)
-
-                FolderTreeLevel(parentId: Folder.rootId, depth: 0, router: router, open: open)
+                SidebarFolders(router: router) { selection = .documents }
+                    .padding(.top, 20)
             }
             .padding(.vertical, 12)
             .padding(.horizontal, 8)
@@ -75,11 +51,6 @@ public struct SideGlobalMenu: View {
         .frame(width: fixedWidth ? 234 : nil)
         .frame(maxWidth: fixedWidth ? nil : .infinity)
         .background(fixedWidth ? WrColors.surface : .clear)
-        .alert("New folder", isPresented: $asksNewFolderTitle) {
-            TextField("Title", text: $newFolderTitle)
-            Button("Cancel", role: .cancel) {}
-            Button("Create") { createFolder() }
-        }
     }
 
     private func destinationRow(_ destination: MainDestination, title: LocalizedStringKey, systemImage: String) -> some View {
@@ -151,9 +122,59 @@ public struct SideGlobalMenu: View {
     }
 
     private var showsFavorites: Bool { router.showsFavorites }
+}
+
+/// The folder tree of the workspace for a side menu: a "Folders" header with a button for a new
+/// folder, then the tree from the root, with the folders expanding in place. `onOpen` runs when
+/// a folder or a document is picked, so the menu can show the documents.
+public struct SidebarFolders: View {
+    private let router: DocumentsRouter
+    private let onOpen: () -> Void
+    @Environment(AppSession.self) private var session
+    @State private var newFolderTitle = ""
+    @State private var asksNewFolderTitle = false
+
+    public init(router: DocumentsRouter, onOpen: @escaping () -> Void) {
+        self.router = router
+        self.onOpen = onOpen
+    }
+
+    public var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack {
+                Text("Folders")
+                    .font(SideMenuStyle.sectionFont)
+                    .foregroundStyle(.secondary)
+                    .textCase(SideMenuStyle.sectionCase)
+                Spacer()
+                Button {
+                    newFolderTitle = ""
+                    asksNewFolderTitle = true
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.caption.weight(.bold))
+                        .frame(width: 28, height: 28)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("New folder")
+                .accessibilityIdentifier("sideMenu.newFolder")
+            }
+            .padding(.leading, 12)
+            .padding(.trailing, 4)
+
+            FolderTreeLevel(parentId: Folder.rootId, depth: 0, router: router, open: open)
+                .padding(.leading, SideMenuStyle.treeInset)
+        }
+        .alert("New folder", isPresented: $asksNewFolderTitle) {
+            TextField("Title", text: $newFolderTitle)
+            Button("Cancel", role: .cancel) {}
+            Button("Create") { createFolder() }
+        }
+    }
 
     private func open(_ item: FolderItem) {
-        selection = .documents
+        onOpen()
         switch item {
         case .folder(let folder):
             Task { await router.open(folder: folder, repository: session.documents) }
@@ -172,6 +193,26 @@ public struct SideGlobalMenu: View {
             router.contentsChanged()
         }
     }
+}
+
+/// The look of the rows of the tree. On the iPad the tree sits under the rows of the system
+/// sidebar, so its rows match them; the Mac sidebar and the side menu are denser.
+private enum SideMenuStyle {
+    #if os(macOS)
+    static let rowFont: Font = .subheadline
+    static let rowHeight: CGFloat = 32
+    static let sectionFont: Font = .caption.weight(.semibold)
+    static let sectionCase: Text.Case? = .uppercase
+    static let treeInset: CGFloat = 0
+    #else
+    static let rowFont: Font = .body
+    static let rowHeight: CGFloat = 44
+    static let sectionFont: Font = .body
+    static let sectionCase: Text.Case? = nil
+    /// The column of the chevrons goes in the margin of the sidebar, so the icons of the tree
+    /// line up with the icons of the rows above it.
+    static let treeInset: CGFloat = -24
+    #endif
 }
 
 /// The folders and documents inside `parentId`; folders expand in place.
@@ -259,7 +300,7 @@ private struct FolderTreeLevel: View {
                     .font(.caption2.weight(.bold))
                     .foregroundStyle(.secondary)
                     .rotationEffect(.degrees(isExpanded == true ? 90 : 0))
-                    .frame(width: 20, height: 32)
+                    .frame(width: 20, height: SideMenuStyle.rowHeight)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -269,14 +310,14 @@ private struct FolderTreeLevel: View {
 
             if hasIconButton {
                 iconButton()
-                    .font(.subheadline)
+                    .font(SideMenuStyle.rowFont)
 
                 Button(action: action) {
                     Text(title.isEmpty ? String(localized: "Untitled") : title)
                         .lineLimit(1)
                         .foregroundStyle(WrColors.textLight)
-                        .font(.subheadline)
-                        .frame(maxWidth: .infinity, minHeight: 32, alignment: .leading)
+                        .font(SideMenuStyle.rowFont)
+                        .frame(maxWidth: .infinity, minHeight: SideMenuStyle.rowHeight, alignment: .leading)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -290,8 +331,8 @@ private struct FolderTreeLevel: View {
                         icon()
                             .foregroundStyle(.secondary)
                     }
-                    .font(.subheadline)
-                    .frame(maxWidth: .infinity, minHeight: 32, alignment: .leading)
+                    .font(SideMenuStyle.rowFont)
+                    .frame(maxWidth: .infinity, minHeight: SideMenuStyle.rowHeight, alignment: .leading)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)

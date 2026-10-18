@@ -267,6 +267,83 @@
         }
       }
     },
+    "Add a bullet list" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar uma lista"
+          }
+        }
+      }
+    },
+    "Add a checklist" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar uma lista de tarefas"
+          }
+        }
+      }
+    },
+    "Add a code block" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar um bloco de código"
+          }
+        }
+      }
+    },
+    "Add a drawing" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar um desenho"
+          }
+        }
+      }
+    },
+    "Add a section heading" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar um título de seção"
+          }
+        }
+      }
+    },
+    "Add a tag" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar uma tag"
+          }
+        }
+      }
+    },
+    "Add a TL;DR at the top" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar um TL;DR no topo"
+          }
+        }
+      }
+    },
     "Add link" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -274,6 +351,39 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Adicionar link"
+          }
+        }
+      }
+    },
+    "Add selected" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar selecionadas"
+          }
+        }
+      }
+    },
+    "Add tag" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar tag"
+          }
+        }
+      }
+    },
+    "Add tags" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar tags"
           }
         }
       }
@@ -586,6 +696,17 @@
         }
       }
     },
+    "Apply" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aplicar"
+          }
+        }
+      }
+    },
     "Apply to" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -608,6 +729,17 @@
         }
       }
     },
+    "Applying the suggestion…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aplicando a sugestão…"
+          }
+        }
+      }
+    },
     "Are you sure?" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -626,6 +758,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pergunte à IA"
+          }
+        }
+      }
+    },
+    "Asking the AI…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Perguntando à IA…"
           }
         }
       }
@@ -1092,6 +1235,17 @@
         }
       }
     },
+    "Could not apply the suggestion" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível aplicar a sugestão"
+          }
+        }
+      }
+    },
     "Could not create the page" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1147,6 +1301,17 @@
         }
       }
     },
+    "Could not send the verification code." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível enviar o código de verificação."
+          }
+        }
+      }
+    },
     "Could not summarize" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1176,6 +1341,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Crie uma pasta para organizar suas notas"
+          }
+        }
+      }
+    },
+    "Create a linked document" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Criar um documento vinculado"
+          }
+        }
+      }
+    },
+    "Create a new folder" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Criar uma nova pasta"
           }
         }
       }
@@ -1213,6 +1400,28 @@
         }
       }
     },
+    "Create and add" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Criar e adicionar"
+          }
+        }
+      }
+    },
+    "Create with AI" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Criar com IA"
+          }
+        }
+      }
+    },
     "Create your account" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1231,6 +1440,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Crie seu primeiro documento"
+          }
+        }
+      }
+    },
+    "Creating a folder…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Criando uma pasta…"
+          }
+        }
+      }
+    },
+    "Creating a tag…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Criando uma tag…"
           }
         }
       }
@@ -1594,6 +1825,17 @@
         }
       }
     },
+    "Draw an image" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desenhar uma imagem"
+          }
+        }
+      }
+    },
     "Drawing" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1612,6 +1854,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tela de desenho"
+          }
+        }
+      }
+    },
+    "Drawing the image…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desenhando a imagem…"
           }
         }
       }
@@ -1814,6 +2067,10 @@
         }
       }
     },
+    "Favorites" : {
+      "comment" : "A tab that shows the user's favorites.",
+      "isCommentAutoGenerated" : true
+    },
     "Find documents by their title or content." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1821,6 +2078,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Encontre documentos pelo título ou conteúdo."
+          }
+        }
+      }
+    },
+    "First, verify your email. We'll send you a code." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Primeiro, verifique seu email. Vamos enviar um código para você."
           }
         }
       }
@@ -1859,7 +2127,6 @@
       }
     },
     "Folders" : {
-      "extractionState" : "stale",
       "localizations" : {
         "pt" : {
           "stringUnit" : {
@@ -1957,6 +2224,17 @@
         }
       }
     },
+    "Give the document a title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dar um título ao documento"
+          }
+        }
+      }
+    },
     "Green highlight" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2001,6 +2279,17 @@
         }
       }
     },
+    "Hide the suggestions" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar as sugestões"
+          }
+        }
+      }
+    },
     "Highlight" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2008,6 +2297,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Marca texto"
+          }
+        }
+      }
+    },
+    "Highlight as a callout" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Destacar como um aviso"
           }
         }
       }
@@ -2030,6 +2330,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ícone"
+          }
+        }
+      }
+    },
+    "If %@ can be used to register, we sent a code to it." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se %@ puder ser usado para criar uma conta, enviamos um código para esse email."
           }
         }
       }
@@ -2320,6 +2631,28 @@
         }
       }
     },
+    "Looking at your folders…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Analisando suas pastas…"
+          }
+        }
+      }
+    },
+    "Looking at your tags…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Olhando suas tags…"
+          }
+        }
+      }
+    },
     "Make admin" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2441,6 +2774,17 @@
         }
       }
     },
+    "Move to a folder" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mover para uma pasta"
+          }
+        }
+      }
+    },
     "Move to…" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2496,6 +2840,17 @@
         }
       }
     },
+    "New tag" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nova tag"
+          }
+        }
+      }
+    },
     "New to Writeopia?" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2514,6 +2869,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nova área de trabalho"
+          }
+        }
+      }
+    },
+    "No AI is available. Pick one in the settings, or sign in to use the cloud AI." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nenhuma IA está disponível. Escolha uma nos ajustes, ou entre para usar a IA na nuvem."
           }
         }
       }
@@ -2540,6 +2906,28 @@
         }
       }
     },
+    "No tag matches. Create one below." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nenhuma tag corresponde. Crie uma abaixo."
+          }
+        }
+      }
+    },
+    "No tags yet" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ainda sem tags"
+          }
+        }
+      }
+    },
     "No teams" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2551,6 +2939,28 @@
         }
       }
     },
+    "None of your folders seems to fit this document." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nenhuma das suas pastas parece servir para este documento."
+          }
+        }
+      }
+    },
+    "None of your tags seems to fit this document." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nenhuma das suas tags parece combinar com este documento."
+          }
+        }
+      }
+    },
     "Not Detected" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2558,6 +2968,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Não detectado"
+          }
+        }
+      }
+    },
+    "Not now" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agora não"
           }
         }
       }
@@ -2771,6 +3192,17 @@
         }
       }
     },
+    "Pick a tag" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolha uma tag"
+          }
+        }
+      }
+    },
     "Plan" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -2943,6 +3375,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Remover dos favoritos"
+          }
+        }
+      }
+    },
+    "Remove tag" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remover tag"
           }
         }
       }
@@ -3122,6 +3565,17 @@
         }
       }
     },
+    "Search tags" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar tags"
+          }
+        }
+      }
+    },
     "Search your documents" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3238,6 +3692,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Configurações"
+          }
+        }
+      }
+    },
+    "Show the suggestions" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar as sugestões"
           }
         }
       }
@@ -3462,6 +3927,28 @@
         }
       }
     },
+    "Suggest with AI" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sugerir com IA"
+          }
+        }
+      }
+    },
+    "Suggestions" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sugestões"
+          }
+        }
+      }
+    },
     "Suggestions:" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3572,6 +4059,17 @@
         }
       }
     },
+    "Tags of this document" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tags deste documento"
+          }
+        }
+      }
+    },
     "Team workspace name" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3605,6 +4103,28 @@
         }
       }
     },
+    "The AI answered nothing." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A IA não respondeu nada."
+          }
+        }
+      }
+    },
+    "The AI could not suggest a tag. Try again or write one." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A IA não conseguiu sugerir uma tag. Tente de novo ou escreva uma."
+          }
+        }
+      }
+    },
     "The AI didn't return a summary." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3612,6 +4132,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "A IA não retornou um resumo."
+          }
+        }
+      }
+    },
+    "The AI drew no picture" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A IA não desenhou nenhuma imagem"
           }
         }
       }
@@ -3726,6 +4257,17 @@
         }
       }
     },
+    "The tag couldn't be saved." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível salvar a tag."
+          }
+        }
+      }
+    },
     "The text is too long for Apple Intelligence. Try with fewer lines." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3733,6 +4275,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "O texto é longo demais para a Apple Intelligence. Tente com menos linhas."
+          }
+        }
+      }
+    },
+    "There is no paragraph to illustrate." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não há parágrafo para ilustrar."
           }
         }
       }
@@ -3803,6 +4356,39 @@
         }
       }
     },
+    "This document has no tags. Add one from the catalogue or create a new one." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este documento não tem tags. Adicione uma do catálogo ou crie uma nova."
+          }
+        }
+      }
+    },
+    "This document has no tags. Pick the ones that fit, or let the AI create one." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este documento não tem tags. Escolha as que combinam, ou deixe a IA criar uma."
+          }
+        }
+      }
+    },
+    "This document is in the root folder. Pick a folder for it, or let the AI create one." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este documento está na pasta raiz. Escolha uma pasta para ele, ou deixe a IA criar uma."
+          }
+        }
+      }
+    },
     "This feature is only available for premium users using an online workspace" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3869,6 +4455,28 @@
         }
       }
     },
+    "This username is already taken." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este nome de usuário já está em uso."
+          }
+        }
+      }
+    },
+    "This workspace has no tags yet." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este workspace ainda não tem tags."
+          }
+        }
+      }
+    },
     "Title" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3898,6 +4506,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tentar novamente"
+          }
+        }
+      }
+    },
+    "Turn into a table" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transformar em tabela"
           }
         }
       }
@@ -4182,6 +4801,17 @@
         }
       }
     },
+    "Verify your email" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verifique seu email"
+          }
+        }
+      }
+    },
     "Version" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4200,6 +4830,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Exibir como"
+          }
+        }
+      }
+    },
+    "View tags" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ver tags"
           }
         }
       }
@@ -4259,6 +4900,17 @@
         }
       }
     },
+    "What does this tag mean?" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O que esta tag significa?"
+          }
+        }
+      }
+    },
     "Where are you writing today?" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4266,6 +4918,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Onde você vai escrever hoje?"
+          }
+        }
+      }
+    },
+    "Where should this document live?" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Onde este documento deve ficar?"
+          }
+        }
+      }
+    },
+    "Which tags fit this document?" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quais tags combinam com este documento?"
           }
         }
       }
@@ -4288,6 +4962,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Área de trabalho"
+          }
+        }
+      }
+    },
+    "Write a conclusion" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escrever uma conclusão"
           }
         }
       }
@@ -4332,6 +5017,83 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Writeopia Cloud"
+          }
+        }
+      }
+    },
+    "Writing a conclusion…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escrevendo uma conclusão…"
+          }
+        }
+      }
+    },
+    "Writing a section heading…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escrevendo um título de seção…"
+          }
+        }
+      }
+    },
+    "Writing a TL;DR…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escrevendo um TL;DR…"
+          }
+        }
+      }
+    },
+    "Writing the checklist…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escrevendo a lista de tarefas…"
+          }
+        }
+      }
+    },
+    "Writing the code snippet…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escrevendo o trecho de código…"
+          }
+        }
+      }
+    },
+    "Writing the document title…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escrevendo o título do documento…"
+          }
+        }
+      }
+    },
+    "Writing the list…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escrevendo a lista…"
           }
         }
       }
@@ -4446,6 +5208,17 @@
         }
       }
     },
+    "Your account for %@ comes with a team workspace you can invite people to." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sua conta para %@ vem com uma área de trabalho de time para a qual você pode convidar pessoas."
+          }
+        }
+      }
+    },
     "Your notes stay on this device" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4500,777 +5273,7 @@
           }
         }
       }
-    },
-    "Suggestions" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sugestões"
-          }
-        }
-      }
-    },
-    "Apply" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aplicar"
-          }
-        }
-      }
-    },
-    "Show the suggestions" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostrar as sugestões"
-          }
-        }
-      }
-    },
-    "Hide the suggestions" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ocultar as sugestões"
-          }
-        }
-      }
-    },
-    "Move to a folder" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mover para uma pasta"
-          }
-        }
-      }
-    },
-    "Add a code block" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adicionar um bloco de código"
-          }
-        }
-      }
-    },
-    "Add a bullet list" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adicionar uma lista"
-          }
-        }
-      }
-    },
-    "Add a checklist" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adicionar uma lista de tarefas"
-          }
-        }
-      }
-    },
-    "Create a linked document" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Criar um documento vinculado"
-          }
-        }
-      }
-    },
-    "Draw an image" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Desenhar uma imagem"
-          }
-        }
-      }
-    },
-    "Add a drawing" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adicionar um desenho"
-          }
-        }
-      }
-    },
-    "Turn into a table" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Transformar em tabela"
-          }
-        }
-      }
-    },
-    "Add a section heading" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adicionar um título de seção"
-          }
-        }
-      }
-    },
-    "Give the document a title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dar um título ao documento"
-          }
-        }
-      }
-    },
-    "Highlight as a callout" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Destacar como um aviso"
-          }
-        }
-      }
-    },
-    "Add a TL;DR at the top" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adicionar um TL;DR no topo"
-          }
-        }
-      }
-    },
-    "Write a conclusion" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Escrever uma conclusão"
-          }
-        }
-      }
-    },
-    "Where should this document live?" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Onde este documento deve ficar?"
-          }
-        }
-      }
-    },
-    "This document is in the root folder. Pick a folder for it, or let the AI create one." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Este documento está na pasta raiz. Escolha uma pasta para ele, ou deixe a IA criar uma."
-          }
-        }
-      }
-    },
-    "Looking at your folders…" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Analisando suas pastas…"
-          }
-        }
-      }
-    },
-    "Creating a folder…" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Criando uma pasta…"
-          }
-        }
-      }
-    },
-    "None of your folders seems to fit this document." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nenhuma das suas pastas parece servir para este documento."
-          }
-        }
-      }
-    },
-    "Create a new folder" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Criar uma nova pasta"
-          }
-        }
-      }
-    },
-    "Not now" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Agora não"
-          }
-        }
-      }
-    },
-    "Could not apply the suggestion" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Não foi possível aplicar a sugestão"
-          }
-        }
-      }
-    },
-    "Writing the code snippet…" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Escrevendo o trecho de código…"
-          }
-        }
-      }
-    },
-    "Writing the list…" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Escrevendo a lista…"
-          }
-        }
-      }
-    },
-    "Writing the checklist…" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Escrevendo a lista de tarefas…"
-          }
-        }
-      }
-    },
-    "Drawing the image…" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Desenhando a imagem…"
-          }
-        }
-      }
-    },
-    "Writing a section heading…" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Escrevendo um título de seção…"
-          }
-        }
-      }
-    },
-    "Writing the document title…" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Escrevendo o título do documento…"
-          }
-        }
-      }
-    },
-    "Writing a TL;DR…" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Escrevendo um TL;DR…"
-          }
-        }
-      }
-    },
-    "Writing a conclusion…" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Escrevendo uma conclusão…"
-          }
-        }
-      }
-    },
-    "Applying the suggestion…" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aplicando a sugestão…"
-          }
-        }
-      }
-    },
-    "No AI is available. Pick one in the settings, or sign in to use the cloud AI." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nenhuma IA está disponível. Escolha uma nos ajustes, ou entre para usar a IA na nuvem."
-          }
-        }
-      }
-    },
-    "The AI answered nothing." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A IA não respondeu nada."
-          }
-        }
-      }
-    },
-    "There is no paragraph to illustrate." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Não há parágrafo para ilustrar."
-          }
-        }
-      }
-    },
-    "The AI drew no picture" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A IA não desenhou nenhuma imagem"
-          }
-        }
-      }
-    },
-    "First, verify your email. We'll send you a code." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Primeiro, verifique seu email. Vamos enviar um código para você."
-          }
-        }
-      }
-    },
-    "Verify your email" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Verifique seu email"
-          }
-        }
-      }
-    },
-    "If %@ can be used to register, we sent a code to it." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Se %@ puder ser usado para criar uma conta, enviamos um código para esse email."
-          }
-        }
-      }
-    },
-    "Your account for %@ comes with a team workspace you can invite people to." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sua conta para %@ vem com uma área de trabalho de time para a qual você pode convidar pessoas."
-          }
-        }
-      }
-    },
-    "Could not send the verification code." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Não foi possível enviar o código de verificação."
-          }
-        }
-      }
-    },
-    "This username is already taken." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Este nome de usuário já está em uso."
-          }
-        }
-      }
-    },
-    "Add tags" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adicionar tags"
-          }
-        }
-      }
-    },
-    "Which tags fit this document?" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Quais tags combinam com este documento?"
-          }
-        }
-      }
-    },
-    "This document has no tags. Pick the ones that fit, or let the AI create one." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Este documento não tem tags. Escolha as que combinam, ou deixe a IA criar uma."
-          }
-        }
-      }
-    },
-    "Creating a tag…" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Criando uma tag…"
-          }
-        }
-      }
-    },
-    "Looking at your tags…" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Olhando suas tags…"
-          }
-        }
-      }
-    },
-    "This workspace has no tags yet." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Este workspace ainda não tem tags."
-          }
-        }
-      }
-    },
-    "None of your tags seems to fit this document." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nenhuma das suas tags parece combinar com este documento."
-          }
-        }
-      }
-    },
-    "Create with AI" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Criar com IA"
-          }
-        }
-      }
-    },
-    "Add selected" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adicionar selecionadas"
-          }
-        }
-      }
-    },
-    "Add tag" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adicionar tag"
-          }
-        }
-      }
-    },
-    "View tags" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ver tags"
-          }
-        }
-      }
-    },
-    "No tags yet" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ainda sem tags"
-          }
-        }
-      }
-    },
-    "Tags of this document" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tags deste documento"
-          }
-        }
-      }
-    },
-    "This document has no tags. Add one from the catalogue or create a new one." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Este documento não tem tags. Adicione uma do catálogo ou crie uma nova."
-          }
-        }
-      }
-    },
-    "Remove tag" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Remover tag"
-          }
-        }
-      }
-    },
-    "Add a tag" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adicionar uma tag"
-          }
-        }
-      }
-    },
-    "Pick a tag" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Escolha uma tag"
-          }
-        }
-      }
-    },
-    "Search tags" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Buscar tags"
-          }
-        }
-      }
-    },
-    "No tag matches. Create one below." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nenhuma tag corresponde. Crie uma abaixo."
-          }
-        }
-      }
-    },
-    "New tag" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nova tag"
-          }
-        }
-      }
-    },
-    "What does this tag mean?" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O que esta tag significa?"
-          }
-        }
-      }
-    },
-    "Asking the AI…" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Perguntando à IA…"
-          }
-        }
-      }
-    },
-    "Suggest with AI" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sugerir com IA"
-          }
-        }
-      }
-    },
-    "Create and add" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Criar e adicionar"
-          }
-        }
-      }
-    },
-    "The AI could not suggest a tag. Try again or write one." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A IA não conseguiu sugerir uma tag. Tente de novo ou escreva uma."
-          }
-        }
-      }
-    },
-    "The tag couldn't be saved." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Não foi possível salvar a tag."
-          }
-        }
-      }
     }
   },
-  "version" : "1.0"
+  "version" : "1.1"
 }

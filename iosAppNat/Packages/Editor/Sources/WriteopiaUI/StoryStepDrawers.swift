@@ -147,7 +147,10 @@ struct DraggableStep<Content: View>: View {
 
             content
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .blockDecoration(block)
+                .blockInsets(block)
+                // The block itself is painted by the editor, as one piece from its first step
+                // to its last (see `BlockPainter`).
+                .blockPiece(block)
         }
         .swipeToSelect(step, manager: manager)
         .selectableByDrag(id: step.id)
@@ -923,19 +926,13 @@ struct LoadingDrawer: View {
 
 /// Gap between steps. While a step is dragged over it, it turns into the `ON_DRAG_SPACE`
 /// highlight that shows where the step will land.
-/// The gap between two steps. Inside a code block, box or card it paints the block too, so the
-/// block doesn't break between its steps, like `SpaceDrawer` of the SDK.
+/// The gap between two steps. Inside a code block, box or card the block is painted through it
+/// by the editor (see `BlockPainter`).
 struct SpaceDrawer: View {
     let draw: DrawStory
     let manager: WriteopiaStateManager
-    @Environment(\.isSlideLayout) private var isSlideLayout
 
     private var isTarget: Bool { draw.storyStep.type.number == StoryType.onDragSpace.number }
-
-    /// Where the content of the steps starts: after the grip and the spacing of `DraggableStep`.
-    private var contentStart: CGFloat {
-        isSlideLayout ? 0 : EditorLayout.gutter + 4
-    }
 
     var body: some View {
         RoundedRectangle(cornerRadius: 3)
@@ -943,12 +940,6 @@ struct SpaceDrawer: View {
             .frame(height: isTarget ? 6 : 4)
             .padding(.vertical, isTarget ? 2 : 3)
             .padding(.leading, EditorLayout.gutter)
-            .background {
-                if let kind = draw.insideBlock {
-                    BlockGap(kind: kind)
-                        .padding(.leading, contentStart)
-                }
-            }
             .contentShape(Rectangle().inset(by: -6))
             .animation(.easeOut(duration: 0.15), value: isTarget)
     }

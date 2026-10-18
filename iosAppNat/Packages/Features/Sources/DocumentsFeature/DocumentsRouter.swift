@@ -2,7 +2,6 @@ import Observation
 import SwiftUI
 import WrData
 import WrModels
-import WrSession
 
 /// Navigation of the Documents tab, shared with the side menu of landscape so it can open a
 /// folder or a document from anywhere in the tree.
@@ -27,19 +26,6 @@ public final class DocumentsRouter {
 
     func open(document: WrDocument) {
         path.append(DocumentsRoute.document(id: document.id, title: document.displayTitle))
-    }
-
-    /// Shows an item of the sidebar: a folder with its ancestors behind it, a document right
-    /// under the root.
-    @MainActor
-    public func open(_ item: SidebarItem, session: AppSession) async {
-        switch item.item {
-        case .folder(let folder):
-            await open(folder: folder, repository: session.documents)
-        case .document(let document):
-            favoritesOpened = false
-            path = NavigationPath([DocumentsRoute.document(id: document.id, title: document.displayTitle)])
-        }
     }
 
     /// Shows the documents carrying `tag`, like a folder.

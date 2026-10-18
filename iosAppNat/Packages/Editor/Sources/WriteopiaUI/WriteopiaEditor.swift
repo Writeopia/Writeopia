@@ -103,6 +103,9 @@ public struct WriteopiaEditor: View {
                                 .id(draw.id)
                         }
                     }
+                    // The code blocks, boxes and cards, each painted as one piece behind its
+                    // steps and the spaces between them.
+                    .backgroundPreferenceValue(BlockPiecesKey.self) { BlockPainter(pieces: $0) }
                     .coordinateSpace(.named(ReorderCoordinator.coordinateSpace))
                     .overlay(alignment: .topLeading) { reorderPreview }
                     .padding(.top, 8)

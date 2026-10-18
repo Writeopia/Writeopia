@@ -168,31 +168,77 @@ struct BlockOutline: View {
     }
 }
 
-/// The piece of a block that a space between two of its steps paints, so the block doesn't
-/// break between them.
-struct BlockGap: View {
+/// A step of a block on screen, as the step reports it to the editor.
+struct BlockPiece {
+    let groupId: String
     let kind: BlockKind
+    let bounds: Anchor<CGRect>
+}
+
+/// The steps of the blocks on screen, collected up to the column of the editor.
+struct BlockPiecesKey: PreferenceKey {
+    static let defaultValue: [BlockPiece] = []
+
+    static func reduce(value: inout [BlockPiece], nextValue: () -> [BlockPiece]) {
+        value += nextValue()
+    }
+}
+
+/// Paints every block of the document as one shape, from its first step to its last, behind the
+/// steps. Painting the steps and the spaces one by one leaves hairlines between them where the
+/// rows don't end on a pixel, so the block is painted once instead.
+struct BlockPainter: View {
+    let pieces: [BlockPiece]
+
+    private struct Block: Identifiable {
+        let id: String
+        let kind: BlockKind
+        var rect: CGRect
+    }
 
     var body: some View {
-        let style = BlockStyle(kind: kind)
-        Rectangle()
-            .fill(style.background)
-            .overlay { BlockOutline(style: style, position: nil) }
+        GeometryReader { proxy in
+            ForEach(blocks(in: proxy)) { block in
+                let style = BlockStyle(kind: block.kind)
+                style.shape(for: .single)
+                    .fill(style.background)
+                    .overlay { BlockOutline(style: style, position: .single) }
+                    .frame(width: block.rect.width, height: block.rect.height)
+                    .offset(x: block.rect.minX, y: block.rect.minY)
+            }
+        }
+    }
+
+    /// The pieces joined by block, in the order of the document.
+    private func blocks(in proxy: GeometryProxy) -> [Block] {
+        var blocks: [Block] = []
+        for piece in pieces {
+            let rect = proxy[piece.bounds]
+            if let index = blocks.firstIndex(where: { $0.id == piece.groupId }) {
+                blocks[index].rect = blocks[index].rect.union(rect)
+            } else {
+                blocks.append(Block(id: piece.groupId, kind: piece.kind, rect: rect))
+            }
+        }
+        return blocks
     }
 }
 
 extension View {
-    /// Paints the block of a step around it: its fill, edge and accent line, open on the sides
-    /// where the block goes on to the next step.
+    /// The room a step keeps around its text inside its block.
     @ViewBuilder
-    func blockDecoration(_ block: BlockInfo?) -> some View {
+    func blockInsets(_ block: BlockInfo?) -> some View {
         if let block {
-            let style = BlockStyle(kind: block.kind)
-            padding(style.insets(for: block.position))
-                .background(style.background, in: style.shape(for: block.position))
-                .overlay { BlockOutline(style: style, position: block.position) }
+            padding(BlockStyle(kind: block.kind).insets(for: block.position))
         } else {
             self
+        }
+    }
+
+    /// Reports this view as a piece of `block` to the `BlockPainter` of the editor.
+    func blockPiece(_ block: BlockInfo?) -> some View {
+        anchorPreference(key: BlockPiecesKey.self, value: .bounds) { bounds in
+            block.map { [BlockPiece(groupId: $0.groupId, kind: $0.kind, bounds: bounds)] } ?? []
         }
     }
 }

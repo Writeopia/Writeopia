@@ -73,14 +73,14 @@ private let sample = document([
 
         func draw(_ id: String) -> DrawStory? { manager.toDraw.first { $0.id == id } }
 
-        #expect(draw("c1")?.block == BlockInfo(kind: .code, position: .first, lineNumber: 1))
-        #expect(draw("c2")?.block == BlockInfo(kind: .code, position: .middle, lineNumber: 2))
-        #expect(draw("c3")?.block == BlockInfo(kind: .code, position: .last, lineNumber: 3))
+        #expect(draw("c1")?.block == BlockInfo(kind: .code, position: .first, lineNumber: 1, groupId: "c1"))
+        #expect(draw("c2")?.block == BlockInfo(kind: .code, position: .middle, lineNumber: 2, groupId: "c1"))
+        #expect(draw("c3")?.block == BlockInfo(kind: .code, position: .last, lineNumber: 3, groupId: "c1"))
         #expect(draw("p")?.block == nil)
-        #expect(draw("b1")?.block == BlockInfo(kind: .box, position: .first))
-        #expect(draw("b2")?.block == BlockInfo(kind: .box, position: .last))
+        #expect(draw("b1")?.block == BlockInfo(kind: .box, position: .first, groupId: "b1"))
+        #expect(draw("b2")?.block == BlockInfo(kind: .box, position: .last, groupId: "b1"))
         // A new block starts counting lines again.
-        #expect(draw("c4")?.block == BlockInfo(kind: .code, position: .single, lineNumber: 1))
+        #expect(draw("c4")?.block == BlockInfo(kind: .code, position: .single, lineNumber: 1, groupId: "c4"))
 
         #expect(draw("space-c1")?.insideBlock == nil)
         #expect(draw("space-c2")?.insideBlock == .code)
@@ -100,8 +100,8 @@ private let sample = document([
 
         func draw(_ id: String) -> DrawStory? { manager.toDraw.first { $0.id == id } }
 
-        #expect(draw("b")?.block == BlockInfo(kind: .box, position: .single))
-        #expect(draw("c")?.block == BlockInfo(kind: .card, position: .single))
+        #expect(draw("b")?.block == BlockInfo(kind: .box, position: .single, groupId: "b"))
+        #expect(draw("c")?.block == BlockInfo(kind: .card, position: .single, groupId: "c"))
         #expect(draw("space-c")?.insideBlock == nil)
     }
 }

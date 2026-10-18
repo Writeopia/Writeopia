@@ -41,11 +41,15 @@ nonisolated public struct BlockInfo: Equatable, Sendable {
     public let position: BlockPosition
     /// The number of the line inside a code block, starting at 1.
     public let lineNumber: Int
+    /// The id of the first step of the block: the same for every step of it, so the editor can
+    /// paint the block as one piece.
+    public let groupId: String
 
-    public init(kind: BlockKind, position: BlockPosition, lineNumber: Int = 1) {
+    public init(kind: BlockKind, position: BlockPosition, lineNumber: Int = 1, groupId: String) {
         self.kind = kind
         self.position = position
         self.lineNumber = lineNumber
+        self.groupId = groupId
     }
 }
 
@@ -131,6 +135,7 @@ public enum StepsModifier {
         var marked = draws
         let contentIndices = draws.indices.filter { !isSpace(draws[$0]) }
         var lineNumber = 1
+        var groupId = ""
 
         for (order, index) in contentIndices.enumerated() {
             guard let kind = BlockKind(of: draws[index].storyStep) else {
@@ -152,7 +157,10 @@ public enum StepsModifier {
 
             // Only the lines of a code block are numbered.
             lineNumber = kind == .code && joinsPrevious ? lineNumber + 1 : 1
-            marked[index].block = BlockInfo(kind: kind, position: position, lineNumber: lineNumber)
+            if !joinsPrevious {
+                groupId = draws[index].id
+            }
+            marked[index].block = BlockInfo(kind: kind, position: position, lineNumber: lineNumber, groupId: groupId)
 
             if joinsPrevious, let previousIndex {
                 for spaceIndex in (previousIndex + 1)..<index {
