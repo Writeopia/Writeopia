@@ -43,6 +43,12 @@ interface GlobalShellViewModel : FolderController, LocalAiConfigController {
     /** Whether any sync with the backend is running, so the shell can show a spinner. */
     val isSyncingState: StateFlow<Boolean>
 
+    /**
+     * Whether content picked in the side menu is loading from the backend (a document opening,
+     * a folder expanding), for the spinner by the folders.
+     */
+    val isLoadingContentState: StateFlow<Boolean>
+
     val isAutoSyncEnabled: StateFlow<Boolean>
 
     val availableWorkspaces: StateFlow<ResultData<List<Workspace>>>

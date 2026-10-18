@@ -27,6 +27,8 @@ import io.writeopia.commonui.extensions.toUiCard
 import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.repository.MenuItemsRepository
 import io.writeopia.core.folders.repository.folder.NotesUseCase
+import io.writeopia.core.folders.sync.ContentLoadActivity
+import io.writeopia.core.folders.sync.FolderSync
 import io.writeopia.core.folders.sync.SyncActivity
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.model.LocalAiWizardState
@@ -48,6 +50,7 @@ import io.writeopia.sdk.import.json.WriteopiaJsonParser
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.id.GenerateId
+import io.writeopia.sdk.models.user.Tier
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.utils.map
@@ -92,6 +95,8 @@ class GlobalShellKmpViewModel(
     private val useBackendOnly: Boolean = false,
     private val menuItemsRepository: MenuItemsRepository? = null,
     private val genAiApi: GenAiApi? = null,
+    /** Brings an expanded folder in sync with the backend; null when there is no backend. */
+    private val folderSync: FolderSync? = null,
     /** Picks the AI that answers, local or cloud, following the choice of the user. */
     private val aiClients: AiClients = AiClients(
         localAiRepository = localAiRepository,
@@ -127,6 +132,8 @@ class GlobalShellKmpViewModel(
     override val lastWorkspaceSync: StateFlow<ResultData<String>> = workspaceHandler.lastWorkspaceSync
 
     override val isSyncingState: StateFlow<Boolean> = SyncActivity.isSyncing
+
+    override val isLoadingContentState: StateFlow<Boolean> = ContentLoadActivity.isLoading
 
     override val isAutoSyncEnabled: StateFlow<Boolean> = workspaceHandler.isAutoSyncEnabled
 
@@ -459,6 +466,11 @@ class GlobalShellKmpViewModel(
         }
     }
 
+    /**
+     * Expands or collapses a folder of the side menu. Expanding shows what is on the device
+     * right away, then fetches the children from the backend: a folder received inside its
+     * parent has its contents on the backend only until it is opened somewhere.
+     */
     override fun expandFolder(id: String) {
         val expanded = expandedFolders.value
         if (expanded.contains(id)) {
@@ -476,6 +488,23 @@ class GlobalShellKmpViewModel(
                 )
 
                 expandedFolders.value = expanded + id
+
+                syncExpandedFolder(id, workspace)
+            }
+        }
+    }
+
+    /** Fetches the children of an expanded folder, like opening the folder does. */
+    private suspend fun syncExpandedFolder(folderId: String, workspace: Workspace) {
+        val sync = folderSync ?: return
+        if (workspace.id == Workspace.disconnectedWorkspace().id) return
+        if (!authRepository.isLoggedIn() || authRepository.getUser().tier != Tier.PREMIUM) return
+
+        withContext(Dispatchers.Default) {
+            ContentLoadActivity.track {
+                // The side menu may expand several folders in a row: no sync is skipped for
+                // coming right after another.
+                sync.syncFolder(folderId = folderId, workspaceId = workspace.id, force = true)
             }
         }
     }

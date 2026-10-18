@@ -53,6 +53,7 @@ private const val FINAL_WIDTH = 300
 private const val MAC_WINDOW_BUTTONS_WIDTH = 80
 
 const val SIDE_MENU_SYNCING_TAG = "SideMenuSyncing"
+const val SIDE_MENU_LOADING_CONTENT_TAG = "SideMenuLoadingContent"
 
 @Composable
 fun SideGlobalMenu(
@@ -75,6 +76,7 @@ fun SideGlobalMenu(
     changeIcon: (String, String, Int, IconChange) -> Unit,
     toggleMaxScreen: () -> Unit,
     isSyncingState: StateFlow<Boolean> = MutableStateFlow(false),
+    isLoadingContentState: StateFlow<Boolean> = MutableStateFlow(false),
 ) {
     val widthState by derivedStateOf { width }
 
@@ -183,8 +185,11 @@ fun SideGlobalMenu(
 
                     if (showContent == ShowContent.FULL) {
                         item {
+                            val isLoadingContent by isLoadingContentState.collectAsState()
+
                             title(
                                 text = WrStrings.folder(),
+                                isLoading = isLoadingContent,
                                 trailingContent = {
                                     Icon(
                                         imageVector = WrIcons.target,
@@ -286,10 +291,12 @@ private fun SettingsOptions(
     }
 }
 
+/** A section header. With [isLoading], a small spinner sits right by the [text]. */
 @Composable
 private fun title(
     text: String,
     click: (() -> Unit)? = null,
+    isLoading: Boolean = false,
     trailingContent: @Composable (RowScope.() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
@@ -311,9 +318,21 @@ private fun title(
             style = MaterialTheme.typography.bodySmall.copy(
                 fontWeight = FontWeight.Bold
             ),
-            maxLines = 1,
-            modifier = Modifier.weight(1F)
+            maxLines = 1
         )
+
+        if (isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier
+                    .padding(start = 8.dp)
+                    .size(12.dp)
+                    .testTag(SIDE_MENU_LOADING_CONTENT_TAG),
+                color = MaterialTheme.colorScheme.onBackground,
+                strokeWidth = 2.dp
+            )
+        }
+
+        Spacer(modifier = Modifier.weight(1F))
 
         if (trailingContent != null) {
             trailingContent()

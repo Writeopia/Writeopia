@@ -127,10 +127,17 @@ class FolderSync(
                 // Update lastSyncedAt for sent items to prevent re-sending them.
                 val syncTime = Clock.System.now()
 
-                // Update lastSyncedAt for documents that were sent
-                documentsNotSent.forEach { doc ->
-                    val updatedDoc = doc.copy(lastSyncedAt = syncTime)
-                    documentRepository.saveDocument(updatedDoc)
+                // Stamp the sync time on the documents that were sent. The editor may have
+                // saved a newer revision while the send ran: the snapshot sent is never written
+                // back (it would undo those edits), only the metadata of what is stored now,
+                // and only while that is still the revision sent. A newer revision stays
+                // outdated and goes with the next sync.
+                documentsNotSent.forEach { sent ->
+                    val current =
+                        documentRepository.loadDocumentById(sent.id, workspaceId) ?: return@forEach
+                    if (current.lastUpdatedAt == sent.lastUpdatedAt) {
+                        documentRepository.saveDocumentMetadata(current.copy(lastSyncedAt = syncTime))
+                    }
                 }
 
                 // Update lastSyncedAt for folders that were sent

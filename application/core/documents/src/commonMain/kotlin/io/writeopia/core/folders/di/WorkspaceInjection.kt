@@ -15,6 +15,7 @@ import io.writeopia.core.folders.sync.DocumentConflictHandler
 import io.writeopia.core.folders.sync.DocumentMerger
 import io.writeopia.core.folders.sync.DocumentTagConflictHandler
 import io.writeopia.core.folders.sync.FolderConflictHandler
+import io.writeopia.core.folders.sync.FolderSync
 import io.writeopia.core.folders.sync.ImageSync
 import io.writeopia.core.folders.sync.WorkspaceSync
 import io.writeopia.core.folders.sync.createConfigFileWatcher
@@ -72,6 +73,23 @@ class WorkspaceInjection private constructor(
                 connectionInjector().baseUrl(),
                 repositoryInjection.provideDocumentRepository()
             ),
+            documentTagRepository = tagRepo,
+            documentTagConflictHandler = DocumentTagConflictHandler(tagRepo),
+        )
+    }
+
+    /** Syncs one folder with the backend, like the folder screen does when it opens. */
+    fun provideFolderSync(): FolderSync {
+        val documentRepo = repositoryInjection.provideDocumentRepository()
+        val folderRepo = FoldersInjector.singleton().provideFoldersRepository()
+        val tagRepo = DocumentTagsInjector.singleton().provideDocumentTagRepository()
+        return FolderSync(
+            documentRepository = documentRepo,
+            documentsApi = provideDocumentsApi(),
+            documentConflictHandler = DocumentConflictHandler(documentRepository = documentRepo),
+            folderConflictHandler = FolderConflictHandler(folderRepository = folderRepo),
+            folderRepository = folderRepo,
+            authRepository = authCoreInjection.provideAuthRepository(),
             documentTagRepository = tagRepo,
             documentTagConflictHandler = DocumentTagConflictHandler(tagRepo),
         )

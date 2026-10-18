@@ -196,7 +196,8 @@ fun DesktopApp(
                         highlightContent = {},
                         changeIcon = globalShellViewModel::changeIcons,
                         toggleMaxScreen = toggleMaxScreen,
-                        isSyncingState = globalShellViewModel.isSyncingState
+                        isSyncingState = globalShellViewModel.isSyncingState,
+                        isLoadingContentState = globalShellViewModel.isLoadingContentState
                     )
 
                     Column {

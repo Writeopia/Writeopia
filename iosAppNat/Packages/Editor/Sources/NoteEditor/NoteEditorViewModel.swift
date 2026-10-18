@@ -71,6 +71,8 @@ public final class NoteEditorViewModel {
     @ObservationIgnored private let aiClient: AiStreaming?
     @ObservationIgnored private let publishing: DocumentPublishing?
     @ObservationIgnored private let imageUploader: ImageUploading?
+    /// Holds while the document opens, so the side menu can show it; nil when nothing shows it.
+    @ObservationIgnored private let loadActivity: ContentLoadActivity?
     @ObservationIgnored private let isPremium: Bool
     @ObservationIgnored private let tagAgent: WritingAgentServing?
     @ObservationIgnored private let defaults: UserDefaults
@@ -125,6 +127,7 @@ public final class NoteEditorViewModel {
         writingAgent: WritingAgentServing? = nil,
         imageGenerator: AiImageGenerating? = nil,
         headerImages: HeaderImageServing? = nil,
+        loadActivity: ContentLoadActivity? = nil,
         defaults: UserDefaults = .standard,
         writeopiaManager: WriteopiaStateManager = WriteopiaStateManager()
     ) {
@@ -133,6 +136,7 @@ public final class NoteEditorViewModel {
         self.aiClient = aiClient
         self.publishing = publishing
         self.imageUploader = imageUploader
+        self.loadActivity = loadActivity
         self.isPremium = isPremium
         self.tagAgent = writingAgent
         self.defaults = defaults
@@ -818,6 +822,24 @@ public final class NoteEditorViewModel {
 
     /// Title as it is being typed.
     public var title: String { writeopiaManager.title }
+
+    /// Opens the document the way the side menu expects: the copy on the device is shown right
+    /// away, then the backend copy is merged into it. `afterLocalLoad` runs in between, once
+    /// the editor shows something. The load activity holds for the whole of it, so the side
+    /// menu shows a spinner by its folders until the content is final.
+    public func open(afterLocalLoad: () -> Void = {}) async {
+        guard let loadActivity else {
+            await loadDocument()
+            afterLocalLoad()
+            await mergeFromBackend()
+            return
+        }
+        await loadActivity.track {
+            await loadDocument()
+            afterLocalLoad()
+            await mergeFromBackend()
+        }
+    }
 
     public func loadDocument() async {
         guard !hasLoaded else { return }

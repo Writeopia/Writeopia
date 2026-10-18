@@ -135,7 +135,9 @@ fun Navigation(
                     searchClick = { navController.navigateToSearch() },
                     highlightContent = {},
                     changeIcon = globalShellViewModel::changeIcons,
-                    toggleMaxScreen = {}
+                    toggleMaxScreen = {},
+                    isSyncingState = globalShellViewModel.isSyncingState,
+                    isLoadingContentState = globalShellViewModel.isLoadingContentState
                 )
 
                 Box(
