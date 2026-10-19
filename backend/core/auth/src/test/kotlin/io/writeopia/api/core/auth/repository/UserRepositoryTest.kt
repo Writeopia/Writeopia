@@ -31,6 +31,7 @@ class UserRepositoryTest {
     fun setup() {
         // Create an in-memory SQLite database for testing
         val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        // SQLite here, not Postgres: only the generated schema applies (no partitioned tables).
         WriteopiaDbBackend.Schema.create(driver)
         db = WriteopiaDbBackend(driver)
     }

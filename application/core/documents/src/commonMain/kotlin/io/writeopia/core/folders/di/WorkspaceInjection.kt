@@ -11,7 +11,7 @@ import io.writeopia.core.folders.image.CloudImageUploader
 import io.writeopia.core.folders.repository.folder.DocumentLoadUseCase
 import io.writeopia.ui.image.ImageUploader
 import io.writeopia.core.folders.sync.ConfigFileWatcher
-import io.writeopia.core.folders.sync.DocumentConflictHandler
+import io.writeopia.core.folders.sync.DocumentSyncService
 import io.writeopia.core.folders.sync.DocumentMerger
 import io.writeopia.core.folders.sync.DocumentTagConflictHandler
 import io.writeopia.core.folders.sync.FolderConflictHandler
@@ -62,9 +62,7 @@ class WorkspaceInjection private constructor(
             documentRepository = documentRepo,
             authRepository = authCoreInjection.provideAuthRepository(),
             documentsApi = provideDocumentsApi(),
-            documentConflictHandler = DocumentConflictHandler(
-                documentRepository = documentRepo
-            ),
+            documentSyncService = provideDocumentSyncService(),
             folderConflictHandler = FolderConflictHandler(
                 folderRepository = folderRepo
             ),
@@ -86,7 +84,7 @@ class WorkspaceInjection private constructor(
         return FolderSync(
             documentRepository = documentRepo,
             documentsApi = provideDocumentsApi(),
-            documentConflictHandler = DocumentConflictHandler(documentRepository = documentRepo),
+            documentSyncService = provideDocumentSyncService(),
             folderConflictHandler = FolderConflictHandler(folderRepository = folderRepo),
             folderRepository = folderRepo,
             authRepository = authCoreInjection.provideAuthRepository(),
@@ -94,6 +92,13 @@ class WorkspaceInjection private constructor(
             documentTagConflictHandler = DocumentTagConflictHandler(tagRepo),
         )
     }
+
+    /** The step-level sync the folder and workspace syncs send and receive documents through. */
+    fun provideDocumentSyncService(): DocumentSyncService = DocumentSyncService(
+        documentRepository = repositoryInjection.provideDocumentRepository(),
+        syncApi = { request -> connectionInjector().storyStepSyncApi().syncStorySteps(request) },
+        documentsApi = provideDocumentsApi(),
+    )
 
     fun provideDocumentsApi(): DocumentsApi = DocumentsApi(
         connectionInjector().httpClient(),

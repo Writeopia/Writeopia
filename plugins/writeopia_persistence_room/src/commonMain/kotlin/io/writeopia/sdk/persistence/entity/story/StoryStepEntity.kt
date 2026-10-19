@@ -23,5 +23,7 @@ data class StoryStepEntity(
     @ColumnInfo(name = "background_color") val backgroundColor: Int?,
     @ColumnInfo(name = "tags") val tags: String,
     @ColumnInfo(name = "spans") val spans: String,
-    @ColumnInfo(name = "link_to_document") val linkToDocument: String? = null
+    @ColumnInfo(name = "link_to_document") val linkToDocument: String? = null,
+    /** Epoch milliseconds of the last edit, compared with the backend copy by the sync. */
+    @ColumnInfo(name = "last_updated_at") val lastUpdatedAt: Long? = null
 )

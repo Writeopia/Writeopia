@@ -40,40 +40,6 @@ public enum DocumentMerger {
 
 // MARK: - Conflicts
 
-/// Settles the documents changed here and on the backend. Mirrors `DocumentConflictHandler`:
-/// the copy updated last wins as a whole and is stored locally (documents deleted on this device
-/// are never brought back), and the winners that came from this device are returned to be sent.
-public enum DocumentConflictHandler {
-    public static func handle(
-        local: [WrDocument],
-        remote: [WrDocument],
-        store: LocalDocumentsRepository
-    ) throws -> [WrDocument] {
-        let remoteIds = Set(remote.map(\.id))
-        var toSend: [WrDocument] = []
-
-        for (id, copies) in Dictionary(grouping: local + remote, by: \.id) {
-            guard let winner = copies.max(by: { $0.lastUpdatedAt < $1.lastUpdatedAt }) else { continue }
-            let existing = try store.storedDocument(id: id)
-
-            if existing?.deleted != true {
-                var stored = winner
-                // A document that came from the backend is in sync with it.
-                if remoteIds.contains(id), existing.map({ $0.lastUpdatedAt < winner.lastUpdatedAt }) ?? true {
-                    stored.lastSyncedAt = max(winner.lastUpdatedAt, winner.lastSyncedAt ?? 0)
-                }
-                try store.store(stored)
-            }
-
-            let localCopy = local.first { $0.id == id }
-            if !remoteIds.contains(id) || (localCopy != nil && localCopy?.lastUpdatedAt == winner.lastUpdatedAt && localCopy?.isOutdated == true) {
-                toSend.append(winner)
-            }
-        }
-        return toSend
-    }
-}
-
 /// Settles the folders changed here and on the backend. Mirrors `FolderConflictHandler`.
 public enum FolderConflictHandler {
     public static func handle(
@@ -213,6 +179,40 @@ public final class SyncAPI {
         try await client.get("api/docs/workspace/\(workspaceId)/document/\(id)")
     }
 
+    /// Tells the backend which steps this device deleted, like `DocumentsApi.deleteStorySteps`.
+    /// Sent before any content, so a step the backend still has is deleted there instead of
+    /// coming back here.
+    public func deleteSteps(_ tombstones: [StepTombstone]) async throws {
+        guard !tombstones.isEmpty else { return }
+        struct Tombstone: Encodable {
+            let stepId: String
+            let documentId: String
+        }
+        struct Body: Encodable {
+            let tombstones: [Tombstone]
+        }
+        try await client.perform(
+            .post,
+            "api/docs/workspace/\(workspaceId)/steps/delete",
+            body: Body(tombstones: tombstones.map { Tombstone(stepId: $0.stepId, documentId: $0.documentId) })
+        )
+    }
+
+    public struct DeletedStepsResponse: Decodable {
+        public let stepIds: [String]
+        public let serverTimestamp: Int64
+    }
+
+    /// The ids of the steps deleted in the workspace, on any device, after `since` (epoch ms),
+    /// with the backend's time before it looked: the next request asks from there, in the
+    /// backend's clock.
+    public func deletedSteps(since: Int64) async throws -> DeletedStepsResponse {
+        try await client.get(
+            "api/docs/workspace/\(workspaceId)/steps/deleted",
+            query: [URLQueryItem(name: "since", value: String(since))]
+        )
+    }
+
     public struct StepChange: Encodable, Equatable {
         public let storyStep: StoryStep
         public let position: Double
@@ -294,6 +294,229 @@ public final class SyncAPI {
     }
 }
 
+// MARK: - Step sync
+
+/// Syncs documents with the backend one step at a time. Mirrors `DocumentSyncService` of the
+/// Compose app, so the two apps never disagree about a document: a document is never
+/// replaced whole on either side.
+///
+/// Sending, in this order:
+/// 1. `sendDeletedSteps`: the steps deleted here go first, as ids only, for the whole
+///    workspace. The backend deletes them and keeps the tombstones for the other devices;
+///    once it has them, they are dropped here.
+/// 2. `syncDocuments`: for each document changed here, the steps edited since it was last
+///    sent (the backend keeps the newer copy of each step), then the metadata of all of them
+///    in one request. Only then are they stamped as synced, at the time taken before the
+///    send: whatever was edited meanwhile is still newer than that and goes with the next sync.
+///
+/// Receiving:
+/// 3. `receiveDeletedSteps`: the steps deleted on other devices since the last time.
+/// 4. `mergeReceived`: the steps changed on other devices, merged step by step; a step
+///    deleted here is never written back.
+public final class DocumentStepSync {
+    /// Steps per request: keeps the payload small and the request reliable.
+    static let stepsPerBatch = 50
+    /// Ids per deletion request.
+    static let tombstonesPerBatch = 500
+
+    private let local: LocalDocumentsRepository
+    private let api: SyncAPI
+
+    public init(local: LocalDocumentsRepository, api: SyncAPI) {
+        self.local = local
+        self.api = api
+    }
+
+    /// Sends the deletions pending in the workspace, in batches, forgetting the ones the
+    /// backend accepted, and returns their ids: a listing fetched before they went may still
+    /// carry the steps. Throws when some could not be sent; they stay pending.
+    @discardableResult
+    public func sendDeletedSteps() async throws -> Set<String> {
+        let tombstones = try local.storedStepTombstones()
+        guard !tombstones.isEmpty else { return [] }
+
+        for start in stride(from: 0, to: tombstones.count, by: Self.tombstonesPerBatch) {
+            let batch = Array(tombstones[start..<min(start + Self.tombstonesPerBatch, tombstones.count)])
+            try await api.deleteSteps(batch)
+            try local.deleteStepTombstones(batch.map(\.stepId))
+        }
+        return Set(tombstones.map(\.stepId))
+    }
+
+    /// Sends the documents changed here. For each one its edited steps go first, one request
+    /// per batch; then the metadata of all of them (title, folder, icon, tags) goes in one
+    /// request, without content; only then are they stamped as synced, at the time taken
+    /// before anything was sent, so an edit made meanwhile is still newer and goes next time.
+    /// Nothing is stamped while the metadata is not on the backend: a rename or a move would
+    /// be lost otherwise, and steps sent again are harmless (the backend keeps the newer copy).
+    ///
+    /// A document whose steps could not be sent is left out, to be tried again next time.
+    /// Throws when the metadata could not be sent.
+    ///
+    /// - Returns: the documents now in sync.
+    @discardableResult
+    public func syncDocuments(_ documents: [WrDocument]) async throws -> [WrDocument] {
+        guard !documents.isEmpty else { return [] }
+
+        // The time of the send. Every step edited after it is newer than the stamp below.
+        let sentAt = Date.nowMillis
+        var toSend: [WrDocument] = []
+        var sentSteps: [String: [StoryStep]] = [:]
+        for document in documents {
+            guard let steps = try? await sendSteps(of: document, requestTimestamp: sentAt) else { continue }
+            toSend.append(document)
+            sentSteps[document.id] = steps
+        }
+        guard !toSend.isEmpty else { return [] }
+
+        try await api.sendDocuments(toSend.map(Self.withoutContent))
+
+        for document in toSend {
+            try stampSent(document, steps: sentSteps[document.id] ?? [], at: sentAt)
+        }
+        return toSend
+    }
+
+    /// The document's metadata alone: its steps travel through the step sync.
+    private static func withoutContent(_ document: WrDocument) -> WrDocument {
+        var document = document
+        document.content = []
+        return document
+    }
+
+    /// Sends the steps of the document edited since it was last sent, in batches, with
+    /// `requestTimestamp` as their edit time on the backend. Returns the steps sent (none when
+    /// the document was already in sync); throws when the backend could not be reached.
+    private func sendSteps(of document: WrDocument, requestTimestamp: Int64) async throws -> [StoryStep] {
+        let lastSync = document.lastSyncedAt ?? 0
+        let outdated = Self.outdatedSteps(of: document, lastSync: lastSync)
+        guard !outdated.isEmpty else { return [] }
+
+        var currentSync = lastSync
+
+        for (index, start) in stride(from: 0, to: outdated.count, by: Self.stepsPerBatch).enumerated() {
+            let batch = Array(outdated[start..<min(start + Self.stepsPerBatch, outdated.count)])
+            let response = try await api.syncSteps(
+                documentId: document.id,
+                lastSyncTimestamp: currentSync,
+                requestTimestamp: requestTimestamp,
+                changes: batch.map { SyncAPI.StepChange(storyStep: $0, position: $0.position) },
+                deletions: []
+            )
+            // What the backend had that this device didn't; once, the first answer has it all.
+            if index == 0 { try applyServerUpdates(response, to: document) }
+            currentSync = response.serverTimestamp
+        }
+
+        return outdated
+    }
+
+    /// What `receiveDeletedSteps` brought: the ids, and where the next request starts from.
+    public struct ReceivedDeletions {
+        public let stepIds: Set<String>
+        /// The backend's time before it looked, in its own clock.
+        public let serverTimestamp: Int64
+    }
+
+    /// Removes the steps deleted on other devices after `since` and returns their ids, so a
+    /// listing fetched before the deletions doesn't bring them back, with the backend's time
+    /// to ask from next (its clock, not this device's: a deletion made while the clocks
+    /// disagree would be skipped for good otherwise). No tombstone is kept for them: the
+    /// backend has one.
+    @discardableResult
+    public func receiveDeletedSteps(since: Int64) async throws -> ReceivedDeletions {
+        let response = try await api.deletedSteps(since: since)
+        if !response.stepIds.isEmpty { try local.deleteSteps(ids: response.stepIds) }
+        return ReceivedDeletions(stepIds: Set(response.stepIds), serverTimestamp: response.serverTimestamp)
+    }
+
+    /// Merges a document received from the backend into the local copy, step by step: a step
+    /// only there is added, a step newer there replaces the local one, the rest stays. The
+    /// steps deleted here and not yet sent are left out, like the ones in `excluding` (deleted
+    /// elsewhere, just learned of). A document deleted here is not brought back.
+    ///
+    /// - Returns: the document as stored when something was written, nil otherwise.
+    @discardableResult
+    public func mergeReceived(_ received: WrDocument, excluding: Set<String> = []) throws -> WrDocument? {
+        let local = try local.storedDocument(id: received.id)
+        if local?.deleted == true { return nil }
+
+        let tombstoned = try self.local.tombstonedIds(among: received.content.map(\.id))
+        var incoming = received
+        incoming.content.removeAll { tombstoned.contains($0.id) || excluding.contains($0.id) }
+
+        guard let local else {
+            try self.local.store(incoming)
+            return incoming
+        }
+
+        guard let merged = DocumentMerger.merge(local: local, remote: incoming) else { return nil }
+        let localById = Dictionary(local.content.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        // The merger hands back the local copy when it keeps it, so the rest came from the backend.
+        let stepsToWrite = merged.content.filter { localById[$0.id] != $0 }
+        let tagsChanged = merged.tagIds != local.tagIds
+        let backendIsNewer = incoming.lastUpdatedAt > local.lastUpdatedAt
+
+        if stepsToWrite.isEmpty, !tagsChanged, !backendIsNewer { return nil }
+
+        var stored = merged
+        if local.isOutdated {
+            // Still to be sent: it keeps looking outdated, with its own timestamps.
+            stored.lastUpdatedAt = local.lastUpdatedAt
+            stored.lastSyncedAt = local.lastSyncedAt
+        } else {
+            // Nothing pending here: in sync with what was just received.
+            stored.lastSyncedAt = Date.nowMillis
+        }
+
+        try self.local.storeMetadata(stored)
+        if !stepsToWrite.isEmpty { try self.local.storeSteps(stepsToWrite, documentId: stored.id) }
+        return stored
+    }
+
+    /// The steps edited since the document was last sent, by position; everything when it was
+    /// never sent.
+    static func outdatedSteps(of document: WrDocument, lastSync: Int64) -> [StoryStep] {
+        document.content
+            .filter { lastSync == 0 || ($0.lastUpdatedAt ?? 0) > lastSync }
+            .sorted { $0.position < $1.position }
+    }
+
+    /// What the backend answered with: its deletions, then its steps newer than the local ones.
+    private func applyServerUpdates(_ response: SyncAPI.StepSyncResponse, to document: WrDocument) throws {
+        if !response.deletedIds.isEmpty { try local.deleteSteps(ids: response.deletedIds) }
+        guard !response.updatedSteps.isEmpty else { return }
+
+        let localById = Dictionary(document.content.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let newer = response.updatedSteps.filter { serverStep in
+            guard let localStep = localById[serverStep.id] else { return true }
+            return (serverStep.lastUpdatedAt ?? 0) > (localStep.lastUpdatedAt ?? .max)
+        }
+        if !newer.isEmpty { try local.storeSteps(newer, documentId: document.id) }
+    }
+
+    /// The document is in sync as of `sentAt`: that goes on the document, and on the steps
+    /// sent, so they are no longer newer than it. A step edited since keeps its newer time.
+    /// The copy sent is covered even when its change time is a millisecond ahead (a move
+    /// right after a sync is stamped that way); the stamp never goes back in time.
+    private func stampSent(_ document: WrDocument, steps sent: [StoryStep], at sentAt: Int64) throws {
+        guard var current = try local.storedDocument(id: document.id) else { return }
+        let coveredUntil = current.lastUpdatedAt <= document.lastUpdatedAt ? max(sentAt, current.lastUpdatedAt) : sentAt
+        current.lastSyncedAt = max(current.lastSyncedAt ?? coveredUntil, coveredUntil)
+        try local.storeMetadata(current)
+
+        let sentTimes = Dictionary(sent.map { ($0.id, $0.lastUpdatedAt) }, uniquingKeysWith: { first, _ in first })
+        let stamped = current.content
+            .filter { step in sentTimes[step.id].map { $0 == step.lastUpdatedAt } ?? false }
+            .map { step -> StoryStep in
+                var step = step
+                step.lastUpdatedAt = sentAt
+                return step
+            }
+        if !stamped.isEmpty { try local.storeSteps(stamped, documentId: document.id) }
+    }
+}
+
 // MARK: - Synced repository
 
 /// Documents that also live on the backend and can be synced.
@@ -328,10 +551,13 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
     private let api: SyncAPI
     private var lastFolderSync: [String: Date] = [:]
 
+    private let stepSync: DocumentStepSync
+
     public init(local: LocalDocumentsRepository, remote: RemoteDocumentsRepository, api: SyncAPI) {
         self.local = local
         self.remote = remote
         self.api = api
+        self.stepSync = DocumentStepSync(local: local, api: api)
     }
 
     public var workspaceId: String { remote.workspaceId }
@@ -608,16 +834,20 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
         remoteContents.documents.removeAll { deletedNow.contains($0.id) }
         remoteContents.folders.removeAll { deletedFoldersNow.contains($0.id) }
 
+        // The folder as it is before anything is sent: what is outdated now was not deleted
+        // elsewhere, it just hasn't reached the backend yet.
         let storedDocuments = try local.storedDocuments(inFolder: folderId)
         let storedFolders = try local.storedFolders(inFolder: folderId)
-        let outdatedDocuments = storedDocuments.filter { !$0.deleted && $0.isOutdated }
+        let outdatedDocumentIds = Set(storedDocuments.filter { !$0.deleted && $0.isOutdated }.map(\.id))
         let outdatedFolders = storedFolders.filter { !$0.deleted && $0.isOutdated }
 
-        let documentsToSend = try DocumentConflictHandler.handle(
-            local: outdatedDocuments,
-            remote: remoteContents.documents,
-            store: local
-        )
+        // Documents travel one step at a time, like `FolderSync` of the Compose app: first the
+        // steps deleted here, then, for every document of the workspace changed here since it
+        // was sent, its edited steps and then its metadata (title, folder, icon...), stamped
+        // as synced only once both are on the backend.
+        let deletedHere = try await stepSync.sendDeletedSteps()
+        try await stepSync.syncDocuments(try local.storedOutdatedDocuments())
+
         let foldersToSend = try FolderConflictHandler.handle(
             local: outdatedFolders,
             remote: remoteContents.folders,
@@ -627,7 +857,8 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
         // Synced items the backend doesn't have in this folder anymore were deleted or moved
         // on another device.
         let remoteDocumentIds = Set(remoteContents.documents.map(\.id))
-        for document in storedDocuments where document.lastSyncedAt != nil && !document.isOutdated && !remoteDocumentIds.contains(document.id) {
+        for document in storedDocuments
+        where document.lastSyncedAt != nil && !outdatedDocumentIds.contains(document.id) && !remoteDocumentIds.contains(document.id) {
             try local.hardDeleteDocument(id: document.id)
         }
         let remoteFolderIds = Set(remoteContents.folders.map(\.id))
@@ -635,7 +866,6 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
             try local.hardDeleteFolder(id: folder.id)
         }
 
-        try await sendAndMarkSynced(documentsToSend)
         try await api.sendFolders(foldersToSend)
         for folder in foldersToSend {
             try markSynced(folder)
@@ -652,31 +882,29 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
             try markSynced(tag)
         }
 
-        // Changes made in other folders that couldn't be sent yet (a move while offline, for
-        // one) go with this sync too, so they don't wait for their folder to be opened. After
-        // this folder is handled: they're still outdated while its listing is applied, so a
-        // stale copy of a moved item in it can't undo the move.
-        await pushPending(outside: folderId)
+        // Now what changed elsewhere: the steps deleted since the last time go first, so
+        // nothing received recreates them; then the documents, merged step by step. The
+        // listing predates the deletions sent above, so it may still carry those steps too.
+        let received = try await stepSync.receiveDeletedSteps(since: try local.stepDeletionsSyncedAt() ?? 0)
+        for document in remoteContents.documents {
+            try stepSync.mergeReceived(document, excluding: received.stepIds.union(deletedHere))
+        }
+        // Workspace-wide, in the backend's clock.
+        try local.setStepDeletionsSyncedAt(received.serverTimestamp)
+
+        // Folders changed in other folders that couldn't be sent yet (a move while offline, for
+        // one) go with this sync too, so they don't wait for their folder to be opened.
+        await pushPendingFolders(outside: folderId)
 
         lastFolderSync[folderId] = Date()
     }
 
+    /// Opens the document: the backend copy is merged into the local one step by step and the
+    /// result returned when something changed.
     public func fetchAndMerge(documentId: String) async throws -> WrDocument? {
-        let localCopy = try local.storedDocument(id: documentId)
         let remoteCopy = try await api.document(id: documentId)
         guard remoteCopy.id == documentId else { return nil }
-
-        guard var merged = DocumentMerger.merge(local: localCopy, remote: remoteCopy) else { return nil }
-        guard localCopy == nil || merged.content != localCopy?.content || merged.title != localCopy?.title
-            || merged.tagIds != localCopy?.tagIds
-        else {
-            return nil
-        }
-        if localCopy?.isOutdated != true {
-            merged.lastSyncedAt = max(merged.lastUpdatedAt, merged.lastSyncedAt ?? 0)
-        }
-        try local.store(merged)
-        return merged
+        return try stepSync.mergeReceived(remoteCopy)
     }
 
     public func pushSteps(
@@ -717,28 +945,9 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
         return synced.updatedSteps.first { $0.id == step.id && !($0.text ?? "").isEmpty } ?? described
     }
 
-    /// Sends the outdated documents and folders that aren't in `folderId`, resolving each
-    /// document against the backend copy like the folder sync does. Failures are left for the
-    /// next sync.
-    private func pushPending(outside folderId: String) async {
-        let documents = (try? local.storedOutdatedDocuments())?.filter { $0.parentId != folderId } ?? []
+    /// Sends the outdated folders that aren't in `folderId`. Failures are left for the next sync.
+    private func pushPendingFolders(outside folderId: String) async {
         let folders = (try? local.storedOutdatedFolders())?.filter { $0.parentId != folderId } ?? []
-
-        if !documents.isEmpty {
-            var toSend: [WrDocument] = []
-            for document in documents {
-                let remote = (try? await api.document(id: document.id)).map { [$0] } ?? []
-                if let resolved = try? DocumentConflictHandler.handle(
-                    local: [document],
-                    remote: remote.filter { $0.id == document.id },
-                    store: local
-                ) {
-                    toSend += resolved
-                }
-            }
-            try? await sendAndMarkSynced(toSend)
-        }
-
         if !folders.isEmpty, (try? await api.sendFolders(folders)) != nil {
             for folder in folders {
                 try? markSynced(folder)

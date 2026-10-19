@@ -206,6 +206,8 @@ interface DocumentEntityDao {
             "FROM $DOCUMENT_ENTITY " +
             "JOIN $STORY_UNIT_ENTITY ON $DOCUMENT_ENTITY.id = $STORY_UNIT_ENTITY.document_id " +
             "WHERE $DOCUMENT_ENTITY.workspace_id = :workspaceId AND is_deleted = FALSE " +
+            "AND ($DOCUMENT_ENTITY.last_updated_at > $DOCUMENT_ENTITY.last_synced_at " +
+            "OR $DOCUMENT_ENTITY.last_synced_at IS NULL) " +
             "ORDER BY " +
             "$STORY_UNIT_ENTITY.position"
     )

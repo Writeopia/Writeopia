@@ -79,3 +79,13 @@ SELECT *
 FROM storyStepEntity
 WHERE parent_id = ?
 ORDER BY position;
+
+-- Steps deleted on the backend, scoped to the workspace so an id can't reach another one.
+deleteByIdsForWorkspace:
+DELETE
+FROM storyStepEntity
+WHERE id IN ? AND document_id IN (
+  SELECT id
+  FROM documentEntity
+  WHERE workspace_id = ?
+);

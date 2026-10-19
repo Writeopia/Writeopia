@@ -24,10 +24,12 @@ import io.writeopia.sdk.persistence.converter.IdListConverter
 import io.writeopia.sdk.persistence.dao.CommentEntityDao
 import io.writeopia.sdk.persistence.dao.DocumentEntityDao
 import io.writeopia.sdk.persistence.dao.DocumentTagLinkDao
+import io.writeopia.sdk.persistence.dao.StoryStepTombstoneDao
 import io.writeopia.sdk.persistence.dao.StoryUnitEntityDao
 import io.writeopia.sdk.persistence.entity.comment.CommentEntity
 import io.writeopia.sdk.persistence.entity.document.DocumentEntity
 import io.writeopia.sdk.persistence.entity.story.StoryStepEntity
+import io.writeopia.sdk.persistence.entity.story.StoryStepTombstoneEntity
 import io.writeopia.sdk.persistence.entity.tag.DocumentTagLinkEntity
 
 // The Room compiler generates the `actual` implementations.
@@ -40,6 +42,7 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<WriteopiaApplicat
     entities = [
         DocumentEntity::class,
         StoryStepEntity::class,
+        StoryStepTombstoneEntity::class,
         CommentEntity::class,
         DocumentTagLinkEntity::class,
         DocumentTagRoomEntity::class,
@@ -51,7 +54,7 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<WriteopiaApplicat
         TokenEntity::class,
         WorkspaceEntity::class
     ],
-    version = 34,
+    version = 35,
     exportSchema = false
 )
 @TypeConverters(IdListConverter::class)
@@ -61,6 +64,8 @@ abstract class WriteopiaApplicationDatabase : RoomDatabase() {
     abstract fun documentDao(): DocumentEntityDao
 
     abstract fun storyUnitDao(): StoryUnitEntityDao
+
+    abstract fun storyStepTombstoneDao(): StoryStepTombstoneDao
 
     abstract fun commentDao(): CommentEntityDao
 
@@ -93,7 +98,14 @@ abstract class WriteopiaApplicationDatabase : RoomDatabase() {
         ): WriteopiaApplicationDatabase =
             databaseBuilder
 //                    .createFromAsset("WriteopiaDatabase.db")
-                .addMigrations(MIGRATION_29_30, MIGRATION_30_31, MIGRATION_31_32, MIGRATION_32_33, MIGRATION_33_34)
+                .addMigrations(
+                    MIGRATION_29_30,
+                    MIGRATION_30_31,
+                    MIGRATION_31_32,
+                    MIGRATION_32_33,
+                    MIGRATION_33_34,
+                    MIGRATION_34_35
+                )
                 .fallbackToDestructiveMigration(dropAllTables = true)
                 .build()
                 .also { database ->

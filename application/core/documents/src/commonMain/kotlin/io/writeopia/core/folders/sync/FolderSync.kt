@@ -20,7 +20,7 @@ import kotlin.time.ExperimentalTime
 class FolderSync(
     private val documentRepository: DocumentRepository,
     private val documentsApi: DocumentsApi,
-    private val documentConflictHandler: DocumentConflictHandler,
+    private val documentSyncService: DocumentSyncService,
     private val folderConflictHandler: FolderConflictHandler,
     private val folderRepository: FolderRepository,
     private val authRepository: AuthRepository,
@@ -37,6 +37,11 @@ class FolderSync(
      * Receiving is about this folder only. Sending covers the whole workspace: every document
      * and folder changed locally since it was last sent goes with this sync, wherever it is, so
      * a change (a move, for one) doesn't wait for its own folder to be opened.
+     *
+     * Documents travel one step at a time, through [DocumentSyncService]: first the deletions
+     * made here, then the steps edited here, each kept by the backend only when newer than its
+     * own copy. What comes back (the steps deleted and changed elsewhere) is merged into the
+     * local copy the same way. A document is never replaced whole on either side.
      *
      * This logic is atomic. If it fails, the whole process must be tried again in a future time.
      * The sync time of the folder will only be updated with everything works correctly.
@@ -86,27 +91,23 @@ class FolderSync(
             // The whole tag catalogue of the workspace comes with every folder.
             val newTags = folderContent.tags.map { it.toModel() }
 
-            // Then, load the outdated documents and folders of the whole workspace.
-            // These were updated locally, but were not sent to the backend yet.
-            val localOutdatedDocs = documentRepository.loadOutdatedDocumentsForWorkspace(workspaceId)
-            val localOutdatedFolders = folderRepository.localOutDatedFolders(workspaceId)
+            // Send what was deleted here before anything else: a step the backend still has is
+            // deleted there instead of coming back.
+            val deletedHere = documentSyncService.sendDeletedSteps(workspaceId) ?: return
 
-            // Resolve conflicts of documents that were updated both locally and in the backend.
-            // Documents will be saved locally by documentConflictHandler.handleConflict
-            val documentsNotSent =
-                documentConflictHandler.handleConflict(localOutdatedDocs, newDocuments)
+            // Then the documents of the whole workspace changed locally since they were sent:
+            // their edited steps, then their metadata (title, folder, icon...), stamped as synced
+            // only once both are on the backend.
+            val localOutdatedDocs = documentRepository.loadOutdatedDocumentsForWorkspace(workspaceId)
+            documentSyncService.syncDocuments(localOutdatedDocs, workspaceId) ?: return
 
             // Resolve conflicts for subfolders
+            val localOutdatedFolders = folderRepository.localOutDatedFolders(workspaceId)
             val foldersNotSent = folderConflictHandler.handleConflict(
                 localFolders = localOutdatedFolders,
                 externalFolders = newFolders
             )
-
-            documentRepository.refreshDocuments()
             folderRepository.refreshFolders()
-
-            // Send documents to backend
-            val resultSendDocuments = documentsApi.sendDocuments(documentsNotSent, workspaceId)
 
             // Send subfolders to backend
             val resultSendFolders = documentsApi.sendFolders(foldersNotSent, workspaceId)
@@ -118,27 +119,10 @@ class FolderSync(
             val resultSendTags =
                 if (tagsNotSent.isEmpty()) ResultData.Complete(Unit) else documentsApi.sendTags(tagsNotSent, workspaceId)
 
-            if (
-                resultSendDocuments is ResultData.Complete &&
-                resultSendFolders is ResultData.Complete &&
-                resultSendTags is ResultData.Complete
-            ) {
-                // Documents and folders were sent successfully.
+            if (resultSendFolders is ResultData.Complete && resultSendTags is ResultData.Complete) {
+                // Folders and tags were sent successfully.
                 // Update lastSyncedAt for sent items to prevent re-sending them.
                 val syncTime = Clock.System.now()
-
-                // Stamp the sync time on the documents that were sent. The editor may have
-                // saved a newer revision while the send ran: the snapshot sent is never written
-                // back (it would undo those edits), only the metadata of what is stored now,
-                // and only while that is still the revision sent. A newer revision stays
-                // outdated and goes with the next sync.
-                documentsNotSent.forEach { sent ->
-                    val current =
-                        documentRepository.loadDocumentById(sent.id, workspaceId) ?: return@forEach
-                    if (current.lastUpdatedAt == sent.lastUpdatedAt) {
-                        documentRepository.saveDocumentMetadata(current.copy(lastSyncedAt = syncTime))
-                    }
-                }
 
                 // Update lastSyncedAt for folders that were sent
                 foldersNotSent.forEach { folder ->
@@ -149,6 +133,16 @@ class FolderSync(
                 tagsNotSent.forEach { tag ->
                     documentTagRepository?.upsertTag(tag.copy(lastSyncedAt = syncTime))
                 }
+
+                // Now what changed elsewhere: the steps deleted since the last sync go first, so
+                // nothing received recreates them; then the documents, merged step by step. The
+                // listing predates the deletions sent above, so it may still carry those steps.
+                val deletionsSince = folderRepository.getContentSyncedAt(DocumentSyncService.DELETIONS_WATERMARK_ID, workspaceId)
+                val received =
+                    documentSyncService.receiveDeletedSteps(workspaceId, deletionsSince ?: Instant.DISTANT_PAST) ?: return
+                documentSyncService.mergeReceivedDocuments(newDocuments, excluding = deletedHere + received.stepIds)
+                // Workspace-wide, in the backend's clock.
+                folderRepository.setContentSyncedAt(DocumentSyncService.DELETIONS_WATERMARK_ID, workspaceId, received.serverTimestamp)
 
                 // The contents of this folder are now on this device. The watermark is the time
                 // taken before the request, so whatever changed while it ran comes again next time.

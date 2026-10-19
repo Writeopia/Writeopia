@@ -53,6 +53,7 @@ class DocumentRoomRepositoryTest {
             commentEntityDao,
             database,
             database.documentTagLinkDao(),
+            database.storyStepTombstoneDao(),
         )
         documentRepositoryTests = DocumentRepositoryTests(documentRepository)
     }
@@ -86,6 +87,26 @@ class DocumentRoomRepositoryTest {
     @Test
     fun saveSimpleDocumentInRepository() = runTest {
         documentRepositoryTests.saveAndLoadADocumentWithoutContent()
+    }
+
+    @Test
+    fun deletedStepLeavesATombstoneAndNeverComesBack() = runTest {
+        documentRepositoryTests.deletedStepLeavesATombstoneAndNeverComesBack()
+    }
+
+    @Test
+    fun stepsDeletedElsewhereGoWithoutTombstone() = runTest {
+        documentRepositoryTests.stepsDeletedElsewhereGoWithoutTombstone()
+    }
+
+    @Test
+    fun stepTimestampsAreKept() = runTest {
+        documentRepositoryTests.stepTimestampsAreKept()
+    }
+
+    @Test
+    fun aDocumentWithMoreStepsThanOneQueryCanBindIsSaved() = runTest {
+        documentRepositoryTests.aDocumentWithMoreStepsThanOneQueryCanBindIsSaved()
     }
 
     @Test

@@ -56,35 +56,6 @@ private func makeStore() -> LocalDocumentsRepository {
 }
 
 @Suite struct ConflictHandlerTests {
-    @Test func newestDocumentWinsAndLocalWinnersAreSent() throws {
-        let store = makeStore()
-        let localNewer = WrDocument(id: "a", title: "mine", workspaceId: "w", lastUpdatedAt: 200, parentId: "root")
-        let remoteOlder = WrDocument(id: "a", title: "theirs", workspaceId: "w", lastUpdatedAt: 100, parentId: "root")
-        let remoteOnly = WrDocument(id: "b", title: "new there", workspaceId: "w", lastUpdatedAt: 50, parentId: "root")
-        let localOnly = WrDocument(id: "c", title: "new here", workspaceId: "w", lastUpdatedAt: 50, parentId: "root")
-
-        let toSend = try DocumentConflictHandler.handle(local: [localNewer, localOnly], remote: [remoteOlder, remoteOnly], store: store)
-
-        #expect(Set(toSend.map(\.id)) == ["a", "c"])
-        #expect(try store.storedDocument(id: "a")?.title == "mine")
-        let received = try #require(try store.storedDocument(id: "b"))
-        #expect(received.title == "new there")
-        #expect(!received.isOutdated)
-    }
-
-    @Test func documentsDeletedHereAreNotBroughtBack() throws {
-        let store = makeStore()
-        try store.store(WrDocument(id: "a", title: "gone", workspaceId: "w", lastUpdatedAt: 300, deleted: true))
-
-        _ = try DocumentConflictHandler.handle(
-            local: [],
-            remote: [WrDocument(id: "a", title: "still there", workspaceId: "w", lastUpdatedAt: 100)],
-            store: store
-        )
-
-        #expect(try store.storedDocument(id: "a")?.deleted == true)
-    }
-
     @Test func foldersFollowTheSameRules() throws {
         let store = makeStore()
         let mine = Folder(id: "f", parentId: "root", title: "Mine", workspaceId: "w", lastUpdatedAt: Date(millis: 200))
@@ -110,10 +81,25 @@ final class FakeBackend: HTTPTransport {
     private(set) var sentFolders: [[String: Any]] = []
     private(set) var sentTags: [[String: Any]] = []
     private(set) var stepSyncBodies: [[String: Any]] = []
+    /// What the step sync answers; the server time is 777.
+    var stepSyncUpdatedSteps: [StoryStep] = []
+    var stepSyncDeletedIds: [String] = []
+    /// The tombstones a device sent, as `[stepId: documentId]`.
+    private(set) var deletedStepTombstones: [[String: String]] = []
+    /// The ids of the steps deleted elsewhere, answered to `/steps/deleted`.
+    var deletedStepIds: [String] = []
+    private(set) var deletedStepsSince: [Int64] = []
+    /// Every request, in order, as "METHOD path".
+    private(set) var requestLog: [String] = []
     private(set) var deletedIds: [String] = []
     private(set) var deletedFolderIds: [String] = []
     private(set) var favorites: [String: Bool] = [:]
     var deleteFails = false
+    /// Documents sent while this is set are refused.
+    var documentSendFails = false
+    /// Step deletions and step syncs are refused while these are set.
+    var stepDeleteFails = false
+    var stepSyncFails = false
     /// Folders sent while this is set are refused, like when the backend can't be reached.
     var folderSendFails = false
     /// Runs while folders are being sent, before the backend answers.
@@ -124,8 +110,22 @@ final class FakeBackend: HTTPTransport {
         let body = request.httpBody.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] } ?? [:]
         var status = 200
         var response = Data()
+        requestLog.append("\(request.httpMethod ?? "GET") \(path)")
 
         switch path {
+        case let path where path.hasSuffix("/steps/delete"):
+            if stepDeleteFails {
+                status = 500
+            } else {
+                deletedStepTombstones += (body["tombstones"] as? [[String: String]]) ?? []
+                response = Data("Accepted".utf8)
+            }
+        case let path where path.hasSuffix("/steps/deleted"):
+            let since = URLComponents(url: request.url!, resolvingAgainstBaseURL: false)?
+                .queryItems?.first { $0.name == "since" }?.value.flatMap(Int64.init) ?? -1
+            deletedStepsSince.append(since)
+            let ids = String(decoding: try JSONEncoder().encode(deletedStepIds), as: UTF8.self)
+            response = Data(#"{"stepIds":\#(ids),"serverTimestamp":778}"#.utf8)
         case "/api/docs/workspace/document/folder/diff":
             // Like the backend, deleted documents aren't returned.
             var contents = folderDiff
@@ -133,8 +133,12 @@ final class FakeBackend: HTTPTransport {
             contents.folders.removeAll { deletedFolderIds.contains($0.id) }
             response = try JSONEncoder().encode(contents)
         case "/api/docs/workspace/document":
-            sentDocuments += body["documents"] as? [[String: Any]] ?? []
-            response = Data("Accepted".utf8)
+            if documentSendFails {
+                status = 500
+            } else {
+                sentDocuments += body["documents"] as? [[String: Any]] ?? []
+                response = Data("Accepted".utf8)
+            }
         case "/api/docs/workspace/tag":
             sentTags += body["tags"] as? [[String: Any]] ?? []
             response = Data("Accepted".utf8)
@@ -163,8 +167,14 @@ final class FakeBackend: HTTPTransport {
                 response = Data("Deleted".utf8)
             }
         case let path where path.hasSuffix("/steps/sync"):
+            if stepSyncFails {
+                status = 500
+                break
+            }
             stepSyncBodies.append(body)
-            response = Data(#"{"serverTimestamp":777,"updatedSteps":[],"deletedIds":[]}"#.utf8)
+            let steps = String(decoding: try JSONEncoder().encode(stepSyncUpdatedSteps), as: UTF8.self)
+            let deleted = String(decoding: try JSONEncoder().encode(stepSyncDeletedIds), as: UTF8.self)
+            response = Data(#"{"serverTimestamp":777,"updatedSteps":\#(steps),"deletedIds":\#(deleted)}"#.utf8)
         case "/api/docs/workspace/w/document/search":
             searchRequests += 1
             if let searchResponse {
@@ -304,6 +314,154 @@ final class FakeBackend: HTTPTransport {
         #expect(try repository.local.storedDocument(id: "d")?.isOutdated == false)
     }
 
+    @Test func folderSyncSendsTheDeletionsThenTheStepsThenTheMetadata() async throws {
+        let backend = FakeBackend()
+        let repository = makeRepository(backend)
+        // Synced at 100, then a line edited and another deleted here.
+        let document = WrDocument(id: "d", title: "Doc", workspaceId: "w", content: [
+            step("kept", "old", at: 0, updated: 50),
+            step("edited", "new", at: 1, updated: 200),
+            step("gone", "bye", at: 2, updated: 50),
+        ], lastUpdatedAt: 200, parentId: "root", lastSyncedAt: 100)
+        try repository.local.store(document)
+        var edited = document
+        edited.content.removeAll { $0.id == "gone" }
+        try repository.saveEdit(document: edited, changedSteps: [], deletedStepIds: ["gone"])
+
+        try await repository.syncFolder("root")
+
+        #expect(backend.deletedStepTombstones == [["stepId": "gone", "documentId": "d"]])
+        // Only the step edited since the last sync went, then the metadata without content.
+        let changes = try #require(backend.stepSyncBodies.first?["changes"] as? [[String: Any]])
+        #expect(changes.map { ($0["storyStep"] as? [String: Any])?["id"] as? String } == ["edited"])
+        let sent = try #require(backend.sentDocuments.first)
+        #expect(sent["id"] as? String == "d")
+        #expect((sent["content"] as? [Any])?.isEmpty == true)
+        let order = backend.requestLog.filter { $0.hasSuffix("/steps/delete") || $0.hasSuffix("/steps/sync") || $0.hasSuffix("/workspace/document") }
+        #expect(order == ["POST /api/docs/workspace/w/steps/delete", "POST /api/docs/workspace/w/document/d/steps/sync", "POST /api/docs/workspace/document"], "\(backend.requestLog)")
+        // The tombstone went, the document is in sync, and nothing was written back.
+        #expect(try repository.local.storedStepTombstones().isEmpty)
+        let stored = try #require(try repository.local.storedDocument(id: "d"))
+        #expect(!stored.isOutdated)
+        #expect(stored.content.map(\.id) == ["kept", "edited"])
+    }
+
+    @Test func nothingIsStampedUntilTheMetadataIsOnTheBackend() async throws {
+        let backend = FakeBackend()
+        backend.documentSendFails = true
+        let repository = makeRepository(backend)
+        try repository.local.store(WrDocument(id: "d", title: "Renamed here", workspaceId: "w", content: [
+            step("a", "edited", at: 0, updated: 2_000),
+        ], lastUpdatedAt: 3_000, parentId: "root", lastSyncedAt: 1_000))
+
+        await #expect(throws: (any Error).self) { try await repository.syncFolder("root") }
+
+        // The steps went, the metadata didn't: still outdated, with its steps, for the next sync.
+        #expect(backend.stepSyncBodies.count == 1)
+        let stillOutdated = try #require(try repository.local.storedDocument(id: "d"))
+        #expect(stillOutdated.lastSyncedAt == 1_000)
+        #expect(stillOutdated.content.first?.lastUpdatedAt == 2_000)
+
+        backend.documentSendFails = false
+        try await Task.sleep(for: .seconds(2.1))
+        try await repository.syncFolder("root")
+
+        #expect(backend.sentDocuments.map { $0["title"] as? String } == ["Renamed here"])
+        let synced = try #require(try repository.local.storedDocument(id: "d"))
+        #expect(!synced.isOutdated)
+        #expect(synced.content.first?.lastUpdatedAt == synced.lastSyncedAt)
+    }
+
+    @Test func folderSyncStopsWhenTheDeletionsCantBeSent() async throws {
+        let backend = FakeBackend()
+        let repository = makeRepository(backend)
+        try repository.local.store(WrDocument(id: "d", title: "Doc", workspaceId: "w", content: [step("a", "a", at: 0, updated: 5)], lastUpdatedAt: 5, parentId: "root"))
+        try repository.saveEdit(document: WrDocument(id: "d", title: "Doc", workspaceId: "w", lastUpdatedAt: 6, parentId: "root"), changedSteps: [], deletedStepIds: ["a"])
+        backend.stepDeleteFails = true
+
+        await #expect(throws: (any Error).self) { try await repository.syncFolder("root") }
+
+        #expect(backend.stepSyncBodies.isEmpty)
+        #expect(backend.sentDocuments.isEmpty)
+        #expect(try repository.local.storedStepTombstones().map(\.stepId) == ["a"])
+    }
+
+    @Test func stepsDeletedElsewhereLeaveAndNeverComeBack() async throws {
+        let backend = FakeBackend()
+        let repository = makeRepository(backend)
+        try repository.local.store(WrDocument(id: "d", title: "Doc", workspaceId: "w", content: [
+            step("a", "a", at: 0, updated: 10),
+            step("b", "b", at: 1, updated: 10),
+        ], lastUpdatedAt: 10, parentId: "root", lastSyncedAt: 20))
+        // The backend still lists "b" in a stale copy, but says it was deleted.
+        backend.folderDiff = FolderContents(documents: [WrDocument(id: "d", title: "Doc", workspaceId: "w", content: [
+            step("a", "a", at: 0, updated: 10),
+            step("b", "b", at: 1, updated: 10),
+        ], lastUpdatedAt: 10, parentId: "root", lastSyncedAt: 20)])
+        backend.deletedStepIds = ["b"]
+
+        try await repository.syncFolder("root")
+
+        #expect(try repository.local.storedDocument(id: "d")?.content.map(\.id) == ["a"])
+        #expect(try repository.local.storedStepTombstones().isEmpty)
+        // The first time everything is asked for; afterwards from the backend's own time on,
+        // never this device's clock.
+        #expect(backend.deletedStepsSince == [0])
+        #expect(try repository.local.stepDeletionsSyncedAt() == 778)
+        try await Task.sleep(for: .seconds(2.1))
+        try await repository.syncFolder("root")
+        #expect(backend.deletedStepsSince == [0, 778])
+    }
+
+    @Test func receivedDocumentsAreMergedStepByStep() async throws {
+        let backend = FakeBackend()
+        let repository = makeRepository(backend)
+        try repository.local.store(WrDocument(id: "d", title: "Doc", workspaceId: "w", content: [
+            step("a", "local a", at: 0, updated: 5),
+            step("b", "local b", at: 1, updated: 1),
+            step("deleted-here", "x", at: 2, updated: 1),
+        ], lastUpdatedAt: 10, parentId: "root", lastSyncedAt: 10))
+        try repository.saveEdit(
+            document: WrDocument(id: "d", title: "Doc", workspaceId: "w", lastUpdatedAt: 10, parentId: "root", lastSyncedAt: 10),
+            changedSteps: [],
+            deletedStepIds: ["deleted-here"]
+        )
+        backend.folderDiff = FolderContents(documents: [WrDocument(id: "d", title: "Renamed elsewhere", workspaceId: "w", content: [
+            step("a", "server a", at: 0, updated: 3),
+            step("b", "server b", at: 1, updated: 9),
+            step("c", "server c", at: 3, updated: 9),
+            step("deleted-here", "back?", at: 2, updated: 9),
+        ], lastUpdatedAt: 20, parentId: "root", lastSyncedAt: 20)])
+
+        try await repository.syncFolder("root")
+
+        let stored = try #require(try repository.local.storedDocument(id: "d"))
+        #expect(stored.title == "Renamed elsewhere")
+        #expect(stored.content.map(\.text) == ["local a", "server b", "server c"], "\(stored.content)")
+        #expect(!stored.isOutdated)
+    }
+
+    @Test func aDocumentStillOutdatedHereKeepsLookingOutdatedAfterAMerge() async throws {
+        let backend = FakeBackend()
+        backend.stepSyncFails = true
+        let repository = makeRepository(backend)
+        try repository.local.store(WrDocument(id: "d", title: "Doc", workspaceId: "w", content: [
+            step("a", "edited here", at: 0, updated: 150),
+        ], lastUpdatedAt: 200, parentId: "root", lastSyncedAt: 100))
+        backend.folderDiff = FolderContents(documents: [WrDocument(id: "d", title: "Renamed elsewhere", workspaceId: "w", content: [
+            step("a", "older elsewhere", at: 0, updated: 50),
+        ], lastUpdatedAt: 300, parentId: "root", lastSyncedAt: 300)])
+
+        try await repository.syncFolder("root")
+
+        let stored = try #require(try repository.local.storedDocument(id: "d"))
+        #expect(stored.title == "Renamed elsewhere")
+        #expect(stored.content.first?.text == "edited here")
+        #expect(stored.lastUpdatedAt == 200)
+        #expect(stored.lastSyncedAt == 100)
+        #expect(stored.isOutdated)
+    }
+
     @Test func folderDatesReadBothFormats() throws {
         let iso = try JSONDecoder().decode(Folder.self, from: Data(#"{"id":"f","parentId":"root","title":"T","workspaceId":"w","createdAt":"2026-01-02T10:00:00Z","lastUpdatedAt":"2026-01-02T10:00:00.250Z","itemCount":1}"#.utf8))
         #expect(iso.createdAt != nil)
@@ -345,6 +503,58 @@ final class FakeBackend: HTTPTransport {
         let saved = try #require(try store.storedDocument(id: "d"))
         #expect(saved.title == "Renamed")
         #expect(saved.content.map(\.text) == ["one!", "two"])
+    }
+
+    @Test func aStepDeletedInTheEditorLeavesATombstoneAndNoSyncBringsItBack() throws {
+        let store = LocalDocumentsRepository(directory: directory, workspaceId: "w", seedsWelcome: false)
+        let document = WrDocument(id: "d", title: "Doc", workspaceId: "w", content: [
+            StoryStep(id: "a", type: .text, text: "one", position: 0),
+            StoryStep(id: "b", type: .text, text: "two", position: 1),
+        ], parentId: Folder.rootId)
+        try store.store(document)
+
+        try store.saveEdit(document: document, changedSteps: [], deletedStepIds: ["b"])
+
+        let tombstone = try #require(try store.storedStepTombstones().first)
+        #expect(tombstone.stepId == "b")
+        #expect(tombstone.documentId == "d")
+        #expect(tombstone.workspaceId == "w")
+        // Whatever a sync writes, whole document or steps: it stays deleted.
+        try store.store(document)
+        #expect(try store.storedDocument(id: "d")?.content.map(\.id) == ["a"])
+        try store.storeSteps(document.content, documentId: "d")
+        #expect(try store.storedDocument(id: "d")?.content.map(\.id) == ["a"])
+        // Once the backend has the deletion, the tombstone goes.
+        try store.deleteStepTombstones(["b"])
+        #expect(try store.storedStepTombstones().isEmpty)
+    }
+
+    @Test func theEditorMayBringADeletedStepBack() throws {
+        let store = LocalDocumentsRepository(directory: directory, workspaceId: "w", seedsWelcome: false)
+        let document = WrDocument(id: "d", title: "Doc", workspaceId: "w", content: [
+            StoryStep(id: "a", type: .text, text: "one", position: 0),
+        ], parentId: Folder.rootId)
+        try store.store(document)
+        try store.saveEdit(document: document, changedSteps: [], deletedStepIds: ["a"])
+
+        // An undo in the editor: its word wins over the tombstone.
+        try store.saveEdit(document: document, changedSteps: document.content, deletedStepIds: [])
+
+        #expect(try store.storedDocument(id: "d")?.content.map(\.id) == ["a"])
+        #expect(try store.storedStepTombstones().isEmpty)
+    }
+
+    @Test func stepsDeletedElsewhereGoWithoutATombstone() throws {
+        let store = LocalDocumentsRepository(directory: directory, workspaceId: "w", seedsWelcome: false)
+        try store.store(WrDocument(id: "d", title: "Doc", workspaceId: "w", content: [
+            StoryStep(id: "a", type: .text, text: "one", position: 0),
+            StoryStep(id: "b", type: .text, text: "two", position: 1),
+        ], parentId: Folder.rootId))
+
+        try store.deleteSteps(ids: ["b"])
+
+        #expect(try store.storedDocument(id: "d")?.content.map(\.id) == ["a"])
+        #expect(try store.storedStepTombstones().isEmpty)
     }
 
     @Test func stepsKeepTheirContent() throws {

@@ -95,3 +95,24 @@ val MIGRATION_33_34 = object : Migration(33, 34) {
         )
     }
 }
+
+/**
+ * Steps carry the time of their last edit, so the sync sends only the changed ones, and the
+ * steps deleted here are remembered until the backend is told.
+ */
+val MIGRATION_34_35 = object : Migration(34, 35) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL("ALTER TABLE STORY_UNIT_ENTITY_TABLE ADD COLUMN last_updated_at INTEGER")
+        connection.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS STORY_STEP_TOMBSTONE_TABLE (
+                step_id TEXT NOT NULL,
+                document_id TEXT NOT NULL,
+                workspace_id TEXT NOT NULL,
+                deleted_at INTEGER NOT NULL,
+                PRIMARY KEY(step_id)
+            )
+            """.trimIndent()
+        )
+    }
+}

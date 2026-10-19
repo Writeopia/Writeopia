@@ -6,6 +6,7 @@ import io.writeopia.sdk.model.document.DocumentInfo
 import io.writeopia.sdk.model.document.info
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.story.StoryStep
+import io.writeopia.sdk.models.story.StoryStepTombstone
 import io.writeopia.sdk.search.DocumentSearch
 import io.writeopia.sdk.repository.DocumentRepository
 import io.writeopia.sdk.models.sorting.OrderBy
@@ -13,6 +14,7 @@ import io.writeopia.sdk.persistence.sqldelight.dao.DocumentSqlDao
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
+import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
@@ -129,7 +131,18 @@ class SqlDelightDocumentRepository(
     }
 
     override suspend fun deleteStoryStep(storyStepId: String, documentId: String) {
-        documentSqlDao.deleteStoryStepById(storyStepId)
+        documentSqlDao.deleteStoryStep(storyStepId, documentId, Clock.System.now().toEpochMilliseconds())
+    }
+
+    override suspend fun loadStoryStepTombstones(workspaceId: String): List<StoryStepTombstone> =
+        documentSqlDao.loadStoryStepTombstones(workspaceId)
+
+    override suspend fun deleteStoryStepTombstones(stepIds: Collection<String>) {
+        documentSqlDao.deleteStoryStepTombstones(stepIds)
+    }
+
+    override suspend fun deleteStoryStepsByIds(stepIds: Collection<String>, workspaceId: String) {
+        documentSqlDao.deleteStoryStepsByIds(stepIds, workspaceId)
     }
 
     override suspend fun updateStoryStepUrl(url: String, id: String) {

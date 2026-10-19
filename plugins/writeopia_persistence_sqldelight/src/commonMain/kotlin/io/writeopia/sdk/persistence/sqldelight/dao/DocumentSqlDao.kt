@@ -11,6 +11,7 @@ import io.writeopia.sdk.models.link.DocumentLink
 import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.sdk.models.story.Decoration
 import io.writeopia.sdk.models.story.StoryStep
+import io.writeopia.sdk.models.story.StoryStepTombstone
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.TagInfo
 import io.writeopia.sdk.search.DocumentSearch
@@ -22,6 +23,7 @@ import io.writeopia.sdk.sql.DocumentEntityQueries
 import io.writeopia.sdk.sql.DocumentTagLinkEntityQueries
 import io.writeopia.sdk.sql.StoryStepEntity
 import io.writeopia.sdk.sql.StoryStepEntityQueries
+import io.writeopia.sdk.sql.StoryStepTombstoneEntityQueries
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
@@ -31,6 +33,7 @@ class DocumentSqlDao(
     private val storyStepQueries: StoryStepEntityQueries?,
     private val commentQueries: CommentEntityQueries?,
     private val documentTagLinkQueries: DocumentTagLinkEntityQueries? = null,
+    private val storyStepTombstoneQueries: StoryStepTombstoneEntityQueries? = null,
 ) : DocumentSearch {
 
     @Deprecated("Pass CommentEntityQueries to preserve comment loading.")
@@ -88,8 +91,9 @@ class DocumentSqlDao(
             }
 
             storyStepQueries?.deleteByDocumentId(document.id)
+            val tombstoned = tombstonedIdsAmong(document.content.values.flatMap { step -> step.allIds() })
             document.content.values.forEachIndexed { i, storyStep ->
-                insertStoryStep(storyStep, i.toDouble(), document.id)
+                insertStoryStep(storyStep, i.toDouble(), document.id, tombstoned)
             }
 
             commentQueries?.deleteByDocumentId(document.id)
@@ -132,7 +136,21 @@ class DocumentSqlDao(
         )
     }
 
-    suspend fun insertStoryStep(storyStep: StoryStep, position: Double, documentId: String) {
+    /**
+     * Saves a step and its nested steps. A step that was deleted here (it has a tombstone the
+     * backend doesn't know of yet) is never written back, whatever is saving it.
+     *
+     * @param tombstoned The ids with a tombstone, when the caller already looked them up.
+     */
+    suspend fun insertStoryStep(
+        storyStep: StoryStep,
+        position: Double,
+        documentId: String,
+        tombstoned: Set<String>? = null,
+    ) {
+        val tombstoned = tombstoned ?: tombstonedIdsAmong(storyStep.allIds())
+        if (storyStep.id in tombstoned) return
+
         storyStep.run {
             storyStepQueries?.insert(
                 id = id,
@@ -157,15 +175,26 @@ class DocumentSqlDao(
             // Recursively save nested steps with parent_id set to this step's id
             steps.forEachIndexed { index, childStep ->
                 val childWithParent = childStep.copy(parentId = id)
-                insertStoryStep(childWithParent, index.toDouble(), documentId)
+                insertStoryStep(childWithParent, index.toDouble(), documentId, tombstoned)
             }
         }
     }
 
     suspend fun insertStorySteps(steps: List<Pair<Double, StoryStep>>, documentId: String) {
+        val tombstoned = tombstonedIdsAmong(steps.flatMap { (_, step) -> step.allIds() })
         steps.forEach { (position, storyStep) ->
-            insertStoryStep(storyStep, position, documentId)
+            insertStoryStep(storyStep, position, documentId, tombstoned)
         }
+    }
+
+    private fun StoryStep.allIds(): List<String> = listOf(id) + steps.flatMap { child -> child.allIds() }
+
+    private suspend fun tombstonedIdsAmong(ids: Collection<String>): Set<String> {
+        val queries = storyStepTombstoneQueries ?: return emptySet()
+        // In batches: SQLite binds one variable per id, and older builds allow 999.
+        return ids.distinct().chunked(SQLITE_IDS_PER_QUERY)
+            .flatMap { batch -> queries.selectStepIdsIn(batch).awaitAsList() }
+            .toSet()
     }
 
     /**
@@ -215,8 +244,51 @@ class DocumentSqlDao(
             } ?: emptyList()
     }
 
+    /**
+     * Deletes a step the user removed. A tombstone is kept until the backend is told, so the
+     * step is never recreated by a sync that still carries it.
+     */
+    suspend fun deleteStoryStep(storyStepId: String, documentId: String, deletedAt: Long) {
+        val queries = storyStepQueries ?: return
+
+        queries.transaction {
+            val workspaceId = documentQueries?.selectById(documentId)?.awaitAsOneOrNull()?.workspace_id
+            if (workspaceId != null) {
+                storyStepTombstoneQueries?.insert(storyStepId, documentId, workspaceId, deletedAt)
+            }
+            queries.deleteById(storyStepId)
+        }
+    }
+
+    @Deprecated("Use deleteStoryStep, which keeps a tombstone for the sync.")
     suspend fun deleteStoryStepById(storyStepId: String) {
         storyStepQueries?.deleteById(storyStepId)
+    }
+
+    suspend fun loadStoryStepTombstones(workspaceId: String): List<StoryStepTombstone> =
+        storyStepTombstoneQueries?.selectByWorkspaceId(workspaceId)
+            ?.awaitAsList()
+            ?.map { entity ->
+                StoryStepTombstone(
+                    stepId = entity.step_id,
+                    documentId = entity.document_id,
+                    workspaceId = entity.workspace_id,
+                    deletedAt = entity.deleted_at
+                )
+            }
+            ?: emptyList()
+
+    suspend fun deleteStoryStepTombstones(stepIds: Collection<String>) {
+        stepIds.distinct().chunked(SQLITE_IDS_PER_QUERY).forEach { batch ->
+            storyStepTombstoneQueries?.deleteByStepIds(batch)
+        }
+    }
+
+    /** Removes steps deleted on the backend. No tombstone: the backend has one already. */
+    suspend fun deleteStoryStepsByIds(stepIds: Collection<String>, workspaceId: String) {
+        stepIds.distinct().chunked(SQLITE_IDS_PER_QUERY).forEach { batch ->
+            storyStepQueries?.deleteByIdsForWorkspace(batch, workspaceId)
+        }
     }
 
     suspend fun loadDocumentById(id: String): Document? =
@@ -1129,5 +1201,10 @@ class DocumentSqlDao(
                 storyStep
             }
             ?: emptyList()
+    }
+
+    private companion object {
+        /** Ids per `IN (...)` query: SQLite binds one variable per id, and builds before 3.32 allow 999. */
+        const val SQLITE_IDS_PER_QUERY = 500
     }
 }

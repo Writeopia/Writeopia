@@ -7,6 +7,8 @@ import io.writeopia.sdk.models.extensions.sortWithOrderBy
 import io.writeopia.sdk.models.sorting.OrderBy
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sql.WriteopiaDbBackend
+import io.writeopia.databse.HikariCp
+import io.writeopia.databse.tombstone.StoryStepTombstoneStore
 
 private var documentSqlDao: DocumentSqlBeDao? = null
 
@@ -19,10 +21,17 @@ private fun WriteopiaDbBackend.getDocumentDaoFn(): DocumentSqlBeDao =
             userFavoriteEntityQueries,
             documentTagEntityQueries,
             documentTagLinkEntityQueries,
+            StoryStepTombstoneStore(HikariCp.driver()),
         ).also {
             documentSqlDao = it
         }
     }
+
+/** The deleted steps of the database, kept for the devices that still have them. */
+fun WriteopiaDbBackend.storyStepTombstones(): StoryStepTombstoneStore =
+    tombstoneStore ?: StoryStepTombstoneStore(HikariCp.driver()).also { tombstoneStore = it }
+
+private var tombstoneStore: StoryStepTombstoneStore? = null
 
 fun WriteopiaDbBackend.saveDocument(vararg documents: Document) {
     val dao = getDocumentDaoFn()
@@ -202,6 +211,15 @@ fun WriteopiaDbBackend.deleteStoryStepById(storyStepId: String) {
 fun WriteopiaDbBackend.deleteStoryStepsByIds(storyStepIds: List<String>) {
     getDocumentDaoFn().deleteStoryStepsByIds(storyStepIds)
 }
+
+/** Deletes [stepIds] where they belong to a document of [workspaceId]. */
+fun WriteopiaDbBackend.deleteStoryStepsByIdsForWorkspace(stepIds: Collection<String>, workspaceId: String) {
+    getDocumentDaoFn().deleteStoryStepsByIdsForWorkspace(stepIds, workspaceId)
+}
+
+/** The document of each of [stepIds], for the ones that exist. */
+fun WriteopiaDbBackend.storyStepDocumentIds(stepIds: Collection<String>): Map<String, String> =
+    getDocumentDaoFn().storyStepDocumentIds(stepIds)
 
 // Document Publishing Operations
 

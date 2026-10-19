@@ -6,6 +6,7 @@ import io.writeopia.sdk.manager.DocumentUpdate
 import io.writeopia.sdk.model.document.DocumentInfo
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.story.StoryStep
+import io.writeopia.sdk.models.story.StoryStepTombstone
 import io.writeopia.sdk.search.DocumentSearch
 import kotlinx.coroutines.flow.Flow
 import kotlin.time.ExperimentalTime
@@ -64,6 +65,21 @@ interface DocumentRepository : DocumentUpdate, DocumentSearch {
     override suspend fun saveStoryStep(storyStep: StoryStep, position: Double, documentId: String)
 
     suspend fun updateStoryStepUrl(url: String, id: String)
+
+    /**
+     * The steps deleted on this device that the backend has not been told about yet.
+     * Written by [deleteStoryStep]; a step with a tombstone is never saved again.
+     */
+    suspend fun loadStoryStepTombstones(workspaceId: String): List<StoryStepTombstone> = emptyList()
+
+    /** Forgets the tombstones of [stepIds], once the backend has them. */
+    suspend fun deleteStoryStepTombstones(stepIds: Collection<String>) {}
+
+    /**
+     * Removes steps deleted elsewhere. No tombstone is kept: the deletion came from the backend,
+     * which has one already.
+     */
+    suspend fun deleteStoryStepsByIds(stepIds: Collection<String>, workspaceId: String) {}
 
     suspend fun deleteDocument(document: Document, workspaceId: String)
 

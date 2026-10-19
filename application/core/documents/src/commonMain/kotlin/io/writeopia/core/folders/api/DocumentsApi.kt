@@ -17,6 +17,9 @@ import io.writeopia.sdk.models.api.request.documents.FolderDiffRequest
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.DocumentTag
 import io.writeopia.sdk.models.document.Folder
+import io.writeopia.sdk.models.story.StoryStepTombstone
+import io.writeopia.sdk.serialization.request.DeleteStoryStepsRequest
+import io.writeopia.sdk.serialization.response.DeletedStoryStepsResponse
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.models.utils.ResultData
@@ -129,6 +132,52 @@ class DocumentsApi(
             ResultData.Complete(Unit)
         } else {
             println("error sending documents: $response")
+            ResultData.Error()
+        }
+    }
+
+    /**
+     * Tells the backend which steps this device deleted. Sent before any content, so a step
+     * the backend still has is deleted there instead of coming back here.
+     */
+    suspend fun deleteStorySteps(
+        tombstones: List<StoryStepTombstone>,
+        workspaceId: String
+    ): ResultData<Unit> {
+        if (workspaceId == Workspace.disconnectedWorkspace().id) return ResultData.Error()
+        if (tombstones.isEmpty()) return ResultData.Complete(Unit)
+
+        val response = client.post("$baseUrl/api/docs/workspace/$workspaceId/steps/delete") {
+            contentType(ContentType.Application.Json)
+            setBody(DeleteStoryStepsRequest(tombstones.map { it.toApi() }))
+        }
+
+        return if (response.status.isSuccess()) {
+            ResultData.Complete(Unit)
+        } else {
+            println("error deleting story steps: $response")
+            ResultData.Error()
+        }
+    }
+
+    /**
+     * The ids of the steps deleted in the workspace, on any device, since [since], with the
+     * backend's time before it looked: the next sync asks from there, in the backend's clock.
+     */
+    suspend fun getDeletedStoryStepIds(
+        workspaceId: String,
+        since: Instant
+    ): ResultData<DeletedStoryStepsResponse> {
+        if (workspaceId == Workspace.disconnectedWorkspace().id) return ResultData.Error()
+
+        val response = client.get("$baseUrl/api/docs/workspace/$workspaceId/steps/deleted") {
+            parameter("since", since.toEpochMilliseconds())
+        }
+
+        return if (response.status.isSuccess()) {
+            ResultData.Complete(response.body<DeletedStoryStepsResponse>())
+        } else {
+            println("error loading deleted story steps: $response")
             ResultData.Error()
         }
     }

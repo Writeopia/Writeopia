@@ -22,6 +22,7 @@ import io.writeopia.sql.Document_tag_entity
 import io.writeopia.sql.FolderEntityQueries
 import io.writeopia.sql.Folder_entity
 import io.writeopia.sql.StoryStepEntityQueries
+import io.writeopia.databse.tombstone.StoryStepTombstoneStore
 import io.writeopia.sql.Story_step_entity
 import io.writeopia.sql.UserFavoriteEntityQueries
 import java.math.BigDecimal
@@ -36,6 +37,7 @@ class DocumentSqlBeDao(
     private val userFavoriteQueries: UserFavoriteEntityQueries? = null,
     private val documentTagQueries: DocumentTagEntityQueries? = null,
     private val documentTagLinkQueries: DocumentTagLinkEntityQueries? = null,
+    private val tombstones: StoryStepTombstoneStore? = null,
 ) : DocumentSearch {
 
     override suspend fun search(query: String, workspaceId: String): List<Document> =
@@ -74,23 +76,53 @@ class DocumentSqlBeDao(
                 )
             } ?: emptyList()
 
+    /**
+     * Saves the document row and the steps it carries. The steps already stored are kept: a
+     * step is written only when it is newer than the stored copy (or the copy has no time),
+     * a step deleted at some point is never written back, and a step absent from [document]
+     * is left alone. Deleting steps is the step sync's job, through the tombstones.
+     */
     fun insertDocumentWithContent(document: Document) {
         val queries = documentQueries ?: return
 
         queries.transaction {
-            val result = queries.selectById(document.id, document.workspaceId).executeAsOneOrNull()
-
-            if (result != null) {
-                storyStepQueries?.deleteByDocumentId(document.id)
-            }
+            val stored = storyStepQueries?.selectTimestampsByDocumentId(document.id)
+                ?.executeAsList()
+                ?.associate { row -> row.id to row.last_updated_at }
+                ?: emptyMap()
+            val tombstoned = tombstones?.tombstonedAmong(document.content.values.flatMap { step -> step.allIds() }, document.workspaceId)
+                ?: emptySet()
 
             document.content.values.forEachIndexed { i, storyStep ->
+                if (storyStep.id in tombstoned) return@forEachIndexed
+                if (!storyStep.isNewerThan(stored[storyStep.id], stored.containsKey(storyStep.id))) return@forEachIndexed
                 insertStoryStep(storyStep, i.toDouble(), document.id)
             }
 
             replaceTagLinks(document)
             insertDocument(document)
         }
+    }
+
+    /** A step wins over the stored copy when there is none, when the copy has no time, or when it is newer. */
+    private fun StoryStep.isNewerThan(storedTimestamp: Long?, stored: Boolean): Boolean =
+        !stored || storedTimestamp == null || (lastUpdatedAt ?: 0L) >= storedTimestamp
+
+    private fun StoryStep.allIds(): List<String> = listOf(id) + steps.flatMap { child -> child.allIds() }
+
+    /** The document of each of [stepIds], for the ones that exist. */
+    fun storyStepDocumentIds(stepIds: Collection<String>): Map<String, String> {
+        if (stepIds.isEmpty()) return emptyMap()
+        return storyStepQueries?.selectDocumentIdsByIds(stepIds.distinct())
+            ?.executeAsList()
+            ?.associate { row -> row.id to row.document_id }
+            ?: emptyMap()
+    }
+
+    /** Deletes [stepIds] where they belong to a document of [workspaceId]. */
+    fun deleteStoryStepsByIdsForWorkspace(stepIds: Collection<String>, workspaceId: String) {
+        if (stepIds.isEmpty()) return
+        storyStepQueries?.deleteByIdsForWorkspace(stepIds.distinct(), workspaceId)
     }
 
     /** The document's tag links are replaced whole, like its story steps. */
@@ -357,6 +389,7 @@ class DocumentSqlBeDao(
                                 ?.map(SpanInfo::fromString)
                                 ?.toSet()
                                 ?: emptySet(),
+                            lastUpdatedAt = innerContent.last_updated_at_,
                             documentLink = innerContent.link_to_document?.let { docId ->
                                 val title = documentQueries.selectTitleByDocumentId(docId)
                                     .executeAsOneOrNull()
@@ -427,6 +460,7 @@ class DocumentSqlBeDao(
                                 ?.map(SpanInfo::fromString)
                                 ?.toSet()
                                 ?: emptySet(),
+                            lastUpdatedAt = innerContent.last_updated_at_,
                             documentLink = innerContent.link_to_document?.let { docId ->
                                 val title = documentQueries.selectTitleByDocumentId(docId)
                                     .executeAsOneOrNull()
@@ -500,6 +534,7 @@ class DocumentSqlBeDao(
                                 ?.map(SpanInfo::fromString)
                                 ?.toSet()
                                 ?: emptySet(),
+                            lastUpdatedAt = innerContent.last_updated_at_,
                             documentLink = innerContent.link_to_document?.let { docId ->
                                 val title = documentQueries.selectTitleByDocumentId(docId)
                                     .executeAsOneOrNull()
@@ -573,6 +608,7 @@ class DocumentSqlBeDao(
                                 ?.map(SpanInfo::fromString)
                                 ?.toSet()
                                 ?: emptySet(),
+                            lastUpdatedAt = innerContent.last_updated_at_,
                             documentLink = innerContent.link_to_document?.let { docId ->
                                 val title = documentQueries.selectTitleByDocumentId(docId)
                                     .executeAsOneOrNull()
@@ -651,6 +687,7 @@ class DocumentSqlBeDao(
                                 ?.map(SpanInfo::fromString)
                                 ?.toSet()
                                 ?: emptySet(),
+                            lastUpdatedAt = innerContent.last_updated_at_,
                             documentLink = innerContent.link_to_document?.let { docId ->
                                 val title = documentQueries.selectTitleByDocumentId(docId)
                                     .executeAsOneOrNull()
@@ -725,6 +762,7 @@ class DocumentSqlBeDao(
                                 ?.map(SpanInfo::fromString)
                                 ?.toSet()
                                 ?: emptySet(),
+                            lastUpdatedAt = innerContent.last_updated_at_,
                             documentLink = innerContent.link_to_document?.let { docId ->
                                 val title = documentQueries.selectTitleByDocumentId(docId)
                                     .executeAsOneOrNull()
@@ -800,6 +838,7 @@ class DocumentSqlBeDao(
                                 ?.map(SpanInfo::fromString)
                                 ?.toSet()
                                 ?: emptySet(),
+                            lastUpdatedAt = innerContent.last_updated_at_,
                             documentLink = innerContent.link_to_document?.let { linkDocId ->
                                 val title = documentQueries.selectTitleByDocumentId(linkDocId)
                                     .executeAsOneOrNull()
@@ -874,6 +913,7 @@ class DocumentSqlBeDao(
                                 ?.map(SpanInfo::fromString)
                                 ?.toSet()
                                 ?: emptySet(),
+                            lastUpdatedAt = innerContent.last_updated_at_,
                             documentLink = innerContent.link_to_document?.let { docId ->
                                 val title = documentQueries.selectTitleByDocumentId(docId)
                                     .executeAsOneOrNull()
@@ -945,6 +985,7 @@ class DocumentSqlBeDao(
                                 ?.map(SpanInfo::fromString)
                                 ?.toSet()
                                 ?: emptySet(),
+                            lastUpdatedAt = innerContent.last_updated_at_,
                             documentLink = innerContent.link_to_document?.let { docId ->
                                 val docTitle = documentQueries.selectTitleByDocumentId(docId)
                                     .executeAsOneOrNull()
@@ -1290,6 +1331,7 @@ class DocumentSqlBeDao(
                                 ?.map(SpanInfo::fromString)
                                 ?.toSet()
                                 ?: emptySet(),
+                            lastUpdatedAt = innerContent.last_updated_at_,
                             documentLink = innerContent.link_to_document?.let { linkDocId ->
                                 val title = documentQueries.selectTitleByDocumentId(linkDocId)
                                     .executeAsOneOrNull()

@@ -6,16 +6,21 @@ import io.writeopia.sdk.model.document.DocumentInfo
 import io.writeopia.sdk.model.document.info
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.story.StoryStep
+import io.writeopia.sdk.models.story.StoryStepTombstone
 import io.writeopia.sdk.repository.DocumentRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
+import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
 class InMemoryDocumentRepository : DocumentRepository {
 
     private val documentsMap: MutableMap<String, Document> = mutableMapOf()
+
+    /** The steps deleted here and not yet sent, by step id. */
+    private val tombstones: MutableMap<String, StoryStepTombstone> = mutableMapOf()
 
     // Holds documents grouped by parentId for reactive updates
     private val documentsGroupedByParentIdFlow = MutableStateFlow<Map<String, List<Document>>>(emptyMap())
@@ -77,29 +82,36 @@ class InMemoryDocumentRepository : DocumentRepository {
     }
 
     override suspend fun saveDocument(document: Document) {
-        documentsMap[document.id] = document
+        documentsMap[document.id] = document.copy(
+            content = document.content.filterNot { (_, step) -> step.id in tombstones }
+        )
         refreshDocuments()
     }
 
     override suspend fun saveDocumentMetadata(document: Document) {
         documentsMap[document.id]?.let { currentDocument ->
-            documentsMap[document.id] = currentDocument.copy(title = document.title)
+            // Everything but the content, the comments and the tags.
+            documentsMap[document.id] = document.copy(
+                content = currentDocument.content,
+                commentConversations = currentDocument.commentConversations,
+                tagIds = currentDocument.tagIds,
+            )
             refreshDocuments()
         }
     }
 
     override suspend fun saveStoryStep(storyStep: StoryStep, position: Double, documentId: String) {
-        documentsMap[documentId]?.let { document ->
-            val newContent = document.content + (position to storyStep)
-            documentsMap[documentId] = document.copy(content = newContent)
-            refreshDocuments()
-        }
+        saveStorySteps(listOf(position to storyStep), documentId)
     }
 
     override suspend fun saveStorySteps(steps: List<Pair<Double, StoryStep>>, documentId: String) {
         documentsMap[documentId]?.let { document ->
             val newContent = document.content.toMutableMap()
             steps.forEach { (position, storyStep) ->
+                // A step deleted here is never written back.
+                if (storyStep.id in tombstones) return@forEach
+                // The same step at another position moves there.
+                newContent.entries.removeAll { (_, step) -> step.id == storyStep.id }
                 newContent[position] = storyStep
             }
             documentsMap[documentId] = document.copy(content = newContent)
@@ -109,11 +121,37 @@ class InMemoryDocumentRepository : DocumentRepository {
 
     override suspend fun deleteStoryStep(storyStepId: String, documentId: String) {
         documentsMap[documentId]?.let { document ->
+            tombstones[storyStepId] = StoryStepTombstone(
+                stepId = storyStepId,
+                documentId = documentId,
+                workspaceId = document.workspaceId,
+                deletedAt = Clock.System.now().toEpochMilliseconds()
+            )
             val newContent = document.content.filterNot { (_, step) -> step.id == storyStepId }
                 .values.mapIndexed { index, step -> index.toDouble() to step }.toMap()
             documentsMap[documentId] = document.copy(content = newContent)
             refreshDocuments()
         }
+    }
+
+    override suspend fun loadStoryStepTombstones(workspaceId: String): List<StoryStepTombstone> =
+        tombstones.values.filter { tombstone -> tombstone.workspaceId == workspaceId }
+
+    override suspend fun deleteStoryStepTombstones(stepIds: Collection<String>) {
+        stepIds.forEach(tombstones::remove)
+    }
+
+    override suspend fun deleteStoryStepsByIds(stepIds: Collection<String>, workspaceId: String) {
+        val ids = stepIds.toSet()
+        documentsMap.values
+            .filter { document -> document.workspaceId == workspaceId }
+            .forEach { document ->
+                val newContent = document.content.filterNot { (_, step) -> step.id in ids }
+                if (newContent.size != document.content.size) {
+                    documentsMap[document.id] = document.copy(content = newContent)
+                }
+            }
+        refreshDocuments()
     }
 
     override suspend fun updateStoryStepUrl(url: String, id: String) {
@@ -198,7 +236,12 @@ class InMemoryDocumentRepository : DocumentRepository {
     override suspend fun loadOutdatedDocumentsByFolder(folderId: String, workspaceId: String): List<Document> = emptyList()
 
     override suspend fun loadOutdatedDocumentsForWorkspace(workspaceId: String): List<Document> =
-        emptyList()
+        documentsMap.values.filter { document ->
+            val lastSyncedAt = document.lastSyncedAt
+            document.workspaceId == workspaceId &&
+                !document.deleted &&
+                (lastSyncedAt == null || document.lastUpdatedAt > lastSyncedAt)
+        }
 
     override suspend fun loadDocumentsByParentId(parentId: String, workspaceId: String): List<Document> =
         documentsMap.values.filter { it.parentId == parentId && it.workspaceId == workspaceId }

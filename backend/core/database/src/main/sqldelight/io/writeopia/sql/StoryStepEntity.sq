@@ -83,3 +83,25 @@ SELECT *
 FROM story_step_entity
 WHERE parent_id = ?
 ORDER BY position;
+
+-- The document of each step, for the deletions a client sends by id.
+selectDocumentIdsByIds:
+SELECT id, document_id
+FROM story_step_entity
+WHERE id IN ?;
+
+-- Deletions scoped to the workspace, so an id can't reach another one's documents.
+deleteByIdsForWorkspace:
+DELETE
+FROM story_step_entity
+WHERE id IN ? AND document_id IN (
+  SELECT id
+  FROM document_entity
+  WHERE workspace_id = ?
+);
+
+-- The edit time of each step of a document, to keep the newer copy on a save.
+selectTimestampsByDocumentId:
+SELECT id, last_updated_at
+FROM story_step_entity
+WHERE document_id = ?;

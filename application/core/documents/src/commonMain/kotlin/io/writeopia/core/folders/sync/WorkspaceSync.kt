@@ -10,17 +10,21 @@ import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.repository.DocumentRepository
 import kotlin.time.Clock
-import kotlin.time.Instant
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
+/**
+ * Syncs the whole workspace, the way [FolderSync] syncs a folder: documents go and come one
+ * step at a time through [DocumentSyncService], never replaced whole.
+ */
 class WorkspaceSync(
     private val folderRepository: FolderRepository,
     private val documentRepository: DocumentRepository,
     private val authRepository: AuthRepository,
     private val documentsApi: DocumentsApi,
-    private val documentConflictHandler: DocumentConflictHandler,
+    private val documentSyncService: DocumentSyncService,
     private val folderConflictHandler: FolderConflictHandler,
     private val imageSync: ImageSync,
     private val documentTagRepository: DocumentTagRepository? = null,
@@ -58,22 +62,17 @@ class WorkspaceSync(
                 return ResultData.Error()
             }
 
-            val localOutdatedDocs =
-                documentRepository.loadOutdatedDocumentsForWorkspace(workspaceId)
+            // Deletions first, then the edited steps and the metadata of the outdated documents.
+            val deletedHere = documentSyncService.sendDeletedSteps(workspaceId) ?: return ResultData.Error()
+
+            val localOutdatedDocs = documentRepository.loadOutdatedDocumentsForWorkspace(workspaceId)
+            documentSyncService.syncDocuments(localOutdatedDocs, workspaceId) ?: return ResultData.Error()
+
             val localOutdatedFolders = folderRepository.localOutDatedFolders(workspaceId)
-
-            val documentsNotSent = documentConflictHandler.handleConflict(
-                localOutdatedDocs,
-                newDocuments,
-            )
-
             val foldersNotSent = folderConflictHandler.handleConflict(
                 localFolders = localOutdatedFolders,
                 externalFolders = newFolders,
             )
-
-            val resultSendDocuments =
-                documentsApi.sendDocuments(documentsNotSent, workspaceId)
 
             val resultSendFolders = documentsApi.sendFolders(foldersNotSent, workspaceId)
 
@@ -84,20 +83,8 @@ class WorkspaceSync(
             val resultSendTags =
                 if (tagsNotSent.isEmpty()) ResultData.Complete(Unit) else documentsApi.sendTags(tagsNotSent, workspaceId)
 
-            if (
-                resultSendDocuments is ResultData.Complete &&
-                resultSendFolders is ResultData.Complete &&
-                resultSendTags is ResultData.Complete
-            ) {
-                // Documents and folders were sent successfully.
-                // Update lastSyncedAt for sent items to prevent re-sending them.
+            if (resultSendFolders is ResultData.Complete && resultSendTags is ResultData.Complete) {
                 val syncTime = Clock.System.now()
-
-                // Update lastSyncedAt for documents that were sent
-                documentsNotSent.forEach { doc ->
-                    val updatedDoc = doc.copy(lastSyncedAt = syncTime)
-                    documentRepository.saveDocument(updatedDoc)
-                }
 
                 // Update lastSyncedAt for folders that were sent
                 foldersNotSent.forEach { folder ->
@@ -108,6 +95,13 @@ class WorkspaceSync(
                 tagsNotSent.forEach { tag ->
                     documentTagRepository?.upsertTag(tag.copy(lastSyncedAt = syncTime))
                 }
+
+                // What changed elsewhere: deletions first, then the documents, step by step.
+                val deletionsSince = folderRepository.getContentSyncedAt(DocumentSyncService.DELETIONS_WATERMARK_ID, workspaceId)
+                val received = documentSyncService.receiveDeletedSteps(workspaceId, deletionsSince ?: Instant.DISTANT_PAST)
+                    ?: return ResultData.Error()
+                documentSyncService.mergeReceivedDocuments(newDocuments, excluding = deletedHere + received.stepIds)
+                folderRepository.setContentSyncedAt(DocumentSyncService.DELETIONS_WATERMARK_ID, workspaceId, received.serverTimestamp)
 
                 documentRepository.refreshDocuments()
                 folderRepository.refreshFolders()

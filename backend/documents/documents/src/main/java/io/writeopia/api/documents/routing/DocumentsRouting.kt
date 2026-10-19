@@ -54,6 +54,8 @@ import io.writeopia.sdk.serialization.request.LinkCardDescriptionRequest
 import io.writeopia.sdk.serialization.request.MoveDocumentRequest
 import io.writeopia.sdk.serialization.request.MoveFolderRequest
 import io.writeopia.sdk.serialization.request.StoryStepSyncRequest
+import io.writeopia.sdk.serialization.request.DeleteStoryStepsRequest
+import io.writeopia.sdk.serialization.response.DeletedStoryStepsResponse
 import io.writeopia.sdk.serialization.request.UpdateFolderRequest
 import io.writeopia.sdk.serialization.request.UpsertDocumentRequest
 import io.writeopia.sdk.serialization.request.WorkspaceDiffRequest
@@ -1088,6 +1090,47 @@ fun Routing.documentsRoute(
                     status = HttpStatusCode.InternalServerError,
                     message = "${e.message}"
                 )
+            }
+        }
+    }
+
+    // The steps a device deleted, sent before its content so none of them comes back.
+    post<DeleteStoryStepsRequest>("/api/docs/workspace/{workspaceId}/steps/delete") { request ->
+        val userId = call.requirePremiumUserId(writeopiaDb, debug) ?: return@post
+        val workspaceId = call.pathParameters["workspaceId"] ?: ""
+
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            try {
+                DocumentsService.deleteStorySteps(request.tombstones, workspaceId, writeopiaDb, embeddingService)
+                call.respond(status = HttpStatusCode.OK, message = "Accepted")
+            } catch (e: Exception) {
+                logger.error("Error deleting story steps - workspaceId: $workspaceId", e)
+                call.respond(status = HttpStatusCode.InternalServerError, message = "${e.message}")
+            }
+        }
+    }
+
+    // The ids of the steps deleted in the workspace since `since` (epoch milliseconds).
+    get("/api/docs/workspace/{workspaceId}/steps/deleted") {
+        val userId = call.requirePremiumUserId(writeopiaDb, debug) ?: return@get
+        val workspaceId = call.pathParameters["workspaceId"] ?: ""
+        val since = call.request.queryParameters["since"]?.toLongOrNull()
+        if (since == null) {
+            call.respond(status = HttpStatusCode.BadRequest, message = "since must be epoch milliseconds")
+            return@get
+        }
+
+        runIfMember(userId, workspaceId, writeopiaDb, debug) {
+            try {
+                val serverTimestamp = Clock.System.now().toEpochMilliseconds()
+                val stepIds = DocumentsService.deletedStoryStepIds(workspaceId, since, writeopiaDb)
+                call.respond(
+                    status = HttpStatusCode.OK,
+                    message = DeletedStoryStepsResponse(stepIds = stepIds, serverTimestamp = serverTimestamp)
+                )
+            } catch (e: Exception) {
+                logger.error("Error loading deleted story steps - workspaceId: $workspaceId", e)
+                call.respond(status = HttpStatusCode.InternalServerError, message = "${e.message}")
             }
         }
     }

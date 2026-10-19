@@ -400,17 +400,78 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
 
     // MARK: - StepStore
 
+    /// The editor's word: a step it deletes leaves a tombstone, so no sync brings it back until
+    /// the backend is told; a step it writes again (an undo, say) loses its tombstone.
     public func saveEdit(document: WrDocument, changedSteps: [StoryStep], deletedStepIds: [String]) throws {
         let document = try keepingStoredIcon(document)
+        let now = Date.nowMillis
         try db.transaction {
             try writeMetadata(document)
             for step in changedSteps {
+                try db.run("DELETE FROM story_step_tombstone WHERE step_id = ?", [.text(step.id)])
                 try writeStep(step, documentId: document.id)
             }
             for id in deletedStepIds {
                 try db.run("DELETE FROM story_step WHERE id = ? AND document_id = ?", [.text(id), .text(document.id)])
+                try db.run(
+                    "INSERT OR REPLACE INTO story_step_tombstone (step_id, document_id, workspace_id, deleted_at) VALUES (?, ?, ?, ?)",
+                    [.text(id), .text(document.id), .text(document.workspaceId.isEmpty ? workspaceId : document.workspaceId), .integer(now)]
+                )
             }
         }
+    }
+
+    // MARK: - Step tombstones, used by the sync
+
+    /// The steps deleted here that the backend has not been told about yet, oldest first.
+    public func storedStepTombstones() throws -> [StepTombstone] {
+        try db.query(
+            "SELECT step_id, document_id, workspace_id, deleted_at FROM story_step_tombstone ORDER BY deleted_at"
+        ) { row in
+            guard let stepId = row.text(0) else { return nil }
+            return StepTombstone(
+                stepId: stepId,
+                documentId: row.text(1) ?? "",
+                workspaceId: row.text(2) ?? workspaceId,
+                deletedAt: row.integer(3) ?? 0
+            )
+        }
+    }
+
+    /// Forgets the tombstones of `stepIds`, once the backend has them.
+    public func deleteStepTombstones(_ stepIds: [String]) throws {
+        for id in stepIds {
+            try db.run("DELETE FROM story_step_tombstone WHERE step_id = ?", [.text(id)])
+        }
+    }
+
+    /// Removes steps deleted elsewhere. No tombstone is kept: the backend has one already.
+    public func deleteSteps(ids stepIds: [String]) throws {
+        try db.transaction {
+            for id in stepIds {
+                try db.run("DELETE FROM story_step WHERE id = ?", [.text(id)])
+            }
+        }
+    }
+
+    /// The ids among `stepIds` with a tombstone: a sync must not write them.
+    func tombstonedIds(among stepIds: [String]) throws -> Set<String> {
+        var found: Set<String> = []
+        for id in stepIds {
+            let rows = try db.query("SELECT step_id FROM story_step_tombstone WHERE step_id = ?", [.text(id)]) { $0.text(0) }
+            if !rows.isEmpty { found.insert(id) }
+        }
+        return found
+    }
+
+    /// Where the next request for the deletions made elsewhere starts from: the backend's time
+    /// (epoch milliseconds) before it answered the last one; nil before the first time.
+    public func stepDeletionsSyncedAt() throws -> Int64? {
+        try meta("step_deletions_synced_at").flatMap(Int64.init)
+    }
+
+    public func setStepDeletionsSyncedAt(_ millis: Int64) throws {
+        try setMeta("step_deletions_synced_at", String(millis))
     }
 
     // MARK: - Direct access, used by the sync
@@ -457,13 +518,32 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
         try db.query("\(Self.folderColumns) FROM folder WHERE parent_id = ?", [.text(folderId)], row: folder)
     }
 
-    /// Stores the whole document, replacing its steps.
+    /// Stores the whole document, replacing its steps. A step deleted here (it has a tombstone
+    /// the backend doesn't know of yet) is never written back.
     public func store(_ document: WrDocument) throws {
+        let tombstoned = try tombstonedIds(among: document.content.map(\.id))
         try db.transaction {
             try writeMetadata(document)
             try db.run("DELETE FROM story_step WHERE document_id = ?", [.text(document.id)])
-            for step in document.content {
+            for step in document.content where !tombstoned.contains(step.id) {
                 try writeStep(step, documentId: document.id)
+            }
+        }
+    }
+
+    /// Stores the document's metadata and tags; its steps are left as they are.
+    public func storeMetadata(_ document: WrDocument) throws {
+        try db.transaction {
+            try writeMetadata(document)
+        }
+    }
+
+    /// Writes these steps of the document, the rest untouched; a step deleted here is skipped.
+    public func storeSteps(_ steps: [StoryStep], documentId: String) throws {
+        let tombstoned = try tombstonedIds(among: steps.map(\.id))
+        try db.transaction {
+            for step in steps where !tombstoned.contains(step.id) {
+                try writeStep(step, documentId: documentId)
             }
         }
     }
@@ -489,6 +569,7 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
         try db.transaction {
             try db.run("DELETE FROM document_tag_link WHERE document_id = ?", [.text(id)])
             try db.run("DELETE FROM story_step WHERE document_id = ?", [.text(id)])
+            try db.run("DELETE FROM story_step_tombstone WHERE document_id = ?", [.text(id)])
             try db.run("DELETE FROM document WHERE id = ?", [.text(id)])
             try db.run(
                 "DELETE FROM presentation_step WHERE presentation_id IN (SELECT id FROM presentation WHERE document_id = ?)",
@@ -650,6 +731,13 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
                 PRIMARY KEY (document_id, id)
             );
             CREATE INDEX IF NOT EXISTS story_step_document ON story_step(document_id);
+
+            CREATE TABLE IF NOT EXISTS story_step_tombstone (
+                step_id TEXT PRIMARY KEY NOT NULL,
+                document_id TEXT NOT NULL,
+                workspace_id TEXT NOT NULL,
+                deleted_at INTEGER NOT NULL
+            );
 
             CREATE TABLE IF NOT EXISTS folder (
                 id TEXT PRIMARY KEY NOT NULL,

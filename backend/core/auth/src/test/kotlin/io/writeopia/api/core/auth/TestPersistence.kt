@@ -1,6 +1,7 @@
 package io.writeopia.api.core.auth
 
 import io.writeopia.databse.HikariCp
+import io.writeopia.databse.createWriteopiaSchema
 import io.writeopia.sql.WriteopiaDbBackend
 
 /**
@@ -8,6 +9,6 @@ import io.writeopia.sql.WriteopiaDbBackend
  */
 fun configureTestPersistence(): WriteopiaDbBackend {
     val driver = HikariCp.driver(debugMode = true)
-    HikariCp.initializeSchemaIfNeeded { WriteopiaDbBackend.Schema.create(it) }
+    HikariCp.initializeSchemaIfNeeded(::createWriteopiaSchema)
     return WriteopiaDbBackend(driver)
 }

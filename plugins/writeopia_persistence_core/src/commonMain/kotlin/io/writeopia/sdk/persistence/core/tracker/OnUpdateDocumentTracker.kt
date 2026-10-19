@@ -146,7 +146,8 @@ class OnUpdateDocumentTracker(
 
                     documentUpdate.saveStoryStep(
                         storyStep = lastEdit.storyStep.copy(
-                            localId = GenerateId.generate()
+                            localId = GenerateId.generate(),
+                            lastUpdatedAt = nowMillis()
                         ),
                         position = lastEdit.position,
                         documentId = documentInfo.id,
@@ -215,7 +216,7 @@ class OnUpdateDocumentTracker(
 
                     if (!lastEdit.storyStep.ephemeral) {
                         documentUpdate.saveStoryStep(
-                            storyStep = lastEdit.storyStep,
+                            storyStep = lastEdit.storyStep.copy(lastUpdatedAt = nowMillis()),
                             position = lastEdit.position,
                             documentId = documentInfo.id
                         )
@@ -254,7 +255,7 @@ class OnUpdateDocumentTracker(
 
                     if (!originalStep.second.ephemeral && !newStep.second.ephemeral) {
                         documentUpdate.saveStorySteps(
-                            steps = listOf(originalStep, newStep),
+                            steps = listOf(originalStep, newStep).stamped(),
                             documentId = documentInfo.id
                         )
                     }
@@ -285,7 +286,7 @@ class OnUpdateDocumentTracker(
 
                     if (nonEphemeralSteps.isNotEmpty()) {
                         documentUpdate.saveStorySteps(
-                            steps = nonEphemeralSteps,
+                            steps = nonEphemeralSteps.stamped(),
                             documentId = documentInfo.id
                         )
                     }
@@ -349,7 +350,7 @@ class OnUpdateDocumentTracker(
                     val (dbPos, updatedStep) = lastEdit.updatedStep
                     if (!updatedStep.ephemeral) {
                         documentUpdate.saveStorySteps(
-                            steps = listOf(dbPos to updatedStep),
+                            steps = listOf(dbPos to updatedStep.copy(lastUpdatedAt = nowMillis())),
                             documentId = documentInfo.id
                         )
                     }
@@ -406,6 +407,17 @@ class OnUpdateDocumentTracker(
             }
         }
     }
+}
+
+private fun nowMillis(): Long = Clock.System.now().toEpochMilliseconds()
+
+/**
+ * The steps as edited now. The time goes with them to the database, so the sync can tell the
+ * steps changed since it last sent the document from the rest.
+ */
+private fun List<Pair<Double, StoryStep>>.stamped(): List<Pair<Double, StoryStep>> {
+    val now = nowMillis()
+    return map { (position, step) -> position to step.copy(lastUpdatedAt = now) }
 }
 
 private data class TrackedEdition(
