@@ -705,9 +705,10 @@ class WriteopiaStateManager(
 
             val newText = if (
                 commandInfo.commandTrigger == CommandTrigger.WRITTEN &&
-                story.text?.trim()?.startsWith(commandText.trim()) == true
+                storyText.trimStart().startsWith(commandText)
             ) {
-                storyText.subSequence(commandText.length, storyText.length).toString()
+                // The command leaves the line with the space after it ("/box " of "/box text").
+                storyText.trimStart().removePrefix(commandText).removePrefix(" ")
             } else {
                 storyText
             }

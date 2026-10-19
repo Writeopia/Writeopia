@@ -1304,6 +1304,122 @@ class WriteopiaStateManagerTest {
         assertEquals("", story.text)
     }
 
+    @Test
+    fun typingTheHashesOfAHeadingOnlyMakesItWhenTheSpaceComes() = runTest {
+        val now = Clock.System.now()
+        val storyManager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        )
+        storyManager.loadDocument(
+            Document(
+                content = mapOf(0.0 to StoryStep(type = StoryTypes.TEXT.type, text = "")),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+            )
+        )
+
+        fun type(text: String) {
+            storyManager.handleTextInput(
+                TextInput(text, start = text.length, end = text.length, spans = emptySet()),
+                position = 0.0,
+                lineBreakByContent = false
+            )
+        }
+
+        type("#")
+        type("##")
+        advanceUntilIdle()
+        val typing = storyManager.currentStory.value.stories[0.0]!!
+        assertEquals("##", typing.text)
+        assertTrue(typing.tags.isEmpty(), "Without the space the hashes are plain text")
+
+        type("## ")
+        advanceUntilIdle()
+        val heading = storyManager.currentStory.value.stories[0.0]!!
+        assertEquals(StoryTypes.TEXT.type, heading.type)
+        assertEquals("", heading.text)
+        assertTrue(heading.tags.any { it.tag == Tag.H2 })
+    }
+
+    @Test
+    fun typingDashesMakesADividerAndNotAList() = runTest {
+        val now = Clock.System.now()
+        val storyManager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        )
+        storyManager.loadDocument(
+            Document(
+                content = mapOf(0.0 to StoryStep(type = StoryTypes.TEXT.type, text = "")),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+            )
+        )
+
+        fun type(text: String) {
+            storyManager.handleTextInput(
+                TextInput(text, start = text.length, end = text.length, spans = emptySet()),
+                position = 0.0,
+                lineBreakByContent = false
+            )
+        }
+
+        type("-")
+        type("--")
+        advanceUntilIdle()
+        assertEquals(StoryTypes.TEXT.type, storyManager.currentStory.value.stories[0.0]!!.type)
+        assertEquals("--", storyManager.currentStory.value.stories[0.0]!!.text)
+
+        type("---")
+        advanceUntilIdle()
+        assertEquals(StoryTypes.DIVIDER.type, storyManager.currentStory.value.stories[0.0]!!.type)
+    }
+
+    @Test
+    fun aDashAndASpaceMakeAListItem() = runTest {
+        val now = Clock.System.now()
+        val storyManager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        )
+        storyManager.loadDocument(
+            Document(
+                content = mapOf(0.0 to StoryStep(type = StoryTypes.TEXT.type, text = "")),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+            )
+        )
+
+        storyManager.handleTextInput(
+            TextInput("-", start = 1, end = 1, spans = emptySet()),
+            position = 0.0,
+            lineBreakByContent = false
+        )
+        storyManager.handleTextInput(
+            TextInput("- ", start = 2, end = 2, spans = emptySet()),
+            position = 0.0,
+            lineBreakByContent = false
+        )
+        advanceUntilIdle()
+
+        val story = storyManager.currentStory.value.stories[0.0]!!
+        assertEquals(StoryTypes.UNORDERED_LIST_ITEM.type, story.type)
+        assertEquals("", story.text)
+    }
+
     // Tests for acceptStoryStep with markdown processing
 
     @Test
@@ -1355,11 +1471,11 @@ class WriteopiaStateManagerTest {
             firstStory.tags.any { it.tag == Tag.H3 },
             "First story should have H3 tag"
         )
-        // Note: The command handler strips "###" but leaves the space after it
+        // The command handler strips "###" and the space after it
         assertEquals(
-            " This is a heading",
+            "This is a heading",
             firstStory.text,
-            "H3 text should have ### removed (space remains)"
+            "H3 text should have ### removed"
         )
     }
 
@@ -1403,10 +1519,10 @@ class WriteopiaStateManagerTest {
         }
 
         assertEquals(3, sortedStories.size, "Should have 3 list items")
-        // Note: The command handler strips "-" but leaves the space after it
-        assertEquals(" First item", sortedStories[0].value.text)
-        assertEquals(" Second item", sortedStories[1].value.text)
-        assertEquals(" Third item", sortedStories[2].value.text)
+        // The command handler strips "-" and the space after it
+        assertEquals("First item", sortedStories[0].value.text)
+        assertEquals("Second item", sortedStories[1].value.text)
+        assertEquals("Third item", sortedStories[2].value.text)
     }
 
     @Test
@@ -1450,9 +1566,9 @@ class WriteopiaStateManagerTest {
         }
 
         assertEquals(2, sortedStories.size, "Should have 2 check items")
-        // Note: The command handler strips "[]" but leaves the space after it
-        assertEquals(" Task one", sortedStories[0].value.text)
-        assertEquals(" Task two", sortedStories[1].value.text)
+        // The command handler strips "[]" and the space after it
+        assertEquals("Task one", sortedStories[0].value.text)
+        assertEquals("Task two", sortedStories[1].value.text)
     }
 
     @Test
@@ -1535,33 +1651,33 @@ class WriteopiaStateManagerTest {
 
         assertEquals(4, sortedStories.size, "Should have 4 heading stories")
 
-        // Check H1 - Note: The command handler strips "#" but leaves the space after it
+        // Check H1 - The command handler strips "#" and the space after it
         assertTrue(
             sortedStories[0].value.tags.any { it.tag == Tag.H1 },
             "First story should have H1 tag"
         )
-        assertEquals(" Heading 1", sortedStories[0].value.text)
+        assertEquals("Heading 1", sortedStories[0].value.text)
 
         // Check H2
         assertTrue(
             sortedStories[1].value.tags.any { it.tag == Tag.H2 },
             "Second story should have H2 tag"
         )
-        assertEquals(" Heading 2", sortedStories[1].value.text)
+        assertEquals("Heading 2", sortedStories[1].value.text)
 
         // Check H3
         assertTrue(
             sortedStories[2].value.tags.any { it.tag == Tag.H3 },
             "Third story should have H3 tag"
         )
-        assertEquals(" Heading 3", sortedStories[2].value.text)
+        assertEquals("Heading 3", sortedStories[2].value.text)
 
         // Check H4
         assertTrue(
             sortedStories[3].value.tags.any { it.tag == Tag.H4 },
             "Fourth story should have H4 tag"
         )
-        assertEquals(" Heading 4", sortedStories[3].value.text)
+        assertEquals("Heading 4", sortedStories[3].value.text)
     }
 
     @Test
@@ -1601,18 +1717,18 @@ class WriteopiaStateManagerTest {
             sortedStories[0].value.tags.any { it.tag == Tag.H3 },
             "First story should have H3 tag"
         )
-        assertEquals(" Heading", sortedStories[0].value.text)
+        assertEquals("Heading", sortedStories[0].value.text)
 
         // Second and third should be list items
         assertEquals(StoryTypes.UNORDERED_LIST_ITEM.type, sortedStories[1].value.type)
-        assertEquals(" List item 1", sortedStories[1].value.text)
+        assertEquals("List item 1", sortedStories[1].value.text)
 
         assertEquals(StoryTypes.UNORDERED_LIST_ITEM.type, sortedStories[2].value.type)
-        assertEquals(" List item 2", sortedStories[2].value.text)
+        assertEquals("List item 2", sortedStories[2].value.text)
 
         // Fourth should be check item
         assertEquals(StoryTypes.CHECK_ITEM.type, sortedStories[3].value.type)
-        assertEquals(" Task item", sortedStories[3].value.text)
+        assertEquals("Task item", sortedStories[3].value.text)
 
         // Fifth should be regular text (no command, no leading space)
         assertEquals(StoryTypes.TEXT.type, sortedStories[4].value.type)

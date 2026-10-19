@@ -22,7 +22,7 @@ class TextCommandHandler(
     }
 
     /**
-     * Whether [text] is, as a whole, a command (e.g. "[]" or "---").
+     * Whether [text] is, as a whole, a command (e.g. "[]", "---" or "## ").
      */
     fun isExactCommand(text: String, step: StoryStep): Boolean =
         !excludeTypes.contains(step.type.number) && trie.search(text)
@@ -30,27 +30,25 @@ class TextCommandHandler(
     fun handleCommand(text: String, step: StoryStep, position: Double): Boolean {
         if (excludeTypes.contains(step.type.number)) return false
 
-        // First, check if the entire text is an exact command match (e.g., "---" for divider)
-        if (trie.search(text)) {
-            commandsMap[text]!!.invoke(step.copy(text = text), position)
-            return true
-        }
+        val command = findCommand(text) ?: return false
+        commandsMap[command]!!.invoke(step.copy(text = text), position)
+        return true
+    }
 
-        // Fall back to space-based command detection (e.g., "### heading")
-        if (!text.contains(' ')) return false
+    /**
+     * The command [text] starts with: the whole text ("---"), the text up to and including its
+     * first space ("## " of "## Heading"), or the first word ("---" of "--- "). A command whose
+     * text ends with a space is only found once that space is typed, so "#" and "##" stay plain
+     * text while "###" is being written.
+     */
+    private fun findCommand(text: String): String? {
+        if (trie.search(text)) return text
 
-        val textArray = text.split(" ")
-        if (textArray.isEmpty()) return false
+        val space = text.indexOf(' ')
+        if (space < 0) return null
 
-        val command = textArray[0]
-        val hasCommand = trie.search(command)
-
-        return if (hasCommand) {
-            commandsMap[command]!!.invoke(step.copy(text = text), position)
-            true
-        } else {
-            false
-        }
+        return listOf(text.substring(0, space + 1), text.substring(0, space))
+            .firstOrNull(trie::search)
     }
 
     companion object {

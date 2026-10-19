@@ -470,7 +470,7 @@ private let sample = document([
     @Test func commandsNeedTheSpaceAndTheStartOfTheLineAndSkipTheTitle() {
         let manager = manager()
         // Without the space nothing happens, so longer commands can still be typed.
-        for typed in ["#", "##", "-", "--", "---", "[]", "```", "/box"] {
+        for typed in ["#", "##", "###", "-", "--", "---", "-[", "[]", "```", "/box"] {
             manager.handleTextInput(typed, cursor: typed.count, stepId: "a")
             #expect(manager.step(withId: "a")?.type == .text, "\(typed) alone is plain text")
             #expect(manager.step(withId: "a")?.text == typed)

@@ -141,7 +141,9 @@ class ContentHandler(
                 commandTrigger == CommandTrigger.WRITTEN &&
                 storyText?.startsWith(commandText) == true
             ) {
-                storyText.subSequence(commandText.length, storyText.length).toString()
+                // The command leaves the line with the space that triggered it ("## " of
+                // "## Heading"), so the text does not start with a space.
+                storyText.removePrefix(commandText).removePrefix(" ")
             } else {
                 storyStep.text
             }
