@@ -369,19 +369,10 @@ internal class ChooseNoteKmpViewModel(
         _editState.value = true
     }
 
-    override suspend fun currentFolderMoveDestinations(): List<FolderDestination> {
-        val folderId = (notesNavigation as? NotesNavigation.Folder)?.id ?: return emptyList()
-        val folder = notesUseCase.getFolderById(folderId) ?: return emptyList()
-
-        return moveDestinations(folder, notesUseCase.loadFoldersForWorkspace(getWorkspaceId()))
-    }
-
     override suspend fun workspaceFolders(): List<Folder> =
         notesUseCase.loadFoldersForWorkspace(getWorkspaceId())
 
-    override fun moveCurrentFolder(parentId: String) {
-        val folderId = (notesNavigation as? NotesNavigation.Folder)?.id ?: return
-
+    override fun moveFolder(folderId: String, parentId: String) {
         viewModelScope.launch(Dispatchers.Default) {
             val folder = notesUseCase.getFolderById(folderId) ?: return@launch
             if (folder.parentId == parentId) return@launch

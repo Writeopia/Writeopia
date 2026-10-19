@@ -54,7 +54,9 @@ import androidx.compose.ui.unit.dp
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.resources.WrStrings
 import io.writeopia.common.utils.icons.WrIcons
+import io.writeopia.ai.task.ui.AiOptionsSheet
 import io.writeopia.notemenu.ui.screen.FolderSharedKeys
+import io.writeopia.notemenu.ui.screen.configuration.molecules.FolderOptionsSheet
 import io.writeopia.notemenu.ui.screen.configuration.molecules.MobileConfigurationsMenu
 import io.writeopia.notemenu.ui.screen.configuration.molecules.NotesSelectionMenu
 import io.writeopia.commonui.dialogs.confirmation.DeleteConfirmationDialog
@@ -100,20 +102,30 @@ internal fun MobileChooseNoteScreen(
     val hasSelectedNotes by chooseNoteViewModel.hasSelectedNotes.collectAsState()
     val selectionHasFolders by chooseNoteViewModel.selectionHasFolders.collectAsState()
     val editState by chooseNoteViewModel.editState.collectAsState()
-    val folderEdit = chooseNoteViewModel.editFolderState.collectAsState().value
+    // The folder whose "more" button was tapped: its options open in a sheet.
+    val folderWithOptions = chooseNoteViewModel.editFolderState.collectAsState().value
     val currentFolder by chooseNoteViewModel.currentFolder.collectAsState()
-    var currentFolderDialog by remember { mutableStateOf<CurrentFolderDialog?>(null) }
+    // One flow for every folder: the one of a card and the one being displayed share it.
+    var folderAction by remember { mutableStateOf<FolderAction?>(null) }
 
-    // The options sheet closes before a dialog about the current folder opens.
-    val openCurrentFolderDialog = { dialog: CurrentFolderDialog ->
+    // The options sheet of the current folder closes before what it opened shows up.
+    val actOnCurrentFolder = { action: (Folder) -> FolderAction ->
         chooseNoteViewModel.cancelEditMenu()
-        currentFolderDialog = dialog
+        folderAction = currentFolder?.let(action)
     }
 
-    // Leaves the folder only once it's deleted locally: leaving first could cancel the deletion.
-    val deleteCurrentFolder = { folderId: String ->
-        currentFolderDialog = null
-        chooseNoteViewModel.deleteFolder(folderId, onCurrentFolderDeleted)
+    // The options sheet of the card closes before what it opened shows up.
+    val actOnFolderWithOptions = { action: (Folder) -> FolderAction ->
+        folderAction = folderWithOptions?.let(action)
+        chooseNoteViewModel.stopEditingFolder()
+    }
+
+    // Deleting the folder being displayed leaves it, but only once it's deleted locally: leaving
+    // first could cancel the deletion.
+    val deleteFolder = { folderId: String ->
+        folderAction = null
+        val onDeleted = if (folderId == currentFolder?.id) onCurrentFolderDeleted else ({})
+        chooseNoteViewModel.deleteFolder(folderId, onDeleted)
     }
 
     val showFab by derivedStateOf { !editState && !hasSelectedNotes }
@@ -221,9 +233,9 @@ internal fun MobileChooseNoteScreen(
                     sortingSelected = chooseNoteViewModel::sortingSelected,
                     sortingState = chooseNoteViewModel.orderByState,
                     folderTitle = currentFolder?.title,
-                    onEditFolder = { openCurrentFolderDialog(CurrentFolderDialog.EDIT) },
-                    onMoveFolder = { openCurrentFolderDialog(CurrentFolderDialog.MOVE) },
-                    onDeleteFolder = { openCurrentFolderDialog(CurrentFolderDialog.DELETE) },
+                    onEditFolder = { actOnCurrentFolder(FolderAction::Edit) },
+                    onMoveFolder = { actOnCurrentFolder(FolderAction::Move) },
+                    onDeleteFolder = { actOnCurrentFolder(FolderAction::Delete) },
                     // Closes the sheet for good: it would otherwise still be open on return.
                     onOpenGraph = navigateToForceGraph?.let { navigate ->
                         {
@@ -233,30 +245,44 @@ internal fun MobileChooseNoteScreen(
                     },
                 )
 
-                currentFolder?.let { folder ->
-                    when (currentFolderDialog) {
-                        CurrentFolderDialog.EDIT -> EditFileDialog(
-                            folderEdit = folder,
-                            onDismissRequest = { currentFolderDialog = null },
-                            deleteFolder = deleteCurrentFolder,
-                            editFolder = chooseNoteViewModel::updateFolder,
-                            colorSize = TOUCH_COLOR_SIZE,
-                        )
+                if (folderWithOptions != null) {
+                    FolderOptionsSheet(
+                        folderTitle = folderWithOptions.title,
+                        onDismissRequest = chooseNoteViewModel::stopEditingFolder,
+                        onEditFolder = { actOnFolderWithOptions(FolderAction::Edit) },
+                        onMoveFolder = { actOnFolderWithOptions(FolderAction::Move) },
+                        onDeleteFolder = { actOnFolderWithOptions(FolderAction::Delete) },
+                    )
+                }
 
-                        CurrentFolderDialog.MOVE -> MoveFolderDialog(
-                            folderTitle = folder.title,
-                            loadDestinations = chooseNoteViewModel::currentFolderMoveDestinations,
-                            onDismissRequest = { currentFolderDialog = null },
-                            onMove = chooseNoteViewModel::moveCurrentFolder
-                        )
+                when (val action = folderAction) {
+                    is FolderAction.Edit -> EditFolderSheet(
+                        folderEdit = action.folder,
+                        onDismissRequest = { folderAction = null },
+                        deleteFolder = deleteFolder,
+                        editFolder = chooseNoteViewModel::updateFolder,
+                        colorSize = TOUCH_COLOR_SIZE,
+                    )
 
-                        CurrentFolderDialog.DELETE -> DeleteConfirmationDialog(
-                            onConfirmation = { deleteCurrentFolder(folder.id) },
-                            onCancel = { currentFolderDialog = null },
-                        )
+                    // The same picker as moving the selected documents. The folder and what's
+                    // inside it aren't offered: a folder can't go inside itself.
+                    is FolderAction.Move -> MoveSelectionSheet(
+                        loadFolders = chooseNoteViewModel::workspaceFolders,
+                        excludedIds = setOf(action.folder.id),
+                        currentParentId = action.folder.parentId,
+                        onMove = { parentId ->
+                            folderAction = null
+                            chooseNoteViewModel.moveFolder(action.folder.id, parentId)
+                        },
+                        onDismissRequest = { folderAction = null }
+                    )
 
-                        null -> {}
-                    }
+                    is FolderAction.Delete -> DeleteConfirmationDialog(
+                        onConfirmation = { deleteFolder(action.folder.id) },
+                        onCancel = { folderAction = null },
+                    )
+
+                    null -> {}
                 }
 
                 val showCreateFolderDialog by chooseNoteViewModel.showCreateFolderDialogState.collectAsState()
@@ -278,16 +304,6 @@ internal fun MobileChooseNoteScreen(
                     )
                 }
 
-                if (folderEdit != null) {
-                    EditFileDialog(
-                        folderEdit = folderEdit,
-                        onDismissRequest = chooseNoteViewModel::stopEditingFolder,
-                        deleteFolder = chooseNoteViewModel::deleteFolder,
-                        editFolder = chooseNoteViewModel::updateFolder,
-                        colorSize = TOUCH_COLOR_SIZE,
-                    )
-                }
-
                 NotesSelectionMenu(
                     // Narrow, so it covers less of the notes: the actions scroll inside it.
                     modifier = Modifier
@@ -303,12 +319,22 @@ internal fun MobileChooseNoteScreen(
                     onDelete = chooseNoteViewModel::requestPermissionToDeleteSelection,
                     onCopy = chooseNoteViewModel::copySelectedNotes,
                     onFavorite = chooseNoteViewModel::favoriteSelectedNotes,
-                    onSummary = if (selectionHasFolders) null else chooseNoteViewModel::summarizeDocuments,
+                    // Like the desktop, the AI action is picked before it runs.
+                    onSummary = if (selectionHasFolders) null else chooseNoteViewModel::showAiOptions,
                     onClose = chooseNoteViewModel::clearSelection,
                     onMove = chooseNoteViewModel::showMoveSelection,
                     showCopy = !selectionHasFolders,
                     shape = MaterialTheme.shapes.large
                 )
+
+                val showAiOptions by chooseNoteViewModel.showAiOptionsState.collectAsState()
+
+                if (showAiOptions) {
+                    AiOptionsSheet(
+                        onSummarize = chooseNoteViewModel::summarizeDocuments,
+                        onDismiss = chooseNoteViewModel::hideAiOptions
+                    )
+                }
 
                 val showMoveSelection by chooseNoteViewModel.moveSelectionState.collectAsState()
 
@@ -334,10 +360,15 @@ private val TOUCH_COLOR_SIZE = 30.dp
 const val NAVIGATE_BACK_TEST_TAG = "NotesMenuNavigateBack"
 const val SYNCING_TEST_TAG = "NotesMenuSyncing"
 
-private enum class CurrentFolderDialog {
-    EDIT,
-    MOVE,
-    DELETE
+/** What's being done to a folder, picked in its options sheet. */
+private sealed interface FolderAction {
+    val folder: Folder
+
+    data class Edit(override val folder: Folder) : FolderAction
+
+    data class Move(override val folder: Folder) : FolderAction
+
+    data class Delete(override val folder: Folder) : FolderAction
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
