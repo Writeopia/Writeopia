@@ -22,6 +22,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
@@ -33,6 +34,10 @@ class DocumentSyncServiceTest {
     private val requests = mutableListOf<StoryStepSyncRequest>()
     private var answer: (StoryStepSyncRequest) -> StoryStepSyncResponse = { request ->
         StoryStepSyncResponse(serverTimestamp = request.requestTimestamp + 1, updatedSteps = emptyList(), deletedIds = emptyList())
+    }
+
+    init {
+        coEvery { documentsApi.sendDocuments(any(), workspaceId) } returns ResultData.Complete(Unit)
     }
 
     private val service = DocumentSyncService(
@@ -77,7 +82,7 @@ class DocumentSyncServiceTest {
         val document = storeDocument(step("old", 500), step("edited", 2_000), lastSyncedAt = 1_000)
         val before = Clock.System.now().toEpochMilliseconds()
 
-        assertTrue(service.syncDocumentSteps(document))
+        assertEquals(listOf(document.id), service.syncDocuments(listOf(document), workspaceId)?.map { it.id })
 
         assertEquals(listOf("edited"), requests.single().changes.map { it.storyStep.id })
         val stored = repository.loadDocumentById(document.id, workspaceId)!!
@@ -87,8 +92,61 @@ class DocumentSyncServiceTest {
         assertEquals(500L, stored.step("old").lastUpdatedAt)
         // Nothing is newer than the stamp: the next sync sends nothing.
         requests.clear()
-        assertTrue(service.syncDocumentSteps(stored))
+        assertEquals(listOf(stored.id), service.syncDocuments(listOf(stored), workspaceId)?.map { it.id })
         assertTrue(requests.isEmpty())
+    }
+
+    @Test
+    fun `the metadata goes without content after the steps, and nothing is stamped until it is there`() = runBlocking {
+        val document = storeDocument(step("a", 2_000, "edited"), lastSyncedAt = 1_000, lastUpdatedAt = 3_000)
+        coEvery { documentsApi.sendDocuments(any(), workspaceId) } returns ResultData.Error()
+
+        assertNull(service.syncDocuments(listOf(document), workspaceId))
+
+        // The steps went, the metadata didn't: still outdated, with its steps, for the next sync.
+        assertEquals(1, requests.size)
+        val stillOutdated = repository.loadDocumentById(document.id, workspaceId)!!
+        assertEquals(1_000L, stillOutdated.lastSyncedAt!!.toEpochMilliseconds())
+        assertEquals(2_000L, stillOutdated.step("a").lastUpdatedAt)
+
+        coEvery { documentsApi.sendDocuments(any(), workspaceId) } returns ResultData.Complete(Unit)
+        assertEquals(listOf(document.id), service.syncDocuments(listOf(stillOutdated), workspaceId)?.map { it.id })
+
+        coVerify { documentsApi.sendDocuments(match { it.single().id == document.id && it.single().content.isEmpty() }, workspaceId) }
+        val synced = repository.loadDocumentById(document.id, workspaceId)!!
+        assertTrue(synced.lastSyncedAt!! >= synced.lastUpdatedAt)
+        assertEquals(synced.lastSyncedAt!!.toEpochMilliseconds(), synced.step("a").lastUpdatedAt)
+    }
+
+    @Test
+    fun `a document edited while it was being sent stays outdated`() = runBlocking {
+        val document = storeDocument(step("a", 2_000), lastSyncedAt = 1_000, lastUpdatedAt = 2_000)
+        coEvery { documentsApi.sendDocuments(any(), workspaceId) } coAnswers {
+            // The editor saved again during the send.
+            repository.saveDocumentMetadata(document.copy(title = "Edited meanwhile", lastUpdatedAt = Clock.System.now() + 1.seconds))
+            ResultData.Complete(Unit)
+        }
+
+        service.syncDocuments(listOf(document), workspaceId)
+
+        val stored = repository.loadDocumentById(document.id, workspaceId)!!
+        assertEquals("Edited meanwhile", stored.title)
+        assertTrue(stored.lastUpdatedAt > stored.lastSyncedAt!!)
+    }
+
+    @Test
+    fun `a document whose steps could not be sent is left out, the others go on`() = runBlocking {
+        val failing = storeDocument(step("x", 5), lastSyncedAt = 1)
+        val fine = storeDocument(step("y", 5), lastSyncedAt = 1)
+        answer = { request ->
+            if (request.documentId == failing.id) throw IllegalStateException("offline for this one")
+            StoryStepSyncResponse(request.requestTimestamp + 1, emptyList(), emptyList())
+        }
+
+        assertEquals(listOf(fine.id), service.syncDocuments(listOf(failing, fine), workspaceId)?.map { it.id })
+
+        coVerify { documentsApi.sendDocuments(match { it.map { doc -> doc.id } == listOf(fine.id) }, workspaceId) }
+        assertEquals(1L, repository.loadDocumentById(failing.id, workspaceId)!!.lastSyncedAt!!.toEpochMilliseconds())
     }
 
     @Test
@@ -96,7 +154,7 @@ class DocumentSyncServiceTest {
         val steps = (1..120).map { index -> step("s$index", index.toLong()) }
         val document = storeDocument(*steps.toTypedArray(), lastSyncedAt = null)
 
-        assertTrue(service.syncDocumentSteps(document))
+        assertEquals(listOf(document.id), service.syncDocuments(listOf(document), workspaceId)?.map { it.id })
 
         assertEquals(listOf(50, 50, 20), requests.map { it.changes.size })
         assertEquals(steps.map { it.id }, requests.flatMap { request -> request.changes.map { it.storyStep.id } })
@@ -113,7 +171,7 @@ class DocumentSyncServiceTest {
             StoryStepSyncResponse(request.requestTimestamp + 1, emptyList(), emptyList())
         }
 
-        assertTrue(service.syncDocumentSteps(document))
+        assertEquals(listOf(document.id), service.syncDocuments(listOf(document), workspaceId)?.map { it.id })
 
         val stored = repository.loadDocumentById(document.id, workspaceId)!!
         assertTrue(stored.step("a").lastUpdatedAt!! > stored.lastSyncedAt!!.toEpochMilliseconds())
@@ -136,7 +194,7 @@ class DocumentSyncServiceTest {
             )
         }
 
-        assertTrue(service.syncDocumentSteps(document))
+        assertEquals(listOf(document.id), service.syncDocuments(listOf(document), workspaceId)?.map { it.id })
 
         val stored = repository.loadDocumentById(document.id, workspaceId)!!
         assertEquals("mine", stored.step("mine").text)
@@ -253,8 +311,10 @@ class DocumentSyncServiceTest {
             parentId = "root"
         )
 
+    private var storedCount = 0
+
     private suspend fun storeDocument(vararg steps: StoryStep, lastSyncedAt: Long? = null, lastUpdatedAt: Long = 0): Document =
-        document("doc-${requests.size}-${steps.size}", *steps, lastSyncedAt = lastSyncedAt, lastUpdatedAt = lastUpdatedAt)
+        document("doc-${storedCount++}", *steps, lastSyncedAt = lastSyncedAt, lastUpdatedAt = lastUpdatedAt)
             .also { repository.saveDocument(it) }
 
     private fun Document.stepOrNull(id: String): StoryStep? = content.values.firstOrNull { step -> step.id == id }

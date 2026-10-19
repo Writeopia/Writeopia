@@ -65,15 +65,8 @@ class WorkspaceSync(
             // Deletions first, then the edited steps and the metadata of the outdated documents.
             val deletedHere = documentSyncService.sendDeletedSteps(workspaceId) ?: return ResultData.Error()
 
-            val sentAt = Clock.System.now()
             val localOutdatedDocs = documentRepository.loadOutdatedDocumentsForWorkspace(workspaceId)
-            val documentsToSend = localOutdatedDocs.filter { document ->
-                documentSyncService.syncDocumentSteps(document)
-            }
-            val resultSendDocuments = documentsApi.sendDocuments(
-                documentsToSend.map { document -> document.withoutContent() },
-                workspaceId
-            )
+            documentSyncService.syncDocuments(localOutdatedDocs, workspaceId) ?: return ResultData.Error()
 
             val localOutdatedFolders = folderRepository.localOutDatedFolders(workspaceId)
             val foldersNotSent = folderConflictHandler.handleConflict(
@@ -90,21 +83,8 @@ class WorkspaceSync(
             val resultSendTags =
                 if (tagsNotSent.isEmpty()) ResultData.Complete(Unit) else documentsApi.sendTags(tagsNotSent, workspaceId)
 
-            if (
-                resultSendDocuments is ResultData.Complete &&
-                resultSendFolders is ResultData.Complete &&
-                resultSendTags is ResultData.Complete
-            ) {
+            if (resultSendFolders is ResultData.Complete && resultSendTags is ResultData.Complete) {
                 val syncTime = Clock.System.now()
-
-                // In sync as of the time taken before the send; a later edit stays newer.
-                documentsToSend.forEach { sent ->
-                    val current =
-                        documentRepository.loadDocumentById(sent.id, workspaceId) ?: return@forEach
-                    // Never earlier than the step sync's own stamp, or its steps would look outdated.
-                    val syncedAt = current.lastSyncedAt?.let { maxOf(it, sentAt) } ?: sentAt
-                    documentRepository.saveDocumentMetadata(current.copy(lastSyncedAt = syncedAt))
-                }
 
                 // Update lastSyncedAt for folders that were sent
                 foldersNotSent.forEach { folder ->

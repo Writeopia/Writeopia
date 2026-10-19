@@ -95,6 +95,8 @@ final class FakeBackend: HTTPTransport {
     private(set) var deletedFolderIds: [String] = []
     private(set) var favorites: [String: Bool] = [:]
     var deleteFails = false
+    /// Documents sent while this is set are refused.
+    var documentSendFails = false
     /// Step deletions and step syncs are refused while these are set.
     var stepDeleteFails = false
     var stepSyncFails = false
@@ -131,8 +133,12 @@ final class FakeBackend: HTTPTransport {
             contents.folders.removeAll { deletedFolderIds.contains($0.id) }
             response = try JSONEncoder().encode(contents)
         case "/api/docs/workspace/document":
-            sentDocuments += body["documents"] as? [[String: Any]] ?? []
-            response = Data("Accepted".utf8)
+            if documentSendFails {
+                status = 500
+            } else {
+                sentDocuments += body["documents"] as? [[String: Any]] ?? []
+                response = Data("Accepted".utf8)
+            }
         case "/api/docs/workspace/tag":
             sentTags += body["tags"] as? [[String: Any]] ?? []
             response = Data("Accepted".utf8)
@@ -338,6 +344,32 @@ final class FakeBackend: HTTPTransport {
         let stored = try #require(try repository.local.storedDocument(id: "d"))
         #expect(!stored.isOutdated)
         #expect(stored.content.map(\.id) == ["kept", "edited"])
+    }
+
+    @Test func nothingIsStampedUntilTheMetadataIsOnTheBackend() async throws {
+        let backend = FakeBackend()
+        backend.documentSendFails = true
+        let repository = makeRepository(backend)
+        try repository.local.store(WrDocument(id: "d", title: "Renamed here", workspaceId: "w", content: [
+            step("a", "edited", at: 0, updated: 2_000),
+        ], lastUpdatedAt: 3_000, parentId: "root", lastSyncedAt: 1_000))
+
+        await #expect(throws: (any Error).self) { try await repository.syncFolder("root") }
+
+        // The steps went, the metadata didn't: still outdated, with its steps, for the next sync.
+        #expect(backend.stepSyncBodies.count == 1)
+        let stillOutdated = try #require(try repository.local.storedDocument(id: "d"))
+        #expect(stillOutdated.lastSyncedAt == 1_000)
+        #expect(stillOutdated.content.first?.lastUpdatedAt == 2_000)
+
+        backend.documentSendFails = false
+        try await Task.sleep(for: .seconds(2.1))
+        try await repository.syncFolder("root")
+
+        #expect(backend.sentDocuments.map { $0["title"] as? String } == ["Renamed here"])
+        let synced = try #require(try repository.local.storedDocument(id: "d"))
+        #expect(!synced.isOutdated)
+        #expect(synced.content.first?.lastUpdatedAt == synced.lastSyncedAt)
     }
 
     @Test func folderSyncStopsWhenTheDeletionsCantBeSent() async throws {

@@ -303,10 +303,10 @@ public final class SyncAPI {
 /// 1. `sendDeletedSteps`: the steps deleted here go first, as ids only, for the whole
 ///    workspace. The backend deletes them and keeps the tombstones for the other devices;
 ///    once it has them, they are dropped here.
-/// 2. `syncDocumentSteps`: the steps edited since the document was last sent. The backend
-///    keeps the newer copy of each step. Once sent, the document is stamped as synced at the
-///    time taken before the request: whatever was edited meanwhile is still newer than that
-///    and goes with the next sync.
+/// 2. `syncDocuments`: for each document changed here, the steps edited since it was last
+///    sent (the backend keeps the newer copy of each step), then the metadata of all of them
+///    in one request. Only then are they stamped as synced, at the time taken before the
+///    send: whatever was edited meanwhile is still newer than that and goes with the next sync.
 ///
 /// Receiving:
 /// 3. `receiveDeletedSteps`: the steps deleted on other devices since the last time.
@@ -342,16 +342,55 @@ public final class DocumentStepSync {
         return Set(tombstones.map(\.stepId))
     }
 
-    /// Sends the steps of the document edited since it was last sent, then stamps it as
-    /// synced. Nothing is sent when it is already in sync. Throws when the backend could not
-    /// be reached.
-    public func syncDocumentSteps(_ document: WrDocument) async throws {
-        let lastSync = document.lastSyncedAt ?? 0
-        let outdated = Self.outdatedSteps(of: document, lastSync: lastSync)
-        guard !outdated.isEmpty else { return }
+    /// Sends the documents changed here. For each one its edited steps go first, one request
+    /// per batch; then the metadata of all of them (title, folder, icon, tags) goes in one
+    /// request, without content; only then are they stamped as synced, at the time taken
+    /// before anything was sent, so an edit made meanwhile is still newer and goes next time.
+    /// Nothing is stamped while the metadata is not on the backend: a rename or a move would
+    /// be lost otherwise, and steps sent again are harmless (the backend keeps the newer copy).
+    ///
+    /// A document whose steps could not be sent is left out, to be tried again next time.
+    /// Throws when the metadata could not be sent.
+    ///
+    /// - Returns: the documents now in sync.
+    @discardableResult
+    public func syncDocuments(_ documents: [WrDocument]) async throws -> [WrDocument] {
+        guard !documents.isEmpty else { return [] }
 
         // The time of the send. Every step edited after it is newer than the stamp below.
-        let requestTimestamp = Date.nowMillis
+        let sentAt = Date.nowMillis
+        var toSend: [WrDocument] = []
+        var sentSteps: [String: [StoryStep]] = [:]
+        for document in documents {
+            guard let steps = try? await sendSteps(of: document, requestTimestamp: sentAt) else { continue }
+            toSend.append(document)
+            sentSteps[document.id] = steps
+        }
+        guard !toSend.isEmpty else { return [] }
+
+        try await api.sendDocuments(toSend.map(Self.withoutContent))
+
+        for document in toSend {
+            try stampSent(document, steps: sentSteps[document.id] ?? [], at: sentAt)
+        }
+        return toSend
+    }
+
+    /// The document's metadata alone: its steps travel through the step sync.
+    private static func withoutContent(_ document: WrDocument) -> WrDocument {
+        var document = document
+        document.content = []
+        return document
+    }
+
+    /// Sends the steps of the document edited since it was last sent, in batches, with
+    /// `requestTimestamp` as their edit time on the backend. Returns the steps sent (none when
+    /// the document was already in sync); throws when the backend could not be reached.
+    private func sendSteps(of document: WrDocument, requestTimestamp: Int64) async throws -> [StoryStep] {
+        let lastSync = document.lastSyncedAt ?? 0
+        let outdated = Self.outdatedSteps(of: document, lastSync: lastSync)
+        guard !outdated.isEmpty else { return [] }
+
         var currentSync = lastSync
 
         for (index, start) in stride(from: 0, to: outdated.count, by: Self.stepsPerBatch).enumerated() {
@@ -368,7 +407,7 @@ public final class DocumentStepSync {
             currentSync = response.serverTimestamp
         }
 
-        try stampSent(document, steps: outdated, at: requestTimestamp)
+        return outdated
     }
 
     /// Removes the steps deleted on other devices after `since` and returns their ids, so a
@@ -448,9 +487,12 @@ public final class DocumentStepSync {
 
     /// The document is in sync as of `sentAt`: that goes on the document, and on the steps
     /// sent, so they are no longer newer than it. A step edited since keeps its newer time.
+    /// The copy sent is covered even when its change time is a millisecond ahead (a move
+    /// right after a sync is stamped that way); the stamp never goes back in time.
     private func stampSent(_ document: WrDocument, steps sent: [StoryStep], at sentAt: Int64) throws {
         guard var current = try local.storedDocument(id: document.id) else { return }
-        current.lastSyncedAt = sentAt
+        let coveredUntil = current.lastUpdatedAt <= document.lastUpdatedAt ? max(sentAt, current.lastUpdatedAt) : sentAt
+        current.lastSyncedAt = max(current.lastSyncedAt ?? coveredUntil, coveredUntil)
         try local.storeMetadata(current)
 
         let sentTimes = Dictionary(sent.map { ($0.id, $0.lastUpdatedAt) }, uniquingKeysWith: { first, _ in first })
@@ -791,19 +833,10 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
 
         // Documents travel one step at a time, like `FolderSync` of the Compose app: first the
         // steps deleted here, then, for every document of the workspace changed here since it
-        // was sent, its edited steps and then its metadata (title, folder, icon...).
+        // was sent, its edited steps and then its metadata (title, folder, icon...), stamped
+        // as synced only once both are on the backend.
         let deletedHere = try await stepSync.sendDeletedSteps()
-        let sentAt = Date.nowMillis
-        var documentsToSend: [WrDocument] = []
-        for document in try local.storedOutdatedDocuments() {
-            if (try? await stepSync.syncDocumentSteps(document)) != nil {
-                documentsToSend.append(document)
-            }
-        }
-        try await api.sendDocuments(documentsToSend.map(Self.withoutContent))
-        for document in documentsToSend {
-            try markSynced(document, at: sentAt)
-        }
+        try await stepSync.syncDocuments(try local.storedOutdatedDocuments())
 
         let foldersToSend = try FolderConflictHandler.handle(
             local: outdatedFolders,
@@ -910,24 +943,6 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
                 try? markSynced(folder)
             }
         }
-    }
-
-    /// The document's metadata alone: its steps travel through the step sync.
-    private static func withoutContent(_ document: WrDocument) -> WrDocument {
-        var document = document
-        document.content = []
-        return document
-    }
-
-    /// The document is in sync as of `sentAt`, the time taken before its send: an edit made
-    /// while it ran is newer than that and goes with the next sync. The copy sent is covered
-    /// even when its change time is a millisecond ahead (a move right after a sync is stamped
-    /// that way). Never earlier than the step sync's own stamp, or its steps would look outdated.
-    private func markSynced(_ sent: WrDocument, at sentAt: Int64) throws {
-        guard var stored = try local.storedDocument(id: sent.id) else { return }
-        let coveredUntil = stored.lastUpdatedAt <= sent.lastUpdatedAt ? max(sentAt, stored.lastUpdatedAt) : sentAt
-        stored.lastSyncedAt = max(stored.lastSyncedAt ?? coveredUntil, coveredUntil)
-        try local.storeMetadata(stored)
     }
 
     private func sendAndMarkSynced(_ documents: [WrDocument]) async throws {

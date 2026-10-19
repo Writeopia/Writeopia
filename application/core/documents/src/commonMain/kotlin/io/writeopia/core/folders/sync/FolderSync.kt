@@ -6,7 +6,6 @@ import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.core.folders.repository.tag.DocumentTagRepository
-import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.repository.DocumentRepository
@@ -97,16 +96,10 @@ class FolderSync(
             val deletedHere = documentSyncService.sendDeletedSteps(workspaceId) ?: return
 
             // Then the documents of the whole workspace changed locally since they were sent:
-            // their edited steps, then their metadata (title, folder, icon...).
-            val sentAt = Clock.System.now()
+            // their edited steps, then their metadata (title, folder, icon...), stamped as synced
+            // only once both are on the backend.
             val localOutdatedDocs = documentRepository.loadOutdatedDocumentsForWorkspace(workspaceId)
-            val documentsToSend = localOutdatedDocs.filter { document ->
-                documentSyncService.syncDocumentSteps(document)
-            }
-            val resultSendDocuments = documentsApi.sendDocuments(
-                documentsToSend.map { document -> document.withoutContent() },
-                workspaceId
-            )
+            documentSyncService.syncDocuments(localOutdatedDocs, workspaceId) ?: return
 
             // Resolve conflicts for subfolders
             val localOutdatedFolders = folderRepository.localOutDatedFolders(workspaceId)
@@ -126,25 +119,10 @@ class FolderSync(
             val resultSendTags =
                 if (tagsNotSent.isEmpty()) ResultData.Complete(Unit) else documentsApi.sendTags(tagsNotSent, workspaceId)
 
-            if (
-                resultSendDocuments is ResultData.Complete &&
-                resultSendFolders is ResultData.Complete &&
-                resultSendTags is ResultData.Complete
-            ) {
-                // Documents and folders were sent successfully.
+            if (resultSendFolders is ResultData.Complete && resultSendTags is ResultData.Complete) {
+                // Folders and tags were sent successfully.
                 // Update lastSyncedAt for sent items to prevent re-sending them.
                 val syncTime = Clock.System.now()
-
-                // The documents sent are in sync as of the time taken before the send: an edit
-                // made while it ran is newer than that and goes with the next sync. Only the
-                // metadata of what is stored now is written, never the snapshot sent.
-                documentsToSend.forEach { sent ->
-                    val current =
-                        documentRepository.loadDocumentById(sent.id, workspaceId) ?: return@forEach
-                    // Never earlier than the step sync's own stamp, or its steps would look outdated.
-                    val syncedAt = current.lastSyncedAt?.let { maxOf(it, sentAt) } ?: sentAt
-                    documentRepository.saveDocumentMetadata(current.copy(lastSyncedAt = syncedAt))
-                }
 
                 // Update lastSyncedAt for folders that were sent
                 foldersNotSent.forEach { folder ->
@@ -181,6 +159,3 @@ class FolderSync(
         }
     }
 }
-
-/** The document's metadata alone: its steps travel through the step sync. */
-internal fun Document.withoutContent(): Document = copy(content = emptyMap())

@@ -27,10 +27,11 @@ import kotlin.time.Instant
  * 1. [sendDeletedSteps]: the steps deleted here go first, as ids only, for the whole workspace.
  *    The backend deletes them and keeps the tombstones for the other devices; once it has
  *    them, they are dropped here.
- * 2. [syncDocument]: the steps edited since the document was last sent. The backend keeps
- *    the newer copy of each step, so an older edit never erases a newer one. Once sent, the
- *    document is stamped as synced at the time taken before the request: whatever was edited
- *    meanwhile is still newer than that and goes with the next sync.
+ * 2. [syncDocuments]: for each document changed here, the steps edited since it was last
+ *    sent (the backend keeps the newer copy of each step, so an older edit never erases a
+ *    newer one), then the metadata of all of them in one request. Only then are they stamped
+ *    as synced, at the time taken before the send: whatever was edited meanwhile is still
+ *    newer than that and goes with the next sync.
  *
  * Receiving:
  * 3. [receiveDeletedSteps]: the steps deleted on other devices since the last sync, as ids.
@@ -76,8 +77,8 @@ class DocumentSyncService(
     }
 
     /**
-     * Sends the steps of a document that were edited since it was last sent, then stamps it
-     * as synced. Nothing is sent when it is already in sync.
+     * Sends a document changed here: its edited steps, then its metadata (title, folder, icon,
+     * tags), then stamps it as synced. Nothing is sent when it is already in sync.
      *
      * @return false when the document is unknown or the backend could not be reached.
      */
@@ -85,29 +86,70 @@ class DocumentSyncService(
         if (workspaceId == Workspace.disconnectedWorkspace().id) return false
 
         val document = documentRepository.loadDocumentById(documentId, workspaceId) ?: return false
-        return syncDocumentSteps(document)
+        return syncDocuments(listOf(document), workspaceId)?.isNotEmpty() == true
     }
 
-    /** [syncDocument] for a document already loaded with its content. */
-    suspend fun syncDocumentSteps(document: Document): Boolean {
-        val workspaceId = document.workspaceId
-        if (workspaceId == Workspace.disconnectedWorkspace().id) return false
-
-        val lastSyncTimestamp = document.lastSyncedAt?.toEpochMilliseconds() ?: 0L
-        val outdatedSteps = getOutdatedStorySteps(document, lastSyncTimestamp)
-
-        // In sync already. lastSyncedAt stays: there is no newer server time to move it to.
-        if (outdatedSteps.isEmpty()) return true
+    /**
+     * Sends the documents changed here, already loaded with their content. For each one its
+     * edited steps go first, one request per batch; then the metadata of all of them goes in
+     * one request, without content; only then are they stamped as synced, at the time taken
+     * before anything was sent, so an edit made meanwhile is still newer and goes next time.
+     * Nothing is stamped while the metadata is not on the backend: a rename or a move would be
+     * lost otherwise, and the steps sent again are harmless (the backend keeps the newer copy).
+     *
+     * A document whose steps could not be sent is left out, to be tried again next time.
+     *
+     * @return the documents now in sync; null when the metadata could not be sent.
+     */
+    suspend fun syncDocuments(documents: List<Document>, workspaceId: String): List<Document>? {
+        if (workspaceId == Workspace.disconnectedWorkspace().id) return null
+        if (documents.isEmpty()) return emptyList()
 
         // The time of the send. Every step edited after it is newer than the stamp below.
-        val requestTimestamp = Clock.System.now().toEpochMilliseconds()
+        val sentAt = Clock.System.now().toEpochMilliseconds()
+
+        val sentSteps = mutableMapOf<String, List<Pair<Double, StoryStep>>>()
+        val toSend = documents.filter { document ->
+            sendSteps(document, sentAt)?.also { steps -> sentSteps[document.id] = steps } != null
+        }
+        if (toSend.isEmpty()) return emptyList()
+
+        documentsApi?.let { api ->
+            val result = try {
+                api.sendDocuments(toSend.map { document -> document.withoutContent() }, workspaceId)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                println("Error sending documents: ${e.message}")
+                return null
+            }
+            if (result !is ResultData.Complete) return null
+        }
+
+        val stampedAt = Instant.fromEpochMilliseconds(sentAt)
+        toSend.forEach { document -> stampSent(document, sentSteps.getValue(document.id), stampedAt) }
+        return toSend
+    }
+
+    /**
+     * Sends the steps of [document] edited since it was last sent, in batches, with
+     * [requestTimestamp] as their edit time on the backend.
+     *
+     * @return the steps sent (none when the document was already in sync); null when the
+     * backend could not be reached.
+     */
+    private suspend fun sendSteps(document: Document, requestTimestamp: Long): List<Pair<Double, StoryStep>>? {
+        val lastSyncTimestamp = document.lastSyncedAt?.toEpochMilliseconds() ?: 0L
+        val outdatedSteps = getOutdatedStorySteps(document, lastSyncTimestamp)
+        if (outdatedSteps.isEmpty()) return outdatedSteps
+
         var currentSyncTimestamp = lastSyncTimestamp
 
         // Large documents (a first sync, say) go in batches: smaller requests, more reliable.
         for ((batchIndex, batch) in outdatedSteps.chunked(MAX_STEPS_PER_BATCH).withIndex()) {
             val request = StoryStepSyncRequest(
                 documentId = document.id,
-                workspaceId = workspaceId,
+                workspaceId = document.workspaceId,
                 lastSyncTimestamp = currentSyncTimestamp,
                 requestTimestamp = requestTimestamp,
                 changes = batch.map { (position, storyStep) ->
@@ -122,7 +164,7 @@ class DocumentSyncService(
                 throw e
             } catch (e: Exception) {
                 println("Error syncing document ${document.id} (batch $batchIndex): ${e.message}")
-                return false
+                return null
             }
 
             // What the backend had that this device didn't; once, the first answer has it all.
@@ -130,8 +172,7 @@ class DocumentSyncService(
             currentSyncTimestamp = response.serverTimestamp
         }
 
-        stampSent(document, outdatedSteps, Instant.fromEpochMilliseconds(requestTimestamp))
-        return true
+        return outdatedSteps
     }
 
     /**
@@ -265,11 +306,14 @@ class DocumentSyncService(
 
     /**
      * The document is in sync as of [sentAt]: that goes on the document, and on the steps sent,
-     * so they are no longer newer than it. A step edited since keeps its newer time.
+     * so they are no longer newer than it. A step edited since keeps its newer time. Only the
+     * metadata of what is stored now is written, never the snapshot sent.
      */
     private suspend fun stampSent(document: Document, sent: List<Pair<Double, StoryStep>>, sentAt: Instant) {
         val current = documentRepository.loadDocumentById(document.id, document.workspaceId) ?: return
-        documentRepository.saveDocumentMetadata(current.copy(lastSyncedAt = sentAt))
+        // Never earlier than a stamp already there.
+        val syncedAt = current.lastSyncedAt?.let { maxOf(it, sentAt) } ?: sentAt
+        documentRepository.saveDocumentMetadata(current.copy(lastSyncedAt = syncedAt))
 
         val sentById = sent.associate { (_, step) -> step.id to step.lastUpdatedAt }
         val stamped = current.content.entries
@@ -277,6 +321,9 @@ class DocumentSyncService(
             .map { (position, step) -> position to step.copy(lastUpdatedAt = sentAt.toEpochMilliseconds()) }
         if (stamped.isNotEmpty()) documentRepository.saveStorySteps(stamped, document.id)
     }
+
+    /** The document's metadata alone: its steps travel through the step sync. */
+    private fun Document.withoutContent(): Document = copy(content = emptyMap())
 
     private fun Map<Double, StoryStep>.withoutSteps(ids: Set<String>): Map<Double, StoryStep> =
         if (ids.isEmpty()) this else filterNot { (_, step) -> step.id in ids }

@@ -14,8 +14,6 @@ import io.writeopia.core.folders.repository.tag.InMemoryDocumentTagRepository
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.DocumentTag
 import io.writeopia.sdk.models.document.Folder
-import io.writeopia.sdk.models.story.StoryStep
-import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.repository.DocumentRepository
 import io.writeopia.sdk.serialization.extensions.toApi
@@ -60,7 +58,6 @@ class FolderSyncTest {
         coEvery { documentRepository.loadOutdatedDocumentsForWorkspace(workspaceId) } returns emptyList()
         coEvery { folderRepository.localOutDatedFolders(workspaceId) } returns emptyList()
         coEvery { folderConflictHandler.handleConflict(any(), any()) } returns emptyList()
-        coEvery { documentsApi.sendDocuments(any(), workspaceId) } returns ResultData.Complete(Unit)
         coEvery { documentsApi.sendFolders(any(), workspaceId) } returns ResultData.Complete(Unit)
 
         val folderSync = folderSync(
@@ -78,7 +75,7 @@ class FolderSyncTest {
         coVerify { documentSyncService.mergeReceivedDocuments(match { it.size == 1 && it.first().id == newDocument.id }, any()) }
         coVerify(exactly = 0) { documentRepository.saveDocument(any()) }
         coVerify { folderConflictHandler.handleConflict(any(), match { it.size == 1 && it.first().id == newSubfolder.id }) }
-        coVerify { documentsApi.sendDocuments(any(), workspaceId) }
+        coVerify { documentSyncService.syncDocuments(any(), workspaceId) }
         coVerify { documentsApi.sendFolders(any(), workspaceId) }
     }
 
@@ -95,7 +92,6 @@ class FolderSyncTest {
         coEvery {
             documentsApi.getFolderNewData(folderId, workspaceId, any(), any())
         } returns ResultData.Complete(FolderContentResponse(tags = listOf(remoteTag.toApi())))
-        coEvery { documentsApi.sendDocuments(any(), workspaceId) } returns ResultData.Complete(Unit)
         coEvery { documentsApi.sendFolders(any(), workspaceId) } returns ResultData.Complete(Unit)
         coEvery { documentsApi.sendTags(any(), workspaceId) } returns ResultData.Complete(Unit)
 
@@ -132,7 +128,6 @@ class FolderSyncTest {
         coEvery { folderRepository.localOutDatedFolders(workspaceId) } returns listOf(localSubfolder)
         val foldersNotSentSlot = slot<List<Folder>>()
         coEvery { folderConflictHandler.handleConflict(capture(foldersNotSentSlot), any()) } returns listOf(localSubfolder)
-        coEvery { documentsApi.sendDocuments(any(), workspaceId) } returns ResultData.Complete(Unit)
         coEvery { documentsApi.sendFolders(any(), workspaceId) } returns ResultData.Complete(Unit)
 
         val folderSync = folderSync(
@@ -169,7 +164,6 @@ class FolderSyncTest {
         coEvery { folderRepository.localOutDatedFolders(workspaceId) } returns listOf(movedFolder)
         val foldersSlot = slot<List<Folder>>()
         coEvery { folderConflictHandler.handleConflict(capture(foldersSlot), any()) } returns listOf(movedFolder)
-        coEvery { documentsApi.sendDocuments(any(), workspaceId) } returns ResultData.Complete(Unit)
         coEvery { documentsApi.sendFolders(any(), workspaceId) } returns ResultData.Complete(Unit)
 
         val folderSync = folderSync(
@@ -182,9 +176,8 @@ class FolderSyncTest {
 
         folderSync.syncFolder(folderId, workspaceId, force = true)
 
-        // Its steps go through the step sync, its metadata alone through the documents request.
-        coVerify { documentSyncService.syncDocumentSteps(movedDocument) }
-        coVerify { documentsApi.sendDocuments(listOf(movedDocument.withoutContent()), workspaceId) }
+        // Wherever it is, it goes with this sync, through the step sync.
+        coVerify { documentSyncService.syncDocuments(listOf(movedDocument), workspaceId) }
         assertEquals(listOf(movedFolder), foldersSlot.captured)
         coVerify { documentsApi.sendFolders(listOf(movedFolder), workspaceId) }
         // Only the opened folder is received.
@@ -206,13 +199,13 @@ class FolderSyncTest {
     }
 
     @Test
-    fun `the deletions go first, then the steps, then the metadata of the outdated documents`() = runBlocking {
+    fun `the deletions go first, then the outdated documents, then what changed elsewhere`() = runBlocking {
         val documentRepository = mockk<DocumentRepository>(relaxed = true)
         val documentSyncService = syncService()
         val folderRepository = mockk<FolderRepository>(relaxed = true)
         val edited = document("doc1", "Edited")
         coEvery { documentRepository.loadOutdatedDocumentsForWorkspace(workspaceId) } returns listOf(edited)
-        val (folderSync, documentsApi) = successfulSync(
+        val (folderSync, _) = successfulSync(
             folderRepository,
             documentRepository = documentRepository,
             documentSyncService = documentSyncService
@@ -222,31 +215,28 @@ class FolderSyncTest {
 
         coVerifyOrder {
             documentSyncService.sendDeletedSteps(workspaceId)
-            documentSyncService.syncDocumentSteps(edited)
-            documentsApi.sendDocuments(listOf(edited.withoutContent()), workspaceId)
+            documentSyncService.syncDocuments(listOf(edited), workspaceId)
             documentSyncService.receiveDeletedSteps(workspaceId, any())
             documentSyncService.mergeReceivedDocuments(any(), any())
         }
+        // The sync never writes a document itself: stamping is the step sync's job.
+        coVerify(exactly = 0) { documentRepository.saveDocumentMetadata(any()) }
+        coVerify(exactly = 0) { documentRepository.saveDocument(any()) }
     }
 
     @Test
-    fun `a document whose steps could not be sent keeps its metadata for the next sync`() = runBlocking {
-        val documentRepository = mockk<DocumentRepository>(relaxed = true)
+    fun `nothing is received and the watermark doesn't move while the documents can't be sent`() = runBlocking {
         val documentSyncService = syncService()
         val folderRepository = mockk<FolderRepository>(relaxed = true)
-        val failing = document("doc1", "Failing")
-        coEvery { documentRepository.loadOutdatedDocumentsForWorkspace(workspaceId) } returns listOf(failing)
-        coEvery { documentSyncService.syncDocumentSteps(failing) } returns false
-        val (folderSync, documentsApi) = successfulSync(
-            folderRepository,
-            documentRepository = documentRepository,
-            documentSyncService = documentSyncService
-        )
+        coEvery { documentSyncService.syncDocuments(any(), workspaceId) } returns null
+        val (folderSync, documentsApi) = successfulSync(folderRepository, documentSyncService = documentSyncService)
 
         folderSync.syncFolder(folderId, workspaceId, force = true)
 
-        coVerify { documentsApi.sendDocuments(emptyList(), workspaceId) }
-        coVerify(exactly = 0) { documentRepository.saveDocumentMetadata(any()) }
+        coVerify(exactly = 0) { documentsApi.sendFolders(any(), any()) }
+        coVerify(exactly = 0) { documentSyncService.receiveDeletedSteps(any(), any()) }
+        coVerify(exactly = 0) { documentSyncService.mergeReceivedDocuments(any(), any()) }
+        coVerify(exactly = 0) { folderRepository.setContentSyncedAt(any(), any(), any()) }
     }
 
     @Test
@@ -264,8 +254,8 @@ class FolderSyncTest {
 
         folderSync.syncFolder(folderId, workspaceId, force = true)
 
-        coVerify(exactly = 0) { documentSyncService.syncDocumentSteps(any()) }
-        coVerify(exactly = 0) { documentsApi.sendDocuments(any(), any()) }
+        coVerify(exactly = 0) { documentSyncService.syncDocuments(any(), any()) }
+        coVerify(exactly = 0) { documentsApi.sendFolders(any(), any()) }
         coVerify(exactly = 0) { documentSyncService.mergeReceivedDocuments(any(), any()) }
         coVerify(exactly = 0) { folderRepository.setContentSyncedAt(any(), any(), any()) }
     }
@@ -310,55 +300,6 @@ class FolderSyncTest {
 
         coVerify(exactly = 0) { documentSyncService.mergeReceivedDocuments(any(), any()) }
         coVerify(exactly = 0) { folderRepository.setContentSyncedAt(any(), any(), any()) }
-    }
-
-    @Test
-    fun `a sent document is stamped as synced without writing its content back`() = runBlocking {
-        val documentRepository = mockk<DocumentRepository>(relaxed = true)
-        val folderRepository = mockk<FolderRepository>(relaxed = true)
-        val sentAt = Instant.fromEpochMilliseconds(1_000)
-        val sent = document("doc1", "Sent", lastUpdatedAt = sentAt).copy(
-            content = mapOf(0.0 to StoryStep(type = StoryTypes.TEXT.type, text = "A line"))
-        )
-        coEvery { documentRepository.loadOutdatedDocumentsForWorkspace(workspaceId) } returns listOf(sent)
-        coEvery { documentRepository.loadDocumentById(sent.id, workspaceId) } returns sent
-        val (folderSync, documentsApi) = successfulSync(folderRepository, documentRepository = documentRepository)
-
-        val before = Clock.System.now()
-        folderSync.syncFolder(folderId, workspaceId, force = true)
-
-        // Metadata only: the steps went through the step sync.
-        coVerify { documentsApi.sendDocuments(match { it.single().content.isEmpty() }, workspaceId) }
-        val stamped = slot<Document>()
-        coVerify(exactly = 1) { documentRepository.saveDocumentMetadata(capture(stamped)) }
-        assertEquals(sent.id, stamped.captured.id)
-        assertEquals(sentAt, stamped.captured.lastUpdatedAt)
-        assertTrue(stamped.captured.lastSyncedAt!! >= before)
-        coVerify(exactly = 0) { documentRepository.saveDocument(any()) }
-    }
-
-    @Test
-    fun `a document edited while it was being sent stays outdated`() = runBlocking {
-        val documentRepository = mockk<DocumentRepository>(relaxed = true)
-        val folderRepository = mockk<FolderRepository>(relaxed = true)
-        val sent = document("doc1", "Sent", lastUpdatedAt = Instant.fromEpochMilliseconds(1_000))
-        coEvery { documentRepository.loadOutdatedDocumentsForWorkspace(workspaceId) } returns listOf(sent)
-        val (folderSync, documentsApi) = successfulSync(folderRepository, documentRepository = documentRepository)
-        // The editor saved again during the send: newer than the time the send started.
-        coEvery { documentsApi.sendDocuments(any(), workspaceId) } coAnswers {
-            val edited = sent.copy(title = "Sent, then edited", lastUpdatedAt = Clock.System.now() + 1.milliseconds)
-            coEvery { documentRepository.loadDocumentById(sent.id, workspaceId) } returns edited
-            ResultData.Complete(Unit)
-        }
-
-        folderSync.syncFolder(folderId, workspaceId, force = true)
-
-        // Stamped as synced at the time the send started: the edit is newer, so it goes next time.
-        val stamped = slot<Document>()
-        coVerify(exactly = 1) { documentRepository.saveDocumentMetadata(capture(stamped)) }
-        assertEquals("Sent, then edited", stamped.captured.title)
-        assertTrue(stamped.captured.lastUpdatedAt > stamped.captured.lastSyncedAt!!)
-        coVerify(exactly = 0) { documentRepository.saveDocument(any()) }
     }
 
     @Test
@@ -453,7 +394,7 @@ class FolderSyncTest {
     /** A step sync that succeeds at everything and receives nothing. */
     private fun syncService(): DocumentSyncService = mockk<DocumentSyncService>(relaxed = true).also { service ->
         coEvery { service.sendDeletedSteps(any()) } returns emptySet()
-        coEvery { service.syncDocumentSteps(any()) } returns true
+        coEvery { service.syncDocuments(any(), any()) } returns emptyList()
         coEvery { service.receiveDeletedSteps(any(), any()) } returns emptySet()
     }
 
@@ -490,7 +431,6 @@ class FolderSyncTest {
             documentsApi.getFolderNewData(syncedFolderId, workspaceId, any(), any())
         } returns ResultData.Complete(FolderContentResponse())
         coEvery { folderRepository.localOutDatedFolders(workspaceId) } returns emptyList()
-        coEvery { documentsApi.sendDocuments(any(), workspaceId) } returns ResultData.Complete(Unit)
         coEvery { documentsApi.sendFolders(any(), workspaceId) } returns ResultData.Complete(Unit)
 
         val folderSync = folderSync(
