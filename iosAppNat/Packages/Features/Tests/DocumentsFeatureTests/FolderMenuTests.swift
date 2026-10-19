@@ -89,6 +89,72 @@ import WrStorage
         #expect(viewModel.actionError != nil)
     }
 
+    @Test func changesTheIconOfTheOpenFolderKeepingItsName() async {
+        let (viewModel, repository) = await makeViewModel()
+
+        await viewModel.changeIcon(IconInfo(label: "star", tint: -256))
+
+        #expect(repository.updatedFolders.last?.title == "Ideas")
+        #expect(repository.updatedFolders.last?.icon == IconInfo(label: "star", tint: -256))
+        #expect(viewModel.folder?.icon == IconInfo(label: "star", tint: -256))
+    }
+
+    @Test func changesTheIconOfAFolderOfTheList() async {
+        let repository = FakeDocumentsRepository()
+        repository.contents = FolderContents(folders: [archive, work])
+        let viewModel = FolderContentsViewModel(folderId: Folder.rootId, repository: repository)
+        await viewModel.load()
+
+        #expect(await viewModel.updateFolder(id: "work", icon: IconInfo(label: "home", tint: -256)))
+
+        #expect(repository.updatedFolders.map(\.id) == ["work"])
+        #expect(repository.updatedFolders.last?.title == "Work")
+        #expect(viewModel.folders.first { $0.id == "work" }?.icon == IconInfo(label: "home", tint: -256))
+        #expect(viewModel.folders.first { $0.id == "archive" }?.icon == nil)
+    }
+
+    @Test func editsAFolderOfTheListFromItsCard() async {
+        let repository = FakeDocumentsRepository()
+        repository.contents = FolderContents(folders: [work])
+        let viewModel = FolderContentsViewModel(folderId: Folder.rootId, repository: repository)
+        await viewModel.load()
+
+        await viewModel.updateFolder(id: "work", title: "  Office ", icon: nil)
+        await viewModel.updateFolder(id: "work", title: "   ", icon: IconInfo(label: "star", tint: nil))
+
+        #expect(repository.updatedFolders.map(\.title) == ["Office", "Office"])
+        #expect(viewModel.folders.first?.title == "Office")
+        #expect(viewModel.folders.first?.icon == IconInfo(label: "star", tint: nil))
+    }
+
+    @Test func editingTheOpenFolderByIdEditsTheFolderItself() async {
+        let (viewModel, repository) = await makeViewModel()
+
+        await viewModel.updateFolder(id: "ideas", title: "Plans", icon: nil)
+
+        #expect(viewModel.folder?.title == "Plans")
+        #expect(repository.updatedFolders.last?.id == "ideas")
+    }
+
+    @Test func failedIconChangeOfAListedFolderIsUndone() async {
+        let repository = FakeDocumentsRepository()
+        repository.contents = FolderContents(folders: [work])
+        let viewModel = FolderContentsViewModel(folderId: Folder.rootId, repository: repository)
+        await viewModel.load()
+        repository.updateError = APIError.notFound
+
+        #expect(await viewModel.updateFolder(id: "work", icon: IconInfo(label: "star", tint: nil)) == false)
+        #expect(viewModel.folders.first?.icon == nil)
+        #expect(viewModel.actionError != nil)
+    }
+
+    @Test func unknownFolderIsNotEdited() async {
+        let (viewModel, repository) = await makeViewModel()
+
+        #expect(await viewModel.updateFolder(id: "missing", icon: nil) == false)
+        #expect(repository.updatedFolders.isEmpty)
+    }
+
     @Test func movesToAnotherFolderAndReturnsTheNewPath() async {
         let (viewModel, repository) = await makeViewModel()
 

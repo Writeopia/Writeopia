@@ -2,17 +2,28 @@ import SwiftUI
 import WrDesign
 import WrModels
 
-/// The icon of a document, like `IconsPicker` of the Compose app: the colors on top, then the
-/// icons. A choice applies right away, so the sidebar and the editor show it while the picker is
-/// still open to try another one.
-struct DocumentIconPicker: View {
+/// The icon of a folder or a document, like `IconsPicker` of the Compose app: the colors on
+/// top, then the icons. A choice applies right away, so the sidebar, the cards and the editor
+/// show it while the picker is still open to try another one.
+struct MenuIconPicker: View {
     let initial: IconInfo?
+    /// The button that takes the icon away: "No icon" for a document, the default folder for a
+    /// folder.
+    let removeTitle: LocalizedStringKey
+    let removeIdentifier: String
     let onPick: (IconInfo?) -> Void
     @State private var iconName: String?
     @State private var tint: Int?
 
-    init(initial: IconInfo?, onPick: @escaping (IconInfo?) -> Void) {
+    init(
+        initial: IconInfo?,
+        removeTitle: LocalizedStringKey = "No icon",
+        removeIdentifier: String = "documentIcon.remove",
+        onPick: @escaping (IconInfo?) -> Void
+    ) {
         self.initial = initial
+        self.removeTitle = removeTitle
+        self.removeIdentifier = removeIdentifier
         self.onPick = onPick
         _iconName = State(initialValue: initial?.label)
         // Without a saved tint the first color is selected, like the Compose app, so the
@@ -37,13 +48,13 @@ struct DocumentIconPicker: View {
             }
             .frame(height: 200)
 
-            Button("No icon", role: .destructive) {
+            Button(removeTitle, role: .destructive) {
                 iconName = nil
                 onPick(nil)
             }
             .buttonStyle(.borderless)
             .disabled(iconName == nil)
-            .accessibilityIdentifier("documentIcon.remove")
+            .accessibilityIdentifier(removeIdentifier)
         }
         .padding(12)
         .frame(width: 300)
@@ -115,7 +126,34 @@ struct DocumentIconButton: View {
         .accessibilityLabel("Change icon")
         .accessibilityIdentifier("documentIcon.button")
         .popover(isPresented: $showsPicker, arrowEdge: .trailing) {
-            DocumentIconPicker(initial: icon, onPick: onPick)
+            MenuIconPicker(initial: icon, onPick: onPick)
+                .presentationCompactAdaptation(.popover)
+        }
+    }
+}
+
+/// The icon of a folder, opening the icon and color picker when clicked, like the icon of a
+/// folder card and of the side menu tree of the Compose app. The folder keeps its name; the
+/// edition sheet changes both.
+struct FolderIconButton: View {
+    let icon: IconInfo?
+    var isDropTarget = false
+    let onPick: (IconInfo?) -> Void
+    @State private var showsPicker = false
+
+    var body: some View {
+        Button {
+            showsPicker = true
+        } label: {
+            FolderIconImage(icon: icon, isDropTarget: isDropTarget)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help("Change icon")
+        .accessibilityLabel("Change icon")
+        .accessibilityIdentifier("folderIcon.button")
+        .popover(isPresented: $showsPicker, arrowEdge: .trailing) {
+            MenuIconPicker(initial: icon, removeTitle: "Default icon", removeIdentifier: "folderIcon.remove", onPick: onPick)
                 .presentationCompactAdaptation(.popover)
         }
     }

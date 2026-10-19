@@ -239,6 +239,10 @@ private struct FolderTreeLevel: View {
                 row(
                     title: folder.displayTitle,
                     icon: { FolderIconImage(icon: folder.icon) },
+                    iconButton: {
+                        FolderIconButton(icon: folder.icon) { icon in changeIcon(ofFolder: folder.id, to: icon) }
+                            .frame(width: 20, height: SideMenuStyle.rowHeight)
+                    },
                     isExpanded: expanded.contains(folder.id),
                     toggle: { toggle(folder.id) }
                 ) { open(.folder(folder)) }
@@ -365,6 +369,17 @@ private struct FolderTreeLevel: View {
     private func loadLocal() async {
         guard let loaded = try? await session.documents.folderContents(folderId: parentId) else { return }
         contents = loaded
+    }
+
+    /// Shown here right away; the list of the folder reloads to show it on the card too.
+    private func changeIcon(ofFolder folderId: String, to icon: IconInfo?) {
+        guard let index = contents.folders.firstIndex(where: { $0.id == folderId }) else { return }
+        contents.folders[index].icon = icon
+        let folder = contents.folders[index]
+        Task {
+            _ = try? await session.documents.updateFolder(folder)
+            router.contentsChanged()
+        }
     }
 
     /// Shown here right away; the list of the folder reloads to show it on the card too.

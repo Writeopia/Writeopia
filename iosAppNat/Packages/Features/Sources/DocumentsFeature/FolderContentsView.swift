@@ -402,6 +402,39 @@ final class FolderContentsViewModel {
         }
     }
 
+    /// Changes the icon of this folder, picked on its title. The name stays.
+    @discardableResult
+    func changeIcon(_ icon: IconInfo?) async -> Bool {
+        await updateFolder(title: "", icon: icon)
+    }
+
+    /// Renames a folder of the list and changes its icon, from its card: the icon picker on the
+    /// icon and the edition sheet behind its "more" button (or, on the Mac, its context menu),
+    /// like the icon and the edition dialog of a folder card in the Compose app. A nil or empty name keeps the current one.
+    /// Returns whether the change was saved.
+    @discardableResult
+    func updateFolder(id: String, title: String? = nil, icon: IconInfo?) async -> Bool {
+        if id == folderId { return await updateFolder(title: title ?? "", icon: icon) }
+        guard let index = folders.firstIndex(where: { $0.id == id }) else { return false }
+        var edited = folders[index]
+        if let trimmed = title?.trimmingCharacters(in: .whitespacesAndNewlines), !trimmed.isEmpty {
+            edited.title = trimmed
+        }
+        edited.icon = icon
+
+        let previous = folders[index]
+        folders[index] = edited
+        do {
+            let saved = try await repository.updateFolder(edited)
+            if let current = folders.firstIndex(where: { $0.id == id }) { folders[current] = saved }
+            return true
+        } catch {
+            if let current = folders.firstIndex(where: { $0.id == id }) { folders[current] = previous }
+            actionError = error.userMessage
+            return false
+        }
+    }
+
     /// Moves this folder into `targetId`. Returns the folders from the root down to this one in
     /// its new place, to rebuild the navigation, or nil when it couldn't be moved.
     func moveFolder(to targetId: String) async -> [Folder]? {
@@ -568,6 +601,9 @@ struct FolderContentsView: View {
     @State private var dragSelection = DragSelection()
     @State private var folderSheet: FolderSheet?
     @State private var confirmsFolderDeletion = false
+    /// A folder of the list being edited from the "more" button of its card, or from its
+    /// context menu on the Mac.
+    @State private var editingFolder: Folder?
     private let title: String
     private let rootTitle: String
     private let contentsVersion: Int
@@ -667,6 +703,17 @@ struct FolderContentsView: View {
         .refreshable { await viewModel.load() }
         .background(WrColors.background)
         .modifier(folderMenuPresentations)
+        // A folder of the list, edited from the "more" button of its card, like the edition
+        // dialog of a folder card in the Compose app.
+        .sheet(item: $editingFolder) { folder in
+            FolderEditSheet(folder: folder) { title, icon in
+                Task {
+                    if await viewModel.updateFolder(id: folder.id, title: title, icon: icon) { onItemsChange() }
+                }
+            }
+            .presentationDetents([.medium, .large])
+            .wrSheetSize(width: 440, height: 440)
+        }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if viewModel.hasSelection {
                 DocumentsSelectionMenu(
@@ -897,10 +944,13 @@ struct FolderContentsView: View {
                 isDropTarget: dropTargetId == item.id,
                 isSelected: viewModel.isSelected(item.id),
                 style: style,
-                showsSyncState: viewModel.showsSyncState
+                showsSyncState: viewModel.showsSyncState,
+                onFolderIconPick: item.isFolder ? { icon in changeIcon(of: item.id, to: icon) } : nil,
+                onFolderEdit: folderOf(item).map { folder in { editingFolder = folder } }
             )
         }
         .buttonStyle(.plain)
+        .folderContextMenu(item) { folder in editingFolder = folder }
         .zoomTransitionSource(id: item.id, in: transitionNamespace, enabled: !item.isFolder)
         // Slide a card sideways to select it, like the Compose notes list.
         .slideToSelect { viewModel.toggleSelection(item.id) }
@@ -930,7 +980,12 @@ struct FolderContentsView: View {
     /// The icon and the name of the folder shown, in the navigation bar.
     private var folderTitle: some View {
         HStack(spacing: 6) {
-            FolderIconImage(icon: viewModel.folder?.icon)
+            FolderIconButton(icon: viewModel.folder?.icon) { icon in
+                Task {
+                    // The icon shows in the side menu tree too.
+                    if await viewModel.changeIcon(icon) { onItemsChange() }
+                }
+            }
             Text(viewModel.folder?.displayTitle ?? title)
                 .fontWeight(.semibold)
                 .lineLimit(1)
@@ -951,6 +1006,17 @@ struct FolderContentsView: View {
             Label("Folder options", systemImage: "ellipsis.circle")
         }
         .accessibilityIdentifier("documents.folderMenu")
+    }
+
+    private func folderOf(_ item: FolderItem) -> Folder? {
+        if case .folder(let folder) = item { folder } else { nil }
+    }
+
+    /// A folder of the list gets the icon picked on its card.
+    private func changeIcon(of folderId: String, to icon: IconInfo?) {
+        Task {
+            if await viewModel.updateFolder(id: folderId, icon: icon) { onItemsChange() }
+        }
     }
 
     private var folderMenuPresentations: FolderMenuPresentations {
@@ -1091,6 +1157,12 @@ struct ItemCard: View {
     /// Marks the documents changed on this device since their last sync, like the cloud icon
     /// of `NotesCardsScreen` in the Compose app.
     var showsSyncState = false
+    /// With it, the icon of a folder opens the icon picker, like the icon of a folder card in
+    /// the Compose app. Without it (a drag preview) the icon is just drawn.
+    var onFolderIconPick: ((IconInfo?) -> Void)?
+    /// With it, a folder card shows the "more" button at its top right that opens the edition
+    /// sheet of the folder, like the one of `FolderItem` in the Compose app.
+    var onFolderEdit: (() -> Void)?
 
     var body: some View {
         Group {
@@ -1205,11 +1277,34 @@ struct ItemCard: View {
             .multilineTextAlignment(.leading)
     }
 
-    /// The favorite star and the sync indicator, at the top right of the card.
+    /// The favorite star and the sync indicator, at the top right of the card, and the
+    /// "more" button of a folder.
     private var badges: some View {
         HStack(spacing: 6) {
             favoriteStar
             syncIndicator
+            editButton
+        }
+    }
+
+    /// Opens the edition sheet of a folder (name and icon). Hidden while the card is selected,
+    /// where the checkmark takes its place.
+    @ViewBuilder
+    private var editButton: some View {
+        if case .folder = item, let onFolderEdit {
+            Button(action: onFolderEdit) {
+                Image(systemName: "ellipsis")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(WrColors.textLighter)
+                    .frame(width: 28, height: 24)
+                    .contentShape(RoundedRectangle(cornerRadius: 8))
+            }
+            .buttonStyle(.plain)
+            .opacity(isSelected ? 0 : 1)
+            .disabled(isSelected)
+            .help("Edit folder")
+            .accessibilityLabel("Edit folder")
+            .accessibilityIdentifier("folderCard.edit")
         }
     }
 
@@ -1262,6 +1357,8 @@ struct ItemCard: View {
                 .font(.caption)
                 .foregroundStyle(WrColors.textLighter)
                 .opacity(isSelected ? 0 : 1)
+
+            editButton
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
@@ -1272,7 +1369,11 @@ struct ItemCard: View {
     private var iconImage: some View {
         switch item {
         case .folder(let folder):
-            FolderIconImage(icon: folder.icon, isDropTarget: isDropTarget)
+            if let onFolderIconPick {
+                FolderIconButton(icon: folder.icon, isDropTarget: isDropTarget, onPick: onFolderIconPick)
+            } else {
+                FolderIconImage(icon: folder.icon, isDropTarget: isDropTarget)
+            }
         case .document(let document):
             DocumentIconImage(icon: document.icon)
         }
@@ -1406,6 +1507,27 @@ extension View {
         #if os(iOS)
         if #available(iOS 18, *) {
             navigationTransition(.zoom(sourceID: sourceID, in: namespace))
+        } else {
+            self
+        }
+        #else
+        self
+        #endif
+    }
+
+    /// On the Mac, a right click on a folder card offers to edit it, like the edition dialog of
+    /// a folder card in the Compose desktop app. On iOS a long press starts a drag instead.
+    @ViewBuilder
+    func folderContextMenu(_ item: FolderItem, onEdit: @escaping (Folder) -> Void) -> some View {
+        #if os(macOS)
+        if case .folder(let folder) = item {
+            contextMenu {
+                Button {
+                    onEdit(folder)
+                } label: {
+                    Label("Edit folder…", systemImage: "pencil")
+                }
+            }
         } else {
             self
         }
