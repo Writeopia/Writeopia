@@ -465,6 +465,80 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
         assertEquals(document.tagIds, loaded?.tagIds)
     }
 
+    /** A step deleted here leaves a tombstone for the sync, and nothing recreates it meanwhile. */
+    suspend fun deletedStepLeavesATombstoneAndNeverComesBack() {
+        val document = Document(
+            createdAt = now(),
+            lastUpdatedAt = now(),
+            lastSyncedAt = null,
+            workspaceId = "workspace-tombstone",
+            parentId = "",
+            content = twoLines(),
+        )
+        documentRepository.saveDocument(document)
+        val (deleted, kept) = document.content.toSortedMap().values.toList()
+
+        documentRepository.deleteStoryStep(deleted.id, document.id)
+
+        val tombstones = documentRepository.loadStoryStepTombstones(document.workspaceId)
+        assertEquals(listOf(deleted.id to document.id), tombstones.map { it.stepId to it.documentId })
+        assertEquals(listOf(kept.id), documentRepository.loadDocumentById(document.id, document.workspaceId)?.stepIds())
+
+        // Whatever saves it again, step by step or whole: it stays deleted.
+        documentRepository.saveStoryStep(deleted, 0.0, document.id)
+        assertEquals(listOf(kept.id), documentRepository.loadDocumentById(document.id, document.workspaceId)?.stepIds())
+        documentRepository.saveDocument(document)
+        assertEquals(listOf(kept.id), documentRepository.loadDocumentById(document.id, document.workspaceId)?.stepIds())
+
+        // Once the backend has the deletion, the tombstone goes.
+        documentRepository.deleteStoryStepTombstones(listOf(deleted.id))
+        assertEquals(emptyList(), documentRepository.loadStoryStepTombstones(document.workspaceId))
+    }
+
+    /** A step deleted elsewhere goes without a tombstone, and only inside its workspace. */
+    suspend fun stepsDeletedElsewhereGoWithoutTombstone() {
+        val document = Document(
+            createdAt = now(),
+            lastUpdatedAt = now(),
+            lastSyncedAt = null,
+            workspaceId = "workspace-deleted-elsewhere",
+            parentId = "",
+            content = twoLines(),
+        )
+        documentRepository.saveDocument(document)
+        val (deleted, kept) = document.content.toSortedMap().values.toList()
+
+        documentRepository.deleteStoryStepsByIds(listOf(deleted.id), "another-workspace")
+        assertEquals(2, documentRepository.loadDocumentById(document.id, document.workspaceId)?.content?.size)
+
+        documentRepository.deleteStoryStepsByIds(listOf(deleted.id), document.workspaceId)
+        assertEquals(listOf(kept.id), documentRepository.loadDocumentById(document.id, document.workspaceId)?.stepIds())
+        assertEquals(emptyList(), documentRepository.loadStoryStepTombstones(document.workspaceId))
+    }
+
+    /** The time of a step's last edit survives a round trip, so the sync can compare it. */
+    suspend fun stepTimestampsAreKept() {
+        val content = mapOf(
+            0.0 to StoryStep(type = StoryTypes.TEXT.type, text = "stamped", lastUpdatedAt = 1_791_998_156_814L),
+            1.0 to StoryStep(type = StoryTypes.TEXT.type, text = "not stamped"),
+        )
+        val document = Document(
+            createdAt = now(),
+            lastUpdatedAt = now(),
+            lastSyncedAt = null,
+            workspaceId = "workspace-timestamps",
+            parentId = "",
+            content = content,
+        )
+
+        documentRepository.saveDocument(document)
+
+        val loaded = documentRepository.loadDocumentById(document.id, document.workspaceId)
+        assertEquals(listOf(1_791_998_156_814L, null), loaded?.content?.values?.map { it.lastUpdatedAt })
+    }
+
+    private fun Document.stepIds(): List<String> = content.values.map { it.id }
+
     suspend fun saveSimpleDocumentAndLoadByParentId() {
         val document = Document(
             id = GenerateId.generate(),
@@ -488,6 +562,11 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
 }
 
 private fun now() = Instant.fromEpochMilliseconds(Clock.System.now().toEpochMilliseconds())
+
+fun twoLines(): Map<Double, StoryStep> = mapOf(
+    0.0 to StoryStep(type = StoryTypes.TEXT.type, text = "first", dbPosition = 0.0),
+    1.0 to StoryStep(type = StoryTypes.TEXT.type, text = "second", dbPosition = 1.0),
+)
 
 fun simpleText(): Map<Double, StoryStep> = mapOf(
     0.0 to StoryStep(

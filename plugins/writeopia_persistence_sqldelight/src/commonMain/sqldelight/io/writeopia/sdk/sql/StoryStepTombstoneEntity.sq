@@ -1,0 +1,33 @@
+-- The steps deleted on this device that the backend has not been told about yet.
+-- A step with a tombstone is never saved again; the tombstone goes once the backend has it.
+CREATE TABLE storyStepTombstoneEntity (
+  step_id TEXT PRIMARY KEY,
+  document_id TEXT NOT NULL,
+  workspace_id TEXT NOT NULL,
+  deleted_at INTEGER NOT NULL
+);
+
+insert:
+INSERT OR REPLACE INTO storyStepTombstoneEntity(step_id, document_id, workspace_id, deleted_at)
+VALUES (?, ?, ?, ?);
+
+selectByWorkspaceId:
+SELECT *
+FROM storyStepTombstoneEntity
+WHERE workspace_id = ?
+ORDER BY deleted_at;
+
+selectStepIdsIn:
+SELECT step_id
+FROM storyStepTombstoneEntity
+WHERE step_id IN ?;
+
+deleteByStepIds:
+DELETE
+FROM storyStepTombstoneEntity
+WHERE step_id IN ?;
+
+deleteByWorkspaceId:
+DELETE
+FROM storyStepTombstoneEntity
+WHERE workspace_id = ?;

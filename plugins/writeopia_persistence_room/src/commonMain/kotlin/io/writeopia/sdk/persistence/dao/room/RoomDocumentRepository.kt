@@ -17,6 +17,9 @@ import io.writeopia.sdk.persistence.dao.CommentEntityDao
 import io.writeopia.sdk.persistence.dao.DocumentEntityDao
 import io.writeopia.sdk.persistence.dao.DocumentTagLinkDao
 import io.writeopia.sdk.persistence.dao.StoryUnitEntityDao
+import io.writeopia.sdk.models.story.StoryStepTombstone
+import io.writeopia.sdk.persistence.entity.story.StoryStepTombstoneEntity
+import io.writeopia.sdk.persistence.dao.StoryStepTombstoneDao
 import io.writeopia.sdk.persistence.entity.story.StoryStepEntity
 import io.writeopia.sdk.persistence.entity.tag.DocumentTagLinkEntity
 import io.writeopia.sdk.persistence.parse.toCommentConversations
@@ -39,6 +42,7 @@ class RoomDocumentRepository(
     private val commentEntityDao: CommentEntityDao,
     private val database: RoomDatabase,
     private val documentTagLinkDao: DocumentTagLinkDao? = null,
+    private val storyStepTombstoneDao: StoryStepTombstoneDao? = null,
 ) : DocumentRepository, DocumentSearch {
 
     private val documentsState: MutableStateFlow<Map<String, List<Document>>> =
@@ -167,7 +171,7 @@ class RoomDocumentRepository(
 
             document.content.toEntity(document.id).let { data ->
                 storyUnitEntityDao?.deleteDocumentContent(documentId = document.id)
-                storyUnitEntityDao?.insertStoryUnits(*data.toTypedArray())
+                insertStepsKeepingTombstones(data)
             }
 
             val comments = document.commentConversations.toCommentEntities(document.id)
@@ -226,17 +230,69 @@ class RoomDocumentRepository(
 
     override suspend fun saveStoryStep(storyStep: StoryStep, position: Double, documentId: String) {
         val dbPos = storyStep.dbPosition ?: position
-        storyUnitEntityDao?.insertStoryUnits(storyStep.toEntity(dbPos, documentId))
+        insertStepsKeepingTombstones(listOf(storyStep.toEntity(dbPos, documentId)))
     }
 
     override suspend fun saveStorySteps(steps: List<Pair<Double, StoryStep>>, documentId: String) {
-        steps.forEach { (position, storyStep) ->
-            storyUnitEntityDao?.insertStoryUnits(storyStep.toEntity(position, documentId))
+        insertStepsKeepingTombstones(
+            steps.map { (position, storyStep) -> storyStep.toEntity(position, documentId) }
+        )
+    }
+
+    /**
+     * Writes the steps, except those deleted here (they have a tombstone the backend doesn't
+     * know of yet): a deleted step is never written back, whatever is saving it.
+     */
+    private suspend fun insertStepsKeepingTombstones(steps: List<StoryStepEntity>) {
+        if (steps.isEmpty()) return
+        val tombstoned = storyStepTombstoneDao
+            ?.stepIdsIn(steps.map { step -> step.id }.distinct())
+            ?.toSet()
+            ?: emptySet()
+        val toWrite = steps.filter { step -> step.id !in tombstoned }
+        if (toWrite.isNotEmpty()) storyUnitEntityDao?.insertStoryUnits(*toWrite.toTypedArray())
+    }
+
+    /**
+     * Deletes a step the user removed. A tombstone is kept until the backend is told, so the
+     * step is never recreated by a sync that still carries it.
+     */
+    override suspend fun deleteStoryStep(storyStepId: String, documentId: String) {
+        writeTransaction {
+            documentEntityDao.loadDocumentById(documentId)?.let { document ->
+                storyStepTombstoneDao?.insert(
+                    StoryStepTombstoneEntity(
+                        stepId = storyStepId,
+                        documentId = documentId,
+                        workspaceId = document.workspaceId,
+                        deletedAt = Clock.System.now().toEpochMilliseconds()
+                    )
+                )
+            }
+            storyUnitEntityDao?.deleteById(storyStepId)
         }
     }
 
-    override suspend fun deleteStoryStep(storyStepId: String, documentId: String) {
-        storyUnitEntityDao?.deleteById(storyStepId)
+    override suspend fun loadStoryStepTombstones(workspaceId: String): List<StoryStepTombstone> =
+        storyStepTombstoneDao?.loadByWorkspaceId(workspaceId)
+            ?.map { entity ->
+                StoryStepTombstone(
+                    stepId = entity.stepId,
+                    documentId = entity.documentId,
+                    workspaceId = entity.workspaceId,
+                    deletedAt = entity.deletedAt
+                )
+            }
+            ?: emptyList()
+
+    override suspend fun deleteStoryStepTombstones(stepIds: Collection<String>) {
+        if (stepIds.isEmpty()) return
+        storyStepTombstoneDao?.deleteByStepIds(stepIds.distinct())
+    }
+
+    override suspend fun deleteStoryStepsByIds(stepIds: Collection<String>, workspaceId: String) {
+        if (stepIds.isEmpty()) return
+        storyUnitEntityDao?.deleteByIdsForWorkspace(stepIds.distinct(), workspaceId)
     }
 
     override suspend fun updateStoryStepUrl(url: String, id: String) {

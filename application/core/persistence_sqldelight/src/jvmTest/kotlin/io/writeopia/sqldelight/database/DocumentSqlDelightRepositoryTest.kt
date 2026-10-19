@@ -39,6 +39,21 @@ class DocumentSqlDelightRepositoryTest {
     }
 
     @Test
+    fun deletedStepLeavesATombstoneAndNeverComesBack() = runTest {
+        createDb().deletedStepLeavesATombstoneAndNeverComesBack()
+    }
+
+    @Test
+    fun stepsDeletedElsewhereGoWithoutTombstone() = runTest {
+        createDb().stepsDeletedElsewhereGoWithoutTombstone()
+    }
+
+    @Test
+    fun stepTimestampsAreKept() = runTest {
+        createDb().stepTimestampsAreKept()
+    }
+
+    @Test
     fun saveAndLoadADocumentWithContent() = runTest {
         val documentRepositoryTests: DocumentRepositoryTests = createDb()
         documentRepositoryTests.saveAndLoadADocumentWithContent()

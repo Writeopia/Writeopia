@@ -52,7 +52,8 @@ fun StoryStepEntity.toModel(
             .map(SpanInfo::fromString)
             .toSet(),
         documentLink = documentLink,
-        dbPosition = position
+        dbPosition = position,
+        lastUpdatedAt = lastUpdatedAt
     )
 
 fun StoryStep.toEntity(position: Double, documentId: String): StoryStepEntity =
@@ -72,5 +73,6 @@ fun StoryStep.toEntity(position: Double, documentId: String): StoryStepEntity =
         backgroundColor = this.decoration.backgroundColor,
         tags = this.tags.joinToString(separator = ",") { it.tag.label },
         spans = this.spans.joinToString(separator = ",") { it.toText() },
-        linkToDocument = documentLink?.id
+        linkToDocument = documentLink?.id,
+        lastUpdatedAt = lastUpdatedAt
     )

@@ -40,6 +40,7 @@ class SqlDelightDocumentRepositoryTest {
         database.storyStepEntityQueries,
         database.commentEntityQueries,
         database.documentTagLinkEntityQueries,
+        database.storyStepTombstoneEntityQueries,
     )
 
     private val documentRepository = SqlDelightDocumentRepository(documentSqlDao)
@@ -338,4 +339,18 @@ class SqlDelightDocumentRepositoryTest {
         )
     }
 
+    @Test
+    fun deletedStepLeavesATombstoneAndNeverComesBack() = runTest {
+        DocumentRepositoryTests(documentRepository).deletedStepLeavesATombstoneAndNeverComesBack()
+    }
+
+    @Test
+    fun stepsDeletedElsewhereGoWithoutTombstone() = runTest {
+        DocumentRepositoryTests(documentRepository).stepsDeletedElsewhereGoWithoutTombstone()
+    }
+
+    @Test
+    fun stepTimestampsAreKept() = runTest {
+        DocumentRepositoryTests(documentRepository).stepTimestampsAreKept()
+    }
 }

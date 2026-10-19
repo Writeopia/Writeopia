@@ -16,7 +16,7 @@ import io.writeopia.core.folders.di.DocumentTagsInjector
 import io.writeopia.core.folders.di.FoldersInjector
 import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.core.folders.repository.folder.NotesUseCase
-import io.writeopia.core.folders.sync.DocumentConflictHandler
+import io.writeopia.core.folders.sync.DocumentSyncService
 import io.writeopia.core.folders.sync.DocumentTagConflictHandler
 import io.writeopia.core.folders.sync.EventSync
 import io.writeopia.core.folders.sync.FolderConflictHandler
@@ -83,8 +83,10 @@ class NotesMenuKmpInjection private constructor(
         return FolderSync(
             documentRepository = documentRepository,
             documentsApi = provideDocumentsApi(),
-            documentConflictHandler = DocumentConflictHandler(
-                documentRepository = documentRepository
+            documentSyncService = DocumentSyncService(
+                documentRepository = documentRepository,
+                syncApi = { request -> connectionInjector().storyStepSyncApi().syncStorySteps(request) },
+                documentsApi = provideDocumentsApi(),
             ),
             folderConflictHandler = FolderConflictHandler(
                 folderRepository = folderRepository

@@ -1,6 +1,7 @@
 package io.writeopia.api.documents.documents
 
 import io.writeopia.databse.HikariCp
+import io.writeopia.databse.tombstone.StoryStepTombstoneStore
 import io.writeopia.sql.WriteopiaDbBackend
 
 /**
@@ -8,6 +9,9 @@ import io.writeopia.sql.WriteopiaDbBackend
  */
 fun configureTestPersistence(): WriteopiaDbBackend {
     val driver = HikariCp.driver(debugMode = true)
-    HikariCp.initializeSchemaIfNeeded { WriteopiaDbBackend.Schema.create(it) }
+    HikariCp.initializeSchemaIfNeeded {
+        WriteopiaDbBackend.Schema.create(it)
+        StoryStepTombstoneStore(it).ensureSchema()
+    }
     return WriteopiaDbBackend(driver)
 }

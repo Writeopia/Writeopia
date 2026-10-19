@@ -279,3 +279,19 @@ CREATE TABLE IF NOT EXISTS folder_embedding (
 );
 
 CREATE INDEX IF NOT EXISTS idx_folder_embedding_workspace_id ON folder_embedding(workspace_id);
+
+-- The steps deleted in a workspace, kept so every device learns of the deletion. Partitioned
+-- by month of deletion; locally the service creates each month's partition on first use
+-- (production hands that to pg_partman, see the WriteopiaScripts2 README). Mirrored in
+-- backend/core/database/.../tombstone/StoryStepTombstoneStore.kt (ddl) and in
+-- WriteopiaScripts2/db-migrations/story_step_tombstones/ (production).
+CREATE TABLE IF NOT EXISTS story_step_tombstone (
+  step_id       TEXT NOT NULL,
+  document_id   TEXT NOT NULL,
+  workspace_id  TEXT NOT NULL,
+  deleted_at    BIGINT NOT NULL,
+  PRIMARY KEY (step_id, deleted_at)
+) PARTITION BY RANGE (deleted_at);
+
+CREATE INDEX IF NOT EXISTS idx_story_step_tombstone_workspace_deleted_at ON story_step_tombstone (workspace_id, deleted_at);
+CREATE INDEX IF NOT EXISTS idx_story_step_tombstone_document_deleted_at ON story_step_tombstone (document_id, deleted_at);

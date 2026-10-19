@@ -14,6 +14,11 @@ import io.writeopia.api.documents.documents.repository.deleteDocumentsByFolderId
 import io.writeopia.api.documents.documents.repository.deleteDocumentsByIds
 import io.writeopia.api.documents.documents.repository.deleteFolder
 import io.writeopia.api.documents.documents.repository.deleteStoryStepsByIds
+import io.writeopia.api.documents.documents.repository.storyStepTombstones
+import io.writeopia.api.documents.documents.repository.storyStepDocumentIds
+import io.writeopia.api.documents.documents.repository.deleteStoryStepsByIdsForWorkspace
+import io.writeopia.databse.tombstone.StoryStepTombstoneStore
+import io.writeopia.sdk.serialization.data.StoryStepTombstoneApi
 import io.writeopia.api.documents.documents.repository.documentsDiffByFolder
 import io.writeopia.api.documents.documents.repository.documentsDiffByWorkspace
 import io.writeopia.api.documents.documents.repository.getDocumentById
@@ -82,11 +87,80 @@ object DocumentsService {
                 writeopiaDb.getDocumentById(document.id, workspaceId)?.parentId
             }
             writeopiaDb.saveDocument(document)
-            embeddingService?.onDocumentSaved(document, previousParentId, writeopiaDb)
+            // The steps travel through the step sync, so what was sent may carry none: the
+            // document is embedded as stored.
+            val stored = embeddingService?.let { writeopiaDb.getDocumentWithContentById(document.id, workspaceId) }
+            embeddingService?.onDocumentSaved(stored ?: document, previousParentId, writeopiaDb)
         }
 
         return if (useAi) sendToAiHub(documents, workspaceId) else true
     }
+
+    /**
+     * Deletes the steps a device removed and keeps their tombstones, so the other devices learn
+     * of the deletion and no save brings the steps back. Only the steps of the workspace's
+     * documents are touched; the documents are stamped as changed so the next folder diffs of
+     * the other devices list them.
+     */
+    suspend fun deleteStorySteps(
+        tombstones: List<StoryStepTombstoneApi>,
+        workspaceId: String,
+        writeopiaDb: WriteopiaDbBackend,
+        embeddingService: DocumentEmbeddingService? = null,
+    ) {
+        if (tombstones.isEmpty()) return
+
+        val now = Clock.System.now().toEpochMilliseconds()
+        val stepIds = tombstones.map { tombstone -> tombstone.stepId }.distinct()
+
+        // The document a step is in, as stored; the client's word for the ones already gone.
+        val storedDocumentIds = writeopiaDb.storyStepDocumentIds(stepIds)
+        val documentIds = tombstones.associate { tombstone ->
+            tombstone.stepId to (storedDocumentIds[tombstone.stepId] ?: tombstone.documentId)
+        }
+        // Only the documents of this workspace: a tombstone for another workspace's step is noise.
+        val ownedDocumentIds = documentIds.values.distinct()
+            .filter { documentId -> writeopiaDb.getDocumentById(documentId, workspaceId) != null }
+            .toSet()
+        val owned = stepIds.filter { stepId -> documentIds.getValue(stepId) in ownedDocumentIds }
+        if (owned.isEmpty()) return
+
+        val tombstones = writeopiaDb.storyStepTombstones()
+        val alreadyTombstoned = tombstones.tombstonedAmong(owned)
+
+        writeopiaDb.deleteStoryStepsByIdsForWorkspace(owned, workspaceId)
+        tombstones.insertAll(
+            owned.filter { stepId -> stepId !in alreadyTombstoned }.map { stepId ->
+                StoryStepTombstoneStore.Tombstone(
+                    stepId = stepId,
+                    documentId = documentIds.getValue(stepId),
+                    workspaceId = workspaceId,
+                    deletedAt = now
+                )
+            }
+        )
+
+        // Only the documents that lost a step now: a deletion told twice changes nothing.
+        owned.filter { stepId -> stepId in storedDocumentIds }
+            .map { stepId -> documentIds.getValue(stepId) }
+            .distinct()
+            .forEach { documentId ->
+                val currentUpdatedAt = writeopiaDb.getDocumentById(documentId, workspaceId)
+                    ?.lastUpdatedAt
+                    ?.toEpochMilliseconds()
+                    ?: 0L
+                writeopiaDb.touchDocument(
+                    documentId = documentId,
+                    lastUpdatedAt = maxOf(currentUpdatedAt, now),
+                    lastSynced = now
+                )
+                embeddingService?.embedDocumentIfNeeded(documentId, workspaceId, writeopiaDb)
+            }
+    }
+
+    /** The ids of the steps deleted in [workspaceId] after [since] (epoch milliseconds). */
+    fun deletedStoryStepIds(workspaceId: String, since: Long, writeopiaDb: WriteopiaDbBackend): List<String> =
+        writeopiaDb.storyStepTombstones().deletedSince(workspaceId, since)
 
     /**
      * Stores folders sent by a client. Folders deleted earlier (tombstoned) are dropped
@@ -666,8 +740,14 @@ object DocumentsService {
         val clientUpdatedStepIds = mutableSetOf<String>()
         var updatedTitle: String? = null
 
+        // A step deleted at some point never comes back, whatever a device still holds.
+        val tombstones = writeopiaDb.storyStepTombstones()
+        val tombstoned = tombstones.tombstonedAmong(request.changes.map { change -> change.storyStep.id })
+
         // Process client changes
         for (change in request.changes) {
+            if (change.storyStep.id in tombstoned) continue
+
             val clientStep = change.storyStep.toModel()
             val clientTimestamp = change.storyStep.lastUpdatedAt ?: 0L
             val serverStepTimestamp = serverStepTimestamps[clientStep.id]
@@ -706,6 +786,8 @@ object DocumentsService {
 
         if (deletionsToApply.isNotEmpty()) {
             writeopiaDb.deleteStoryStepsByIds(deletionsToApply)
+            // Kept so the other devices delete them too, and nothing brings them back.
+            tombstones.insert(deletionsToApply, documentId, workspaceId, serverTimestamp)
         }
 
         // Steps alone don't change the document row: without this, the folder diffs of the
@@ -722,9 +804,9 @@ object DocumentsService {
             )
         }
 
-        // Get deletions that happened on server (steps that existed before but are now gone)
-        // For now, we track deletions via the request - in a real system you might have a deletions table
-        val serverDeletedIds = emptyList<String>()
+        // The steps of the document deleted elsewhere since the client's last sync.
+        val serverDeletedIds = tombstones.deletedSinceForDocument(documentId, request.lastSyncTimestamp)
+            .filter { stepId -> stepId !in deletionsToApply }
 
         // Return server steps that were updated after client's lastSync, excluding client's changes
         val stepsToReturn = serverUpdatedSteps

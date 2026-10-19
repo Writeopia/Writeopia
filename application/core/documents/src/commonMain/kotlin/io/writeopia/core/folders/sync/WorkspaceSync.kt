@@ -10,17 +10,21 @@ import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.repository.DocumentRepository
 import kotlin.time.Clock
-import kotlin.time.Instant
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
+/**
+ * Syncs the whole workspace, the way [FolderSync] syncs a folder: documents go and come one
+ * step at a time through [DocumentSyncService], never replaced whole.
+ */
 class WorkspaceSync(
     private val folderRepository: FolderRepository,
     private val documentRepository: DocumentRepository,
     private val authRepository: AuthRepository,
     private val documentsApi: DocumentsApi,
-    private val documentConflictHandler: DocumentConflictHandler,
+    private val documentSyncService: DocumentSyncService,
     private val folderConflictHandler: FolderConflictHandler,
     private val imageSync: ImageSync,
     private val documentTagRepository: DocumentTagRepository? = null,
@@ -58,22 +62,24 @@ class WorkspaceSync(
                 return ResultData.Error()
             }
 
-            val localOutdatedDocs =
-                documentRepository.loadOutdatedDocumentsForWorkspace(workspaceId)
-            val localOutdatedFolders = folderRepository.localOutDatedFolders(workspaceId)
+            // Deletions first, then the edited steps and the metadata of the outdated documents.
+            if (!documentSyncService.sendDeletedSteps(workspaceId)) return ResultData.Error()
 
-            val documentsNotSent = documentConflictHandler.handleConflict(
-                localOutdatedDocs,
-                newDocuments,
+            val sentAt = Clock.System.now()
+            val localOutdatedDocs = documentRepository.loadOutdatedDocumentsForWorkspace(workspaceId)
+            val documentsToSend = localOutdatedDocs.filter { document ->
+                documentSyncService.syncDocumentSteps(document)
+            }
+            val resultSendDocuments = documentsApi.sendDocuments(
+                documentsToSend.map { document -> document.withoutContent() },
+                workspaceId
             )
 
+            val localOutdatedFolders = folderRepository.localOutDatedFolders(workspaceId)
             val foldersNotSent = folderConflictHandler.handleConflict(
                 localFolders = localOutdatedFolders,
                 externalFolders = newFolders,
             )
-
-            val resultSendDocuments =
-                documentsApi.sendDocuments(documentsNotSent, workspaceId)
 
             val resultSendFolders = documentsApi.sendFolders(foldersNotSent, workspaceId)
 
@@ -89,14 +95,15 @@ class WorkspaceSync(
                 resultSendFolders is ResultData.Complete &&
                 resultSendTags is ResultData.Complete
             ) {
-                // Documents and folders were sent successfully.
-                // Update lastSyncedAt for sent items to prevent re-sending them.
                 val syncTime = Clock.System.now()
 
-                // Update lastSyncedAt for documents that were sent
-                documentsNotSent.forEach { doc ->
-                    val updatedDoc = doc.copy(lastSyncedAt = syncTime)
-                    documentRepository.saveDocument(updatedDoc)
+                // In sync as of the time taken before the send; a later edit stays newer.
+                documentsToSend.forEach { sent ->
+                    val current =
+                        documentRepository.loadDocumentById(sent.id, workspaceId) ?: return@forEach
+                    // Never earlier than the step sync's own stamp, or its steps would look outdated.
+                    val syncedAt = current.lastSyncedAt?.let { maxOf(it, sentAt) } ?: sentAt
+                    documentRepository.saveDocumentMetadata(current.copy(lastSyncedAt = syncedAt))
                 }
 
                 // Update lastSyncedAt for folders that were sent
@@ -108,6 +115,12 @@ class WorkspaceSync(
                 tagsNotSent.forEach { tag ->
                     documentTagRepository?.upsertTag(tag.copy(lastSyncedAt = syncTime))
                 }
+
+                // What changed elsewhere: deletions first, then the documents, step by step.
+                if (!documentSyncService.receiveDeletedSteps(workspaceId, workspace.lastSync)) {
+                    return ResultData.Error()
+                }
+                documentSyncService.mergeReceivedDocuments(newDocuments)
 
                 documentRepository.refreshDocuments()
                 folderRepository.refreshFolders()

@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
+import io.writeopia.sdk.models.DOCUMENT_ENTITY
 import io.writeopia.sdk.persistence.entity.story.STORY_UNIT_ENTITY
 import io.writeopia.sdk.persistence.entity.story.StoryStepEntity
 
@@ -50,4 +51,12 @@ interface StoryUnitEntityDao {
 
     @Query("DELETE FROM $STORY_UNIT_ENTITY WHERE $STORY_UNIT_ENTITY.document_id IN (:documentIds)")
     suspend fun deleteByDocumentIds(documentIds: List<String>)
+
+    // Steps deleted on the backend, scoped to the workspace so an id can't reach another one.
+    @Query(
+        "DELETE FROM $STORY_UNIT_ENTITY WHERE $STORY_UNIT_ENTITY.id IN (:stepIds) " +
+            "AND $STORY_UNIT_ENTITY.document_id IN " +
+            "(SELECT id FROM $DOCUMENT_ENTITY WHERE workspace_id = :workspaceId)"
+    )
+    suspend fun deleteByIdsForWorkspace(stepIds: List<String>, workspaceId: String)
 }

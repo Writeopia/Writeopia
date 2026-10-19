@@ -1,6 +1,7 @@
 package io.writeopia.api.geteway
 
 import io.writeopia.databse.HikariCp
+import io.writeopia.databse.tombstone.StoryStepTombstoneStore
 import io.writeopia.sql.WriteopiaDbBackend
 
 private val debugMode: Boolean
@@ -9,7 +10,10 @@ private val debugMode: Boolean
 fun configurePersistence(): WriteopiaDbBackend {
     val driver = HikariCp.driver(debugMode)
     if (debugMode) {
-        HikariCp.initializeSchemaIfNeeded { WriteopiaDbBackend.Schema.create(it) }
+        HikariCp.initializeSchemaIfNeeded {
+            WriteopiaDbBackend.Schema.create(it)
+            StoryStepTombstoneStore(it).ensureSchema()
+        }
     }
     return WriteopiaDbBackend(driver)
 }
