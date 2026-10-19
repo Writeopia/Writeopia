@@ -261,19 +261,24 @@ class FolderSyncTest {
     }
 
     @Test
-    fun `the deletions received are applied before the documents, from the folder watermark on`() = runBlocking {
+    fun `the deletions are applied before the documents, from the backend's own watermark on`() = runBlocking {
         val documentSyncService = syncService()
         val folderRepository = mockk<FolderRepository>(relaxed = true)
-        val contentSyncedAt = Instant.fromEpochMilliseconds(1_000_000)
-        coEvery { folderRepository.getContentSyncedAt(folderId, workspaceId) } returns contentSyncedAt
+        val deletionsSyncedAt = Instant.fromEpochMilliseconds(1_000_000)
+        val serverTimestamp = Instant.fromEpochMilliseconds(2_000_000)
+        coEvery { folderRepository.getContentSyncedAt(DocumentSyncService.DELETIONS_WATERMARK_ID, workspaceId) } returns deletionsSyncedAt
+        coEvery { documentSyncService.receiveDeletedSteps(workspaceId, deletionsSyncedAt) } returns
+            DocumentSyncService.ReceivedDeletions(emptySet(), serverTimestamp)
         val (folderSync, _) = successfulSync(folderRepository, documentSyncService = documentSyncService)
 
         folderSync.syncFolder(folderId, workspaceId, force = true)
 
         coVerifyOrder {
-            documentSyncService.receiveDeletedSteps(workspaceId, contentSyncedAt)
+            documentSyncService.receiveDeletedSteps(workspaceId, deletionsSyncedAt)
             documentSyncService.mergeReceivedDocuments(any(), any())
         }
+        // The backend's time, not this device's: a clock ahead of the backend would skip deletions.
+        coVerify { folderRepository.setContentSyncedAt(DocumentSyncService.DELETIONS_WATERMARK_ID, workspaceId, serverTimestamp) }
     }
 
     @Test
@@ -281,7 +286,8 @@ class FolderSyncTest {
         val documentSyncService = syncService()
         val folderRepository = mockk<FolderRepository>(relaxed = true)
         coEvery { documentSyncService.sendDeletedSteps(workspaceId) } returns setOf("deleted-here")
-        coEvery { documentSyncService.receiveDeletedSteps(workspaceId, any()) } returns setOf("deleted-elsewhere")
+        coEvery { documentSyncService.receiveDeletedSteps(workspaceId, any()) } returns
+            DocumentSyncService.ReceivedDeletions(setOf("deleted-elsewhere"), Instant.fromEpochMilliseconds(0))
         val (folderSync, _) = successfulSync(folderRepository, documentSyncService = documentSyncService)
 
         folderSync.syncFolder(folderId, workspaceId, force = true)
@@ -395,7 +401,8 @@ class FolderSyncTest {
     private fun syncService(): DocumentSyncService = mockk<DocumentSyncService>(relaxed = true).also { service ->
         coEvery { service.sendDeletedSteps(any()) } returns emptySet()
         coEvery { service.syncDocuments(any(), any()) } returns emptyList()
-        coEvery { service.receiveDeletedSteps(any(), any()) } returns emptySet()
+        coEvery { service.receiveDeletedSteps(any(), any()) } returns
+            DocumentSyncService.ReceivedDeletions(emptySet(), Instant.fromEpochMilliseconds(0))
     }
 
     private fun folderSync(

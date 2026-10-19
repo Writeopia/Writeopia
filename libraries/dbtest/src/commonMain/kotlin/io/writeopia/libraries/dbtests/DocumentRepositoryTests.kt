@@ -538,6 +538,27 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
         assertEquals(listOf(1_791_998_156_814L, null), loaded?.content?.values?.map { it.lastUpdatedAt })
     }
 
+    /** More steps than one SQLite query can bind (older builds allow 999 variables). */
+    suspend fun aDocumentWithMoreStepsThanOneQueryCanBindIsSaved() {
+        val content = (0 until 1_200).associate { index ->
+            index.toDouble() to StoryStep(type = StoryTypes.TEXT.type, text = "line $index")
+        }
+        val document = Document(
+            createdAt = now(),
+            lastUpdatedAt = now(),
+            lastSyncedAt = null,
+            workspaceId = "workspace-big",
+            parentId = "",
+            content = content,
+        )
+
+        documentRepository.saveDocument(document)
+        val deleted = content.values.take(1_100).map { step -> step.id }
+        documentRepository.deleteStoryStepsByIds(deleted, document.workspaceId)
+
+        assertEquals(100, documentRepository.loadDocumentById(document.id, document.workspaceId)?.content?.size)
+    }
+
     private fun Document.stepIds(): List<String> = content.values.map { it.id }
 
     suspend fun saveSimpleDocumentAndLoadByParentId() {

@@ -97,9 +97,11 @@ class WorkspaceSync(
                 }
 
                 // What changed elsewhere: deletions first, then the documents, step by step.
-                val deletedElsewhere = documentSyncService.receiveDeletedSteps(workspaceId, workspace.lastSync)
+                val deletionsSince = folderRepository.getContentSyncedAt(DocumentSyncService.DELETIONS_WATERMARK_ID, workspaceId)
+                val received = documentSyncService.receiveDeletedSteps(workspaceId, deletionsSince ?: Instant.DISTANT_PAST)
                     ?: return ResultData.Error()
-                documentSyncService.mergeReceivedDocuments(newDocuments, excluding = deletedHere + deletedElsewhere)
+                documentSyncService.mergeReceivedDocuments(newDocuments, excluding = deletedHere + received.stepIds)
+                folderRepository.setContentSyncedAt(DocumentSyncService.DELETIONS_WATERMARK_ID, workspaceId, received.serverTimestamp)
 
                 documentRepository.refreshDocuments()
                 folderRepository.refreshFolders()

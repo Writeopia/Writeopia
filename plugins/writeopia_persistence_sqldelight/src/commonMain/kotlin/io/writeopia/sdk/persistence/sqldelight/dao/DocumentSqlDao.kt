@@ -191,8 +191,10 @@ class DocumentSqlDao(
 
     private suspend fun tombstonedIdsAmong(ids: Collection<String>): Set<String> {
         val queries = storyStepTombstoneQueries ?: return emptySet()
-        if (ids.isEmpty()) return emptySet()
-        return queries.selectStepIdsIn(ids.distinct()).awaitAsList().toSet()
+        // In batches: SQLite binds one variable per id, and older builds allow 999.
+        return ids.distinct().chunked(SQLITE_IDS_PER_QUERY)
+            .flatMap { batch -> queries.selectStepIdsIn(batch).awaitAsList() }
+            .toSet()
     }
 
     /**
@@ -277,14 +279,16 @@ class DocumentSqlDao(
             ?: emptyList()
 
     suspend fun deleteStoryStepTombstones(stepIds: Collection<String>) {
-        if (stepIds.isEmpty()) return
-        storyStepTombstoneQueries?.deleteByStepIds(stepIds.distinct())
+        stepIds.distinct().chunked(SQLITE_IDS_PER_QUERY).forEach { batch ->
+            storyStepTombstoneQueries?.deleteByStepIds(batch)
+        }
     }
 
     /** Removes steps deleted on the backend. No tombstone: the backend has one already. */
     suspend fun deleteStoryStepsByIds(stepIds: Collection<String>, workspaceId: String) {
-        if (stepIds.isEmpty()) return
-        storyStepQueries?.deleteByIdsForWorkspace(stepIds.distinct(), workspaceId)
+        stepIds.distinct().chunked(SQLITE_IDS_PER_QUERY).forEach { batch ->
+            storyStepQueries?.deleteByIdsForWorkspace(batch, workspaceId)
+        }
     }
 
     suspend fun loadDocumentById(id: String): Document? =
@@ -1197,5 +1201,10 @@ class DocumentSqlDao(
                 storyStep
             }
             ?: emptyList()
+    }
+
+    private companion object {
+        /** Ids per `IN (...)` query: SQLite binds one variable per id, and builds before 3.32 allow 999. */
+        const val SQLITE_IDS_PER_QUERY = 500
     }
 }

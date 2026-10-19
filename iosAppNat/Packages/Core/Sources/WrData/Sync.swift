@@ -203,13 +203,14 @@ public final class SyncAPI {
         public let serverTimestamp: Int64
     }
 
-    /// The ids of the steps deleted in the workspace, on any device, after `since` (epoch ms).
-    public func deletedStepIds(since: Int64) async throws -> [String] {
-        let response: DeletedStepsResponse = try await client.get(
+    /// The ids of the steps deleted in the workspace, on any device, after `since` (epoch ms),
+    /// with the backend's time before it looked: the next request asks from there, in the
+    /// backend's clock.
+    public func deletedSteps(since: Int64) async throws -> DeletedStepsResponse {
+        try await client.get(
             "api/docs/workspace/\(workspaceId)/steps/deleted",
             query: [URLQueryItem(name: "since", value: String(since))]
         )
-        return response.stepIds
     }
 
     public struct StepChange: Encodable, Equatable {
@@ -410,14 +411,23 @@ public final class DocumentStepSync {
         return outdated
     }
 
+    /// What `receiveDeletedSteps` brought: the ids, and where the next request starts from.
+    public struct ReceivedDeletions {
+        public let stepIds: Set<String>
+        /// The backend's time before it looked, in its own clock.
+        public let serverTimestamp: Int64
+    }
+
     /// Removes the steps deleted on other devices after `since` and returns their ids, so a
-    /// listing fetched before the deletions doesn't bring them back. No tombstone is kept for
-    /// them: the backend has one.
+    /// listing fetched before the deletions doesn't bring them back, with the backend's time
+    /// to ask from next (its clock, not this device's: a deletion made while the clocks
+    /// disagree would be skipped for good otherwise). No tombstone is kept for them: the
+    /// backend has one.
     @discardableResult
-    public func receiveDeletedSteps(since: Int64) async throws -> Set<String> {
-        let ids = try await api.deletedStepIds(since: since)
-        if !ids.isEmpty { try local.deleteSteps(ids: ids) }
-        return Set(ids)
+    public func receiveDeletedSteps(since: Int64) async throws -> ReceivedDeletions {
+        let response = try await api.deletedSteps(since: since)
+        if !response.stepIds.isEmpty { try local.deleteSteps(ids: response.stepIds) }
+        return ReceivedDeletions(stepIds: Set(response.stepIds), serverTimestamp: response.serverTimestamp)
     }
 
     /// Merges a document received from the backend into the local copy, step by step: a step
@@ -875,12 +885,12 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
         // Now what changed elsewhere: the steps deleted since the last time go first, so
         // nothing received recreates them; then the documents, merged step by step. The
         // listing predates the deletions sent above, so it may still carry those steps too.
-        let deletionsAskedAt = Date.nowMillis
-        let deletedElsewhere = try await stepSync.receiveDeletedSteps(since: try local.stepDeletionsSyncedAt() ?? 0)
+        let received = try await stepSync.receiveDeletedSteps(since: try local.stepDeletionsSyncedAt() ?? 0)
         for document in remoteContents.documents {
-            try stepSync.mergeReceived(document, excluding: deletedElsewhere.union(deletedHere))
+            try stepSync.mergeReceived(document, excluding: received.stepIds.union(deletedHere))
         }
-        try local.setStepDeletionsSyncedAt(deletionsAskedAt)
+        // Workspace-wide, in the backend's clock.
+        try local.setStepDeletionsSyncedAt(received.serverTimestamp)
 
         // Folders changed in other folders that couldn't be sent yet (a move while offline, for
         // one) go with this sync too, so they don't wait for their folder to be opened.

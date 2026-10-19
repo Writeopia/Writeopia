@@ -160,11 +160,14 @@ class DocumentsApi(
         }
     }
 
-    /** The ids of the steps deleted in the workspace, on any device, since [since]. */
+    /**
+     * The ids of the steps deleted in the workspace, on any device, since [since], with the
+     * backend's time before it looked: the next sync asks from there, in the backend's clock.
+     */
     suspend fun getDeletedStoryStepIds(
         workspaceId: String,
         since: Instant
-    ): ResultData<List<String>> {
+    ): ResultData<DeletedStoryStepsResponse> {
         if (workspaceId == Workspace.disconnectedWorkspace().id) return ResultData.Error()
 
         val response = client.get("$baseUrl/api/docs/workspace/$workspaceId/steps/deleted") {
@@ -172,7 +175,7 @@ class DocumentsApi(
         }
 
         return if (response.status.isSuccess()) {
-            ResultData.Complete(response.body<DeletedStoryStepsResponse>().stepIds)
+            ResultData.Complete(response.body<DeletedStoryStepsResponse>())
         } else {
             println("error loading deleted story steps: $response")
             ResultData.Error()

@@ -13,6 +13,7 @@ import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.persistence.core.repository.InMemoryDocumentRepository
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.request.StoryStepSyncRequest
+import io.writeopia.sdk.serialization.response.DeletedStoryStepsResponse
 import io.writeopia.sdk.serialization.response.StoryStepSyncResponse
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
@@ -288,9 +289,12 @@ class DocumentSyncServiceTest {
     @Test
     fun `the steps deleted elsewhere are removed without a tombstone`() = runBlocking {
         val document = storeDocument(step("a", 1), step("b", 1))
-        coEvery { documentsApi.getDeletedStoryStepIds(workspaceId, any()) } returns ResultData.Complete(listOf("b"))
+        coEvery { documentsApi.getDeletedStoryStepIds(workspaceId, any()) } returns
+            ResultData.Complete(DeletedStoryStepsResponse(stepIds = listOf("b"), serverTimestamp = 778))
 
-        assertEquals(setOf("b"), service.receiveDeletedSteps(workspaceId, Instant.DISTANT_PAST))
+        val received = service.receiveDeletedSteps(workspaceId, Instant.DISTANT_PAST)
+        assertEquals(setOf("b"), received?.stepIds)
+        assertEquals(778L, received?.serverTimestamp?.toEpochMilliseconds())
 
         assertNull(repository.loadDocumentById(document.id, workspaceId)!!.stepOrNull("b"))
         assertTrue(repository.loadStoryStepTombstones(workspaceId).isEmpty())

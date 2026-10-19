@@ -105,6 +105,11 @@ class DocumentRoomRepositoryTest {
     }
 
     @Test
+    fun aDocumentWithMoreStepsThanOneQueryCanBindIsSaved() = runTest {
+        documentRepositoryTests.aDocumentWithMoreStepsThanOneQueryCanBindIsSaved()
+    }
+
+    @Test
     fun savingAndLoadingDocumentWithOneImageInRepository() = runTest {
         documentRepositoryTests.savingAndLoadingDocumentWithOneImageInRepository()
     }

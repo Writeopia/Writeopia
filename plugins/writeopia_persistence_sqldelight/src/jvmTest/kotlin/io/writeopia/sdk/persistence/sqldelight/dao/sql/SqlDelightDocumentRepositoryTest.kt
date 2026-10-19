@@ -353,4 +353,9 @@ class SqlDelightDocumentRepositoryTest {
     fun stepTimestampsAreKept() = runTest {
         DocumentRepositoryTests(documentRepository).stepTimestampsAreKept()
     }
+
+    @Test
+    fun aDocumentWithMoreStepsThanOneQueryCanBindIsSaved() = runTest {
+        DocumentRepositoryTests(documentRepository).aDocumentWithMoreStepsThanOneQueryCanBindIsSaved()
+    }
 }

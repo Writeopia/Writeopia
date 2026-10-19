@@ -464,7 +464,8 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
         return found
     }
 
-    /// When the deletions made elsewhere were last fetched (epoch milliseconds), nil before the first time.
+    /// Where the next request for the deletions made elsewhere starts from: the backend's time
+    /// (epoch milliseconds) before it answered the last one; nil before the first time.
     public func stepDeletionsSyncedAt() throws -> Int64? {
         try meta("step_deletions_synced_at").flatMap(Int64.init)
     }

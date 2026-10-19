@@ -404,12 +404,13 @@ final class FakeBackend: HTTPTransport {
 
         #expect(try repository.local.storedDocument(id: "d")?.content.map(\.id) == ["a"])
         #expect(try repository.local.storedStepTombstones().isEmpty)
-        // The first time everything is asked for; afterwards only what came since.
+        // The first time everything is asked for; afterwards from the backend's own time on,
+        // never this device's clock.
         #expect(backend.deletedStepsSince == [0])
+        #expect(try repository.local.stepDeletionsSyncedAt() == 778)
         try await Task.sleep(for: .seconds(2.1))
         try await repository.syncFolder("root")
-        #expect(backend.deletedStepsSince.count == 2)
-        #expect(backend.deletedStepsSince[1] > 0)
+        #expect(backend.deletedStepsSince == [0, 778])
     }
 
     @Test func receivedDocumentsAreMergedStepByStep() async throws {

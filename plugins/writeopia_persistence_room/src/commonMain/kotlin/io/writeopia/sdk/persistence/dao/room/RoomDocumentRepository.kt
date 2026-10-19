@@ -245,10 +245,15 @@ class RoomDocumentRepository(
      */
     private suspend fun insertStepsKeepingTombstones(steps: List<StoryStepEntity>) {
         if (steps.isEmpty()) return
-        val tombstoned = storyStepTombstoneDao
-            ?.stepIdsIn(steps.map { step -> step.id }.distinct())
-            ?.toSet()
-            ?: emptySet()
+        val tombstoneDao = storyStepTombstoneDao
+        val tombstoned = if (tombstoneDao == null) {
+            emptySet()
+        } else {
+            // In batches: SQLite binds one variable per id, and older builds allow 999.
+            steps.map { step -> step.id }.distinct().chunked(SQLITE_IDS_PER_QUERY)
+                .flatMap { batch -> tombstoneDao.stepIdsIn(batch) }
+                .toSet()
+        }
         val toWrite = steps.filter { step -> step.id !in tombstoned }
         if (toWrite.isNotEmpty()) storyUnitEntityDao?.insertStoryUnits(*toWrite.toTypedArray())
     }
@@ -286,13 +291,15 @@ class RoomDocumentRepository(
             ?: emptyList()
 
     override suspend fun deleteStoryStepTombstones(stepIds: Collection<String>) {
-        if (stepIds.isEmpty()) return
-        storyStepTombstoneDao?.deleteByStepIds(stepIds.distinct())
+        stepIds.distinct().chunked(SQLITE_IDS_PER_QUERY).forEach { batch ->
+            storyStepTombstoneDao?.deleteByStepIds(batch)
+        }
     }
 
     override suspend fun deleteStoryStepsByIds(stepIds: Collection<String>, workspaceId: String) {
-        if (stepIds.isEmpty()) return
-        storyUnitEntityDao?.deleteByIdsForWorkspace(stepIds.distinct(), workspaceId)
+        stepIds.distinct().chunked(SQLITE_IDS_PER_QUERY).forEach { batch ->
+            storyUnitEntityDao?.deleteByIdsForWorkspace(batch, workspaceId)
+        }
     }
 
     override suspend fun updateStoryStepUrl(url: String, id: String) {
@@ -364,6 +371,11 @@ class RoomDocumentRepository(
 
                 entity.toModel()
             }
+
+    private companion object {
+        /** Ids per `IN (...)` query: SQLite binds one variable per id, and builds before 3.32 allow 999. */
+        const val SQLITE_IDS_PER_QUERY = 500
+    }
 
     private suspend fun <T> writeTransaction(block: suspend () -> T): T =
         database.useWriterConnection { transactor ->

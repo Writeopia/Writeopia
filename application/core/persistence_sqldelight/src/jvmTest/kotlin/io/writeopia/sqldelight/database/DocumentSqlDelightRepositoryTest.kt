@@ -54,6 +54,11 @@ class DocumentSqlDelightRepositoryTest {
     }
 
     @Test
+    fun aDocumentWithMoreStepsThanOneQueryCanBindIsSaved() = runTest {
+        createDb().aDocumentWithMoreStepsThanOneQueryCanBindIsSaved()
+    }
+
+    @Test
     fun saveAndLoadADocumentWithContent() = runTest {
         val documentRepositoryTests: DocumentRepositoryTests = createDb()
         documentRepositoryTests.saveAndLoadADocumentWithContent()

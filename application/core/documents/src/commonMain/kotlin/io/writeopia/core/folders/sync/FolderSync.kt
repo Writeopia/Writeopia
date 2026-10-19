@@ -137,9 +137,12 @@ class FolderSync(
                 // Now what changed elsewhere: the steps deleted since the last sync go first, so
                 // nothing received recreates them; then the documents, merged step by step. The
                 // listing predates the deletions sent above, so it may still carry those steps.
-                val deletedElsewhere =
-                    documentSyncService.receiveDeletedSteps(workspaceId, lastSync ?: Instant.DISTANT_PAST) ?: return
-                documentSyncService.mergeReceivedDocuments(newDocuments, excluding = deletedHere + deletedElsewhere)
+                val deletionsSince = folderRepository.getContentSyncedAt(DocumentSyncService.DELETIONS_WATERMARK_ID, workspaceId)
+                val received =
+                    documentSyncService.receiveDeletedSteps(workspaceId, deletionsSince ?: Instant.DISTANT_PAST) ?: return
+                documentSyncService.mergeReceivedDocuments(newDocuments, excluding = deletedHere + received.stepIds)
+                // Workspace-wide, in the backend's clock.
+                folderRepository.setContentSyncedAt(DocumentSyncService.DELETIONS_WATERMARK_ID, workspaceId, received.serverTimestamp)
 
                 // The contents of this folder are now on this device. The watermark is the time
                 // taken before the request, so whatever changed while it ran comes again next time.

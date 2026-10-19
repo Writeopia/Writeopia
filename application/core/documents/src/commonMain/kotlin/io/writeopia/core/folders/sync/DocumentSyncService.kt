@@ -179,12 +179,14 @@ class DocumentSyncService(
      * Removes the steps deleted on other devices since [since]. No tombstone is kept for them:
      * the backend has one.
      *
-     * @return their ids, so a listing fetched before doesn't bring them back; null when the
+     * @return their ids, so a listing fetched before doesn't bring them back, and the backend's
+     * time before it looked, to ask from next time (its clock, not this device's: a deletion
+     * made while the clocks disagree would be skipped for good otherwise); null when the
      * backend could not be reached.
      */
-    suspend fun receiveDeletedSteps(workspaceId: String, since: Instant): Set<String>? {
+    suspend fun receiveDeletedSteps(workspaceId: String, since: Instant): ReceivedDeletions? {
         if (workspaceId == Workspace.disconnectedWorkspace().id) return null
-        val api = documentsApi ?: return emptySet()
+        val api = documentsApi ?: return ReceivedDeletions(emptySet(), since)
 
         val result = try {
             api.getDeletedStoryStepIds(workspaceId, since)
@@ -196,9 +198,15 @@ class DocumentSyncService(
         }
         if (result !is ResultData.Complete) return null
 
-        documentRepository.deleteStoryStepsByIds(result.data, workspaceId)
-        return result.data.toSet()
+        documentRepository.deleteStoryStepsByIds(result.data.stepIds, workspaceId)
+        return ReceivedDeletions(
+            stepIds = result.data.stepIds.toSet(),
+            serverTimestamp = Instant.fromEpochMilliseconds(result.data.serverTimestamp)
+        )
     }
+
+    /** What [receiveDeletedSteps] brought: the ids, and where the next request starts from. */
+    data class ReceivedDeletions(val stepIds: Set<String>, val serverTimestamp: Instant)
 
     /**
      * Merges a document received from the backend into the local copy, step by step: a step
@@ -329,6 +337,13 @@ class DocumentSyncService(
         if (ids.isEmpty()) this else filterNot { (_, step) -> step.id in ids }
 
     companion object {
+        /**
+         * Where the deletions watermark of a workspace is kept: in the folder contents
+         * watermarks, under this id instead of a folder's. Deletions are workspace-wide, and
+         * the value is the backend's time, not this device's.
+         */
+        const val DELETIONS_WATERMARK_ID = "__step_deletions__"
+
         /** Steps per request: keeps the payload small and the request reliable. */
         private const val MAX_STEPS_PER_BATCH = 50
 
