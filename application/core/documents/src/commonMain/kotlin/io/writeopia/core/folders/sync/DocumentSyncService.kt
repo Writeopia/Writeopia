@@ -48,14 +48,15 @@ class DocumentSyncService(
      * Sends the deletions pending in the workspace, in batches, and forgets the ones the
      * backend accepted.
      *
-     * @return false when some could not be sent; they stay pending.
+     * @return the ids sent, so a listing fetched before they went doesn't bring the steps back;
+     * null when some could not be sent (they stay pending).
      */
-    suspend fun sendDeletedSteps(workspaceId: String): Boolean {
-        if (workspaceId == Workspace.disconnectedWorkspace().id) return false
-        val api = documentsApi ?: return true
+    suspend fun sendDeletedSteps(workspaceId: String): Set<String>? {
+        if (workspaceId == Workspace.disconnectedWorkspace().id) return null
+        val api = documentsApi ?: return emptySet()
 
         val tombstones = documentRepository.loadStoryStepTombstones(workspaceId)
-        if (tombstones.isEmpty()) return true
+        if (tombstones.isEmpty()) return emptySet()
 
         for (batch in tombstones.chunked(MAX_TOMBSTONES_PER_BATCH)) {
             val result = try {
@@ -64,14 +65,14 @@ class DocumentSyncService(
                 throw e
             } catch (e: Exception) {
                 println("Error sending deleted steps: ${e.message}")
-                return false
+                return null
             }
-            if (result !is ResultData.Complete) return false
+            if (result !is ResultData.Complete) return null
 
             documentRepository.deleteStoryStepTombstones(batch.map { tombstone -> tombstone.stepId })
         }
 
-        return true
+        return tombstones.map { tombstone -> tombstone.stepId }.toSet()
     }
 
     /**
@@ -136,10 +137,13 @@ class DocumentSyncService(
     /**
      * Removes the steps deleted on other devices since [since]. No tombstone is kept for them:
      * the backend has one.
+     *
+     * @return their ids, so a listing fetched before doesn't bring them back; null when the
+     * backend could not be reached.
      */
-    suspend fun receiveDeletedSteps(workspaceId: String, since: Instant): Boolean {
-        if (workspaceId == Workspace.disconnectedWorkspace().id) return false
-        val api = documentsApi ?: return true
+    suspend fun receiveDeletedSteps(workspaceId: String, since: Instant): Set<String>? {
+        if (workspaceId == Workspace.disconnectedWorkspace().id) return null
+        val api = documentsApi ?: return emptySet()
 
         val result = try {
             api.getDeletedStoryStepIds(workspaceId, since)
@@ -147,22 +151,24 @@ class DocumentSyncService(
             throw e
         } catch (e: Exception) {
             println("Error receiving deleted steps: ${e.message}")
-            return false
+            return null
         }
-        if (result !is ResultData.Complete) return false
+        if (result !is ResultData.Complete) return null
 
         documentRepository.deleteStoryStepsByIds(result.data, workspaceId)
-        return true
+        return result.data.toSet()
     }
 
     /**
      * Merges a document received from the backend into the local copy, step by step: a step
      * only there is added, a step newer there replaces the local one, the rest stays. The steps
-     * deleted here and not yet sent are left out. A document deleted here is not brought back.
+     * deleted here and not yet sent are left out, like the ones in [excluding] (deleted just
+     * now, here or elsewhere, after the listing was fetched). A document deleted here is not
+     * brought back.
      *
      * @return true when something was written.
      */
-    suspend fun mergeReceivedDocument(received: Document): Boolean {
+    suspend fun mergeReceivedDocument(received: Document, excluding: Set<String> = emptySet()): Boolean {
         val workspaceId = received.workspaceId
         val local = documentRepository.loadDocumentById(received.id, workspaceId)
         if (local?.deleted == true) return false
@@ -170,7 +176,7 @@ class DocumentSyncService(
         val tombstoned = documentRepository.loadStoryStepTombstones(workspaceId)
             .map { tombstone -> tombstone.stepId }
             .toSet()
-        val incoming = received.copy(content = received.content.withoutSteps(tombstoned))
+        val incoming = received.copy(content = received.content.withoutSteps(tombstoned + excluding))
 
         if (local == null) {
             documentRepository.saveDocument(incoming)
@@ -212,8 +218,8 @@ class DocumentSyncService(
     }
 
     /** [mergeReceivedDocument] for each document. */
-    suspend fun mergeReceivedDocuments(received: List<Document>) {
-        received.forEach { document -> mergeReceivedDocument(document) }
+    suspend fun mergeReceivedDocuments(received: List<Document>, excluding: Set<String> = emptySet()) {
+        received.forEach { document -> mergeReceivedDocument(document, excluding) }
     }
 
     /**

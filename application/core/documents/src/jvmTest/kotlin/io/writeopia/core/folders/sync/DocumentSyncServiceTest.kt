@@ -50,7 +50,7 @@ class DocumentSyncServiceTest {
         repository.deleteStoryStep("a", document.id)
         coEvery { documentsApi.deleteStorySteps(any(), workspaceId) } returns ResultData.Complete(Unit)
 
-        assertTrue(service.sendDeletedSteps(workspaceId))
+        assertEquals(setOf("a"), service.sendDeletedSteps(workspaceId))
 
         coVerify {
             documentsApi.deleteStorySteps(
@@ -67,7 +67,7 @@ class DocumentSyncServiceTest {
         repository.deleteStoryStep("a", document.id)
         coEvery { documentsApi.deleteStorySteps(any(), workspaceId) } returns ResultData.Error()
 
-        assertFalse(service.sendDeletedSteps(workspaceId))
+        assertNull(service.sendDeletedSteps(workspaceId))
 
         assertEquals(listOf("a"), repository.loadStoryStepTombstones(workspaceId).map { it.stepId })
     }
@@ -215,11 +215,24 @@ class DocumentSyncServiceTest {
     }
 
     @Test
+    fun `a received listing never brings back a step deleted in this sync`() = runBlocking {
+        val local = storeDocument(step("a", 5), lastSyncedAt = 10, lastUpdatedAt = 10)
+        val received = local.copy(
+            lastUpdatedAt = Instant.fromEpochMilliseconds(20),
+            content = mapOf(0.0 to step("a", 5), 1.0 to step("stale", 20))
+        )
+
+        service.mergeReceivedDocument(received, excluding = setOf("stale"))
+
+        assertNull(repository.loadDocumentById(local.id, workspaceId)!!.stepOrNull("stale"))
+    }
+
+    @Test
     fun `the steps deleted elsewhere are removed without a tombstone`() = runBlocking {
         val document = storeDocument(step("a", 1), step("b", 1))
         coEvery { documentsApi.getDeletedStoryStepIds(workspaceId, any()) } returns ResultData.Complete(listOf("b"))
 
-        assertTrue(service.receiveDeletedSteps(workspaceId, Instant.DISTANT_PAST))
+        assertEquals(setOf("b"), service.receiveDeletedSteps(workspaceId, Instant.DISTANT_PAST))
 
         assertNull(repository.loadDocumentById(document.id, workspaceId)!!.stepOrNull("b"))
         assertTrue(repository.loadStoryStepTombstones(workspaceId).isEmpty())

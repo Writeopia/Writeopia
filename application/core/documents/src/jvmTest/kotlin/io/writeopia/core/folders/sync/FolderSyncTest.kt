@@ -75,7 +75,7 @@ class FolderSyncTest {
 
         coVerify { documentsApi.getFolderNewData(folderId, workspaceId, any(), any()) }
         // The received documents are merged step by step, never saved whole.
-        coVerify { documentSyncService.mergeReceivedDocuments(match { it.size == 1 && it.first().id == newDocument.id }) }
+        coVerify { documentSyncService.mergeReceivedDocuments(match { it.size == 1 && it.first().id == newDocument.id }, any()) }
         coVerify(exactly = 0) { documentRepository.saveDocument(any()) }
         coVerify { folderConflictHandler.handleConflict(any(), match { it.size == 1 && it.first().id == newSubfolder.id }) }
         coVerify { documentsApi.sendDocuments(any(), workspaceId) }
@@ -225,7 +225,7 @@ class FolderSyncTest {
             documentSyncService.syncDocumentSteps(edited)
             documentsApi.sendDocuments(listOf(edited.withoutContent()), workspaceId)
             documentSyncService.receiveDeletedSteps(workspaceId, any())
-            documentSyncService.mergeReceivedDocuments(any())
+            documentSyncService.mergeReceivedDocuments(any(), any())
         }
     }
 
@@ -254,7 +254,7 @@ class FolderSyncTest {
         val documentRepository = mockk<DocumentRepository>(relaxed = true)
         val documentSyncService = syncService()
         val folderRepository = mockk<FolderRepository>(relaxed = true)
-        coEvery { documentSyncService.sendDeletedSteps(workspaceId) } returns false
+        coEvery { documentSyncService.sendDeletedSteps(workspaceId) } returns null
         coEvery { documentRepository.loadOutdatedDocumentsForWorkspace(workspaceId) } returns listOf(document("doc1", "Edited"))
         val (folderSync, documentsApi) = successfulSync(
             folderRepository,
@@ -266,7 +266,7 @@ class FolderSyncTest {
 
         coVerify(exactly = 0) { documentSyncService.syncDocumentSteps(any()) }
         coVerify(exactly = 0) { documentsApi.sendDocuments(any(), any()) }
-        coVerify(exactly = 0) { documentSyncService.mergeReceivedDocuments(any()) }
+        coVerify(exactly = 0) { documentSyncService.mergeReceivedDocuments(any(), any()) }
         coVerify(exactly = 0) { folderRepository.setContentSyncedAt(any(), any(), any()) }
     }
 
@@ -282,20 +282,33 @@ class FolderSyncTest {
 
         coVerifyOrder {
             documentSyncService.receiveDeletedSteps(workspaceId, contentSyncedAt)
-            documentSyncService.mergeReceivedDocuments(any())
+            documentSyncService.mergeReceivedDocuments(any(), any())
         }
+    }
+
+    @Test
+    fun `the steps deleted in this sync, here or elsewhere, are kept out of the received documents`() = runBlocking {
+        val documentSyncService = syncService()
+        val folderRepository = mockk<FolderRepository>(relaxed = true)
+        coEvery { documentSyncService.sendDeletedSteps(workspaceId) } returns setOf("deleted-here")
+        coEvery { documentSyncService.receiveDeletedSteps(workspaceId, any()) } returns setOf("deleted-elsewhere")
+        val (folderSync, _) = successfulSync(folderRepository, documentSyncService = documentSyncService)
+
+        folderSync.syncFolder(folderId, workspaceId, force = true)
+
+        coVerify { documentSyncService.mergeReceivedDocuments(any(), setOf("deleted-here", "deleted-elsewhere")) }
     }
 
     @Test
     fun `the watermark doesn't move while the deletions can't be received`() = runBlocking {
         val documentSyncService = syncService()
         val folderRepository = mockk<FolderRepository>(relaxed = true)
-        coEvery { documentSyncService.receiveDeletedSteps(workspaceId, any()) } returns false
+        coEvery { documentSyncService.receiveDeletedSteps(workspaceId, any()) } returns null
         val (folderSync, _) = successfulSync(folderRepository, documentSyncService = documentSyncService)
 
         folderSync.syncFolder(folderId, workspaceId, force = true)
 
-        coVerify(exactly = 0) { documentSyncService.mergeReceivedDocuments(any()) }
+        coVerify(exactly = 0) { documentSyncService.mergeReceivedDocuments(any(), any()) }
         coVerify(exactly = 0) { folderRepository.setContentSyncedAt(any(), any(), any()) }
     }
 
@@ -419,7 +432,7 @@ class FolderSyncTest {
         coVerify(exactly = 0) { folderRepository.setContentSyncedAt(any(), any(), any()) }
         // Nothing received is applied either: the sync is tried again whole.
         coVerify(exactly = 0) { documentSyncService.receiveDeletedSteps(any(), any()) }
-        coVerify(exactly = 0) { documentSyncService.mergeReceivedDocuments(any()) }
+        coVerify(exactly = 0) { documentSyncService.mergeReceivedDocuments(any(), any()) }
     }
 
     private fun document(
@@ -439,9 +452,9 @@ class FolderSyncTest {
 
     /** A step sync that succeeds at everything and receives nothing. */
     private fun syncService(): DocumentSyncService = mockk<DocumentSyncService>(relaxed = true).also { service ->
-        coEvery { service.sendDeletedSteps(any()) } returns true
+        coEvery { service.sendDeletedSteps(any()) } returns emptySet()
         coEvery { service.syncDocumentSteps(any()) } returns true
-        coEvery { service.receiveDeletedSteps(any(), any()) } returns true
+        coEvery { service.receiveDeletedSteps(any(), any()) } returns emptySet()
     }
 
     private fun folderSync(

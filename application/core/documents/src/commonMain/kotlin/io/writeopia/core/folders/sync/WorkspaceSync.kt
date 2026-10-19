@@ -63,7 +63,7 @@ class WorkspaceSync(
             }
 
             // Deletions first, then the edited steps and the metadata of the outdated documents.
-            if (!documentSyncService.sendDeletedSteps(workspaceId)) return ResultData.Error()
+            val deletedHere = documentSyncService.sendDeletedSteps(workspaceId) ?: return ResultData.Error()
 
             val sentAt = Clock.System.now()
             val localOutdatedDocs = documentRepository.loadOutdatedDocumentsForWorkspace(workspaceId)
@@ -117,10 +117,9 @@ class WorkspaceSync(
                 }
 
                 // What changed elsewhere: deletions first, then the documents, step by step.
-                if (!documentSyncService.receiveDeletedSteps(workspaceId, workspace.lastSync)) {
-                    return ResultData.Error()
-                }
-                documentSyncService.mergeReceivedDocuments(newDocuments)
+                val deletedElsewhere = documentSyncService.receiveDeletedSteps(workspaceId, workspace.lastSync)
+                    ?: return ResultData.Error()
+                documentSyncService.mergeReceivedDocuments(newDocuments, excluding = deletedHere + deletedElsewhere)
 
                 documentRepository.refreshDocuments()
                 folderRepository.refreshFolders()
