@@ -19,7 +19,6 @@ import io.writeopia.notemenu.ui.dto.NotesUi
 import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
 import io.writeopia.notemenu.viewmodel.ConfigState
 import io.writeopia.notemenu.viewmodel.FolderController
-import io.writeopia.notemenu.viewmodel.FolderDestination
 import io.writeopia.notemenu.viewmodel.SyncState
 import io.writeopia.notemenu.viewmodel.UserState
 import io.writeopia.notemenu.viewmodel.pathTo
@@ -291,9 +290,7 @@ internal class OnlyBackendChooseNoteKmpViewModel(
             false
         }
 
-    override suspend fun currentFolderMoveDestinations(): List<FolderDestination> = emptyList()
-
-    override fun moveCurrentFolder(parentId: String) {}
+    override fun moveFolder(folderId: String, parentId: String) {}
 
     // Only the folders loaded so far are known here: this ViewModel has no local database.
     override suspend fun workspaceFolders(): List<Folder> =

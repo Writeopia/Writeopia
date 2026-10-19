@@ -141,16 +141,11 @@ interface ChooseNoteViewModel : FolderController {
 
     fun createFolderWithDetails(name: String, icon: MenuItem.Icon?)
 
-    /**
-     * Folders the current folder can be moved into: the whole tree of the workspace, except the
-     * current folder itself, what is inside it and where it already is.
-     */
-    suspend fun currentFolderMoveDestinations(): List<FolderDestination>
-
-    /** Every folder of the workspace, for the picker of where the selected items go. */
+    /** Every folder of the workspace, for the picker of where the selected items or a folder go. */
     suspend fun workspaceFolders(): List<Folder>
 
-    fun moveCurrentFolder(parentId: String)
+    /** Moves the folder [folderId] into [parentId]. */
+    fun moveFolder(folderId: String, parentId: String)
 }
 
 sealed interface UserState<T> {

@@ -298,11 +298,11 @@ private fun SortingSection(sortingSelected: (OrderBy) -> Unit, sortingState: Sta
 private fun Modifier.sortingOptionModifier(): Modifier = fillMaxWidth().padding(12.dp)
 
 /**
- * Editing, moving and deleting the folder being displayed. Outside a folder ([folderTitle] null)
- * there's nothing to act on, so nothing is shown.
+ * Editing, moving and deleting a folder. Without a folder ([folderTitle] null) there's nothing
+ * to act on, so nothing is shown.
  */
 @Composable
-private fun FolderSection(
+internal fun FolderSection(
     folderTitle: String?,
     onEditFolder: () -> Unit,
     onMoveFolder: () -> Unit,
