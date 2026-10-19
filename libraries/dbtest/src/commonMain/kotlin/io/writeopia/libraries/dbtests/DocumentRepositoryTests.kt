@@ -476,12 +476,13 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
             content = twoLines(),
         )
         documentRepository.saveDocument(document)
-        val (deleted, kept) = document.content.toSortedMap().values.toList()
+        val (deleted, kept) = document.content.entries.sortedBy { entry -> entry.key }.map { entry -> entry.value }
 
         documentRepository.deleteStoryStep(deleted.id, document.id)
 
         val tombstones = documentRepository.loadStoryStepTombstones(document.workspaceId)
-        assertEquals(listOf(deleted.id to document.id), tombstones.map { it.stepId to it.documentId })
+        assertEquals(listOf(deleted.id), tombstones.map { tombstone -> tombstone.stepId })
+        assertEquals(document.id, tombstones.single().documentId)
         assertEquals(listOf(kept.id), documentRepository.loadDocumentById(document.id, document.workspaceId)?.stepIds())
 
         // Whatever saves it again, step by step or whole: it stays deleted.
@@ -492,7 +493,7 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
 
         // Once the backend has the deletion, the tombstone goes.
         documentRepository.deleteStoryStepTombstones(listOf(deleted.id))
-        assertEquals(emptyList(), documentRepository.loadStoryStepTombstones(document.workspaceId))
+        assertTrue(documentRepository.loadStoryStepTombstones(document.workspaceId).isEmpty())
     }
 
     /** A step deleted elsewhere goes without a tombstone, and only inside its workspace. */
@@ -506,14 +507,14 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
             content = twoLines(),
         )
         documentRepository.saveDocument(document)
-        val (deleted, kept) = document.content.toSortedMap().values.toList()
+        val (deleted, kept) = document.content.entries.sortedBy { entry -> entry.key }.map { entry -> entry.value }
 
         documentRepository.deleteStoryStepsByIds(listOf(deleted.id), "another-workspace")
         assertEquals(2, documentRepository.loadDocumentById(document.id, document.workspaceId)?.content?.size)
 
         documentRepository.deleteStoryStepsByIds(listOf(deleted.id), document.workspaceId)
         assertEquals(listOf(kept.id), documentRepository.loadDocumentById(document.id, document.workspaceId)?.stepIds())
-        assertEquals(emptyList(), documentRepository.loadStoryStepTombstones(document.workspaceId))
+        assertTrue(documentRepository.loadStoryStepTombstones(document.workspaceId).isEmpty())
     }
 
     /** The time of a step's last edit survives a round trip, so the sync can compare it. */
