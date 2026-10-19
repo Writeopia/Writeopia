@@ -126,7 +126,7 @@ object DocumentsService {
         if (owned.isEmpty()) return
 
         val tombstones = writeopiaDb.storyStepTombstones()
-        val alreadyTombstoned = tombstones.tombstonedAmong(owned)
+        val alreadyTombstoned = tombstones.tombstonedAmong(owned, workspaceId)
 
         writeopiaDb.deleteStoryStepsByIdsForWorkspace(owned, workspaceId)
         tombstones.insertAll(
@@ -742,7 +742,7 @@ object DocumentsService {
 
         // A step deleted at some point never comes back, whatever a device still holds.
         val tombstones = writeopiaDb.storyStepTombstones()
-        val tombstoned = tombstones.tombstonedAmong(request.changes.map { change -> change.storyStep.id })
+        val tombstoned = tombstones.tombstonedAmong(request.changes.map { change -> change.storyStep.id }, workspaceId)
 
         // Process client changes
         for (change in request.changes) {
@@ -777,15 +777,19 @@ object DocumentsService {
             }
         }
 
-        // Process deletions
+        // Process deletions: only steps of this document (a client may send any id), and only
+        // if the step wasn't updated on the server after the client's last sync.
+        val stepsOfThisDocument = writeopiaDb.storyStepDocumentIds(request.deletions)
+            .filterValues { owner -> owner == documentId }
+            .keys
         val deletionsToApply = request.deletions.filter { deletionId ->
-            // Only delete if the step wasn't updated on the server after client's last sync
             val serverStepTimestamp = serverStepTimestamps[deletionId]
-            serverStepTimestamp == null || serverStepTimestamp <= request.lastSyncTimestamp
+            deletionId in stepsOfThisDocument &&
+                (serverStepTimestamp == null || serverStepTimestamp <= request.lastSyncTimestamp)
         }
 
         if (deletionsToApply.isNotEmpty()) {
-            writeopiaDb.deleteStoryStepsByIds(deletionsToApply)
+            writeopiaDb.deleteStoryStepsByIdsForWorkspace(deletionsToApply, workspaceId)
             // Kept so the other devices delete them too, and nothing brings them back.
             tombstones.insert(deletionsToApply, documentId, workspaceId, serverTimestamp)
         }

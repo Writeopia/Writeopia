@@ -90,7 +90,7 @@ class DocumentSqlBeDao(
                 ?.executeAsList()
                 ?.associate { row -> row.id to row.last_updated_at }
                 ?: emptyMap()
-            val tombstoned = tombstones?.tombstonedAmong(document.content.values.flatMap { step -> step.allIds() })
+            val tombstoned = tombstones?.tombstonedAmong(document.content.values.flatMap { step -> step.allIds() }, document.workspaceId)
                 ?: emptySet()
 
             document.content.values.forEachIndexed { i, storyStep ->

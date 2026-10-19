@@ -87,16 +87,23 @@ class StoryStepTombstoneStore(private val driver: SqlDriver) {
             }
         ) { cursor -> cursor.getString(0)!! }
 
-    /** Which of [stepIds] were deleted at some point: a save must not bring them back. */
-    fun tombstonedAmong(stepIds: Collection<String>): Set<String> {
+    /**
+     * Which of [stepIds] were deleted at some point in [workspaceId]: a save there must not
+     * bring them back. Scoped to the workspace, so a tombstone filed elsewhere, under an id
+     * someone guessed, can't block a step here.
+     */
+    fun tombstonedAmong(stepIds: Collection<String>, workspaceId: String): Set<String> {
         val ids = stepIds.distinct()
         if (ids.isEmpty()) return emptySet()
 
         return ids.chunked(BATCH).flatMap { batch ->
             query(
-                "SELECT DISTINCT step_id FROM $TABLE WHERE step_id IN ${placeholders(batch.size)}",
-                batch.size,
-                { batch.forEachIndexed { index, id -> bindString(index, id) } }
+                "SELECT DISTINCT step_id FROM $TABLE WHERE workspace_id = ? AND step_id IN ${placeholders(batch.size)}",
+                batch.size + 1,
+                {
+                    bindString(0, workspaceId)
+                    batch.forEachIndexed { index, id -> bindString(index + 1, id) }
+                }
             ) { cursor -> cursor.getString(0)!! }
         }.toSet()
     }

@@ -128,6 +128,47 @@ class StoryStepTombstoneTest {
     }
 
     @Test
+    fun `a step sync deletes only the steps of its own document`() = runBlocking {
+        storeDocument(step("a"))
+        val otherDocument = "doc-tombstones-other"
+        db.saveDocument(
+            Document(
+                id = otherDocument,
+                title = "Other",
+                createdAt = Instant.fromEpochMilliseconds(editedAt),
+                lastUpdatedAt = Instant.fromEpochMilliseconds(editedAt),
+                lastSyncedAt = Instant.fromEpochMilliseconds(editedAt),
+                workspaceId = workspaceId,
+                parentId = "root",
+                content = mapOf(0.0 to step("elsewhere"))
+            )
+        )
+
+        DocumentsService.syncStorySteps(
+            documentId,
+            workspaceId,
+            request(changes = emptyList(), deletions = listOf("elsewhere", "never-stored", "a"), lastSync = editedAt),
+            db
+        )
+
+        assertEquals(listOf("title"), stepIds())
+        assertEquals(listOf("elsewhere"), db.getDocumentWithContentById(otherDocument, workspaceId)!!.content.values.map { it.id })
+        assertEquals(listOf("a"), DocumentsService.deletedStoryStepIds(workspaceId, editedAt, db))
+        db.storyStepEntityQueries.deleteByDocumentId(otherDocument)
+        Unit
+    }
+
+    @Test
+    fun `a tombstone of another workspace doesn't block the same id here`() = runBlocking {
+        db.storyStepTombstones().insert(listOf("a"), "a-document-elsewhere", "another-workspace", editedAt)
+
+        storeDocument(step("a"))
+
+        assertEquals(listOf("title", "a"), stepIds())
+        db.storyStepTombstones().deleteByWorkspace("another-workspace")
+    }
+
+    @Test
     fun `deletions of steps outside the workspace are ignored`() = runBlocking {
         storeDocument(step("a"))
 
