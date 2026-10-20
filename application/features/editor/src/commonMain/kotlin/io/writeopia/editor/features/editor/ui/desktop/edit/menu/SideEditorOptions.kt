@@ -1217,6 +1217,9 @@ internal fun AiOptions(
         AiTargetMode.CURSOR
     ),
     fixedTargetMode: AiTargetMode? = null,
+    // The side panel draws its own bordered, fixed-width frame. Inside a container that already
+    // has one (mobile's bottom sheet) the content fills the container's width instead.
+    framed: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     var selectedTargetMode by remember {
@@ -1227,13 +1230,19 @@ internal fun AiOptions(
     // Buttons are disabled when Selected Lines mode is active but no lines are selected
     val actionsEnabled = selectedTargetMode != AiTargetMode.SELECTED_LINES || hasSelectedLines
 
-    Column(
-        modifier = modifier.border(
+    val frameModifier = if (framed) {
+        Modifier.border(
             1.dp,
             MaterialTheme.colorScheme.surfaceVariant,
             MaterialTheme.shapes.medium
         ).background(MaterialTheme.colorScheme.background, MaterialTheme.shapes.medium)
             .width(MENU_WIDTH.dp)
+    } else {
+        Modifier.fillMaxWidth()
+    }
+
+    Column(
+        modifier = modifier.then(frameModifier)
             .verticalScroll(rememberScrollState())
             .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp)
     ) {

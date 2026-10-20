@@ -56,7 +56,7 @@ import io.writeopia.editor.features.editor.ui.desktop.edit.menu.SideEditorOption
 import io.writeopia.editor.features.editor.ui.tags.AddDocumentTagDialog
 import io.writeopia.editor.features.editor.ui.tags.DocumentTagsDialog
 import io.writeopia.editor.features.editor.ui.folders.FolderSelectionDialog
-import io.writeopia.editor.features.editor.ui.mobile.MobileAiDialog
+import io.writeopia.editor.features.editor.ui.mobile.MobileAiSheet
 import io.writeopia.editor.features.editor.viewmodel.AiTargetMode
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.editor.features.editor.viewmodel.ShareDocument
@@ -350,7 +350,7 @@ internal fun NoteEditorScreen(
             }
 
             if (showAiDialog) {
-                MobileAiDialog(
+                MobileAiSheet(
                     onDismissRequest = { showAiDialog = false },
                     currentModel = noteEditorViewModel.currentModel,
                     models = noteEditorViewModel.models,
@@ -365,7 +365,7 @@ internal fun NoteEditorScreen(
             }
 
             if (showSelectedLinesAiDialog) {
-                MobileAiDialog(
+                MobileAiSheet(
                     onDismissRequest = { showSelectedLinesAiDialog = false },
                     currentModel = noteEditorViewModel.currentModel,
                     models = noteEditorViewModel.models,
