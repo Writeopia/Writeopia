@@ -72,10 +72,27 @@ class CommandIntentServiceTest {
     }
 
     @Test
-    fun `it does not ask when there is nothing to replace`() = runTest {
+    fun `without a selection an edit rewrites the document`() = runTest {
+        val (response, _) = service(answer(replace = 0.8))
+            .decide(request.copy(selectedText = "", command = "fix the typo in the last line"))
+
+        assertEquals(AiCommandIntent.REWRITE, response.intent)
+        assertEquals(0.8, response.replaceProbability)
+    }
+
+    @Test
+    fun `without a selection new content is added`() = runTest {
+        val (response, _) = service(answer(replace = 0.1))
+            .decide(request.copy(selectedText = "", command = "write a conclusion"))
+
+        assertEquals(AiCommandIntent.ADD, response.intent)
+    }
+
+    @Test
+    fun `it does not ask when there is no text at all`() = runTest {
         var calls = 0
         val (response, _) = service(answer(replace = 0.9)) { calls++ }
-            .decide(request.copy(selectedText = "  "))
+            .decide(request.copy(selectedText = "  ", documentText = ""))
 
         assertEquals(AiCommandIntent.ADD, response.intent)
         assertEquals(0, calls)

@@ -6,9 +6,9 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 
 /**
- * The question Jev answers about a free command: does the writer want the lines they selected
- * rewritten, or something new added to the document? One Choice, since the two exclude each
- * other. Only asked when lines are selected: without them there is nothing to replace.
+ * The question Jev answers about a free command: does the writer want the text they have
+ * (the lines they selected, or the document when nothing is selected) rewritten, or something
+ * new added to the document? One Choice, since the two exclude each other.
  */
 object CommandIntentQuestions {
 
@@ -29,7 +29,27 @@ object CommandIntentQuestions {
             )
         )
 
-    fun question(): SystemOneQuestion =
+    fun question(request: AiCommandRequest): SystemOneQuestion =
+        if (request.selectedText.isBlank()) questionForDocument() else questionForSelection()
+
+    /** With nothing selected the command is about the document: rewrite it, or add to it. */
+    fun questionForDocument(): SystemOneQuestion =
+        SystemOneQuestion.choice(
+            instructions = "The writer of `document` (titled `document_title`) typed `command` " +
+                "for an AI assistant, with nothing selected. Decide whether the writer wants " +
+                "the existing text of the document changed, or new content added to it.",
+            options = mapOf(
+                REPLACE to "The command changes text that is already in the document: edit, " +
+                    "rewrite, fix, shorten, expand, simplify, translate, reorder, reformat, " +
+                    "change the tone, or correct a specific line, paragraph or section of it.",
+                ADD to "The command asks for new content that leaves the existing text as it " +
+                    "is: continue the document, write a new paragraph or section, a summary, a " +
+                    "conclusion, examples, ideas, a reply, or any other content to add.",
+            )
+        )
+
+    /** With lines selected the command is about them: replace them, or add after them. */
+    fun questionForSelection(): SystemOneQuestion =
         SystemOneQuestion.choice(
             instructions = "The writer of `document` (titled `document_title`) selected the lines " +
                 "in `selected_text` and typed `command` for an AI assistant. Decide what the " +

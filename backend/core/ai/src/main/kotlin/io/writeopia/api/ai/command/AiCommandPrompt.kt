@@ -5,9 +5,10 @@ import io.writeopia.app.dto.ai.AiCommandRequest
 
 /**
  * The prompt Gemini answers for a free command: the document, the lines the writer selected
- * when there are any, and the command. It changes with the intent Jev decided: a replacement
- * must be only the new version of the selected lines, an addition must be only the new content,
- * so the editor can put the answer in the document as it is.
+ * when there are any, and the command. It changes with the intent: a replacement must be only
+ * the new version of the selected lines, an addition only the new content, and a rewrite (no
+ * selection) the whole document again, so the editor can put the answer in the document as it
+ * is.
  */
 object AiCommandPrompt {
 
@@ -23,6 +24,12 @@ object AiCommandPrompt {
             appendLine()
 
             when {
+                intent == AiCommandIntent.REWRITE -> {
+                    appendLine("The DOCUMENT is in Markdown, one paragraph per line. A line like [[writeopia-block-3]] stands for a block you cannot see (a table, an image, a drawing): keep every such line exactly as it is, in its place.")
+                    appendLine("Apply the command to the document and answer with the WHOLE document again, in the same Markdown, one paragraph per line, keeping every line the command does not affect exactly as it is, in the same order.")
+                    appendLine("Do not explain what you did, do not add a title, and do not wrap the answer in a code fence: answer with the document only.")
+                }
+
                 intent == AiCommandIntent.REPLACE && hasSelection -> {
                     appendLine("Apply the command to the SELECTED LINES and answer with the new version of them, and nothing else.")
                     appendLine("The new version takes the place of the selected lines in the document, so keep what the command does not ask to change: the language, the meaning, the formatting and the line breaks between paragraphs.")

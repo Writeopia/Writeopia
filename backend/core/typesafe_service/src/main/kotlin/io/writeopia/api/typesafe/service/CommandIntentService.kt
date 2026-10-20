@@ -9,8 +9,8 @@ import io.writeopia.app.dto.ai.AiCommandRequest
 import io.writeopia.connection.logger
 
 /**
- * Asks Jev whether a free command replaces the lines the writer selected or adds to the
- * document. Replacing is the destructive answer, so it needs at least [replaceThreshold] of probability; below that the
+ * Asks Jev whether a free command changes the text the writer has (the selected lines, or the
+ * document when nothing is selected) or adds to the document. Changing is the destructive answer, so it needs at least [replaceThreshold] of probability; below that the
  * text stays and the answer is added after it. The threshold comes from the
  * AI_COMMAND_REPLACE_THRESHOLD environment variable, so it can change without a new image.
  */
@@ -30,8 +30,7 @@ class CommandIntentService(
             return AiCommandIntentResponse(error = "The command is empty") to SystemOneUsage()
         }
 
-        // With nothing selected there is nothing to replace: the answer can only be added.
-        if (request.selectedText.isBlank()) {
+        if (request.selectedText.isBlank() && request.documentText.isBlank()) {
             return AiCommandIntentResponse(intent = AiCommandIntent.ADD) to SystemOneUsage()
         }
 
@@ -42,17 +41,18 @@ class CommandIntentService(
         }
 
         val started = System.currentTimeMillis()
-        val questions = mapOf(CommandIntentQuestions.QUESTION_ID to CommandIntentQuestions.question())
+        val questions = mapOf(CommandIntentQuestions.QUESTION_ID to CommandIntentQuestions.question(request))
+        val hasSelection = request.selectedText.isNotBlank()
 
         return when (val result = client.ask(CommandIntentQuestions.stateFor(request), questions)) {
             is TypeSafeResult.Success -> {
                 val answer = result.response.answers[CommandIntentQuestions.QUESTION_ID]
                 val replaceProbability = answer?.probabilities?.get(CommandIntentQuestions.REPLACE)
                     ?: if (answer?.choice == CommandIntentQuestions.REPLACE) 1.0 else 0.0
-                val intent = if (replaceProbability >= replaceThreshold) {
-                    AiCommandIntent.REPLACE
-                } else {
-                    AiCommandIntent.ADD
+                val intent = when {
+                    replaceProbability < replaceThreshold -> AiCommandIntent.ADD
+                    hasSelection -> AiCommandIntent.REPLACE
+                    else -> AiCommandIntent.REWRITE
                 }
 
                 logger.info(

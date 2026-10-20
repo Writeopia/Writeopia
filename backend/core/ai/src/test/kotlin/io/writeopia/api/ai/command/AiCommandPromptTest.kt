@@ -54,6 +54,19 @@ class AiCommandPromptTest {
     }
 
     @Test
+    fun `a rewrite asks for the whole document back with the blocks in place`() {
+        val prompt = AiCommandPrompt.forRequest(
+            request.copy(selectedText = "", documentText = "Monday.\n[[writeopia-block-1]]\nTuesday."),
+            AiCommandIntent.REWRITE
+        )
+
+        assertContains(prompt, "answer with the WHOLE document again")
+        assertContains(prompt, "keep every such line exactly as it is")
+        assertContains(prompt, "DOCUMENT:\n```\nMonday.\n[[writeopia-block-1]]\nTuesday.")
+        assertFalse(prompt.contains("SELECTED LINES"))
+    }
+
+    @Test
     fun `a long document is cut around the selection`() {
         val filler = "x".repeat(AiCommandPrompt.DOCUMENT_LIMIT)
         val document = "$filler\nThe selected line.\n$filler"

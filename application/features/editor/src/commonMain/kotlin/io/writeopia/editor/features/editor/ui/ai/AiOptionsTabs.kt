@@ -33,14 +33,14 @@ import io.writeopia.editor.features.editor.viewmodel.AiTargetMode
 import io.writeopia.resources.WrStrings
 import kotlinx.coroutines.flow.StateFlow
 
-private const val QUICK_ACTIONS_TAB = 0
-private const val COMMAND_TAB = 1
+private const val COMMAND_TAB = 0
+private const val QUICK_ACTIONS_TAB = 1
 
 /**
- * The AI options, in two tabs, shared by the desktop side panel and the mobile sheet: the quick
- * actions (summary, action points, FAQ, tags), with "Apply to" picking the text they work on,
- * and a free command about the document and the lines selected when it is typed, which the AI
- * either applies to those lines or answers after them.
+ * The AI options, in two tabs, shared by the desktop side panel and the mobile sheet: a free
+ * command about the document and the lines selected when it is typed, which the AI either
+ * applies to those lines or answers after them, and the quick actions (summary, action points,
+ * FAQ, tags), with "Apply to" picking the text they work on.
  */
 @Composable
 internal fun AiOptionsTabs(
@@ -54,7 +54,7 @@ internal fun AiOptionsTabs(
     aiCommand: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var selectedTab by rememberSaveable { mutableIntStateOf(QUICK_ACTIONS_TAB) }
+    var selectedTab by rememberSaveable { mutableIntStateOf(COMMAND_TAB) }
     var command by rememberSaveable { mutableStateOf("") }
 
     Column(modifier = modifier) {
@@ -68,21 +68,28 @@ internal fun AiOptionsTabs(
             contentColor = MaterialTheme.colorScheme.onBackground,
         ) {
             Tab(
-                selected = selectedTab == QUICK_ACTIONS_TAB,
-                onClick = { selectedTab = QUICK_ACTIONS_TAB },
-                text = { Text(WrStrings.quickActions(), style = MaterialTheme.typography.labelLarge) }
-            )
-            Tab(
                 selected = selectedTab == COMMAND_TAB,
                 onClick = { selectedTab = COMMAND_TAB },
                 text = { Text(WrStrings.aiCommand(), style = MaterialTheme.typography.labelLarge) }
+            )
+            Tab(
+                selected = selectedTab == QUICK_ACTIONS_TAB,
+                onClick = { selectedTab = QUICK_ACTIONS_TAB },
+                text = { Text(WrStrings.quickActions(), style = MaterialTheme.typography.labelLarge) }
             )
         }
 
         Spacer(modifier = Modifier.height(12.dp))
 
         when (selectedTab) {
-            QUICK_ACTIONS_TAB -> QuickActions(
+            COMMAND_TAB -> CommandTab(
+                command = command,
+                onCommandChange = { command = it },
+                enabled = command.isNotBlank(),
+                onRun = { aiCommand(command) },
+            )
+
+            else -> QuickActions(
                 hasSelectedLinesState = hasSelectedLinesState,
                 availableTargetModes = availableTargetModes,
                 fixedTargetMode = fixedTargetMode,
@@ -90,13 +97,6 @@ internal fun AiOptionsTabs(
                 aiActionPoints = aiActionPoints,
                 aiFaq = aiFaq,
                 aiTags = aiTags,
-            )
-
-            else -> CommandTab(
-                command = command,
-                onCommandChange = { command = it },
-                enabled = command.isNotBlank(),
-                onRun = { aiCommand(command) },
             )
         }
 

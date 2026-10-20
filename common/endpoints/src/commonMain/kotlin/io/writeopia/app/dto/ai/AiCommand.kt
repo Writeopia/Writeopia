@@ -10,6 +10,12 @@ enum class AiCommandIntent {
 
     /** The answer is new content, added to the document, which stays as it is. */
     ADD,
+
+    /**
+     * The answer is the whole document sent in the request, rewritten: the command applied
+     * where it applies and everything else kept as it was. Used when nothing is selected.
+     */
+    REWRITE,
 }
 
 /**
@@ -24,7 +30,11 @@ data class AiCommandRequest(
     /** The lines selected when the command was typed. Empty when nothing was selected. */
     val selectedText: String = "",
     val documentTitle: String = "",
-    /** The text of the whole document. The backend cuts it when too long, around the selection. */
+    /**
+     * The text of the whole document, or the part of it the command is about. The backend cuts
+     * it when too long, around the selection. For a rewrite it is Markdown, one paragraph per
+     * line, where a `[[writeopia-block-N]]` line stands for a block the AI does not see.
+     */
     val documentText: String = "",
     /** What to generate. Required by the generation endpoint, ignored by the intent one. */
     val intent: AiCommandIntent? = null,

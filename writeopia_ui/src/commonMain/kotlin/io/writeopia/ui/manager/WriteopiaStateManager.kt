@@ -1665,6 +1665,68 @@ class WriteopiaStateManager(
         }
     }
 
+    /**
+     * Starts rewriting the region of the document from [from] up to [toExclusive] (to the end
+     * when null): every story in it goes away, replaced by [stories] (typically a skeleton and
+     * the blocks the rewrite keeps, which keep their ids). The state before is kept in the back
+     * stack, so the rewrite can be undone, and the stories that went away are deleted.
+     *
+     * @return false when the region holds nothing.
+     */
+    fun beginRegionRewrite(from: Double, toExclusive: Double?, stories: List<StoryStep>): Boolean {
+        if (!isEditable) return false
+
+        val current = _currentStory.value
+        val inside = current.stories.filterKeys { position -> position.inRegion(from, toExclusive) }
+        if (inside.isEmpty()) return false
+
+        backStackManager.addState(current)
+        _onEditPositions.value = emptySet()
+
+        val keptIds = stories.map { story -> story.id }.toSet()
+        val deletedIds = inside.values
+            .filter { story -> !story.ephemeral && story.id !in keptIds }
+            .map { story -> story.id }
+
+        _currentStory.value = current.copy(
+            stories = (current.stories - inside.keys) + spreadInRegion(from, toExclusive, stories),
+            lastEdit = LastEdit.BulkDeleteEdition(deletedIds, emptyList())
+        )
+        cleanupOrphanCommentConversations()
+
+        return true
+    }
+
+    /**
+     * Replaces the region of [beginRegionRewrite] with [stories], in order, spread over the
+     * region. While not [done] the change is not saved (the answer is still coming); when done,
+     * the stories get their links to their neighbours and the document is saved whole.
+     */
+    fun updateRegion(from: Double, toExclusive: Double?, stories: List<StoryStep>, done: Boolean) {
+        if (!isEditable) return
+
+        val current = _currentStory.value
+        val outside = current.stories.filterKeys { position -> !position.inRegion(from, toExclusive) }
+        val merged = outside + spreadInRegion(from, toExclusive, stories)
+
+        _currentStory.value = if (done) {
+            current.copy(stories = NextPositionCalculator.calculate(merged), lastEdit = LastEdit.Whole)
+        } else {
+            current.copy(stories = merged, lastEdit = LastEdit.Nothing)
+        }
+    }
+
+    private fun Double.inRegion(from: Double, toExclusive: Double?): Boolean =
+        this >= from && (toExclusive == null || this < toExclusive)
+
+    /** [stories] at positions inside the region, the first exactly at [from]. */
+    private fun spreadInRegion(from: Double, toExclusive: Double?, stories: List<StoryStep>): Map<Double, StoryStep> {
+        if (stories.isEmpty()) return emptyMap()
+        val step = if (toExclusive == null) 1.0 else (toExclusive - from) / (stories.size + 1)
+
+        return stories.mapIndexed { index, story -> (from + index * step) to story }.toMap()
+    }
+
     fun removeAtPosition(position: Double) {
         if (!isEditable) return
         _currentStory.value = writeopiaManager.removeAtPosition(
