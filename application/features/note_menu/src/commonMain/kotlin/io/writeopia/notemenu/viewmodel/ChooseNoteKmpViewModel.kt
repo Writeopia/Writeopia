@@ -531,7 +531,11 @@ internal class ChooseNoteKmpViewModel(
         )
     }
 
-    private suspend fun syncFavoriteToBackend(documentIds: Set<String>, favorite: Boolean) {
+    /**
+     * Only the documents of the workspace open now are sent: the selection was made in the
+     * workspace listed when it was shown, and the request names the current one.
+     */
+    private suspend fun syncFavoriteToBackend(documents: List<Document>, favorite: Boolean) {
         if (!authRepository.isLoggedIn()) return
         if (authRepository.getUser().tier != Tier.PREMIUM) return
 
@@ -539,13 +543,15 @@ internal class ChooseNoteKmpViewModel(
         // Skip sync for offline/disconnected workspace
         if (workspace.id == Workspace.disconnectedWorkspace().id) return
 
-        documentIds.forEach { documentId ->
-            documentsApi.favoriteDocument(
-                documentId = documentId,
-                favorite = favorite,
-                workspaceId = workspace.id
-            )
-        }
+        documents
+            .filter { document -> document.workspaceId == workspace.id }
+            .forEach { document ->
+                documentsApi.favoriteDocument(
+                    documentId = document.id,
+                    favorite = favorite,
+                    workspaceId = workspace.id
+                )
+            }
     }
 
     override fun favoriteSelectedNotes() {
@@ -558,18 +564,15 @@ internal class ChooseNoteKmpViewModel(
         // The backend keeps the favorite documents per user, behind their own endpoint. A
         // folder's favorite is part of the folder: the change makes it outdated, and the next
         // sync sends it.
-        val documentIds = selectedItems.orEmpty()
-            .filterIsInstance<Document>()
-            .map { document -> document.id }
-            .toSet()
+        val documents = selectedItems.orEmpty().filterIsInstance<Document>()
 
         viewModelScope.launch(Dispatchers.Default) {
             if (allFavorites) {
                 notesUseCase.unFavoriteDocuments(selectedIds)
-                syncFavoriteToBackend(documentIds, favorite = false)
+                syncFavoriteToBackend(documents, favorite = false)
             } else {
                 notesUseCase.favoriteDocuments(selectedIds)
-                syncFavoriteToBackend(documentIds, favorite = true)
+                syncFavoriteToBackend(documents, favorite = true)
             }
         }
     }

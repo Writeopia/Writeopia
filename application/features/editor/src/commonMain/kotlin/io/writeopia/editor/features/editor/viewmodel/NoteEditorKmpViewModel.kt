@@ -1150,12 +1150,20 @@ class NoteEditorKmpViewModel(
         writeopiaManager.toggleLockDocument()
     }
 
+    /** The favorite request in flight, so the next one goes after it with the latest state. */
+    private var favoriteSyncJob: Job? = null
+
     override fun toggleFavorite() {
         writeopiaManager.toggleFavoriteDocument()
 
-        val info = writeopiaManager.documentInfo.value
-        viewModelScope.launch(Dispatchers.Default) {
-            sendFavoriteToBackend(info.id, info.isFavorite)
+        val documentId = writeopiaManager.documentInfo.value.id
+        val previous = favoriteSyncJob
+        favoriteSyncJob = viewModelScope.launch(Dispatchers.Default) {
+            // One request at a time, or two quick toggles could reach the backend in the wrong
+            // order. What goes is the state at the time of sending: the user's last word.
+            previous?.join()
+            val info = writeopiaManager.documentInfo.value
+            if (info.id == documentId) sendFavoriteToBackend(documentId, info.isFavorite)
         }
     }
 

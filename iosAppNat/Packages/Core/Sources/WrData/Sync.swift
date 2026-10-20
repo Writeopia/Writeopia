@@ -900,8 +900,17 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
         try local.setStepDeletionsSyncedAt(received.serverTimestamp)
 
         // The favorites of the documents don't travel with them: they come apart, and the
-        // backend wins. A favorite set here that could not be sent is undone.
-        if let favoriteIds = try? await api.favoriteDocumentIds() {
+        // backend wins. A favorite set here that could not be sent is undone. When the backend
+        // can't be asked they stay as they are; a cancelled sync stops here like anywhere else.
+        let favoriteIds: [String]?
+        do {
+            favoriteIds = try await api.favoriteDocumentIds()
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            favoriteIds = nil
+        }
+        if let favoriteIds {
             try local.applyFavorites(Set(favoriteIds))
         }
 
