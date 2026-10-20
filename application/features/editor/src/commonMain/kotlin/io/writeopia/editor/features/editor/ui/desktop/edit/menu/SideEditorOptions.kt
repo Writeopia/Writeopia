@@ -513,7 +513,7 @@ private fun DocumentTagsSection(
 const val SIDE_MENU_TAGS_TAG = "SideMenuTags"
 
 @Composable
-private fun Title(text: String) {
+internal fun Title(text: String) {
     Text(
         text,
         style = MaterialTheme.typography.titleSmall,
@@ -731,7 +731,7 @@ private fun DecorationCommands(commands: Iterable<DecorationButton>) {
 }
 
 @Composable
-private fun TextButton(
+internal fun TextButton(
     modifier: Modifier = Modifier,
     text: String,
     highlight: Boolean = false,
@@ -785,7 +785,7 @@ private fun TextButton(
 }
 
 @Composable
-private fun targetModeLabel(targetMode: AiTargetMode): String = when (targetMode) {
+internal fun targetModeLabel(targetMode: AiTargetMode): String = when (targetMode) {
     AiTargetMode.DOCUMENT -> WrStrings.document()
     AiTargetMode.SELECTED_LINES -> WrStrings.selectedLines()
     AiTargetMode.CURSOR -> WrStrings.cursor()
@@ -794,7 +794,7 @@ private fun targetModeLabel(targetMode: AiTargetMode): String = when (targetMode
 // Mobile has no mouse-precision clicking, so AI buttons get more vertical padding and a
 // larger font than the compact desktop side panel.
 @Composable
-private fun aiButtonPadding(): PaddingValues =
+internal fun aiButtonPadding(): PaddingValues =
     if (LocalPlatform.current.isMobile()) {
         PaddingValues(horizontal = 10.dp, vertical = 14.dp)
     } else {
@@ -802,7 +802,7 @@ private fun aiButtonPadding(): PaddingValues =
     }
 
 @Composable
-private fun aiButtonTextStyle(): TextStyle =
+internal fun aiButtonTextStyle(): TextStyle =
     if (LocalPlatform.current.isMobile()) {
         MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
     } else {
@@ -810,7 +810,7 @@ private fun aiButtonTextStyle(): TextStyle =
     }
 
 @Composable
-private fun AiTargetButton(
+internal fun AiTargetButton(
     text: String,
     isSelected: Boolean,
     onClick: () -> Unit,
@@ -1217,9 +1217,6 @@ internal fun AiOptions(
         AiTargetMode.CURSOR
     ),
     fixedTargetMode: AiTargetMode? = null,
-    // The side panel draws its own bordered, fixed-width frame. Inside a container that already
-    // has one (mobile's bottom sheet) the content fills the container's width instead.
-    framed: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     var selectedTargetMode by remember {
@@ -1230,19 +1227,13 @@ internal fun AiOptions(
     // Buttons are disabled when Selected Lines mode is active but no lines are selected
     val actionsEnabled = selectedTargetMode != AiTargetMode.SELECTED_LINES || hasSelectedLines
 
-    val frameModifier = if (framed) {
-        Modifier.border(
+    Column(
+        modifier = modifier.border(
             1.dp,
             MaterialTheme.colorScheme.surfaceVariant,
             MaterialTheme.shapes.medium
         ).background(MaterialTheme.colorScheme.background, MaterialTheme.shapes.medium)
             .width(MENU_WIDTH.dp)
-    } else {
-        Modifier.fillMaxWidth()
-    }
-
-    Column(
-        modifier = modifier.then(frameModifier)
             .verticalScroll(rememberScrollState())
             .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp)
     ) {

@@ -468,30 +468,24 @@ internal fun NoteEditorScreen(
             if (showAiDialog) {
                 MobileAiSheet(
                     onDismissRequest = { showAiDialog = false },
-                    currentModel = noteEditorViewModel.currentModel,
-                    models = noteEditorViewModel.models,
                     hasSelectedLinesState = noteEditorViewModel.hasSelectedLines,
-                    selectModel = noteEditorViewModel::selectModel,
-                    askAiWithMode = noteEditorViewModel::askAiWithMode,
                     aiSummary = noteEditorViewModel::aiSummary,
                     aiActionPoints = noteEditorViewModel::aiActionPoints,
                     aiFaq = noteEditorViewModel::aiFaq,
                     aiTags = noteEditorViewModel::aiTags,
+                    aiCommand = noteEditorViewModel::aiCommand,
                 )
             }
 
             if (showSelectedLinesAiDialog) {
                 MobileAiSheet(
                     onDismissRequest = { showSelectedLinesAiDialog = false },
-                    currentModel = noteEditorViewModel.currentModel,
-                    models = noteEditorViewModel.models,
                     hasSelectedLinesState = noteEditorViewModel.hasSelectedLines,
-                    selectModel = noteEditorViewModel::selectModel,
-                    askAiWithMode = noteEditorViewModel::askAiWithMode,
                     aiSummary = noteEditorViewModel::aiSummary,
                     aiActionPoints = noteEditorViewModel::aiActionPoints,
                     aiFaq = noteEditorViewModel::aiFaq,
                     aiTags = noteEditorViewModel::aiTags,
+                    aiCommand = noteEditorViewModel::aiCommand,
                     fixedTargetMode = AiTargetMode.SELECTED_LINES,
                 )
             }

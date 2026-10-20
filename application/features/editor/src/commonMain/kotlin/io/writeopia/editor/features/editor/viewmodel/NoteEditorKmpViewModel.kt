@@ -1309,6 +1309,29 @@ class NoteEditorKmpViewModel(
         }
     }
 
+    override fun aiCommand(command: String, targetMode: AiTargetMode) {
+        val trimmed = command.trim()
+        if (trimmed.isEmpty()) return
+
+        val docId = documentId.value
+        val taskId = "editor-$docId-${GenerateId.generate()}"
+
+        aiTaskManager.enqueueTask(
+            id = taskId,
+            type = AiTaskType.TEXT_GENERATION,
+            description = "Running command..."
+        ) {
+            val ai = aiClients.resolve(authRepository.getUser().id)
+
+            if (ai == null) {
+                PromptService.noAiAvailable(targetMode, writeopiaManager)
+                return@enqueueTask Result.failure(Exception(PromptService.NO_AI_MESSAGE))
+            }
+
+            AiCommandService.run(trimmed, targetMode, writeopiaManager, ai)
+        }
+    }
+
     /**
      * Runs [command] over the text [targetMode] points to, with the AI the user picked. The answer
      * streams into the document right after that text.

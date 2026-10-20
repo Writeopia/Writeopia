@@ -227,6 +227,12 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 
     fun aiSection(position: Double)
 
+    /**
+     * Runs a free [command] typed by the user about the text [targetMode] points to. The AI
+     * decides whether its answer replaces that text or is added after it.
+     */
+    fun aiCommand(command: String, targetMode: AiTargetMode)
+
     fun addPage()
 
     fun copySelection()

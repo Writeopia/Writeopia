@@ -1596,6 +1596,75 @@ class WriteopiaStateManager(
         )
     }
 
+    /**
+     * Takes the stories at [positions] out of the document and leaves one skeleton in the place
+     * of the first, holding their text, while the AI rewrites them. The state before is kept in
+     * the back stack, so the change can be undone.
+     *
+     * @return the position of the skeleton, or null when nothing was replaced.
+     */
+    fun replaceWithSkeleton(positions: Set<Double>): Double? {
+        if (!isEditable || positions.isEmpty()) return null
+
+        val stories = _currentStory.value.stories
+        val sorted = positions.sorted().filter { position -> stories.containsKey(position) }
+        val first = sorted.firstOrNull() ?: return null
+        val text = sorted.mapNotNull { position -> stories[position]?.text }.joinToString("\n")
+
+        backStackManager.addState(_currentStory.value)
+        _onEditPositions.value = emptySet()
+
+        val (remaining, deleted) = writeopiaManager.bulkDelete(sorted, stories)
+        // The skeleton links to the neighbours of the replaced range, so the text that takes its
+        // place later lands between them.
+        val skeleton = StoryStep(
+            type = StoryTypes.SKELETON.type,
+            text = text,
+            ephemeral = true,
+            dbPosition = stories[first]?.dbPosition,
+            previousPosition = stories[first]?.previousPosition,
+            nextPosition = stories[sorted.last()]?.nextPosition,
+        )
+
+        _currentStory.value = _currentStory.value.copy(
+            stories = remaining + (first to skeleton),
+            lastEdit = LastEdit.BulkDeleteEdition(deleted.values.map { it.id }, emptyList())
+        )
+        cleanupOrphanCommentConversations()
+
+        return first
+    }
+
+    /**
+     * Puts [text] where the skeleton of [replaceWithSkeleton] is, as regular content: its lines
+     * become stories and its Markdown marks (lists, headings, checks) are applied, like an
+     * accepted AI answer. Nothing happens when the skeleton is gone. Undo goes back to before
+     * the skeleton, since [replaceWithSkeleton] kept that state.
+     */
+    fun replaceSkeletonWithText(position: Double, text: String) {
+        if (!isEditable) return
+        val skeleton = getStory(position) ?: return
+        if (skeleton.type != StoryTypes.SKELETON.type) return
+
+        val step = skeleton.copy(
+            type = StoryTypes.TEXT.type,
+            text = text,
+            ephemeral = false,
+            localId = GenerateId.generate()
+        )
+        val styled = inTextMarkdownHandler?.handleMarkdown(step) ?: step
+
+        changeStoryState(Action.StoryStateChange(styled, position), trackIt = false)
+
+        // Typed text goes through changeStoryText, which tracks every change; here the state
+        // before the skeleton is the only one to go back to.
+        if (text.contains("\n")) {
+            onLineBreak(Action.LineBreak(styled, position), processCommands = true)
+        } else {
+            commandHandler.handleCommand(text, styled, position)
+        }
+    }
+
     fun removeAtPosition(position: Double) {
         if (!isEditable) return
         _currentStory.value = writeopiaManager.removeAtPosition(

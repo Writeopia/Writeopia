@@ -264,4 +264,9 @@
   <string name="header_image_failed">A IA não conseguiu desenhar um cabeçalho. Tente novamente.</string>
   <string name="header_image_cost">Usa seus tokens de IA</string>
   <string name="header_image_save_failed">Não foi possível salvar a imagem no workspace. Tente novamente.</string>
+  <string name="quick_actions">Ações rápidas</string>
+  <string name="ai_command">Comando</string>
+  <string name="ai_command_hint">Diga à IA o que fazer com o texto</string>
+  <string name="ai_command_run">Executar</string>
+  <string name="quick_actions_cursor_hint">As ações rápidas funcionam no documento ou nas linhas selecionadas.</string>
 </resources>

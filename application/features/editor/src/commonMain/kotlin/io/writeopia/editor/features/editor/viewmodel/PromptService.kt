@@ -64,29 +64,37 @@ object PromptService {
         targetMode: AiTargetMode,
         writeopiaManager: WriteopiaStateManager
     ): Pair<String?, Double> {
-        val lastPos = writeopiaManager.lastPosition()
-        return when (targetMode) {
-            AiTargetMode.DOCUMENT -> {
-                val docText = writeopiaManager.getDocumentText()
-                val pos = writeopiaManager.getStory(lastPos)?.nextPosition ?: (lastPos + 1)
-                docText to pos
-            }
-            AiTargetMode.SELECTED_LINES -> {
-                val selText = writeopiaManager.getCurrentSelectionText()
-                val pos = writeopiaManager.positionAfterSelection()
-                    ?: writeopiaManager.getNextPosition()
-                    ?: writeopiaManager.getStory(lastPos)?.nextPosition
-                    ?: (lastPos + 1)
-                selText to pos
-            }
-            AiTargetMode.CURSOR -> {
-                val cursorText = writeopiaManager.getCurrentText()
-                val pos = writeopiaManager.getNextPosition()
-                    ?: writeopiaManager.getStory(lastPos)?.nextPosition
-                    ?: (lastPos + 1)
-                cursorText to pos
-            }
+        val text = when (targetMode) {
+            AiTargetMode.DOCUMENT -> writeopiaManager.getDocumentText()
+            AiTargetMode.SELECTED_LINES -> writeopiaManager.getCurrentSelectionText()
+            AiTargetMode.CURSOR -> writeopiaManager.getCurrentText()
         }
+
+        return text to answerPosition(targetMode, writeopiaManager)
+    }
+
+    /** Where an answer about the text [targetMode] points to goes: right after that text. */
+    internal fun answerPosition(targetMode: AiTargetMode, writeopiaManager: WriteopiaStateManager): Double {
+        val lastPos = writeopiaManager.lastPosition()
+        val afterDocument = writeopiaManager.getStory(lastPos)?.nextPosition ?: (lastPos + 1)
+
+        return when (targetMode) {
+            AiTargetMode.DOCUMENT -> afterDocument
+            AiTargetMode.SELECTED_LINES ->
+                writeopiaManager.positionAfterSelection()
+                    ?: writeopiaManager.getNextPosition()
+                    ?: afterDocument
+            AiTargetMode.CURSOR -> writeopiaManager.getNextPosition() ?: afterDocument
+        }
+    }
+
+    /** Streams [answer] into the document at [position]: a spinner first, then the text as it comes. */
+    internal suspend fun streamIntoDocument(
+        answer: Flow<ResultData<String>>,
+        writeopiaManager: WriteopiaStateManager,
+        position: Double
+    ) {
+        answer.handleStream(writeopiaManager, position)
     }
 
     private suspend fun Flow<ResultData<String>>.handleStream(

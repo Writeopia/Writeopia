@@ -52,6 +52,13 @@ enum class StoryTypes(val type: StoryType) {
     ON_DRAG_SPACE(StoryType("on_drag_space", 17)),
     AI_ANSWER(StoryType("ai_answer", 18)),
     LOADING(StoryType("loading", 19)),
+
+    /**
+     * A placeholder drawn where content is being rewritten by the AI. Ephemeral: it is never
+     * saved. [StoryStep.text] holds the text it replaced, so the drawer can take about the same
+     * room and the text can come back if the AI fails.
+     */
+    SKELETON(StoryType("skeleton", 25)),
     DOCUMENT_LINK(StoryType("document_link", 20)),
     DIVIDER(StoryType("divider", 21)),
     EQUATION(StoryType("equation", 22)),

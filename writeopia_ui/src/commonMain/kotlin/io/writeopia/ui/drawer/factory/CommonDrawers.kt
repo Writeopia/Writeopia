@@ -31,6 +31,7 @@ import io.writeopia.ui.drawer.content.ImageDrawer
 import io.writeopia.ui.drawer.content.LastEmptySpace
 import io.writeopia.ui.drawer.content.LinkCardDrawer
 import io.writeopia.ui.drawer.content.LoadingDrawer
+import io.writeopia.ui.drawer.content.SkeletonDrawer
 import io.writeopia.ui.drawer.content.RowGroupDrawer
 import io.writeopia.ui.drawer.content.SlashCommand
 import io.writeopia.ui.drawer.content.SpaceDrawer
@@ -279,6 +280,7 @@ object CommonDrawers {
         )
 
         val loadingDrawer = LoadingDrawer()
+        val skeletonDrawer = SkeletonDrawer()
 
         val equationsDrawer = EquationDrawer(
             showEditAlways = !isDesktop,
@@ -330,6 +332,7 @@ object CommonDrawers {
             put(StoryTypes.GROUP_IMAGE.type.number, RowGroupDrawer(imageDrawerInGroup))
             put(StoryTypes.AI_ANSWER.type.number, aiAnswerDrawer)
             put(StoryTypes.LOADING.type.number, loadingDrawer)
+            put(StoryTypes.SKELETON.type.number, skeletonDrawer)
             put(StoryTypes.DOCUMENT_LINK.type.number, documentLinkDrawer)
             put(StoryTypes.DIVIDER.type.number, dividerDrawer)
             put(StoryTypes.LINK_CARD.type.number, linkCardDrawer)

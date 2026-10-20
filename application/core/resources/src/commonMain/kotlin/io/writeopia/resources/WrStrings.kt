@@ -108,6 +108,11 @@ import writeopia.application.core.resources.generated.resources.total_tokens
 import writeopia.application.core.resources.generated.resources.are_you_sure
 import writeopia.application.core.resources.generated.resources.arrangement
 import writeopia.application.core.resources.generated.resources.ask_ai
+import writeopia.application.core.resources.generated.resources.quick_actions
+import writeopia.application.core.resources.generated.resources.ai_command
+import writeopia.application.core.resources.generated.resources.ai_command_hint
+import writeopia.application.core.resources.generated.resources.ai_command_run
+import writeopia.application.core.resources.generated.resources.quick_actions_cursor_hint
 import writeopia.application.core.resources.generated.resources.auto_configure_local_ai
 import writeopia.application.core.resources.generated.resources.auto_configure_local_ai_error
 import writeopia.application.core.resources.generated.resources.auto_configure_local_ai_success
@@ -552,6 +557,21 @@ object WrStrings {
 
     @Composable
     fun askAi() = stringResource(Res.string.ask_ai)
+
+    @Composable
+    fun quickActions() = stringResource(Res.string.quick_actions)
+
+    @Composable
+    fun aiCommand() = stringResource(Res.string.ai_command)
+
+    @Composable
+    fun aiCommandHint() = stringResource(Res.string.ai_command_hint)
+
+    @Composable
+    fun aiCommandRun() = stringResource(Res.string.ai_command_run)
+
+    @Composable
+    fun quickActionsCursorHint() = stringResource(Res.string.quick_actions_cursor_hint)
 
     @Composable
     fun summary() = stringResource(Res.string.summarize)
