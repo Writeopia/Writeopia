@@ -1152,6 +1152,28 @@ class NoteEditorKmpViewModel(
 
     override fun toggleFavorite() {
         writeopiaManager.toggleFavoriteDocument()
+
+        val info = writeopiaManager.documentInfo.value
+        viewModelScope.launch(Dispatchers.Default) {
+            sendFavoriteToBackend(info.id, info.isFavorite)
+        }
+    }
+
+    /**
+     * The backend keeps the favorite documents per user, behind their own endpoint: the
+     * favorite saved with the document's metadata doesn't reach it. Sent right away like the
+     * documents list does; a failure leaves the favorite here only until it is toggled again,
+     * since the next sync takes the backend's favorites.
+     */
+    private suspend fun sendFavoriteToBackend(documentId: String, favorite: Boolean) {
+        val api = documentsApi ?: return
+        if (!authRepository.isLoggedIn()) return
+        if (authRepository.getUser().tier != Tier.PREMIUM) return
+
+        val workspace = authRepository.getWorkspace() ?: return
+        if (workspace.id == Workspace.disconnectedWorkspace().id) return
+
+        api.favoriteDocument(documentId = documentId, favorite = favorite, workspaceId = workspace.id)
     }
 
     override fun changeFontFamily(font: Font) {

@@ -551,19 +551,25 @@ internal class ChooseNoteKmpViewModel(
     override fun favoriteSelectedNotes() {
         val selectedIds = selectedNotes.value
 
-        val allFavorites = (menuItemsState.value as? ResultData.Complete<List<MenuItem>>)
+        val selectedItems = (menuItemsState.value as? ResultData.Complete<List<MenuItem>>)
             ?.data
-            ?.filter { document -> selectedIds.contains(document.id) }
-            ?.all { document -> document.favorite }
-            ?: false
+            ?.filter { item -> selectedIds.contains(item.id) }
+        val allFavorites = selectedItems?.all { item -> item.favorite } ?: false
+        // The backend keeps the favorite documents per user, behind their own endpoint. A
+        // folder's favorite is part of the folder: the change makes it outdated, and the next
+        // sync sends it.
+        val documentIds = selectedItems.orEmpty()
+            .filterIsInstance<Document>()
+            .map { document -> document.id }
+            .toSet()
 
         viewModelScope.launch(Dispatchers.Default) {
             if (allFavorites) {
                 notesUseCase.unFavoriteDocuments(selectedIds)
-                syncFavoriteToBackend(selectedIds, favorite = false)
+                syncFavoriteToBackend(documentIds, favorite = false)
             } else {
                 notesUseCase.favoriteDocuments(selectedIds)
-                syncFavoriteToBackend(selectedIds, favorite = true)
+                syncFavoriteToBackend(documentIds, favorite = true)
             }
         }
     }

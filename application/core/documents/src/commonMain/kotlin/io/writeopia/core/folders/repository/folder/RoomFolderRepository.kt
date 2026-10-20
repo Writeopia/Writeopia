@@ -54,10 +54,11 @@ class RoomFolderRepository(
     override suspend fun getSoftDeletedFolders(workspaceId: String): List<Folder> =
         folderRoomDao.getSoftDeletedByWorkspace(workspaceId)
 
+    // The change bumps lastUpdatedAt so the folder is sent with the next sync.
     override suspend fun favoriteDocumentByIds(ids: Set<String>) {
         ids.forEach { folderId ->
             updateFolderById(folderId) { folder ->
-                folder.copy(favorite = true)
+                folder.copy(favorite = true, lastUpdatedAt = Clock.System.now())
             }
         }
     }
@@ -65,7 +66,7 @@ class RoomFolderRepository(
     override suspend fun unFavoriteDocumentByIds(ids: Set<String>) {
         ids.forEach { folderId ->
             updateFolderById(folderId) { folder ->
-                folder.copy(favorite = false)
+                folder.copy(favorite = false, lastUpdatedAt = Clock.System.now())
             }
         }
     }

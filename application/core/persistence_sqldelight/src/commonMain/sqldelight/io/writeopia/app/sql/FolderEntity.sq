@@ -124,8 +124,9 @@ UPDATE folderEntity SET parent_id = ?, last_updated_at = ? WHERE id = ?;
 setLastUpdate:
 UPDATE folderEntity SET last_updated_at = ? WHERE id = ?;
 
+-- The change bumps last_updated_at so the folder is sent with the next sync.
 favoriteById:
-UPDATE folderEntity SET favorite = ? WHERE id = ?;
+UPDATE folderEntity SET favorite = ?, last_updated_at = ? WHERE id = ?;
 
 selectWithContentByWorkspaceIdOutdatedDocuments:
 SELECT *

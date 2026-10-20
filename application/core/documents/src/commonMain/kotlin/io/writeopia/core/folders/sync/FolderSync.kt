@@ -143,6 +143,8 @@ class FolderSync(
                 documentSyncService.mergeReceivedDocuments(newDocuments, excluding = deletedHere + received.stepIds)
                 // Workspace-wide, in the backend's clock.
                 folderRepository.setContentSyncedAt(DocumentSyncService.DELETIONS_WATERMARK_ID, workspaceId, received.serverTimestamp)
+                // The favorites of the documents don't travel with them: they come apart.
+                documentSyncService.receiveFavorites(workspaceId)
 
                 // The contents of this folder are now on this device. The watermark is the time
                 // taken before the request, so whatever changed while it ran comes again next time.
