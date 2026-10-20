@@ -14,6 +14,7 @@ import io.writeopia.sdk.persistence.sqldelight.dao.DocumentSqlDao
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
@@ -23,6 +24,10 @@ class SqlDelightDocumentRepository(
 ) : DocumentRepository, DocumentSearch by documentSqlDao {
 
     private val _documentByParentState = MutableStateFlow<Map<String, List<Document>>>(emptyMap())
+
+    // Bumped on every refresh: the favorites are read again on each change, since they can be
+    // anywhere in the workspace and not only under the listened parents.
+    private val _refreshCount = MutableStateFlow(0)
 
     override suspend fun loadDocumentsForFolder(
         folderId: String,
@@ -54,6 +59,11 @@ class SqlDelightDocumentRepository(
 
         return _documentByParentState
     }
+
+    override suspend fun listenForFavoriteDocuments(workspaceId: String): Flow<List<Document>> =
+        _refreshCount.map {
+            documentSqlDao.loadFavDocumentsWithContentByUserId(OrderBy.UPDATE.type, workspaceId)
+        }
 
     override suspend fun listenForDocumentInfoById(id: String): Flow<DocumentInfo?> {
         val document = documentSqlDao.loadDocumentById(id)
@@ -218,6 +228,7 @@ class SqlDelightDocumentRepository(
             val (parentId, workspaceId) = key.split(":", limit = 2)
             documentSqlDao.loadDocumentByParentId(parentId, workspaceId)
         }
+        _refreshCount.update { count -> count + 1 }
     }
 
     override suspend fun queryUnsyncedImagesSteps(): List<StoryStep> =

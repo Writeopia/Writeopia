@@ -53,6 +53,9 @@ interface FolderRepository {
 
     suspend fun listenForFoldersByParentId(parentId: String, workspaceId: String): Flow<Map<String, List<Folder>>>
 
+    /** The favorite folders of the whole workspace, wherever they are, updated as they change. */
+    suspend fun listenForFavoriteFolders(workspaceId: String): Flow<List<Folder>>
+
     suspend fun stopListeningForFoldersByParentId(parentId: String, workspaceId: String)
 
     suspend fun localOutDatedFolders(workspaceId: String): List<Folder>

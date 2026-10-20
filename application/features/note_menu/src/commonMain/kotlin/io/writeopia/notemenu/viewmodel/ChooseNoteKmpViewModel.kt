@@ -136,7 +136,7 @@ internal class ChooseNoteKmpViewModel(
             authRepository.listenForWorkspace()
         ) { menuItems, workspace ->
             val pageItems = when (notesNavigation) {
-                NotesNavigation.Favorites -> menuItems.values.flatten().filter { it.favorite }
+                NotesNavigation.Favorites -> menuItems[NotesNavigation.Favorites.id]
 
                 is NotesNavigation.Folder -> menuItems[notesNavigation.id]
 

@@ -5,10 +5,12 @@ package io.writeopia.sdk.repository
 import io.writeopia.sdk.manager.DocumentUpdate
 import io.writeopia.sdk.model.document.DocumentInfo
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.sorting.OrderBy
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryStepTombstone
 import io.writeopia.sdk.search.DocumentSearch
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
@@ -45,6 +47,13 @@ interface DocumentRepository : DocumentUpdate, DocumentSearch {
     suspend fun loadDocumentsByParentId(parentId: String, workspaceId: String): List<Document>
 
     suspend fun listenForDocumentsByParentId(parentId: String, workspaceId: String): Flow<Map<String, List<Document>>>
+
+    /**
+     * The favorite documents of the whole workspace, wherever they are, updated as favorites
+     * change. Implementations that can't observe the storage read them once.
+     */
+    suspend fun listenForFavoriteDocuments(workspaceId: String): Flow<List<Document>> =
+        flow { emit(loadFavDocumentsForWorkspace(OrderBy.UPDATE.type, workspaceId)) }
 
     suspend fun listenForDocumentInfoById(id: String): Flow<DocumentInfo?>
 

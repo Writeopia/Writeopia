@@ -41,6 +41,11 @@ class FolderDaoDelegator(
             list.map { it.toCommonEntity().toModel(0) }
         }
 
+    override fun listenForFavoriteFolders(workspaceId: String): Flow<List<Folder>> =
+        delegate.listenForFavoriteFolders(workspaceId).map { list ->
+            list.map { it.toCommonEntity().toModel(0) }
+        }
+
     override suspend fun deleteById(id: String, workspaceId: String, lastUpdatedAt: Long): Int =
         delegate.deleteById(id, workspaceId, lastUpdatedAt)
 

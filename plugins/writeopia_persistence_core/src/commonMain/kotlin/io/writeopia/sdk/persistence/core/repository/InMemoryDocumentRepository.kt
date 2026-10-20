@@ -64,6 +64,13 @@ class InMemoryDocumentRepository : DocumentRepository {
         return documentsGroupedByParentIdFlow
     }
 
+    override suspend fun listenForFavoriteDocuments(workspaceId: String): Flow<List<Document>> =
+        documentsGroupedByParentIdFlow.map { groupedDocs ->
+            groupedDocs.values.flatten().filter { document ->
+                document.favorite && document.workspaceId == workspaceId
+            }
+        }
+
     override suspend fun listenForDocumentInfoById(id: String): Flow<DocumentInfo> =
         documentsGroupedByParentIdFlow.map { groupedDocs ->
             groupedDocs.values.flatten().find { document ->

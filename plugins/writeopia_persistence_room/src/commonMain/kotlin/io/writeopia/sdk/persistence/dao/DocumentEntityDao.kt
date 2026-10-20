@@ -195,6 +195,26 @@ interface DocumentEntityDao {
     @Query("SELECT * FROM $DOCUMENT_ENTITY WHERE $DOCUMENT_ENTITY.id = :id")
     fun listenForDocumentById(id: String): Flow<DocumentEntity?>
 
+    @Query(
+        "SELECT * FROM $DOCUMENT_ENTITY " +
+            "JOIN $STORY_UNIT_ENTITY ON $DOCUMENT_ENTITY.id = $STORY_UNIT_ENTITY.document_id " +
+            "WHERE workspace_id = :workspaceId AND favorite = TRUE AND is_deleted = FALSE " +
+            "ORDER BY $STORY_UNIT_ENTITY.position"
+    )
+    suspend fun loadFavoriteDocumentsWithContentForWorkspace(
+        workspaceId: String,
+    ): Map<DocumentEntity, List<StoryStepEntity>>
+
+    @Query(
+        "SELECT * FROM $DOCUMENT_ENTITY " +
+            "JOIN $STORY_UNIT_ENTITY ON $DOCUMENT_ENTITY.id = $STORY_UNIT_ENTITY.document_id " +
+            "WHERE workspace_id = :workspaceId AND favorite = TRUE AND is_deleted = FALSE " +
+            "ORDER BY $STORY_UNIT_ENTITY.position"
+    )
+    fun listenForFavoriteDocumentsWithContentForWorkspace(
+        workspaceId: String,
+    ): Flow<Map<DocumentEntity, List<StoryStepEntity>>>
+
     @Query("UPDATE $DOCUMENT_ENTITY set workspace_id = :newUserId WHERE workspace_id = :oldUserId")
     suspend fun moveDocumentsToNewUser(oldUserId: String, newUserId: String)
 

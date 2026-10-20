@@ -37,6 +37,9 @@ class InMemoryFolderRepository : FolderRepository {
         workspaceId: String
     ): Flow<Map<String, List<Folder>>> = emptyStateFlow.asStateFlow()
 
+    override suspend fun listenForFavoriteFolders(workspaceId: String): Flow<List<Folder>> =
+        MutableStateFlow<List<Folder>>(emptyList()).asStateFlow()
+
     override suspend fun deleteFolderById(folderId: String, workspaceId: String) {
         // No-op: webapp uses backend data only
     }

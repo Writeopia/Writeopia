@@ -73,6 +73,11 @@ class FolderRepositorySqlDelight(
             }
         }
 
+    override suspend fun listenForFavoriteFolders(workspaceId: String): Flow<List<Folder>> =
+        folderDao.listenForFavoriteFolders(workspaceId).map { folders ->
+            folders.map { (folderEntity, count) -> folderEntity.toModel(count) }
+        }
+
     override suspend fun stopListeningForFoldersByParentId(parentId: String, workspaceId: String) {
         folderDao.removeListening(parentId, workspaceId)
     }

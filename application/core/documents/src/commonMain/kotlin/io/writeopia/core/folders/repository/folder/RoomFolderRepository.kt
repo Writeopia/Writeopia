@@ -92,6 +92,9 @@ class RoomFolderRepository(
         folderRoomDao.listenForFolderByParentId(parentId, workspaceId)
             .map { folders -> folders.groupBy { folder -> folder.parentId } }
 
+    override suspend fun listenForFavoriteFolders(workspaceId: String): Flow<List<Folder>> =
+        folderRoomDao.listenForFavoriteFolders(workspaceId)
+
     override suspend fun stopListeningForFoldersByParentId(parentId: String, workspaceId: String) {}
 
     override suspend fun localOutDatedFolders(workspaceId: String): List<Folder> =

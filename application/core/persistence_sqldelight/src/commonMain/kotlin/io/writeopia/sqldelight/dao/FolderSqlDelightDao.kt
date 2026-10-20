@@ -11,6 +11,8 @@ import io.writeopia.sqldelight.extensions.toModel
 import io.writeopia.sqldelight.utils.sumValues
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
@@ -18,6 +20,10 @@ class FolderSqlDelightDao(database: WriteopiaDb?) : FolderSearch {
 
     private val _foldersStateFlow =
         MutableStateFlow<Map<String, List<Pair<FolderEntity, Long>>>>(emptyMap())
+
+    // Bumped on every refresh: the favorites are read again on each change, since they can be
+    // anywhere in the workspace and not only under the listened parents.
+    private val _refreshCount = MutableStateFlow(0)
 
     private val folderEntityQueries: FolderEntityQueries? = database?.folderEntityQueries
 
@@ -205,6 +211,19 @@ class FolderSqlDelightDao(database: WriteopiaDb?) : FolderSearch {
             val (parentId, workspaceId) = key.split(":", limit = 2)
             getFoldersByParentId(parentId, workspaceId)
         }
+        _refreshCount.update { count -> count + 1 }
+    }
+
+    fun listenForFavoriteFolders(workspaceId: String): Flow<List<Pair<FolderEntity, Long>>> =
+        _refreshCount.map { getFavoriteFolders(workspaceId) }
+
+    private fun getFavoriteFolders(workspaceId: String): List<Pair<FolderEntity, Long>> {
+        val countMap = countAllItems()
+
+        return folderEntityQueries?.selectFavoritesByWorkspace(workspaceId)
+            ?.executeAsList()
+            ?.map { folderEntity -> folderEntity to (countMap[folderEntity.id] ?: 0) }
+            ?: emptyList()
     }
 
     suspend fun removeListening(parentId: String, workspaceId: String) {

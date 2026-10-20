@@ -21,6 +21,8 @@ interface FolderCommonDao {
 
     fun listenForFolderByParentId(id: String, workspaceId: String): Flow<List<Folder>>
 
+    fun listenForFavoriteFolders(workspaceId: String): Flow<List<Folder>>
+
     /**
      * Soft delete: marks folder as deleted but keeps in database (scoped to workspace).
      */

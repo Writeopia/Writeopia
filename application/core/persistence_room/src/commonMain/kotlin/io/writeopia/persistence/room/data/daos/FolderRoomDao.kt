@@ -46,6 +46,9 @@ interface FolderRoomDao {
     @Query("SELECT * FROM $FOLDER_ENTITY WHERE parent_id = :id AND workspace_id = :workspaceId AND deleted = 0")
     fun listenForFolderByParentId(id: String, workspaceId: String): Flow<List<FolderEntity>>
 
+    @Query("SELECT * FROM $FOLDER_ENTITY WHERE workspace_id = :workspaceId AND favorite = 1 AND deleted = 0")
+    fun listenForFavoriteFolders(workspaceId: String): Flow<List<FolderEntity>>
+
     // Soft delete: marks folder as deleted (scoped to workspace)
     @Query("UPDATE $FOLDER_ENTITY SET deleted = 1, last_updated_at = :lastUpdatedAt WHERE folder_id = :id AND workspace_id = :workspaceId")
     suspend fun softDeleteById(id: String, workspaceId: String, lastUpdatedAt: Long): Int

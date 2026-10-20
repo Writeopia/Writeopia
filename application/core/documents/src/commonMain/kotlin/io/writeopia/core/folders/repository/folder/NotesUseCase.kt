@@ -172,11 +172,7 @@ class NotesUseCase private constructor(
         workspaceId: String
     ): Flow<Map<String, List<MenuItem>>> =
         when (notesNavigation) {
-            NotesNavigation.Favorites -> listenForMenuItemsByParentId(
-                Folder.ROOT_PATH,
-                userId,
-                workspaceId
-            )
+            NotesNavigation.Favorites -> listenForFavorites(userId, workspaceId)
 
             is NotesNavigation.Folder -> listenForMenuItemsByParentId(
                 notesNavigation.id,
@@ -195,6 +191,29 @@ class NotesUseCase private constructor(
             menuMap.mapKeys { (key, value) ->
                 key.split(":", limit = 2)[0]
             }
+        }
+
+    /**
+     * The favorite folders and documents of the whole workspace, wherever they are, keyed by
+     * [NotesNavigation.Favorites.id]. The root listing comes along, since the side menu is built
+     * from it while the favorites are shown.
+     */
+    private suspend fun listenForFavorites(
+        userId: String,
+        workspaceId: String
+    ): Flow<Map<String, List<MenuItem>>> =
+        combine(
+            listenForMenuItemsByParentId(Folder.ROOT_PATH, userId, workspaceId),
+            folderRepository.listenForFavoriteFolders(workspaceId),
+            documentRepository.listenForFavoriteDocuments(workspaceId),
+            notesConfig.listenOrderPreference(userId)
+        ) { rootItems, folders, documents, orderPreference ->
+            val order =
+                orderPreference.takeIf { it.isNotEmpty() }?.let(OrderBy.Companion::fromString)
+                    ?: OrderBy.UPDATE
+            val favorites: List<MenuItem> = folders + documents
+
+            rootItems + (NotesNavigation.Favorites.id to favorites.sortedWithOrderBy(order))
         }
 
     /**

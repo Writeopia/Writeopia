@@ -20,6 +20,7 @@ import io.writeopia.sdk.persistence.dao.StoryUnitEntityDao
 import io.writeopia.sdk.models.story.StoryStepTombstone
 import io.writeopia.sdk.persistence.entity.story.StoryStepTombstoneEntity
 import io.writeopia.sdk.persistence.dao.StoryStepTombstoneDao
+import io.writeopia.sdk.persistence.entity.document.DocumentEntity
 import io.writeopia.sdk.persistence.entity.story.StoryStepEntity
 import io.writeopia.sdk.persistence.entity.tag.DocumentTagLinkEntity
 import io.writeopia.sdk.persistence.parse.toCommentConversations
@@ -64,7 +65,19 @@ class RoomDocumentRepository(
         orderBy: String,
         workspaceId: String
     ): List<Document> =
-        emptyList()
+        documentEntityDao.loadFavoriteDocumentsWithContentForWorkspace(workspaceId)
+            .map { (documentEntity, storyEntity) -> documentEntity.toListedModel(storyEntity) }
+
+    override suspend fun listenForFavoriteDocuments(workspaceId: String): Flow<List<Document>> =
+        documentEntityDao.listenForFavoriteDocumentsWithContentForWorkspace(workspaceId)
+            .map { resultsMap ->
+                resultsMap.map { (documentEntity, storyEntity) ->
+                    documentEntity.toListedModel(storyEntity)
+                }
+            }
+
+    private suspend fun DocumentEntity.toListedModel(storyEntity: List<StoryStepEntity>): Document =
+        toModel(loadInnerSteps(storyEntity), loadCommentConversations(id), loadTagIds(id))
 
     override suspend fun deleteDocumentByFolder(folderId: String, workspaceId: String) {
         val documentsToDelete = documentEntityDao.loadDocumentsByParentId(folderId)
