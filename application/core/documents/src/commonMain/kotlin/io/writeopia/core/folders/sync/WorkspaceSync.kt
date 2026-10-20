@@ -102,6 +102,10 @@ class WorkspaceSync(
                     ?: return ResultData.Error()
                 documentSyncService.mergeReceivedDocuments(newDocuments, excluding = deletedHere + received.stepIds)
                 folderRepository.setContentSyncedAt(DocumentSyncService.DELETIONS_WATERMARK_ID, workspaceId, received.serverTimestamp)
+                // The favorites of the documents don't travel with them: they come apart. The
+                // whole list comes each time, so when it can't be asked the sync still ends
+                // here and the next one brings it; the content merged above stays synced.
+                documentSyncService.receiveFavorites(workspaceId)
 
                 documentRepository.refreshDocuments()
                 folderRepository.refreshFolders()

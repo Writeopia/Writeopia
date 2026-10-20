@@ -51,6 +51,28 @@ class DocumentSyncServiceTest {
     )
 
     @Test
+    fun `the favorites become the backend's, wherever the documents are`() = runBlocking {
+        val favoriteHere = storeDocument(step("a", 10)).copy(favorite = true).also { repository.saveDocumentMetadata(it) }
+        val favoriteElsewhere = storeDocument(step("b", 10))
+        coEvery { documentsApi.getUserFavorites(workspaceId) } returns ResultData.Complete(listOf(favoriteElsewhere.id))
+
+        assertTrue(service.receiveFavorites(workspaceId))
+
+        assertFalse(repository.loadDocumentById(favoriteHere.id, workspaceId)!!.favorite)
+        assertTrue(repository.loadDocumentById(favoriteElsewhere.id, workspaceId)!!.favorite)
+    }
+
+    @Test
+    fun `the favorites stay when the backend can't be asked`() = runBlocking {
+        val favoriteHere = storeDocument(step("a", 10)).copy(favorite = true).also { repository.saveDocumentMetadata(it) }
+        coEvery { documentsApi.getUserFavorites(workspaceId) } returns ResultData.Error()
+
+        assertFalse(service.receiveFavorites(workspaceId))
+
+        assertTrue(repository.loadDocumentById(favoriteHere.id, workspaceId)!!.favorite)
+    }
+
+    @Test
     fun `the deletions are sent as ids and forgotten once the backend has them`() = runBlocking {
         val document = storeDocument(step("a", 10), step("b", 10))
         repository.deleteStoryStep("a", document.id)

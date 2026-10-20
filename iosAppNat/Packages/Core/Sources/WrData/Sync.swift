@@ -137,6 +137,13 @@ public final class SyncAPI {
         )
     }
 
+    /// The ids of the documents the user marked as favorites in the workspace. Favorites are
+    /// per user and kept apart from the documents on the backend, so a document favorited
+    /// elsewhere doesn't come back changed in the folder diff.
+    public func favoriteDocumentIds() async throws -> [String] {
+        try await client.get("api/docs/workspace/\(workspaceId)/user/favorites")
+    }
+
     public func sendDocuments(_ documents: [WrDocument]) async throws {
         guard !documents.isEmpty else { return }
         struct Body: Encodable {
@@ -891,6 +898,21 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
         }
         // Workspace-wide, in the backend's clock.
         try local.setStepDeletionsSyncedAt(received.serverTimestamp)
+
+        // The favorites of the documents don't travel with them: they come apart, and the
+        // backend wins. A favorite set here that could not be sent is undone. When the backend
+        // can't be asked they stay as they are; a cancelled sync stops here like anywhere else.
+        let favoriteIds: [String]?
+        do {
+            favoriteIds = try await api.favoriteDocumentIds()
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            favoriteIds = nil
+        }
+        if let favoriteIds {
+            try local.applyFavorites(Set(favoriteIds))
+        }
 
         // Folders changed in other folders that couldn't be sent yet (a move while offline, for
         // one) go with this sync too, so they don't wait for their folder to be opened.

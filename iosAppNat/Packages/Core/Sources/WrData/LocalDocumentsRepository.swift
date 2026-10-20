@@ -366,6 +366,17 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
         }
     }
 
+    /// Makes the favorite documents those of `ids`, as the backend has them. The timestamps
+    /// stay: nothing is to be sent because of it. Folders keep theirs, they travel whole.
+    public func applyFavorites(_ ids: Set<String>) throws {
+        try db.transaction {
+            try db.run("UPDATE document SET favorite = 0 WHERE favorite = 1")
+            for id in ids {
+                try db.run("UPDATE document SET favorite = 1 WHERE id = ?", [.text(id)])
+            }
+        }
+    }
+
     /// The private space has nothing to sync, so everything is removed for good.
     public func deleteItems(ids: [String]) async throws {
         for id in ids {

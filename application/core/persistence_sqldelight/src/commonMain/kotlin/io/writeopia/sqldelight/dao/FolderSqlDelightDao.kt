@@ -106,11 +106,11 @@ class FolderSqlDelightDao(database: WriteopiaDb?) : FolderSearch {
     }
 
     suspend fun favoriteById(id: String) {
-        folderEntityQueries?.favoriteById(1, id)
+        folderEntityQueries?.favoriteById(1, Clock.System.now().toEpochMilliseconds(), id)
     }
 
     suspend fun unFavoriteById(id: String) {
-        folderEntityQueries?.favoriteById(0, id)
+        folderEntityQueries?.favoriteById(0, Clock.System.now().toEpochMilliseconds(), id)
     }
 
     suspend fun listenForFolderByParentId(

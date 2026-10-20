@@ -5,6 +5,7 @@ package io.writeopia.core.folders.sync
 import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.story.StoryStep
+import io.writeopia.sdk.models.sorting.OrderBy
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.repository.DocumentRepository
@@ -269,6 +270,29 @@ class DocumentSyncService(
     /** [mergeReceivedDocument] for each document. */
     suspend fun mergeReceivedDocuments(received: List<Document>, excluding: Set<String> = emptySet()) {
         received.forEach { document -> mergeReceivedDocument(document, excluding) }
+    }
+
+    /**
+     * Makes the favorites of the workspace those of the backend. They are per user and kept
+     * apart from the documents there, so a document favorited elsewhere doesn't come back
+     * changed with the listing: its id is asked for apart and the local copy marked. The
+     * backend wins: a favorite set here that could not be sent is undone.
+     *
+     * @return false when the backend could not be asked; the favorites stay as they are.
+     */
+    suspend fun receiveFavorites(workspaceId: String): Boolean {
+        val response = documentsApi?.getUserFavorites(workspaceId) ?: return false
+        val remote = (response as? ResultData.Complete)?.data?.toSet() ?: return false
+        val local = documentRepository.loadFavDocumentsForWorkspace(OrderBy.UPDATE.type, workspaceId)
+            .map { document -> document.id }
+            .toSet()
+
+        val toFavorite = remote - local
+        val toUnfavorite = local - remote
+        if (toFavorite.isNotEmpty()) documentRepository.favoriteDocumentByIds(toFavorite)
+        if (toUnfavorite.isNotEmpty()) documentRepository.unFavoriteDocumentByIds(toUnfavorite)
+
+        return true
     }
 
     /**
