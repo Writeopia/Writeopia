@@ -115,6 +115,9 @@ public struct StoryType: Codable, Equatable, Hashable, Sendable {
     public static let onDragSpace = StoryType(name: "on_drag_space", number: 17)
     public static let aiAnswer = StoryType(name: "ai_answer", number: 18)
     public static let loading = StoryType(name: "loading", number: 19)
+    /// A placeholder drawn where text is being rewritten by the AI. Never saved: its text is
+    /// the text it replaced, so the drawer takes about the same room.
+    public static let skeleton = StoryType(name: "skeleton", number: 25)
     public static let documentLink = StoryType(name: "document_link", number: 20)
     public static let divider = StoryType(name: "divider", number: 21)
     public static let codeBlock = StoryType(name: "code_block", number: 23)

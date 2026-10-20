@@ -486,18 +486,22 @@ public struct NoteEditorView: View {
         .toolbar(.hidden, for: .tabBar)
         #endif
         .sheet(isPresented: $showAiDialog) {
-            AiDialog(cursorActions: aiCursorActions) { command, mode in
-                viewModel.runAi(command, mode: mode)
-            }
+            AiDialog(
+                cursorActions: aiCursorActions,
+                onCommand: { command, mode in viewModel.runAi(command, mode: mode) },
+                onFreeCommand: { command in viewModel.runAiCommand(command) }
+            )
             .onAppear { viewModel.prewarmAi() }
-            .wrSheetSize(width: 420, height: 440)
+            .wrSheetSize(width: 420, height: 480)
         }
         .sheet(isPresented: $showSelectedLinesAiDialog) {
-            AiDialog(fixedMode: .selectedLines) { command, mode in
-                viewModel.runAi(command, mode: mode)
-            }
+            AiDialog(
+                fixedMode: .selectedLines,
+                onCommand: { command, mode in viewModel.runAi(command, mode: mode) },
+                onFreeCommand: { command in viewModel.runAiCommand(command) }
+            )
             .onAppear { viewModel.prewarmAi() }
-            .wrSheetSize(width: 420, height: 440)
+            .wrSheetSize(width: 420, height: 480)
         }
         .alert(
             "Could not delete the document",

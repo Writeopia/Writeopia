@@ -624,6 +624,30 @@ public final class WriteopiaStateManager {
         changeCount += 1
     }
 
+    // MARK: - AI rewrites
+
+    /// Starts a rewrite by the AI: the steps with `stepIds` go away and `steps` (a skeleton,
+    /// and the blocks the rewrite keeps) take their place. The document before is kept in the
+    /// history, so the rewrite can be undone; the steps that went away are deleted when saved.
+    /// Returns false when none of the steps is in the document.
+    @discardableResult
+    public func beginAiRewrite(of stepIds: Set<String>, with steps: [StoryStep]) -> Bool {
+        guard isEditable, currentStory.stories.values.contains(where: { stepIds.contains($0.id) }) else { return false }
+        selectedStepIds.removeAll()
+        textSelection = nil
+        textSelectionRect = nil
+        commit(writeopiaManager.replaceSteps(ids: stepIds, with: steps, state: currentStory))
+        return true
+    }
+
+    /// Shows the next shape of a rewrite: `steps` take the place of the steps with `stepIds`.
+    /// No history entry, so an undo goes back to before the rewrite began.
+    public func updateAiRewrite(of stepIds: Set<String>, with steps: [StoryStep]) {
+        guard isEditable else { return }
+        currentStory = writeopiaManager.replaceSteps(ids: stepIds, with: steps, state: currentStory)
+        changeCount += 1
+    }
+
     // MARK: - AI list suggestions
 
     public var hasAiSuggestions: Bool {
