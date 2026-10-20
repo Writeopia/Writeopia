@@ -245,7 +245,7 @@ fun DesktopNoteEditorScreen(
             moveToClick = {
                 showFolderSelection = true
             },
-            askAiWithMode = noteEditorViewModel::askAiWithMode,
+            aiCommand = noteEditorViewModel::aiCommand,
             addPage = noteEditorViewModel::addPage,
             deleteDocument = {
                 showDeleteConfirmation = true

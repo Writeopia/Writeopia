@@ -4,38 +4,38 @@ import io.writeopia.app.dto.ai.AiCommandIntent
 import io.writeopia.app.dto.ai.AiCommandRequest
 
 /**
- * The prompt Gemini answers for a free command. It changes with the intent Jev decided: a
- * replacement must be only the new version of the target text, an addition must be only the new
- * content, so the editor can put the answer in the document as it is.
+ * The prompt Gemini answers for a free command: the document, the lines the writer selected
+ * when there are any, and the command. It changes with the intent Jev decided: a replacement
+ * must be only the new version of the selected lines, an addition must be only the new content,
+ * so the editor can put the answer in the document as it is.
  */
 object AiCommandPrompt {
 
-    /** The text around the target is cut here, the target and the command never are. */
-    const val CONTEXT_LIMIT = 12_000
+    /** The document is cut here, around the selection. The selection and the command never are. */
+    const val DOCUMENT_LIMIT = 24_000
 
     fun forRequest(request: AiCommandRequest, intent: AiCommandIntent): String {
-        val before = request.textBefore.takeLast(CONTEXT_LIMIT)
-        val after = request.textAfter.take(CONTEXT_LIMIT)
-        val hasTarget = request.targetText.isNotBlank()
+        val hasSelection = request.selectedText.isNotBlank()
+        val document = request.documentAround(DOCUMENT_LIMIT)
 
         return buildString {
             appendLine("You are a writing assistant inside a text editor. The writer typed a command about their document.")
             appendLine()
 
-            when (intent) {
-                AiCommandIntent.REPLACE -> {
-                    appendLine("Apply the command to the TARGET TEXT and answer with the new version of it, and nothing else.")
-                    appendLine("The new version takes the place of the target text in the document, so keep what the command does not ask to change: the language, the meaning, the formatting and the line breaks between paragraphs.")
+            when {
+                intent == AiCommandIntent.REPLACE && hasSelection -> {
+                    appendLine("Apply the command to the SELECTED LINES and answer with the new version of them, and nothing else.")
+                    appendLine("The new version takes the place of the selected lines in the document, so keep what the command does not ask to change: the language, the meaning, the formatting and the line breaks between paragraphs.")
                 }
 
-                AiCommandIntent.ADD -> {
-                    if (hasTarget) {
-                        appendLine("Answer the command with new content, which the editor inserts right after the TARGET TEXT.")
-                        appendLine("Do not repeat the target text and do not explain what you did: answer with the new content only.")
-                    } else {
-                        appendLine("Answer the command with new content, which the editor inserts at the end of the document.")
-                        appendLine("Do not repeat the document and do not explain what you did: answer with the new content only.")
-                    }
+                hasSelection -> {
+                    appendLine("Answer the command with new content, which the editor inserts right after the SELECTED LINES.")
+                    appendLine("Do not repeat the selected lines and do not explain what you did: answer with the new content only.")
+                }
+
+                else -> {
+                    appendLine("Answer the command with new content, which the editor inserts in the document where the writer is.")
+                    appendLine("Do not repeat the document and do not explain what you did: answer with the new content only.")
                 }
             }
 
@@ -47,26 +47,18 @@ object AiCommandPrompt {
                 appendLine()
             }
 
-            if (before.isNotBlank()) {
-                appendLine("TEXT BEFORE (for context only):")
+            if (document.isNotBlank()) {
+                appendLine("DOCUMENT:")
                 appendLine("```")
-                appendLine(before)
-                appendLine("```")
-                appendLine()
-            }
-
-            if (hasTarget) {
-                appendLine("TARGET TEXT:")
-                appendLine("```")
-                appendLine(request.targetText)
+                appendLine(document)
                 appendLine("```")
                 appendLine()
             }
 
-            if (after.isNotBlank()) {
-                appendLine("TEXT AFTER (for context only):")
+            if (hasSelection) {
+                appendLine("SELECTED LINES:")
                 appendLine("```")
-                appendLine(after)
+                appendLine(request.selectedText)
                 appendLine("```")
                 appendLine()
             }

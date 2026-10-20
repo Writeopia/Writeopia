@@ -299,7 +299,7 @@ internal fun NoteEditorScreen(
                     exportJson = noteEditorViewModel::exportJson,
                     moveToRoot = noteEditorViewModel::moveToRootFolder,
                     moveToClick = { showFolderSelection = true },
-                    askAiWithMode = noteEditorViewModel::askAiWithMode,
+                    aiCommand = noteEditorViewModel::aiCommand,
                     addPage = noteEditorViewModel::addPage,
                     deleteDocument = { showDeleteConfirmation = true },
                     toggleFavorite = noteEditorViewModel::toggleFavorite,

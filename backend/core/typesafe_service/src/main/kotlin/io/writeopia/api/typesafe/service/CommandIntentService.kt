@@ -9,8 +9,8 @@ import io.writeopia.app.dto.ai.AiCommandRequest
 import io.writeopia.connection.logger
 
 /**
- * Asks Jev whether a free command replaces the text it is about or adds to it. Replacing is the
- * destructive answer, so it needs at least [replaceThreshold] of probability; below that the
+ * Asks Jev whether a free command replaces the lines the writer selected or adds to the
+ * document. Replacing is the destructive answer, so it needs at least [replaceThreshold] of probability; below that the
  * text stays and the answer is added after it. The threshold comes from the
  * AI_COMMAND_REPLACE_THRESHOLD environment variable, so it can change without a new image.
  */
@@ -31,7 +31,7 @@ class CommandIntentService(
         }
 
         // With nothing selected there is nothing to replace: the answer can only be added.
-        if (request.targetText.isBlank()) {
+        if (request.selectedText.isBlank()) {
             return AiCommandIntentResponse(intent = AiCommandIntent.ADD) to SystemOneUsage()
         }
 

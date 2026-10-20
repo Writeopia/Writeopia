@@ -4,6 +4,7 @@ import io.writeopia.app.dto.ai.AiCommandIntent
 import io.writeopia.app.dto.ai.AiCommandRequest
 import kotlin.test.Test
 import kotlin.test.assertContains
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -11,54 +12,66 @@ class AiCommandPromptTest {
 
     private val request = AiCommandRequest(
         command = "make it shorter",
-        targetText = "A long paragraph about the weather.",
+        selectedText = "A long paragraph about the weather.",
         documentTitle = "Diary",
-        textBefore = "Monday.",
-        textAfter = "Tuesday.",
+        documentText = "Monday.\nA long paragraph about the weather.\nTuesday.",
     )
 
     @Test
-    fun `a replacement asks for the new version of the target only`() {
+    fun `a replacement asks for the new version of the selected lines only`() {
         val prompt = AiCommandPrompt.forRequest(request, AiCommandIntent.REPLACE)
 
-        assertContains(prompt, "new version of it, and nothing else")
-        assertContains(prompt, "TARGET TEXT:\n```\nA long paragraph about the weather.")
-        assertContains(prompt, "TEXT BEFORE (for context only):\n```\nMonday.")
-        assertContains(prompt, "TEXT AFTER (for context only):\n```\nTuesday.")
+        assertContains(prompt, "new version of them, and nothing else")
+        assertContains(prompt, "SELECTED LINES:\n```\nA long paragraph about the weather.")
+        assertContains(prompt, "DOCUMENT:\n```\nMonday.\nA long paragraph about the weather.\nTuesday.")
         assertContains(prompt, "DOCUMENT TITLE: Diary")
         assertTrue(prompt.trimEnd().endsWith("COMMAND: make it shorter"))
     }
 
     @Test
-    fun `an addition goes after the target`() {
+    fun `an addition goes after the selected lines`() {
         val prompt = AiCommandPrompt.forRequest(request, AiCommandIntent.ADD)
 
-        assertContains(prompt, "inserts right after the TARGET TEXT")
-        assertFalse(prompt.contains("takes the place of the target text"))
+        assertContains(prompt, "inserts right after the SELECTED LINES")
+        assertFalse(prompt.contains("takes the place of the selected lines"))
     }
 
     @Test
-    fun `without a target the addition goes to the end of the document`() {
-        val prompt = AiCommandPrompt.forRequest(
-            request.copy(targetText = "", textAfter = ""),
-            AiCommandIntent.ADD
-        )
+    fun `without a selection the prompt does not mention one`() {
+        val prompt = AiCommandPrompt.forRequest(request.copy(selectedText = ""), AiCommandIntent.ADD)
 
-        assertContains(prompt, "inserts at the end of the document")
-        assertFalse(prompt.contains("TARGET TEXT"))
-        assertFalse(prompt.contains("TEXT AFTER"))
+        assertContains(prompt, "inserts in the document where the writer is")
+        assertFalse(prompt.contains("SELECTED LINES"))
+        assertFalse(prompt.contains("selected lines"))
     }
 
     @Test
-    fun `the context is cut but the target is not`() {
-        val long = "x".repeat(AiCommandPrompt.CONTEXT_LIMIT + 100)
+    fun `a replacement without a selection is written as an addition`() {
+        val prompt = AiCommandPrompt.forRequest(request.copy(selectedText = ""), AiCommandIntent.REPLACE)
+
+        assertContains(prompt, "inserts in the document where the writer is")
+        assertFalse(prompt.contains("SELECTED LINES"))
+    }
+
+    @Test
+    fun `a long document is cut around the selection`() {
+        val filler = "x".repeat(AiCommandPrompt.DOCUMENT_LIMIT)
+        val document = "$filler\nThe selected line.\n$filler"
         val prompt = AiCommandPrompt.forRequest(
-            request.copy(targetText = long, textBefore = "a$long", textAfter = "${long}z"),
+            request.copy(selectedText = "The selected line.", documentText = document),
             AiCommandIntent.REPLACE
         )
 
-        assertContains(prompt, "TARGET TEXT:\n```\n$long")
-        assertFalse(prompt.contains("```\na" + "x".repeat(AiCommandPrompt.CONTEXT_LIMIT)))
-        assertFalse(prompt.contains("x".repeat(AiCommandPrompt.CONTEXT_LIMIT) + "z"))
+        assertContains(prompt, "The selected line.")
+        assertFalse(prompt.contains(filler))
+    }
+
+    @Test
+    fun `the document cut keeps the beginning when the selection is not found`() {
+        val document = (1..5000).joinToString("\n") { "line $it" }
+        val cut = request.copy(selectedText = "not there", documentText = document)
+            .documentAround(limit = 100)
+
+        assertEquals(document.take(100), cut)
     }
 }

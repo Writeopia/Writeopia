@@ -1,4 +1,4 @@
-package io.writeopia.editor.features.editor.ui.mobile
+package io.writeopia.editor.features.editor.ui.ai
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -7,8 +7,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Tab
@@ -39,12 +37,13 @@ private const val QUICK_ACTIONS_TAB = 0
 private const val COMMAND_TAB = 1
 
 /**
- * The AI options of the mobile sheet. "Apply to" picks the text the AI works on, then two tabs:
- * the quick actions (summary, action points, FAQ, tags) and a free command, which the AI
- * either applies to the text or answers after it.
+ * The AI options, in two tabs, shared by the desktop side panel and the mobile sheet: the quick
+ * actions (summary, action points, FAQ, tags), with "Apply to" picking the text they work on,
+ * and a free command about the document and the lines selected when it is typed, which the AI
+ * either applies to those lines or answers after them.
  */
 @Composable
-internal fun MobileAiOptions(
+internal fun AiOptionsTabs(
     hasSelectedLinesState: StateFlow<Boolean>,
     availableTargetModes: List<AiTargetMode>,
     fixedTargetMode: AiTargetMode?,
@@ -52,68 +51,16 @@ internal fun MobileAiOptions(
     aiActionPoints: (AiTargetMode) -> Unit,
     aiFaq: (AiTargetMode) -> Unit,
     aiTags: (AiTargetMode) -> Unit,
-    aiCommand: (String, AiTargetMode) -> Unit,
+    aiCommand: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var selectedTargetMode by remember {
-        mutableStateOf(fixedTargetMode ?: availableTargetModes.firstOrNull() ?: AiTargetMode.DOCUMENT)
-    }
     var selectedTab by rememberSaveable { mutableIntStateOf(QUICK_ACTIONS_TAB) }
     var command by rememberSaveable { mutableStateOf("") }
-    val hasSelectedLines by hasSelectedLinesState.collectAsState()
 
-    // Nothing runs when Selected Lines is the target but no lines are selected.
-    val actionsEnabled = selectedTargetMode != AiTargetMode.SELECTED_LINES || hasSelectedLines
-
-    Column(modifier = modifier.verticalScroll(rememberScrollState())) {
+    Column(modifier = modifier) {
         Title(WrStrings.askAi())
 
         Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = WrStrings.applyTo(),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(bottom = 4.dp)
-        )
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            if (fixedTargetMode != null) {
-                AiTargetButton(
-                    text = targetModeLabel(fixedTargetMode),
-                    isSelected = true,
-                    onClick = {},
-                    modifier = Modifier.weight(1f)
-                )
-            } else {
-                availableTargetModes.forEach { targetMode ->
-                    AiTargetButton(
-                        text = targetModeLabel(targetMode),
-                        isSelected = selectedTargetMode == targetMode,
-                        onClick = { selectedTargetMode = targetMode },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-        }
-
-        if (fixedTargetMode == null &&
-            selectedTargetMode == AiTargetMode.SELECTED_LINES &&
-            !hasSelectedLines
-        ) {
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = WrStrings.selectLinesFirst(),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(horizontal = 4.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
 
         TabRow(
             selectedTabIndex = selectedTab,
@@ -136,8 +83,9 @@ internal fun MobileAiOptions(
 
         when (selectedTab) {
             QUICK_ACTIONS_TAB -> QuickActions(
-                targetMode = selectedTargetMode,
-                enabled = actionsEnabled,
+                hasSelectedLinesState = hasSelectedLinesState,
+                availableTargetModes = availableTargetModes,
+                fixedTargetMode = fixedTargetMode,
                 aiSummary = aiSummary,
                 aiActionPoints = aiActionPoints,
                 aiFaq = aiFaq,
@@ -147,8 +95,8 @@ internal fun MobileAiOptions(
             else -> CommandTab(
                 command = command,
                 onCommandChange = { command = it },
-                enabled = actionsEnabled && command.isNotBlank(),
-                onRun = { aiCommand(command, selectedTargetMode) },
+                enabled = command.isNotBlank(),
+                onRun = { aiCommand(command) },
             )
         }
 
@@ -158,26 +106,77 @@ internal fun MobileAiOptions(
 
 @Composable
 private fun QuickActions(
-    targetMode: AiTargetMode,
-    enabled: Boolean,
+    hasSelectedLinesState: StateFlow<Boolean>,
+    availableTargetModes: List<AiTargetMode>,
+    fixedTargetMode: AiTargetMode?,
     aiSummary: (AiTargetMode) -> Unit,
     aiActionPoints: (AiTargetMode) -> Unit,
     aiFaq: (AiTargetMode) -> Unit,
     aiTags: (AiTargetMode) -> Unit,
 ) {
-    // The quick actions all work on existing text, so there is none for the cursor, where only
-    // new text can be written: the command tab is the way there.
-    if (targetMode == AiTargetMode.CURSOR) {
-        Text(
-            text = WrStrings.quickActionsCursorHint(),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp)
-        )
-        return
+    var targetMode by remember {
+        mutableStateOf(fixedTargetMode ?: availableTargetModes.firstOrNull() ?: AiTargetMode.DOCUMENT)
     }
+    val hasSelectedLines by hasSelectedLinesState.collectAsState()
+
+    // Nothing runs when Selected Lines is the target but no lines are selected.
+    val enabled = targetMode != AiTargetMode.SELECTED_LINES || hasSelectedLines
 
     Column {
+        Text(
+            text = WrStrings.applyTo(),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(bottom = 4.dp)
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            if (fixedTargetMode != null) {
+                AiTargetButton(
+                    text = targetModeLabel(fixedTargetMode),
+                    isSelected = true,
+                    onClick = {},
+                    modifier = Modifier.weight(1f)
+                )
+            } else {
+                availableTargetModes.forEach { mode ->
+                    AiTargetButton(
+                        text = targetModeLabel(mode),
+                        isSelected = targetMode == mode,
+                        onClick = { targetMode = mode },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+
+        if (fixedTargetMode == null && targetMode == AiTargetMode.SELECTED_LINES && !hasSelectedLines) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = WrStrings.selectLinesFirst(),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(horizontal = 4.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // The quick actions all work on existing text, so there is none for the cursor, where
+        // only new text can be written: the command tab is the way there.
+        if (targetMode == AiTargetMode.CURSOR) {
+            Text(
+                text = WrStrings.quickActionsCursorHint(),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp)
+            )
+            return
+        }
+
         TextButton(
             modifier = Modifier.fillMaxWidth(),
             text = WrStrings.summary(),

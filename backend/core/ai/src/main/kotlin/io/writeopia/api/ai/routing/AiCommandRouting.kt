@@ -27,8 +27,8 @@ private const val INTENT_OPERATION = "command-intent"
 private const val COMMAND_OPERATION = "command"
 
 /**
- * The intent of a free command: Jev decides whether the answer replaces the text the command is
- * about or is added after it. Gated like the other cloud AI routes: premium account and monthly
+ * The intent of a free command: Jev decides whether the answer replaces the lines the writer
+ * selected or is added after them. Gated like the other cloud AI routes: premium account and monthly
  * quota, unless in debug.
  */
 fun Routing.commandIntentRoute(
@@ -71,11 +71,11 @@ fun Routing.commandIntentRoute(
             }
 
             logger.info(
-                "Command intent request - user: {}, command: {} chars, target: {} chars, context: {} chars",
+                "Command intent request - user: {}, command: {} chars, selection: {} chars, document: {} chars",
                 effectiveUserId,
                 request.command.length,
-                request.targetText.length,
-                request.textBefore.length + request.textAfter.length
+                request.selectedText.length,
+                request.documentText.length
             )
 
             val (response, usage) = service.decide(request)
@@ -134,10 +134,10 @@ fun Routing.aiCommandRoute(
             val prompt = AiCommandPrompt.forRequest(request, intent)
 
             logger.info(
-                "AI command request - user: {}, intent: {}, target: {} chars, prompt: {} chars",
+                "AI command request - user: {}, intent: {}, selection: {} chars, prompt: {} chars",
                 userId,
                 intent,
-                request.targetText.length,
+                request.selectedText.length,
                 prompt.length
             )
 

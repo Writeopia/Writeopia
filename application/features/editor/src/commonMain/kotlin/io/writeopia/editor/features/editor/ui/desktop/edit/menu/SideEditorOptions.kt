@@ -62,6 +62,7 @@ import io.writeopia.common.utils.configuration.PlatformType
 import io.writeopia.common.utils.file.fileChooserLoad
 import io.writeopia.common.utils.file.fileChooserSave
 import io.writeopia.common.utils.icons.WrIcons
+import io.writeopia.editor.features.editor.ui.ai.AiOptionsTabs
 import io.writeopia.editor.features.editor.ui.tags.DocumentTagChipsRow
 import io.writeopia.editor.features.editor.viewmodel.AiTargetMode
 import io.writeopia.editor.features.editor.viewmodel.SideMenuTab
@@ -109,7 +110,7 @@ fun SideEditorOptions(
     exportMarkdown: (String) -> Unit,
     moveToRoot: () -> Unit,
     moveToClick: () -> Unit,
-    askAiWithMode: (AiTargetMode) -> Unit,
+    aiCommand: (String) -> Unit,
     aiSummary: (AiTargetMode) -> Unit,
     aiActionPoints: (AiTargetMode) -> Unit,
     aiFaq: (AiTargetMode) -> Unit,
@@ -223,7 +224,7 @@ fun SideEditorOptions(
                                 currentModel = currentModel,
                                 models = models,
                                 hasSelectedLinesState = hasSelectedLinesState,
-                                askAiWithMode = askAiWithMode,
+                                aiCommand = aiCommand,
                                 aiSummary = aiSummary,
                                 aiActionPoints = aiActionPoints,
                                 aiFaq = aiFaq,
@@ -1205,28 +1206,14 @@ internal fun AiOptions(
     models: Flow<List<String>>,
     hasSelectedLinesState: StateFlow<Boolean>,
     selectModel: (String) -> Unit,
-    askAiWithMode: (AiTargetMode) -> Unit,
     aiSummary: (AiTargetMode) -> Unit,
     aiActionPoints: (AiTargetMode) -> Unit,
     aiFaq: (AiTargetMode) -> Unit,
     aiTags: (AiTargetMode) -> Unit,
+    aiCommand: (String) -> Unit,
     showModelSelection: Boolean = true,
-    availableTargetModes: List<AiTargetMode> = listOf(
-        AiTargetMode.DOCUMENT,
-        AiTargetMode.SELECTED_LINES,
-        AiTargetMode.CURSOR
-    ),
-    fixedTargetMode: AiTargetMode? = null,
     modifier: Modifier = Modifier,
 ) {
-    var selectedTargetMode by remember {
-        mutableStateOf(fixedTargetMode ?: availableTargetModes.firstOrNull() ?: AiTargetMode.DOCUMENT)
-    }
-    val hasSelectedLines by hasSelectedLinesState.collectAsState()
-
-    // Buttons are disabled when Selected Lines mode is active but no lines are selected
-    val actionsEnabled = selectedTargetMode != AiTargetMode.SELECTED_LINES || hasSelectedLines
-
     Column(
         modifier = modifier.border(
             1.dp,
@@ -1237,117 +1224,20 @@ internal fun AiOptions(
             .verticalScroll(rememberScrollState())
             .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp)
     ) {
-        Title(WrStrings.askAi())
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Apply to section. When the target mode is fixed by the caller (e.g. mobile's
-        // selected-lines menu, which always targets the selection it was opened from), only that
-        // one mode is shown, already selected and not changeable, so the user still sees what
-        // the actions below are about to run on.
-        Text(
-            text = WrStrings.applyTo(),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(bottom = 4.dp)
+        AiOptionsTabs(
+            hasSelectedLinesState = hasSelectedLinesState,
+            availableTargetModes = listOf(
+                AiTargetMode.DOCUMENT,
+                AiTargetMode.SELECTED_LINES,
+                AiTargetMode.CURSOR
+            ),
+            fixedTargetMode = null,
+            aiSummary = aiSummary,
+            aiActionPoints = aiActionPoints,
+            aiFaq = aiFaq,
+            aiTags = aiTags,
+            aiCommand = aiCommand,
         )
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            if (fixedTargetMode != null) {
-                AiTargetButton(
-                    text = targetModeLabel(fixedTargetMode),
-                    isSelected = true,
-                    onClick = {},
-                    modifier = Modifier.weight(1f)
-                )
-            } else {
-                availableTargetModes.forEach { targetMode ->
-                    AiTargetButton(
-                        text = targetModeLabel(targetMode),
-                        isSelected = selectedTargetMode == targetMode,
-                        onClick = { selectedTargetMode = targetMode },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-        }
-
-        // Show warning when Selected Lines is chosen but no lines are selected
-        if (fixedTargetMode == null &&
-            selectedTargetMode == AiTargetMode.SELECTED_LINES &&
-            !hasSelectedLines
-        ) {
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = WrStrings.selectLinesFirst(),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(horizontal = 4.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        TextButton(
-            modifier = Modifier.fillMaxWidth(),
-            text = "Prompt",
-            paddingValues = aiButtonPadding(),
-            textStyle = aiButtonTextStyle(),
-            enabled = actionsEnabled,
-            onClick = { askAiWithMode(selectedTargetMode) }
-        )
-
-        // Summary/Action Points/FAQ/Tags all summarize existing content, which doesn't apply
-        // to Cursor mode (there is no selection or document to summarize, only new text to
-        // generate at the cursor) - only Prompt is offered there.
-        if (selectedTargetMode != AiTargetMode.CURSOR) {
-            Spacer(modifier = Modifier.height(2.dp))
-
-            TextButton(
-                modifier = Modifier.fillMaxWidth(),
-                text = WrStrings.summary(),
-                paddingValues = aiButtonPadding(),
-                textStyle = aiButtonTextStyle(),
-                enabled = actionsEnabled,
-                onClick = { aiSummary(selectedTargetMode) }
-            )
-
-            Spacer(modifier = Modifier.height(2.dp))
-
-            TextButton(
-                modifier = Modifier.fillMaxWidth(),
-                text = WrStrings.actionPoints(),
-                paddingValues = aiButtonPadding(),
-                textStyle = aiButtonTextStyle(),
-                enabled = actionsEnabled,
-                onClick = { aiActionPoints(selectedTargetMode) }
-            )
-
-            Spacer(modifier = Modifier.height(2.dp))
-
-            TextButton(
-                modifier = Modifier.fillMaxWidth(),
-                text = "FAQ",
-                paddingValues = aiButtonPadding(),
-                textStyle = aiButtonTextStyle(),
-                enabled = actionsEnabled,
-                onClick = { aiFaq(selectedTargetMode) }
-            )
-
-            Spacer(modifier = Modifier.height(2.dp))
-
-            TextButton(
-                modifier = Modifier.fillMaxWidth(),
-                text = "Tags",
-                paddingValues = aiButtonPadding(),
-                textStyle = aiButtonTextStyle(),
-                enabled = actionsEnabled,
-                onClick = { aiTags(selectedTargetMode) }
-            )
-        }
 
         // Model selection is only shown for desktop (Local AI)
         // Web uses GenAI with server-side model configuration

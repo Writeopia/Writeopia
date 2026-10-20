@@ -1309,7 +1309,7 @@ class NoteEditorKmpViewModel(
         }
     }
 
-    override fun aiCommand(command: String, targetMode: AiTargetMode) {
+    override fun aiCommand(command: String) {
         val trimmed = command.trim()
         if (trimmed.isEmpty()) return
 
@@ -1324,11 +1324,11 @@ class NoteEditorKmpViewModel(
             val ai = aiClients.resolve(authRepository.getUser().id)
 
             if (ai == null) {
-                PromptService.noAiAvailable(targetMode, writeopiaManager)
+                PromptService.noAiAvailable(AiCommandService.answerTarget(writeopiaManager), writeopiaManager)
                 return@enqueueTask Result.failure(Exception(PromptService.NO_AI_MESSAGE))
             }
 
-            AiCommandService.run(trimmed, targetMode, writeopiaManager, ai)
+            AiCommandService.run(trimmed, writeopiaManager, ai)
         }
     }
 

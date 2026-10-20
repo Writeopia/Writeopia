@@ -41,8 +41,8 @@ class CommandIntentServiceTest {
 
     private val request = AiCommandRequest(
         command = "fix the grammar",
-        targetText = "Their going to the park tomorow.",
-        textBefore = "Notes of the day.",
+        selectedText = "Their going to the park tomorow.",
+        documentText = "Notes of the day.\nTheir going to the park tomorow.",
     )
 
     @Test
@@ -75,7 +75,7 @@ class CommandIntentServiceTest {
     fun `it does not ask when there is nothing to replace`() = runTest {
         var calls = 0
         val (response, _) = service(answer(replace = 0.9)) { calls++ }
-            .decide(request.copy(targetText = "  "))
+            .decide(request.copy(selectedText = "  "))
 
         assertEquals(AiCommandIntent.ADD, response.intent)
         assertEquals(0, calls)

@@ -15,32 +15,21 @@ class AiCommandContextTest {
     }
 
     @Test
-    fun `a short document goes whole around the target`() {
-        val context = AiCommandContext.build(document(paragraphs = 6), targetPositions = listOf(3.0, 4.0))
+    fun `the selected lines and the whole document go together`() {
+        val context = AiCommandContext.build(document(paragraphs = 6), selectedPositions = listOf(4.0, 3.0))
 
-        assertEquals("p3\np4", context.targetText)
-        assertEquals(listOf(3.0, 4.0), context.targetPositions)
-        assertEquals("p1\np2", context.textBefore)
-        assertEquals("p5\np6", context.textAfter)
+        assertEquals("p3\np4", context.selectedText)
+        assertEquals(listOf(3.0, 4.0), context.selectedPositions)
+        assertEquals((1..6).joinToString("\n") { "p$it" }, context.documentText)
     }
 
     @Test
-    fun `a long document is cut to the paragraphs around the target`() {
-        val context = AiCommandContext.build(document(paragraphs = 50), targetPositions = listOf(25.0))
+    fun `without a selection only the document goes`() {
+        val context = AiCommandContext.build(document(paragraphs = 3), selectedPositions = emptyList())
 
-        assertEquals("p25", context.targetText)
-        assertEquals((15..24).joinToString("\n") { "p$it" }, context.textBefore)
-        assertEquals((26..35).joinToString("\n") { "p$it" }, context.textAfter)
-    }
-
-    @Test
-    fun `without a target the whole document is the context`() {
-        val context = AiCommandContext.build(document(paragraphs = 40), targetPositions = emptyList())
-
-        assertEquals("", context.targetText)
-        assertEquals(emptyList(), context.targetPositions)
-        assertEquals((1..40).joinToString("\n") { "p$it" }, context.textBefore)
-        assertEquals("", context.textAfter)
+        assertEquals("", context.selectedText)
+        assertEquals(emptyList(), context.selectedPositions)
+        assertEquals("p1\np2\np3", context.documentText)
     }
 
     @Test
@@ -51,19 +40,17 @@ class AiCommandContextTest {
                 2.5 to StoryStep(type = StoryTypes.LOADING.type, text = "spinner", ephemeral = true),
             )
 
-        val context = AiCommandContext.build(stories, targetPositions = listOf(1.5, 2.0))
+        val context = AiCommandContext.build(stories, selectedPositions = listOf(1.5, 2.0))
 
-        assertEquals("p2", context.targetText)
-        assertEquals(listOf(2.0), context.targetPositions)
-        assertEquals("p1", context.textBefore)
-        assertEquals("p3", context.textAfter)
+        assertEquals("p2", context.selectedText)
+        assertEquals(listOf(2.0), context.selectedPositions)
+        assertEquals("p1\np2\np3", context.documentText)
     }
 
     @Test
-    fun `the title is not part of the context`() {
-        val context = AiCommandContext.build(document(paragraphs = 2), targetPositions = listOf(1.0))
+    fun `the title is not part of the document text`() {
+        val context = AiCommandContext.build(document(paragraphs = 1), selectedPositions = emptyList())
 
-        assertEquals("", context.textBefore)
-        assertEquals("p2", context.textAfter)
+        assertEquals("p1", context.documentText)
     }
 }

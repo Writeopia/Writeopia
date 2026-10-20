@@ -6,8 +6,9 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 
 /**
- * The question Jev answers about a free command: does the writer want the text they pointed at
- * rewritten, or something new added after it? One Choice, since the two exclude each other.
+ * The question Jev answers about a free command: does the writer want the lines they selected
+ * rewritten, or something new added to the document? One Choice, since the two exclude each
+ * other. Only asked when lines are selected: without them there is nothing to replace.
  */
 object CommandIntentQuestions {
 
@@ -15,35 +16,33 @@ object CommandIntentQuestions {
     const val REPLACE = "replace"
     const val ADD = "add"
 
-    /** The text around the target is cut here to keep the request small. The target is never cut. */
-    const val CONTEXT_LIMIT = 3_000
+    /** The document is cut here, around the selection, to keep the request small. */
+    const val DOCUMENT_LIMIT = 6_000
 
     fun stateFor(request: AiCommandRequest): JsonObject =
         JsonObject(
             mapOf(
                 "command" to JsonPrimitive(request.command),
-                "target_text" to JsonPrimitive(request.targetText),
+                "selected_text" to JsonPrimitive(request.selectedText),
                 "document_title" to JsonPrimitive(request.documentTitle),
-                "text_before" to JsonPrimitive(request.textBefore.takeLast(CONTEXT_LIMIT)),
-                "text_after" to JsonPrimitive(request.textAfter.take(CONTEXT_LIMIT)),
+                "document" to JsonPrimitive(request.documentAround(DOCUMENT_LIMIT)),
             )
         )
 
     fun question(): SystemOneQuestion =
         SystemOneQuestion.choice(
-            instructions = "The writer of a document selected `target_text` and typed `command` " +
-                "for an AI assistant. `text_before` and `text_after` are the parts of the " +
-                "document right before and after the selection, and `document_title` is its " +
-                "title. Decide what the writer wants the assistant to do with `target_text`.",
+            instructions = "The writer of `document` (titled `document_title`) selected the lines " +
+                "in `selected_text` and typed `command` for an AI assistant. Decide what the " +
+                "writer wants the assistant to do with the selected lines.",
             options = mapOf(
-                REPLACE to "The command transforms `target_text` itself, so the answer takes " +
-                    "its place: rewrite, fix the grammar or spelling, shorten, expand, " +
-                    "simplify, translate, change the tone or the person, turn it into a list " +
-                    "or a table, reorder it, or produce any new version of the same text.",
-                ADD to "The command asks for something new that leaves `target_text` as it is, " +
-                    "so the answer goes after it: continue the text, write the next paragraph " +
-                    "or section, answer a question about it, explain it, give examples, list " +
-                    "ideas, draft a reply, or create related content.",
+                REPLACE to "The command transforms the selected lines themselves, so the answer " +
+                    "takes their place: rewrite, fix the grammar or spelling, shorten, expand, " +
+                    "simplify, translate, change the tone or the person, turn them into a list " +
+                    "or a table, reorder them, or produce any new version of the same text.",
+                ADD to "The command asks for something new that leaves the selected lines as " +
+                    "they are, so the answer goes after them: continue the text, write the " +
+                    "next paragraph or section, answer a question about them, explain them, " +
+                    "give examples, list ideas, draft a reply, or create related content.",
             )
         )
 }
