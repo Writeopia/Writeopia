@@ -172,6 +172,7 @@ internal fun MobileChooseNoteScreen(
                 ) {
                     TopBar(
                         titleState = chooseNoteViewModel.userName,
+                        workspaceNameState = chooseNoteViewModel.workspaceName,
                         folderTitleState = chooseNoteViewModel.currentFolderTitle,
                         isSyncingState = chooseNoteViewModel.isSyncingState,
                         folder = currentFolder,
@@ -359,6 +360,7 @@ private val TOUCH_COLOR_SIZE = 30.dp
 
 const val NAVIGATE_BACK_TEST_TAG = "NotesMenuNavigateBack"
 const val SYNCING_TEST_TAG = "NotesMenuSyncing"
+const val WORKSPACE_NAME_TEST_TAG = "NotesMenuWorkspaceName"
 
 /** What's being done to a folder, picked in its options sheet. */
 private sealed interface FolderAction {
@@ -376,6 +378,7 @@ private sealed interface FolderAction {
 @Composable
 private fun TopBar(
     titleState: StateFlow<UserState<String>> = MutableStateFlow(UserState.ConnectedUser("Title")),
+    workspaceNameState: StateFlow<String?> = MutableStateFlow(null),
     folderTitleState: StateFlow<String?> = MutableStateFlow(null),
     isSyncingState: StateFlow<Boolean> = MutableStateFlow(false),
     folder: Folder? = null,
@@ -385,6 +388,7 @@ private fun TopBar(
     menuClick: () -> Unit = {}
 ) {
     val title = titleState.collectAsState().value
+    val workspaceName = workspaceNameState.collectAsState().value
     val folderTitle = folderTitleState.collectAsState().value
     val isSyncing = isSyncingState.collectAsState().value
 
@@ -451,11 +455,13 @@ private fun TopBar(
 
                     Spacer(modifier = Modifier.width(12.dp))
 
+                    // The workspace shown; the user describes it until it's loaded.
                     Text(
-                        modifier = Modifier,
-                        text = getUserName(title),
+                        modifier = Modifier.semantics { testTag = WORKSPACE_NAME_TEST_TAG },
+                        text = workspaceName?.takeIf { it.isNotBlank() } ?: getUserName(title),
                         color = MaterialTheme.colorScheme.onPrimary,
-                        maxLines = 1
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }

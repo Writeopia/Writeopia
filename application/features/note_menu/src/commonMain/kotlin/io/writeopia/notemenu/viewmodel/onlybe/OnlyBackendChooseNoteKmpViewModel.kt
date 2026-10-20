@@ -99,6 +99,9 @@ internal class OnlyBackendChooseNoteKmpViewModel(
     private val _userName = MutableStateFlow<UserState<String>>(UserState.Idle())
     override val userName: StateFlow<UserState<String>> = _userName.asStateFlow()
 
+    private val _workspaceName = MutableStateFlow<String?>(null)
+    override val workspaceName: StateFlow<String?> = _workspaceName.asStateFlow()
+
     override val currentFolderTitle: StateFlow<String?> = MutableStateFlow(
         when (notesNavigation) {
             NotesNavigation.Favorites -> "Favorites"
@@ -271,6 +274,8 @@ internal class OnlyBackendChooseNoteKmpViewModel(
 
     override suspend fun requestUser() {
         try {
+            _workspaceName.value = authRepository.getWorkspace()?.name
+
             if (authRepository.isLoggedIn()) {
                 val user = authRepository.getUser()
                 _userName.value = UserState.ConnectedUser(user.name)

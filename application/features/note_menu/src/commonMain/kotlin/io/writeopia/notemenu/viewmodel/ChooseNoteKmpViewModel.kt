@@ -160,6 +160,13 @@ internal class ChooseNoteKmpViewModel(
         }.stateIn(viewModelScope, SharingStarted.Lazily, UserState.Idle())
     }
 
+    private val workspace: MutableStateFlow<Workspace?> = MutableStateFlow(null)
+
+    override val workspaceName: StateFlow<String?> by lazy {
+        workspace.map { workspace -> workspace?.name }
+            .stateIn(viewModelScope, SharingStarted.Lazily, null)
+    }
+
     override val currentFolderTitle: StateFlow<String?> by lazy {
         when (notesNavigation) {
             NotesNavigation.Root -> MutableStateFlow(null)
@@ -340,6 +347,10 @@ internal class ChooseNoteKmpViewModel(
 
     override suspend fun requestUser() {
         try {
+            // Loaded with the user: the screen asks again on every visit, so the title follows
+            // a change of workspace.
+            workspace.value = authRepository.getWorkspace()
+
             user.value = if (authRepository.isLoggedIn()) {
                 val user = authRepository.getUser()
 

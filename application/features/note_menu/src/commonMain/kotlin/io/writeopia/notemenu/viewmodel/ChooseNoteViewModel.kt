@@ -22,6 +22,9 @@ interface ChooseNoteViewModel : FolderController {
 
     val userName: StateFlow<UserState<String>>
 
+    /** The name of the selected workspace, for the title of the root screen. Null until loaded. */
+    val workspaceName: StateFlow<String?>
+
     /**
      * Title of the folder currently being displayed. Null when in the root of the workspace.
      */
