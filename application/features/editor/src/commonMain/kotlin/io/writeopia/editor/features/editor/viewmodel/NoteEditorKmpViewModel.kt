@@ -780,7 +780,7 @@ class NoteEditorKmpViewModel(
     override fun onHeaderImageSelection(url: String?) {
         if (!isEditable.value) return
 
-        writeopiaManager.currentStory.value.stories[0.0]?.let { storyStep ->
+        writeopiaManager.currentStory.value.stories[0L]?.let { storyStep ->
             val action = Action.StoryStateChange(
                 storyStep = storyStep.copy(
                     url = url,
@@ -788,7 +788,7 @@ class NoteEditorKmpViewModel(
                         backgroundColor = if (url != null) null else storyStep.decoration.backgroundColor
                     )
                 ),
-                position = 0.0,
+                position = 0L,
                 preserveFocus = true
             )
             writeopiaManager.changeStoryState(action)
@@ -1002,7 +1002,7 @@ class NoteEditorKmpViewModel(
      * Only cards that still have no description here are touched: anything else the user may
      * be editing is left alone.
      */
-    private suspend fun applyServerLinkCards(documentId: String, steps: List<Pair<Double, StoryStep>>) {
+    private suspend fun applyServerLinkCards(documentId: String, steps: List<Pair<Long, StoryStep>>) {
         val stories = writeopiaManager.currentStory.value.stories
 
         steps.forEach { (_, serverStep) ->
@@ -1033,7 +1033,7 @@ class NoteEditorKmpViewModel(
     override fun onHeaderColorSelection(color: Int?) {
         if (!isEditable.value) return
 
-        writeopiaManager.currentStory.value.stories[0.0]?.let { storyStep ->
+        writeopiaManager.currentStory.value.stories[0L]?.let { storyStep ->
             // A color, or none, takes the place of the picture of the header.
             val action = Action.StoryStateChange(
                 storyStep = storyStep.copy(
@@ -1042,7 +1042,7 @@ class NoteEditorKmpViewModel(
                         backgroundColor = color
                     )
                 ),
-                position = 0.0,
+                position = 0L,
                 preserveFocus = true
             )
             writeopiaManager.changeStoryState(action)
@@ -1192,7 +1192,7 @@ class NoteEditorKmpViewModel(
         }
     }
 
-    override fun addImage(imagePath: String, position: Double?) {
+    override fun addImage(imagePath: String, position: Long?) {
         viewModelScope.launch(Dispatchers.Default) {
             val path = workspaceConfigRepository
                 .loadWorkspacePath(authRepository.getUser().id)
@@ -1269,12 +1269,12 @@ class NoteEditorKmpViewModel(
         documentAi(targetMode, AiCommand.TAGS)
     }
 
-    override fun aiSection(position: Double) {
+    override fun aiSection(position: Long) {
         val sectionText = writeopiaManager.getStory(position)?.text ?: return
 
         val docId = documentId.value
         val taskId = "editor-$docId-${GenerateId.generate()}"
-        val answerPosition = position + 0.001
+        val answerPosition = writeopiaManager.positionAfter(position)
 
         aiTaskManager.enqueueTask(
             id = taskId,
@@ -1397,7 +1397,7 @@ class NoteEditorKmpViewModel(
         }
     }
 
-    override fun receiveExternalFile(files: List<ExternalFile>, position: Double) {
+    override fun receiveExternalFile(files: List<ExternalFile>, position: Long) {
         viewModelScope.launch(Dispatchers.Default) {
             val newFiles = workspaceConfigRepository
                 .loadWorkspacePath(authRepository.getUser().id)

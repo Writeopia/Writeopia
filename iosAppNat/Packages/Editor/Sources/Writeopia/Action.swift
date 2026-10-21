@@ -5,11 +5,11 @@ public enum Action {
     /// New content for the step at `position`, with the cursor after the edit.
     public struct StoryStateChange: Equatable {
         public let storyStep: StoryStep
-        public let position: Double
+        public let position: Int
         public let selectionStart: Int?
         public let selectionEnd: Int?
 
-        public init(storyStep: StoryStep, position: Double, selectionStart: Int? = nil, selectionEnd: Int? = nil) {
+        public init(storyStep: StoryStep, position: Int, selectionStart: Int? = nil, selectionEnd: Int? = nil) {
             self.storyStep = storyStep
             self.position = position
             self.selectionStart = selectionStart
@@ -21,10 +21,10 @@ public enum Action {
     /// `cursor` is the cursor position in that text, used to decide where the focus goes.
     public struct LineBreak: Equatable {
         public let storyStep: StoryStep
-        public let position: Double
+        public let position: Int
         public let cursor: Int
 
-        public init(storyStep: StoryStep, position: Double, cursor: Int) {
+        public init(storyStep: StoryStep, position: Int, cursor: Int) {
             self.storyStep = storyStep
             self.position = position
             self.cursor = cursor
@@ -34,28 +34,28 @@ public enum Action {
     /// Backspace at the start of a step: its text joins the previous step.
     public struct EraseStory: Equatable {
         public let storyStep: StoryStep
-        public let position: Double
+        public let position: Int
 
-        public init(storyStep: StoryStep, position: Double) {
+        public init(storyStep: StoryStep, position: Int) {
             self.storyStep = storyStep
             self.position = position
         }
     }
 
     public struct DeleteStory: Equatable {
-        public let position: Double
+        public let position: Int
 
-        public init(position: Double) {
+        public init(position: Int) {
             self.position = position
         }
     }
 
     /// Moves the step at `positionFrom` to right after the step at `positionTo`.
     public struct Move: Equatable {
-        public let positionFrom: Double
-        public let positionTo: Double
+        public let positionFrom: Int
+        public let positionTo: Int
 
-        public init(positionFrom: Double, positionTo: Double) {
+        public init(positionFrom: Int, positionTo: Int) {
             self.positionFrom = positionFrom
             self.positionTo = positionTo
         }

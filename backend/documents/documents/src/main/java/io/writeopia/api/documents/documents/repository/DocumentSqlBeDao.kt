@@ -93,10 +93,11 @@ class DocumentSqlBeDao(
             val tombstoned = tombstones?.tombstonedAmong(document.content.values.flatMap { step -> step.allIds() }, document.workspaceId)
                 ?: emptySet()
 
-            document.content.values.forEachIndexed { i, storyStep ->
-                if (storyStep.id in tombstoned) return@forEachIndexed
-                if (!storyStep.isNewerThan(stored[storyStep.id], stored.containsKey(storyStep.id))) return@forEachIndexed
-                insertStoryStep(storyStep, i.toDouble(), document.id)
+            // Each step at its position: the key is the position, never the index in the map
+            document.content.forEach { (position, storyStep) ->
+                if (storyStep.id in tombstoned) return@forEach
+                if (!storyStep.isNewerThan(stored[storyStep.id], stored.containsKey(storyStep.id))) return@forEach
+                insertStoryStep(storyStep, position, document.id)
             }
 
             replaceTagLinks(document)
@@ -200,7 +201,7 @@ class DocumentSqlBeDao(
         )
     }
 
-    private fun insertStoryStep(storyStep: io.writeopia.sdk.models.story.StoryStep, position: Double, documentId: String) {
+    private fun insertStoryStep(storyStep: io.writeopia.sdk.models.story.StoryStep, position: Long, documentId: String) {
         storyStep.run {
             storyStepQueries?.insert(
                 id = id,
@@ -211,7 +212,7 @@ class DocumentSqlBeDao(
                 path = path,
                 text = text,
                 checked = checked ?: false,
-                position = BigDecimal.valueOf(position),
+                position = position,
                 document_id = documentId,
                 is_group = isGroup,
                 has_inner_steps = steps.isNotEmpty(),
@@ -225,7 +226,7 @@ class DocumentSqlBeDao(
             // Recursively save nested steps with parent_id set to this step's id
             steps.forEachIndexed { index, childStep ->
                 val childWithParent = childStep.copy(parentId = id)
-                insertStoryStep(childWithParent, index.toDouble(), documentId)
+                insertStoryStep(childWithParent, index.toLong(), documentId)
             }
         }
     }
@@ -272,7 +273,7 @@ class DocumentSqlBeDao(
                     ?.executeAsOneOrNull()
                 DocumentLink(docId, title)
             },
-            dbPosition = position.toDouble(),
+            dbPosition = position,
             lastUpdatedAt = last_updated_at
         )
     }
@@ -397,7 +398,7 @@ class DocumentSqlBeDao(
                             }
                         )
 
-                        innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
+                        innerContent.position!! to storyStep.copy(dbPosition = innerContent.position)
                     }
 
                     Document(
@@ -468,7 +469,7 @@ class DocumentSqlBeDao(
                             }
                         )
 
-                        innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
+                        innerContent.position!! to storyStep.copy(dbPosition = innerContent.position)
                     }
 
                     Document(
@@ -542,7 +543,7 @@ class DocumentSqlBeDao(
                             }
                         )
 
-                        innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
+                        innerContent.position!! to storyStep.copy(dbPosition = innerContent.position)
                     }
 
                     Document(
@@ -616,7 +617,7 @@ class DocumentSqlBeDao(
                             }
                         )
 
-                        innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
+                        innerContent.position!! to storyStep.copy(dbPosition = innerContent.position)
                     }
 
                     Document(
@@ -695,7 +696,7 @@ class DocumentSqlBeDao(
                             }
                         )
 
-                        innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
+                        innerContent.position!! to storyStep.copy(dbPosition = innerContent.position)
                     }
 
                     Document(
@@ -770,7 +771,7 @@ class DocumentSqlBeDao(
                             }
                         )
 
-                        innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
+                        innerContent.position!! to storyStep.copy(dbPosition = innerContent.position)
                     }
 
                     Document(
@@ -846,7 +847,7 @@ class DocumentSqlBeDao(
                             }
                         )
 
-                        innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
+                        innerContent.position!! to storyStep.copy(dbPosition = innerContent.position)
                     }
 
                     Document(
@@ -921,7 +922,7 @@ class DocumentSqlBeDao(
                             }
                         )
 
-                        innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
+                        innerContent.position!! to storyStep.copy(dbPosition = innerContent.position)
                     }
 
                     Document(
@@ -994,7 +995,7 @@ class DocumentSqlBeDao(
                             }
                         )
 
-                        innerContent.position!!.toDouble() to storyStep
+                        innerContent.position!! to storyStep
                     }
 
                     Document(
@@ -1062,7 +1063,7 @@ class DocumentSqlBeDao(
                 val content = if (stepsPerDocument > 0) {
                     storyStepQueries?.selectTopLevelByDocumentIdLimited(entity.id, stepsPerDocument.toLong())
                         ?.executeAsList()
-                        ?.associate { step -> step.position.toDouble() to step.toStoryStep() }
+                        ?.associate { step -> step.position to step.toStoryStep() }
                         ?: emptyMap()
                 } else {
                     emptyMap()
@@ -1159,7 +1160,7 @@ class DocumentSqlBeDao(
     /**
      * Inserts or updates a StoryStep with a specific timestamp.
      */
-    fun upsertStoryStep(storyStep: StoryStep, position: Double, documentId: String, lastUpdatedAt: Long) {
+    fun upsertStoryStep(storyStep: StoryStep, position: Long, documentId: String, lastUpdatedAt: Long) {
         storyStep.run {
             storyStepQueries?.insert(
                 id = id,
@@ -1170,7 +1171,7 @@ class DocumentSqlBeDao(
                 path = path,
                 text = text,
                 checked = checked ?: false,
-                position = BigDecimal.valueOf(position),
+                position = position,
                 document_id = documentId,
                 is_group = isGroup,
                 has_inner_steps = steps.isNotEmpty(),
@@ -1186,7 +1187,7 @@ class DocumentSqlBeDao(
     /**
      * Gets story steps for a document that were updated after the given timestamp.
      */
-    fun getStoryStepsAfterTime(documentId: String, afterTime: Long): List<Pair<Double, StoryStep>> {
+    fun getStoryStepsAfterTime(documentId: String, afterTime: Long): List<Pair<Long, StoryStep>> {
         return storyStepQueries?.selectByDocumentIdAfterTime(documentId, afterTime)
             ?.executeAsList()
             ?.map { entity ->
@@ -1219,14 +1220,14 @@ class DocumentSqlBeDao(
                     },
                     lastUpdatedAt = entity.last_updated_at
                 )
-                entity.position.toDouble() to storyStep
+                entity.position to storyStep
             } ?: emptyList()
     }
 
     /**
      * Gets a single StoryStep by ID.
      */
-    fun getStoryStepById(storyStepId: String): Pair<Double, StoryStep>? {
+    fun getStoryStepById(storyStepId: String): Pair<Long, StoryStep>? {
         return storyStepQueries?.selectById(storyStepId)
             ?.executeAsOneOrNull()
             ?.let { entity ->
@@ -1259,7 +1260,7 @@ class DocumentSqlBeDao(
                     },
                     lastUpdatedAt = entity.last_updated_at
                 )
-                entity.position.toDouble() to storyStep
+                entity.position to storyStep
             }
     }
 
@@ -1339,7 +1340,7 @@ class DocumentSqlBeDao(
                             }
                         )
 
-                        innerContent.position!!.toDouble() to storyStep.copy(dbPosition = innerContent.position?.toDouble())
+                        innerContent.position!! to storyStep.copy(dbPosition = innerContent.position)
                     }
 
                     Document(

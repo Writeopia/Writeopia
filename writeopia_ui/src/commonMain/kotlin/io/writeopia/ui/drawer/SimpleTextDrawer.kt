@@ -9,7 +9,7 @@ import io.writeopia.sdk.models.story.StoryStep
 
 interface SimpleTextDrawer {
 
-    var onFocusChanged: (Double, FocusState) -> Unit
+    var onFocusChanged: (Long, FocusState) -> Unit
 
     /**
      * Draws the StoryStep including its [DrawInfo]

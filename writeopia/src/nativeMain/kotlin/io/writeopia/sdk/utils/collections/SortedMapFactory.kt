@@ -56,3 +56,11 @@ private class SortedMutableMap<K : Comparable<K>, V> : MutableMap<K, V> {
 
     override fun clear() = delegate.clear()
 }
+
+actual fun <K : Comparable<K>, V> Map<K, V>.lastKeyOrNull(): K? = keys.maxOrNull()
+
+actual fun <K : Comparable<K>, V> Map<K, V>.lowerKeyOrNull(key: K): K? =
+    keys.filter { it < key }.maxOrNull()
+
+actual fun <K : Comparable<K>, V> Map<K, V>.higherKeyOrNull(key: K): K? =
+    keys.filter { it > key }.minOrNull()

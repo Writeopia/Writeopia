@@ -33,9 +33,9 @@ fun WriteopiaDbBackend.savePresentation(presentation: Presentation) {
         presentationStepEntityQueries.deleteByPresentationId(presentation.id)
         presentation.slides.forEachIndexed { slideIndex, slide ->
             val titleStep = StoryStep(type = StoryTypes.TITLE.type, text = slide.title)
-            insertPresentationStep(titleStep, presentation.id, slideIndex, 0.0)
+            insertPresentationStep(titleStep, presentation.id, slideIndex, 0L)
             slide.content.forEachIndexed { index, step ->
-                insertPresentationStep(step, presentation.id, slideIndex, (index + 1).toDouble())
+                insertPresentationStep(step, presentation.id, slideIndex, (index + 1).toLong())
             }
         }
     }
@@ -72,7 +72,7 @@ private fun WriteopiaDbBackend.insertPresentationStep(
     step: StoryStep,
     presentationId: String,
     slideIndex: Int,
-    position: Double
+    position: Long
 ) {
     presentationStepEntityQueries.insert(
         // The row id comes from where the step sits, not from the parsed step: unique by
@@ -129,5 +129,5 @@ private fun Presentation_step_entity.toStoryStep() =
         tags = tags.split(",").filter { it.isNotEmpty() }.mapNotNull(TagInfo.Companion::fromString).toSet(),
         spans = spans.split(",").filter { it.isNotEmpty() }.map(SpanInfo::fromString).toSet(),
         decoration = Decoration(backgroundColor = background_color),
-        dbPosition = position.toDouble()
+        dbPosition = position.toLong()
     )

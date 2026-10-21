@@ -638,7 +638,7 @@ public final class NoteEditorViewModel {
     public func runAi(_ command: AiCommand, mode: AiTargetMode) {
         guard let aiClient else { return }
 
-        let input: (text: String, position: Double?)?
+        let input: (text: String, position: Int?)?
         switch mode {
         case .document:
             input = (writeopiaManager.documentText, writeopiaManager.lastPosition)
@@ -723,7 +723,7 @@ public final class NoteEditorViewModel {
 
     /// Streams the answer of `prompt` into a new AI answer after `position`. A loading step
     /// shows until the first part of the answer arrives.
-    private func streamAnswer(_ command: AiCommand, prompt: String, after position: Double?) {
+    private func streamAnswer(_ command: AiCommand, prompt: String, after position: Int?) {
         guard let aiClient, !isAiRunning else { return }
 
         let answerId = writeopiaManager.loadingAtPosition(position)
@@ -864,9 +864,9 @@ public final class NoteEditorViewModel {
         var changed = false
         let steps = writeopiaManager.documentContent.map { step -> StoryStep in
             var step = step
-            if let saved = savedSteps[step.id], saved.hasSameContent(as: step) {
+            // A step that only moved is a change too: its position goes to the backend.
+            if let saved = savedSteps[step.id], saved.hasSameContent(as: step), saved.position == step.position {
                 step.lastUpdatedAt = saved.lastUpdatedAt
-                if saved.position != step.position { changed = true }
             } else {
                 step.lastUpdatedAt = now
                 changed = true

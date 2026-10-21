@@ -60,6 +60,7 @@ import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.markdown.InlineMarkdownParser
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
+import io.writeopia.sdk.utils.iterables.POSITION_GAP
 import io.writeopia.sdk.serialization.extensions.toApi
 import io.writeopia.sdk.serialization.extensions.toModel
 import io.writeopia.sdk.serialization.json.SendDocumentsRequest
@@ -832,7 +833,7 @@ object DocumentsService {
      */
     sealed class LinkCardDescriptionResult {
         /** The card as saved, with the description as its text. */
-        data class Success(val position: Double, val storyStep: StoryStep) : LinkCardDescriptionResult()
+        data class Success(val position: Long, val storyStep: StoryStep) : LinkCardDescriptionResult()
 
         /**
          * The request does not carry a link card with a web address, or its card belongs to
@@ -1092,9 +1093,9 @@ object DocumentsService {
      * Builds the content map for a summary document.
      * Creates TITLE, TEXT paragraphs, and LAST_SPACE StorySteps.
      */
-    private fun buildSummaryContent(title: String, summaryText: String): Map<Double, StoryStep> {
-        val content = mutableMapOf<Double, StoryStep>()
-        var position = 0.0
+    private fun buildSummaryContent(title: String, summaryText: String): Map<Long, StoryStep> {
+        val content = mutableMapOf<Long, StoryStep>()
+        var position = 0L
 
         // Add TITLE StoryStep
         content[position] = StoryStep(
@@ -1103,7 +1104,7 @@ object DocumentsService {
             type = StoryTypes.TITLE.type,
             text = title
         )
-        position += 1.0
+        position += POSITION_GAP
 
         // Split summary into paragraphs and create TEXT StorySteps
         val paragraphs = summaryText.split("\n\n").filter { it.isNotBlank() }
@@ -1114,7 +1115,7 @@ object DocumentsService {
                 type = StoryTypes.TEXT.type,
                 text = paragraph.trim()
             )
-            position += 1.0
+            position += POSITION_GAP
         }
 
         // Add LAST_SPACE StoryStep

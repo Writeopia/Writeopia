@@ -13,7 +13,7 @@ actual class InDocumentSearchInjection {
         override suspend fun insertForFts(
             storyStep: StoryStep,
             documentId: String,
-            position: Double
+            position: Long
         ) {}
     }
 

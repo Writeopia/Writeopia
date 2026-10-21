@@ -3,7 +3,7 @@ import Writeopia
 import WrModels
 
 /// What the writing agent needs to apply its suggestions: inserting blocks around a step found
-/// by its id, since the actions insert blocks, which moves every position.
+/// by its id, since the document may have changed while the AI answered.
 public extension WriteopiaStateManager {
     /// Adds `steps`, in order, right below the step with `stepId`, or at the end when it's gone.
     func addSteps(_ steps: [StoryStep], afterStepId stepId: String?) {
@@ -22,8 +22,8 @@ public extension WriteopiaStateManager {
 
     /// Adds `step` right above the step with `stepId`, like a heading above its paragraph.
     func addStep(_ step: StoryStep, beforeStepId stepId: String) {
-        guard isEditable, let target = self.step(withId: stepId) else { return }
-        currentStory = writeopiaManager.replaceStep(id: stepId, with: [step, target], state: currentStory)
+        guard isEditable, let target = self.position(of: stepId) else { return }
+        currentStory = writeopiaManager.addStep(step, before: target, state: currentStory)
         currentStory.focus = nil
         changeCount += 1
     }

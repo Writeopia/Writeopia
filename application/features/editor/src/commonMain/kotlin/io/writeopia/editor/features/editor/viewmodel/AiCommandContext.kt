@@ -10,11 +10,11 @@ import io.writeopia.sdk.models.story.StoryTypes
 data class AiCommandContext(
     val selectedText: String,
     /** The positions of the selected lines, sorted. Empty when nothing is selected. */
-    val selectedPositions: List<Double>,
+    val selectedPositions: List<Long>,
     val documentText: String,
 ) {
     companion object {
-        fun build(stories: Map<Double, StoryStep>, selectedPositions: Collection<Double>): AiCommandContext {
+        fun build(stories: Map<Long, StoryStep>, selectedPositions: Collection<Long>): AiCommandContext {
             val selected = selectedPositions.sorted().filter { position ->
                 !stories[position]?.text.isNullOrBlank()
             }

@@ -30,10 +30,10 @@ public final class WriteopiaStateManager {
     public var isEditable = true
     public var fontFamily: EditorFont = .system
     /// Position after which a dragged step would be dropped.
-    public private(set) var dragPosition: Double?
+    public private(set) var dragPosition: Int?
     public private(set) var isDragging = false
     public private(set) var focusRequest: FocusRequest?
-    /// Lines selected by sliding them sideways. Kept by id so they survive renumbering.
+    /// Lines selected by sliding them sideways. Kept by id, which is stable across edits.
     public private(set) var selectedStepIds: Set<String> = []
     /// Current selection of the focused text step. Drives the formatting buttons.
     public private(set) var textSelection: StepSelection?
@@ -145,7 +145,7 @@ public final class WriteopiaStateManager {
 
     /// A whole address pasted in an empty line becomes a link card, with the cursor on the line
     /// below it. The description comes later, from the backend, through `onLinkCardCreated`.
-    private func createLinkCard(url: String, stepId: String, at position: Double) {
+    private func createLinkCard(url: String, stepId: String, at position: Int) {
         dismissAiSuggestions()
         apply(writeopiaManager.createLinkCard(url: url, at: position, state: currentStory))
         guard let card = step(withId: stepId), card.type.number == StoryType.linkCard.number else { return }
@@ -170,7 +170,7 @@ public final class WriteopiaStateManager {
 
     /// A command typed at the start of the line changes the type of the step and disappears
     /// from its text, like `changeStoryType` with a written command in the Compose app.
-    private func applyCommand(_ command: TextCommands.Command, rest: String, to step: StoryStep, at position: Double, cursor: Int) {
+    private func applyCommand(_ command: TextCommands.Command, rest: String, to step: StoryStep, at position: Int, cursor: Int) {
         var changed = step
         changed.spans = SpansHandler.adjust(step.spans, from: step.text ?? "", to: rest)
         changed.text = rest
@@ -355,7 +355,7 @@ public final class WriteopiaStateManager {
         Span.highlights.contains(where: isSpanActive)
     }
 
-    private func updateSelection(_ selection: StepSelection, change: (Double, StoryState) -> StoryState) {
+    private func updateSelection(_ selection: StepSelection, change: (Int, StoryState) -> StoryState) {
         guard isEditable, !selection.isEmpty, let (position, _) = find(selection.stepId) else { return }
         commit(change(position, currentStory))
     }
@@ -365,7 +365,7 @@ public final class WriteopiaStateManager {
     public var hasSelectedLines: Bool { !selectedPositions.isEmpty }
 
     /// Positions of the selected lines still in the document, in order.
-    public var selectedPositions: [Double] {
+    public var selectedPositions: [Int] {
         guard !selectedStepIds.isEmpty else { return [] }
         return currentStory.sortedPositions.filter { position in
             currentStory.stories[position].map { selectedStepIds.contains($0.id) } == true
@@ -479,7 +479,7 @@ public final class WriteopiaStateManager {
 
     /// Where the block buttons of the side menu act: the selected lines when there are any,
     /// otherwise the line with the cursor, like the text options of the desktop app.
-    public var blockPositions: [Double] {
+    public var blockPositions: [Int] {
         if !selectedPositions.isEmpty { return selectedPositions }
         guard let focus = currentStory.focus, let step = currentStory.stories[focus], !step.isTitle else { return [] }
         return [focus]
@@ -536,15 +536,15 @@ public final class WriteopiaStateManager {
         commit(writeopiaManager.addDocumentLink(after: position, documentId: documentId, title: title, state: currentStory))
     }
 
-    private func applyToSelectedLines(_ change: ([Double], StoryState) -> StoryState) {
+    private func applyToSelectedLines(_ change: ([Int], StoryState) -> StoryState) {
         apply(change, to: selectedPositions)
     }
 
-    private func applyToBlocks(_ change: ([Double], StoryState) -> StoryState) {
+    private func applyToBlocks(_ change: ([Int], StoryState) -> StoryState) {
         apply(change, to: blockPositions)
     }
 
-    private func apply(_ change: ([Double], StoryState) -> StoryState, to positions: [Double]) {
+    private func apply(_ change: ([Int], StoryState) -> StoryState, to positions: [Int]) {
         guard isEditable, !positions.isEmpty else { return }
         commit(change(positions, currentStory))
     }
@@ -572,10 +572,10 @@ public final class WriteopiaStateManager {
     public var documentText: String { writeopiaManager.documentText(currentStory) }
 
     /// Position of the last step.
-    public var lastPosition: Double? { currentStory.sortedPositions.last }
+    public var lastPosition: Int? { currentStory.sortedPositions.last }
 
     /// The step with the cursor, or the last text step when nothing has the focus.
-    public var currentTextStep: (position: Double, step: StoryStep)? {
+    public var currentTextStep: (position: Int, step: StoryStep)? {
         if let focus = currentStory.focus, let step = currentStory.stories[focus], step.isTextStep {
             return (focus, step)
         }
@@ -587,7 +587,7 @@ public final class WriteopiaStateManager {
     /// Adds a loading step after `position` and returns its id, so it can later become the
     /// answer. Mirrors `loadingAtPosition` of the SDK.
     @discardableResult
-    public func loadingAtPosition(_ position: Double?) -> String {
+    public func loadingAtPosition(_ position: Int?) -> String {
         let loading = StoryStep(type: .loading, position: 0)
         var state = writeopiaManager.addAtPosition(loading, after: position, state: currentStory)
         state.focus = nil
@@ -709,7 +709,7 @@ public final class WriteopiaStateManager {
     }
 
     /// Position of the step with `stepId`.
-    public func position(of stepId: String) -> Double? {
+    public func position(of stepId: String) -> Int? {
         find(stepId)?.0
     }
 
@@ -786,7 +786,7 @@ public final class WriteopiaStateManager {
         Self.dragPayloadPrefix + step.id
     }
 
-    public func onDragHover(_ position: Double?) {
+    public func onDragHover(_ position: Int?) {
         dragPosition = position
         isDragging = position != nil
     }
@@ -797,14 +797,14 @@ public final class WriteopiaStateManager {
     }
 
     /// Moves the step with `stepId` right after the step at `position`, from the reorder drag.
-    public func moveStep(stepId: String, after position: Double) {
+    public func moveStep(stepId: String, after position: Int) {
         _ = moveRequest(payload: dragPayload(for: StoryStep(id: stepId, type: .text, position: 0)), after: position)
     }
 
     /// Moves the dragged step right after the step at `position`. Returns false for payloads
     /// that aren't steps of this document.
     @discardableResult
-    public func moveRequest(payload: String, after position: Double) -> Bool {
+    public func moveRequest(payload: String, after position: Int) -> Bool {
         defer { onDragStop() }
 
         guard isEditable,
@@ -863,7 +863,7 @@ public final class WriteopiaStateManager {
     /// nothing changed. Edits the user makes go through here; changes that arrive on their own
     /// (an AI answer streaming, an upload finishing) set `currentStory` directly, so an undo
     /// goes back to before the action that started them.
-    private func commit(_ newState: StoryState, textEditAt position: Double? = nil) {
+    private func commit(_ newState: StoryState, textEditAt position: Int? = nil) {
         guard newState != currentStory else { return }
         if let position {
             backstack.addTextState(currentStory, position: position)
@@ -887,13 +887,13 @@ public final class WriteopiaStateManager {
 
     // MARK: - Private
 
-    private func find(_ stepId: String) -> (Double, StoryStep)? {
+    private func find(_ stepId: String) -> (Int, StoryStep)? {
         currentStory.stories.first { $0.value.id == stepId }.map { ($0.key, $0.value) }
     }
 
     /// Replaces the document with `newState` and remembers the one before it for undo. Text
     /// typed at `textEditAt` is grouped, see `SnapshotBackstackManager.addTextState`.
-    private func apply(_ newState: StoryState, textEditAt position: Double? = nil) {
+    private func apply(_ newState: StoryState, textEditAt position: Int? = nil) {
         guard newState != currentStory else { return }
 
         let isStructural = newState.lastEdit == .whole

@@ -152,23 +152,23 @@ import WrModels
 }
 
 @Suite struct DocumentRewriteTests {
-    private let image = StoryStep(id: "i", type: .image, url: "pic.png", position: 3)
-    private let link = StoryStep(id: "k", type: .documentLink, text: "Other", position: 7)
+    private let image = StoryStep(id: "i", type: .image, url: "pic.png", position: 30)
+    private let link = StoryStep(id: "k", type: .documentLink, text: "Other", position: 70)
 
     private var content: [StoryStep] {
         [
             StoryStep(id: "t", type: .title, text: "Title", position: 0),
-            StoryStep(id: "h", type: .text, text: "Intro", tags: [TagInfo(tag: "H2")], position: 1),
-            StoryStep(id: "p", type: .text, text: "A paragraph.", position: 2),
+            StoryStep(id: "h", type: .text, text: "Intro", tags: [TagInfo(tag: "H2")], position: 10),
+            StoryStep(id: "p", type: .text, text: "A paragraph.", position: 20),
             image,
-            StoryStep(id: "c", type: .checkItem, text: "Done", checked: true, position: 4),
-            StoryStep(id: "l", type: .unorderedListItem, text: "Item", position: 5),
-            StoryStep(id: "c1", type: .codeBlock, text: "fun a() {}", position: 6),
-            StoryStep(id: "c2", type: .codeBlock, text: "fun b() {}", position: 6.5),
+            StoryStep(id: "c", type: .checkItem, text: "Done", checked: true, position: 40),
+            StoryStep(id: "l", type: .unorderedListItem, text: "Item", position: 50),
+            StoryStep(id: "c1", type: .codeBlock, text: "fun a() {}", position: 60),
+            StoryStep(id: "c2", type: .codeBlock, text: "fun b() {}", position: 65),
             link,
-            StoryStep(id: "d", type: .divider, position: 8),
-            StoryStep(id: "s", type: .loading, position: 9),
-            StoryStep(id: "z", type: .text, text: "Last line.", position: 10),
+            StoryStep(id: "d", type: .divider, position: 80),
+            StoryStep(id: "s", type: .loading, position: 90),
+            StoryStep(id: "z", type: .text, text: "Last line.", position: 100),
         ]
     }
 
@@ -243,7 +243,7 @@ import WrModels
     @Test func aLongDocumentIsCutToTheParagraphsAroundTheCursor() throws {
         var long = [StoryStep(id: "t", type: .title, text: "Title", position: 0)]
         for index in 1...100 {
-            long.append(StoryStep(id: "p\(index)", type: .text, text: "p\(index)", position: Double(index)))
+            long.append(StoryStep(id: "p\(index)", type: .text, text: "p\(index)", position: Int(index)))
         }
 
         let rewrite = try #require(DocumentRewrite.build(long, cursorStepId: "p50", limit: 40))

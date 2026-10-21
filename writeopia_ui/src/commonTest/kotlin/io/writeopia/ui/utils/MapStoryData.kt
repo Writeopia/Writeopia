@@ -6,8 +6,8 @@ import io.writeopia.sdk.models.story.StoryTypes
 
 object MapStoryData {
 
-    fun singleCheckItem(): Map<Double, StoryStep> = mapOf(
-        0.0 to StoryStep(
+    fun singleCheckItem(): Map<Long, StoryStep> = mapOf(
+        0L to StoryStep(
             id = GenerateId.generate(),
             localId = GenerateId.generate(),
             type = StoryTypes.CHECK_ITEM.type,
@@ -15,8 +15,8 @@ object MapStoryData {
         )
     )
 
-    fun imageGroup(): Map<Double, StoryStep> = mapOf(
-        0.0 to StoryStep(
+    fun imageGroup(): Map<Long, StoryStep> = mapOf(
+        0L to StoryStep(
             localId = "0",
             type = StoryTypes.GROUP_IMAGE.type,
             steps = listOf(
@@ -37,37 +37,37 @@ object MapStoryData {
                 )
             )
         ),
-        1.0 to StoryStep(
+        1L to StoryStep(
             localId = "4",
             type = StoryTypes.IMAGE.type,
         )
     )
 
-    fun imageStepsList(): Map<Double, StoryStep> = mapOf(
-        0.0 to StoryStep(
+    fun imageStepsList(): Map<Long, StoryStep> = mapOf(
+        0L to StoryStep(
             localId = "1",
             type = StoryTypes.IMAGE.type,
         ),
-        1.0 to StoryStep(
+        1L to StoryStep(
             localId = "2",
             type = StoryTypes.IMAGE.type,
         ),
-        2.0 to StoryStep(
+        2L to StoryStep(
             localId = "3",
             type = StoryTypes.IMAGE.type,
         ),
-        3.0 to StoryStep(
+        3L to StoryStep(
             localId = "4",
             type = StoryTypes.IMAGE.type,
         ),
-        4.0 to StoryStep(
+        4L to StoryStep(
             localId = "5",
             type = StoryTypes.IMAGE.type,
         ),
     )
 
-    fun imageSimpleGroup(): Map<Double, List<StoryStep>> = mapOf(
-        0.0 to listOf(
+    fun imageSimpleGroup(): Map<Long, List<StoryStep>> = mapOf(
+        0L to listOf(
             StoryStep(
                 localId = "1",
                 type = StoryTypes.IMAGE.type,
@@ -83,12 +83,12 @@ object MapStoryData {
         )
     )
 
-    fun twoGroupsImageList(): Map<Double, List<StoryStep>> {
+    fun twoGroupsImageList(): Map<Long, List<StoryStep>> {
         val parent1Id = GenerateId.generate()
         val parent2Id = GenerateId.generate()
 
         return mapOf(
-            0.0 to listOf(
+            0L to listOf(
                 StoryStep(
                     localId = parent1Id,
                     type = StoryTypes.GROUP_IMAGE.type,
@@ -135,8 +135,8 @@ object MapStoryData {
         )
     }
 
-    fun stepsList(): Map<Double, List<StoryStep>> = mapOf(
-        0.0 to listOf(
+    fun stepsList(): Map<Long, List<StoryStep>> = mapOf(
+        0L to listOf(
             StoryStep(
                 localId = "1",
                 type = StoryTypes.IMAGE.type,
@@ -150,13 +150,13 @@ object MapStoryData {
                 type = StoryTypes.IMAGE.type,
             )
         ),
-        1.0 to listOf(
+        1L to listOf(
             StoryStep(
                 localId = "4",
                 type = StoryTypes.TEXT.type,
             )
         ),
-        2.0 to listOf(
+        2L to listOf(
             StoryStep(
                 localId = "5",
                 type = StoryTypes.TEXT.type,
@@ -164,53 +164,53 @@ object MapStoryData {
         )
     )
 
-    fun singleMessage(): Map<Double, StoryStep> = mapOf(
-        0.0 to StoryStep(
+    fun singleMessage(): Map<Long, StoryStep> = mapOf(
+        0L to StoryStep(
             localId = "0",
             type = StoryTypes.TEXT.type,
             text = "hi!",
         )
     )
 
-    fun singleMessageLineBreak(): Map<Double, StoryStep> = mapOf(
-        0.0 to StoryStep(
+    fun singleMessageLineBreak(): Map<Long, StoryStep> = mapOf(
+        0L to StoryStep(
             localId = "0",
             type = StoryTypes.TEXT.type,
             text = "hi!\n",
         )
     )
 
-    fun messagesInLine(): Map<Double, StoryStep> = mapOf(
-        0.0 to StoryStep(
+    fun messagesInLine(): Map<Long, StoryStep> = mapOf(
+        0L to StoryStep(
             localId = "0",
             type = StoryTypes.TEXT.type,
             text = "hi!",
         ),
-        1.0 to StoryStep(
+        1L to StoryStep(
             localId = "2",
             type = StoryTypes.TEXT.type,
             text = "Hey!",
         ),
-        2.0 to StoryStep(
+        2L to StoryStep(
             localId = "4",
             type = StoryTypes.TEXT.type,
             text = "And it was super awesome!! Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur?",
         ),
-        3.0 to StoryStep(
+        3L to StoryStep(
             localId = "6",
             type = StoryTypes.TEXT.type,
             text = "I couldn't believe how sunny it was. Santiago is a really beautiful city. There's a lot to " +
                 "do and enjoyed the day. We went to many cozy Cafes and we enjoyed the city by foot. " +
                 "We had to buy some Syn Cards to be able to communicate in the new country. ",
         ),
-        4.0 to StoryStep(
+        4L to StoryStep(
             localId = "7",
             type = StoryTypes.TEXT.type,
             text = "I couldn't believe how sunny it was. Santiago is a really beautiful city. There's a lot to " +
                 "do and enjoyed the day. We went to many cozy Cafes and we enjoyed the city by foot. " +
                 "We had to buy some Syn Cards to be able to communicate in the new country. ",
         ),
-        5.0 to StoryStep(
+        5L to StoryStep(
             localId = "8",
             type = StoryTypes.TEXT.type,
             text = "I couldn't believe how sunny it was. Santiago is a really beautiful city. There's a lot to " +
@@ -219,41 +219,41 @@ object MapStoryData {
         )
     )
 
-    fun simpleMessages(): Map<Double, StoryStep> = mapOf(
-        0.0 to StoryStep(
+    fun simpleMessages(): Map<Long, StoryStep> = mapOf(
+        0L to StoryStep(
             localId = "0",
             type = StoryTypes.TEXT.type,
             text = "message1",
         ),
-        1.0 to StoryStep(
+        1L to StoryStep(
             localId = "2",
             type = StoryTypes.TEXT.type,
             text = "message2",
         ),
-        2.0 to StoryStep(
+        2L to StoryStep(
             localId = "4",
             type = StoryTypes.TEXT.type,
             text = "message3",
         ),
-        3.0 to StoryStep(
+        3L to StoryStep(
             localId = "6",
             type = StoryTypes.TEXT.type,
             text = "message4",
         ),
-        4.0 to StoryStep(
+        4L to StoryStep(
             localId = "7",
             type = StoryTypes.TEXT.type,
             text = "message5",
         ),
-        5.0 to StoryStep(
+        5L to StoryStep(
             localId = "8",
             type = StoryTypes.TEXT.type,
             text = "message6",
         )
     )
 
-    fun complexList(): Map<Double, List<StoryStep>> = mapOf(
-        0.0 to listOf(
+    fun complexList(): Map<Long, List<StoryStep>> = mapOf(
+        0L to listOf(
             StoryStep(
                 localId = GenerateId.generate(),
                 type = StoryTypes.IMAGE.type,
@@ -265,14 +265,14 @@ object MapStoryData {
                 url = "https://fastly.picsum.photos/id/15/400/400.jpg?hmac=xv-6mggpYPLIQ9eNAHrl1qKPHjyUCYlBoNBvdsqF4cY",
             ),
         ),
-        1.0 to listOf(
+        1L to listOf(
             StoryStep(
                 localId = GenerateId.generate(),
                 type = StoryTypes.IMAGE.type,
                 url = "https://fastly.picsum.photos/id/15/400/400.jpg?hmac=xv-6mggpYPLIQ9eNAHrl1qKPHjyUCYlBoNBvdsqF4cY",
             )
         ),
-        2.0 to listOf(
+        2L to listOf(
             StoryStep(
                 localId = GenerateId.generate(),
                 type = StoryTypes.IMAGE.type,
@@ -289,14 +289,14 @@ object MapStoryData {
                 url = "https://fastly.picsum.photos/id/984/400/400.jpg?hmac=CaqZ-rcUAbmidwURZcBynO7aIAC-FaktVN7X8lIvlmE",
             )
         ),
-        3.0 to listOf(
+        3L to listOf(
             StoryStep(
                 localId = GenerateId.generate(),
                 type = StoryTypes.TEXT.type,
                 text = "We arrived in Santiago!! \n\nLorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
             )
         ),
-        4.0 to listOf(
+        4L to listOf(
             StoryStep(
                 localId = GenerateId.generate(),
                 type = StoryTypes.IMAGE.type,
@@ -304,14 +304,14 @@ object MapStoryData {
                 text = "The hotel entrance"
             )
         ),
-        5.0 to listOf(
+        5L to listOf(
             StoryStep(
                 localId = GenerateId.generate(),
                 type = StoryTypes.IMAGE.type,
                 text = "And it was super awesome!! \n\nUt enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur?",
             )
         ),
-        6.0 to listOf(
+        6L to listOf(
             StoryStep(
                 localId = "6",
                 type = StoryTypes.TEXT.type,
@@ -322,114 +322,114 @@ object MapStoryData {
         )
     )
 
-    fun aiAnswerWithH3(): Map<Double, StoryStep> = mapOf(
-        0.0 to StoryStep(
+    fun aiAnswerWithH3(): Map<Long, StoryStep> = mapOf(
+        0L to StoryStep(
             localId = "0",
             type = StoryTypes.AI_ANSWER.type,
             text = "### This is a heading\nSome content here",
         )
     )
 
-    fun aiAnswerWithMultipleMarkdown(): Map<Double, StoryStep> = mapOf(
-        0.0 to StoryStep(
+    fun aiAnswerWithMultipleMarkdown(): Map<Long, StoryStep> = mapOf(
+        0L to StoryStep(
             localId = "0",
             type = StoryTypes.AI_ANSWER.type,
             text = "### Heading\n- List item 1\n- List item 2\n[] Task item\nRegular text",
         )
     )
 
-    fun aiAnswerWithListItems(): Map<Double, StoryStep> = mapOf(
-        0.0 to StoryStep(
+    fun aiAnswerWithListItems(): Map<Long, StoryStep> = mapOf(
+        0L to StoryStep(
             localId = "0",
             type = StoryTypes.AI_ANSWER.type,
             text = "- First item\n- Second item\n- Third item",
         )
     )
 
-    fun aiAnswerWithCheckItems(): Map<Double, StoryStep> = mapOf(
-        0.0 to StoryStep(
+    fun aiAnswerWithCheckItems(): Map<Long, StoryStep> = mapOf(
+        0L to StoryStep(
             localId = "0",
             type = StoryTypes.AI_ANSWER.type,
             text = "[] Task one\n[] Task two",
         )
     )
 
-    fun aiAnswerWithDivider(): Map<Double, StoryStep> = mapOf(
-        0.0 to StoryStep(
+    fun aiAnswerWithDivider(): Map<Long, StoryStep> = mapOf(
+        0L to StoryStep(
             localId = "0",
             type = StoryTypes.AI_ANSWER.type,
             text = "Content above\n---\nContent below",
         )
     )
 
-    fun aiAnswerWithAllHeadings(): Map<Double, StoryStep> = mapOf(
-        0.0 to StoryStep(
+    fun aiAnswerWithAllHeadings(): Map<Long, StoryStep> = mapOf(
+        0L to StoryStep(
             localId = "0",
             type = StoryTypes.AI_ANSWER.type,
             text = "# Heading 1\n## Heading 2\n### Heading 3\n#### Heading 4",
         )
     )
 
-    fun aiAnswerWithInlineMarkdown(): Map<Double, StoryStep> = mapOf(
-        0.0 to StoryStep(
+    fun aiAnswerWithInlineMarkdown(): Map<Long, StoryStep> = mapOf(
+        0L to StoryStep(
             localId = "0",
             type = StoryTypes.AI_ANSWER.type,
             text = "**For The Cake**\nThis is *italic* text\nVisit https://example.com",
         )
     )
 
-    fun syncHistory(): Map<Double, StoryStep> =
+    fun syncHistory(): Map<Long, StoryStep> =
         mapOf(
-            0.0 to
+            0L to
                 StoryStep(
                     localId = GenerateId.generate(),
                     type = StoryTypes.IMAGE.type,
                     url = "https://fastly.picsum.photos/id/15/400/400.jpg?hmac=xv-6mggpYPLIQ9eNAHrl1qKPHjyUCYlBoNBvdsqF4cY",
                 ),
-            1.0 to
+            1L to
                 StoryStep(
                     localId = GenerateId.generate(),
                     type = StoryTypes.IMAGE.type,
                     url = "https://fastly.picsum.photos/id/1018/400/400.jpg?hmac=MwHJoMaVXsBbqg-LFoDVL6P8TCDkSEikExptCkkHESQ",
                 ),
-            2.0 to
+            2L to
                 StoryStep(
                     localId = GenerateId.generate(),
                     type = StoryTypes.IMAGE.type,
                     url = "https://fastly.picsum.photos/id/984/400/400.jpg?hmac=CaqZ-rcUAbmidwURZcBynO7aIAC-FaktVN7X8lIvlmE",
                 ),
-            3.0 to
+            3L to
                 StoryStep(
                     localId = GenerateId.generate(),
                     type = StoryTypes.TEXT.type,
                     text = "We arrived in Santiago!!",
                 ),
-            4.0 to
+            4L to
                 StoryStep(
                     localId = GenerateId.generate(),
                     type = StoryTypes.CHECK_ITEM.type,
                     text = "We need to go to the Cafe!",
                 ),
-            5.0 to
+            5L to
                 StoryStep(
                     localId = GenerateId.generate(),
                     type = StoryTypes.CHECK_ITEM.type,
                     text = "We need to have lots of fun!",
                 ),
-            6.0 to
+            6L to
                 StoryStep(
                     localId = GenerateId.generate(),
                     type = StoryTypes.CHECK_ITEM.type,
                     text = "We need to lear some Spanish!",
                 ),
-            7.0 to
+            7L to
                 StoryStep(
                     localId = GenerateId.generate(),
                     type = StoryTypes.IMAGE.type,
                     url = "https://fastly.picsum.photos/id/514/1200/600.jpg?hmac=gh5_PZFkQI74GShPTCJ_XP_EgN-X1O0OUP8tDlT7WkY",
                     text = "The hotel entrance"
                 ),
-            8.0 to
+            8L to
                 StoryStep(
                     localId = GenerateId.generate(),
                     type = StoryTypes.TEXT_BOX.type,
@@ -437,13 +437,13 @@ object MapStoryData {
                         "quis nostrum exercitationem ullam corporis suscipit laboriosam, " +
                         "nisi ut aliquid ex ea commodi consequatur?",
                 ),
-            9.0 to
+            9L to
                 StoryStep(
                     localId = GenerateId.generate(),
                     type = StoryTypes.TEXT_BOX.type,
                     text = "I hope to to it again some day..."
                 ),
-            10.0 to
+            10L to
                 StoryStep(
                     localId = GenerateId.generate(),
                     type = StoryTypes.TEXT_BOX.type,
@@ -457,14 +457,14 @@ object MapStoryData {
      * Document with title at position 0 and text at position 1.
      * Used for testing title protection.
      */
-    fun documentWithTitle(): Map<Double, StoryStep> = mapOf(
-        0.0 to StoryStep(
+    fun documentWithTitle(): Map<Long, StoryStep> = mapOf(
+        0L to StoryStep(
             id = GenerateId.generate(),
             localId = "title",
             type = StoryTypes.TITLE.type,
             text = "My Document Title"
         ),
-        1.0 to StoryStep(
+        1L to StoryStep(
             id = GenerateId.generate(),
             localId = "text1",
             type = StoryTypes.TEXT.type,
@@ -476,8 +476,8 @@ object MapStoryData {
      * Document with only a title at position 0.
      * Used for testing title protection on empty documents.
      */
-    fun documentWithOnlyTitle(): Map<Double, StoryStep> = mapOf(
-        0.0 to StoryStep(
+    fun documentWithOnlyTitle(): Map<Long, StoryStep> = mapOf(
+        0L to StoryStep(
             id = GenerateId.generate(),
             localId = "title",
             type = StoryTypes.TITLE.type,

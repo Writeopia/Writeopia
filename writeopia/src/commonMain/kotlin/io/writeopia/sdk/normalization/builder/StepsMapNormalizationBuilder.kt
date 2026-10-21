@@ -18,7 +18,7 @@ class StepsMapNormalizationBuilder {
             StepsMapNormalizationBuilder().apply(buildFunc).build()
     }
 
-    private var mergeNormalization: ((Map<Double, List<StoryStep>>) -> Map<Double, StoryStep>)? = null
+    private var mergeNormalization: ((Map<Long, List<StoryStep>>) -> Map<Long, StoryStep>)? = null
     private val normalizations: MutableList<UnitsMapTransformation> = mutableListOf()
 
     /**
@@ -30,7 +30,7 @@ class StepsMapNormalizationBuilder {
         normalizations.add(normalization)
     }
 
-    fun addMergeNormalization(merge: (Map<Double, List<StoryStep>>) -> Map<Double, StoryStep>) {
+    fun addMergeNormalization(merge: (Map<Long, List<StoryStep>>) -> Map<Long, StoryStep>) {
         mergeNormalization = merge
     }
 

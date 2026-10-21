@@ -15,10 +15,10 @@ import io.writeopia.sdk.model.story.Selection
  */
 data class DrawInfo(
     val editable: Boolean = true,
-    val focus: Double? = null,
-    val position: Double = 0.0,
-    val previousPosition: Double? = null,
-    val nextPosition: Double? = null,
+    val focus: Long? = null,
+    val position: Long = 0L,
+    val previousPosition: Long? = null,
+    val nextPosition: Long? = null,
     val selectMode: Boolean = false,
     val selection: Selection? = null,
     val extraData: Map<String, Any> = emptyMap()

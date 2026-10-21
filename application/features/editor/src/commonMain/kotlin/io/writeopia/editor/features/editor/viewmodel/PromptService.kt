@@ -38,7 +38,7 @@ object PromptService {
         prompt: String?,
         writeopiaManager: WriteopiaStateManager,
         streamFn: (String) -> Flow<ResultData<String>>,
-        promptPosition: Double? = null
+        promptPosition: Long? = null
     ) {
         val position = promptPosition ?: writeopiaManager.getNextPosition()
 
@@ -53,7 +53,7 @@ object PromptService {
         noAiAvailableAt(position, writeopiaManager)
     }
 
-    fun noAiAvailableAt(position: Double, writeopiaManager: WriteopiaStateManager) {
+    fun noAiAvailableAt(position: Long, writeopiaManager: WriteopiaStateManager) {
         writeopiaManager.changeStoryState(
             Action.StoryStateChange(
                 storyStep = StoryStep(type = StoryTypes.AI_ANSWER.type, text = NO_AI_MESSAGE),
@@ -65,7 +65,7 @@ object PromptService {
     private fun getTextAndPosition(
         targetMode: AiTargetMode,
         writeopiaManager: WriteopiaStateManager
-    ): Pair<String?, Double> {
+    ): Pair<String?, Long> {
         val text = when (targetMode) {
             AiTargetMode.DOCUMENT -> writeopiaManager.getDocumentText()
             AiTargetMode.SELECTED_LINES -> writeopiaManager.getCurrentSelectionText()
@@ -76,9 +76,9 @@ object PromptService {
     }
 
     /** Where an answer about the text [targetMode] points to goes: right after that text. */
-    internal fun answerPosition(targetMode: AiTargetMode, writeopiaManager: WriteopiaStateManager): Double {
+    internal fun answerPosition(targetMode: AiTargetMode, writeopiaManager: WriteopiaStateManager): Long {
         val lastPos = writeopiaManager.lastPosition()
-        val afterDocument = writeopiaManager.getStory(lastPos)?.nextPosition ?: (lastPos + 1)
+        val afterDocument = writeopiaManager.positionAfter(lastPos)
 
         return when (targetMode) {
             AiTargetMode.DOCUMENT -> afterDocument
@@ -94,32 +94,34 @@ object PromptService {
     internal suspend fun streamIntoDocument(
         answer: Flow<ResultData<String>>,
         writeopiaManager: WriteopiaStateManager,
-        position: Double
+        position: Long
     ) {
         answer.handleStream(writeopiaManager, position)
     }
 
     private suspend fun Flow<ResultData<String>>.handleStream(
         writeopiaManager: WriteopiaStateManager,
-        position: Double
+        position: Long
     ) {
         // One step for the whole answer, rewritten at each chunk and ephemeral while the answer
         // comes: nothing is saved nor synced until the stream ends, then the final text once.
         val answerId = GenerateId.generate()
         var text = ""
+        // Where the loading story went: at [position], or right before the story there.
+        var answerPosition = position
 
         this.onStart {
-            writeopiaManager.loadingAtPosition(position)
+            answerPosition = writeopiaManager.loadingAtPosition(position)
         }.onCompletion { cause ->
             // Leaving the document cancels the stream: the answer is dropped, never saved.
             if (cause is CancellationException) return@onCompletion
             // An answer with nothing in it leaves no block behind, only the spinner goes.
             if (text.isBlank()) {
-                writeopiaManager.removeAtPosition(position)
+                writeopiaManager.removeAtPosition(answerPosition)
                 return@onCompletion
             }
             writeopiaManager.changeStoryState(
-                Action.StoryStateChange(storyStep = answerStep(answerId, text, ephemeral = false), position = position),
+                Action.StoryStateChange(storyStep = answerStep(answerId, text, ephemeral = false), position = answerPosition),
                 trackIt = false
             )
             writeopiaManager.trackState()
@@ -134,7 +136,7 @@ object PromptService {
         }.collect { resultText ->
             text = resultText
             writeopiaManager.changeStoryState(
-                Action.StoryStateChange(storyStep = answerStep(answerId, text, ephemeral = true), position = position),
+                Action.StoryStateChange(storyStep = answerStep(answerId, text, ephemeral = true), position = answerPosition),
                 trackIt = false
             )
         }

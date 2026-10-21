@@ -12,7 +12,7 @@ import io.writeopia.sdk.models.story.TagInfo
 import io.writeopia.ui.manager.WriteopiaStateManager
 
 class TextCommandHandler(
-    private val commandsMap: Map<String, (StoryStep, Double) -> Unit>,
+    private val commandsMap: Map<String, (StoryStep, Long) -> Unit>,
     private val excludeTypes: Set<Int> = setOf(StoryTypes.TITLE.type.number),
     private val trie: Trie = Trie()
 ) {
@@ -27,7 +27,7 @@ class TextCommandHandler(
     fun isExactCommand(text: String, step: StoryStep): Boolean =
         !excludeTypes.contains(step.type.number) && trie.search(text)
 
-    fun handleCommand(text: String, step: StoryStep, position: Double): Boolean {
+    fun handleCommand(text: String, step: StoryStep, position: Long): Boolean {
         if (excludeTypes.contains(step.type.number)) return false
 
         val command = findCommand(text) ?: return false

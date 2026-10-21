@@ -18,7 +18,7 @@ class StepsMapNormalizationBuilderTest {
 
         assertEquals(
             StoryTypes.GROUP_IMAGE.type,
-            normalized[0.0]!!.type,
+            normalized[0L]!!.type,
             "The first non space StoryUnit should be a GroupStep"
         )
 
@@ -29,21 +29,21 @@ class StepsMapNormalizationBuilderTest {
         )
         assertEquals(
             StoryTypes.GROUP_IMAGE.type,
-            normalized[2.0]?.type,
+            normalized[2L]?.type,
             "The images in the same position should be merged into GroupImage"
         )
         assertEquals(
             3,
-            normalized[2.0]?.steps?.size,
+            normalized[2L]?.steps?.size,
             "The images in the same position should be merged into GroupImage"
         )
         assertEquals(
             StoryTypes.TEXT.type,
-            normalized[(normalized.size - 1).toDouble()]?.type,
+            normalized[(normalized.size - 1).toLong()]?.type,
             "The last message should stay as it was"
         )
 
-        val group = (normalized[4.0])
+        val group = (normalized[4L])
         group!!.steps.forEach { storyUnit ->
             assertEquals(
                 group.id,

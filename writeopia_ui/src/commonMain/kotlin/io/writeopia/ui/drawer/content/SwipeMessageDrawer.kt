@@ -28,8 +28,8 @@ fun swipeTextDrawer(
     clickable: Boolean = true,
     dragIconWidth: Dp = 16.dp,
     config: DrawConfig,
-    onSelected: (Boolean, Double) -> Unit = { _, _ -> },
-    onDragHover: (Double) -> Unit,
+    onSelected: (Boolean, Long) -> Unit = { _, _ -> },
+    onDragHover: (Long) -> Unit,
     onDragStart: () -> Unit = {},
     onDragStop: () -> Unit = {},
     moveRequest: (Action.Move) -> Unit = {},
@@ -37,7 +37,7 @@ fun swipeTextDrawer(
     isDesktop: Boolean,
     enabled: Boolean,
     paddingValues: PaddingValues = PaddingValues(0.dp),
-    receiveExternalFile: (List<ExternalFile>, Double) -> Unit,
+    receiveExternalFile: (List<ExternalFile>, Long) -> Unit,
     endContent: @Composable ((StoryStep, DrawInfo, Boolean) -> Unit)? = null,
 ): StoryStepDrawer =
     DesktopTextItemDrawer(
@@ -70,7 +70,7 @@ fun swipeTextDrawer(
     paddingValues: PaddingValues = PaddingValues(0.dp),
     customBackgroundColor: Color = Color.Transparent,
     endContent: @Composable ((StoryStep, DrawInfo, Boolean) -> Unit)? = null,
-    receiveExternalFile: (List<ExternalFile>, Double) -> Unit,
+    receiveExternalFile: (List<ExternalFile>, Long) -> Unit,
     messageDrawer: @Composable RowScope.() -> SimpleTextDrawer,
 ): StoryStepDrawer = swipeTextDrawer(
     modifier = modifier,

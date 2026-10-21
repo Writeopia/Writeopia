@@ -116,3 +116,58 @@ val MIGRATION_34_35 = object : Migration(34, 35) {
         )
     }
 }
+
+/**
+ * Story step positions are whole numbers, 10000 apart (POSITION_GAP in the SDK), in an
+ * INTEGER column. The steps of each document are renumbered in their order, children among
+ * their siblings. SQLite can't change the type of a column, so the table is rebuilt.
+ */
+val MIGRATION_35_36 = object : Migration(35, 36) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL(
+            """
+            CREATE TABLE STORY_UNIT_ENTITY_POSITIONS (
+                id TEXT NOT NULL PRIMARY KEY,
+                localId TEXT NOT NULL,
+                type TEXT NOT NULL,
+                parent_id TEXT,
+                url TEXT,
+                path TEXT,
+                text TEXT,
+                checked INTEGER,
+                position INTEGER NOT NULL,
+                document_id TEXT NOT NULL,
+                is_group INTEGER NOT NULL,
+                has_inner_steps INTEGER NOT NULL,
+                background_color INTEGER,
+                tags TEXT NOT NULL,
+                spans TEXT NOT NULL,
+                link_to_document TEXT,
+                last_updated_at INTEGER
+            )
+            """.trimIndent()
+        )
+        connection.execSQL(
+            """
+            INSERT INTO STORY_UNIT_ENTITY_POSITIONS (
+                id, localId, type, parent_id, url, path, text, checked, position, document_id,
+                is_group, has_inner_steps, background_color, tags, spans, link_to_document, last_updated_at
+            )
+            SELECT
+                s.id, s.localId, s.type, s.parent_id, s.url, s.path, s.text, s.checked,
+                (
+                    SELECT COUNT(*)
+                    FROM STORY_UNIT_ENTITY_TABLE o
+                    WHERE o.document_id = s.document_id
+                      AND IFNULL(o.parent_id, '') = IFNULL(s.parent_id, '')
+                      AND (o.position < s.position OR (o.position = s.position AND o.id < s.id))
+                ) * 10000,
+                s.document_id, s.is_group, s.has_inner_steps, s.background_color, s.tags, s.spans,
+                s.link_to_document, s.last_updated_at
+            FROM STORY_UNIT_ENTITY_TABLE s
+            """.trimIndent()
+        )
+        connection.execSQL("DROP TABLE STORY_UNIT_ENTITY_TABLE")
+        connection.execSQL("ALTER TABLE STORY_UNIT_ENTITY_POSITIONS RENAME TO STORY_UNIT_ENTITY_TABLE")
+    }
+}

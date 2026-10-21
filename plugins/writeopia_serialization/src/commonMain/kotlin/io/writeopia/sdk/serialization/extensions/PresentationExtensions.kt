@@ -12,7 +12,7 @@ import kotlin.time.Instant
 fun Slide.toApi(): SlideApi =
     SlideApi(
         title = title,
-        content = content.mapIndexed { index, step -> step.toApi((index + 1).toDouble()) }
+        content = content.mapIndexed { index, step -> step.toApi((index + 1).toLong()) }
     )
 
 fun SlideApi.toModel(): Slide =

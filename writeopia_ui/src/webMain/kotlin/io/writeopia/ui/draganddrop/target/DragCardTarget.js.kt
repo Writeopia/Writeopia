@@ -44,7 +44,7 @@ actual fun DragCardTarget(
     modifier: Modifier,
     dataToDrop: DropInfo,
     showIcon: Boolean,
-    position: Double,
+    position: Long,
     dragIconWidth: Dp,
     iconTintColor: Color,
     iconTintOnHover: Color,

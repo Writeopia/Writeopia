@@ -103,7 +103,7 @@ class DocumentSyncManagerTest {
         )
         val document = Document(
             id = "document-1",
-            content = mapOf(0.0 to initialStep),
+            content = mapOf(0L to initialStep),
             createdAt = now,
             lastUpdatedAt = now,
             lastSyncedAt = now,
@@ -113,7 +113,7 @@ class DocumentSyncManagerTest {
         val documentEditionFlow = MutableStateFlow(
             StoryState(
                 stories = document.content,
-                lastEdit = LastEdit.LineEdition(0.0, initialStep),
+                lastEdit = LastEdit.LineEdition(0L, initialStep),
             ) to document.info()
         )
         val workspaceIdFlow = MutableStateFlow(document.workspaceId)
@@ -142,8 +142,8 @@ class DocumentSyncManagerTest {
 
         val updatedStep = initialStep.copy(text = "two")
         documentEditionFlow.value = StoryState(
-            stories = mapOf(0.0 to updatedStep),
-            lastEdit = LastEdit.LineEdition(0.0, updatedStep),
+            stories = mapOf(0L to updatedStep),
+            lastEdit = LastEdit.LineEdition(0L, updatedStep),
         ) to document.info()
         advanceUntilIdle()
 

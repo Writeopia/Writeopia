@@ -30,8 +30,8 @@ class PromptServiceTest {
             loadDocument(
                 Document(
                     content = mapOf(
-                        0.0 to StoryStep(type = StoryTypes.TITLE.type, text = "Groceries"),
-                        1.0 to StoryStep(type = StoryTypes.TEXT.type, text = "We need milk."),
+                        0L to StoryStep(type = StoryTypes.TITLE.type, text = "Groceries"),
+                        1L to StoryStep(type = StoryTypes.TEXT.type, text = "We need milk."),
                     ),
                     workspaceId = "",
                     createdAt = now,
@@ -59,12 +59,12 @@ class PromptServiceTest {
             prompt = "Summarize",
             writeopiaManager = manager,
             streamFn = { flowOf(ResultData.Complete("Sho"), ResultData.Complete("Short version.")) },
-            promptPosition = 2.0,
+            promptPosition = 2L,
         )
         watching.cancel()
 
         // Two chunks went to the same step, so only one is ever saved and synced.
-        val answer = manager.currentStory.value.stories[2.0]!!
+        val answer = manager.currentStory.value.stories[2L]!!
         assertEquals(StoryTypes.AI_ANSWER.type, answer.type)
         assertEquals("Short version.", answer.text)
         assertEquals(setOf(answer.id), edits.map { step -> step.id }.toSet())
@@ -82,9 +82,9 @@ class PromptServiceTest {
             prompt = "Summarize",
             writeopiaManager = manager,
             streamFn = { flowOf(ResultData.Loading(), ResultData.Complete("")) },
-            promptPosition = 2.0,
+            promptPosition = 2L,
         )
 
-        assertEquals(setOf(0.0, 1.0), manager.currentStory.value.stories.keys)
+        assertEquals(setOf(0L, 1L), manager.currentStory.value.stories.keys)
     }
 }

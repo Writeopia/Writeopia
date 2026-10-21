@@ -96,7 +96,7 @@ class CommentSerializationTest {
             id = "document-1",
             title = "Document",
             content = mapOf(
-                0.0 to StoryStep(
+                0L to StoryStep(
                     id = "step-1",
                     type = StoryTypes.TEXT.type,
                     text = "Commented text",
@@ -126,7 +126,7 @@ class CommentSerializationTest {
         assertEquals(document.title, decoded.title)
         assertEquals(document.commentConversations, decoded.commentConversations)
 
-        val decodedStep = decoded.content.getValue(0.0)
+        val decodedStep = decoded.content.getValue(0L)
         assertEquals("step-1", decodedStep.id)
         assertEquals("Commented text", decodedStep.text)
         assertEquals(

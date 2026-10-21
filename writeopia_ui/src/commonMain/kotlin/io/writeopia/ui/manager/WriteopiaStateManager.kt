@@ -36,9 +36,14 @@ import io.writeopia.sdk.repository.DocumentRepository
 import io.writeopia.sdk.repository.UserRepository
 import io.writeopia.sdk.sharededition.SharedEditionManager
 import io.writeopia.sdk.utils.alias.UnitsNormalizationMap
+import io.writeopia.sdk.utils.collections.lastKeyOrNull
 import io.writeopia.sdk.utils.collections.toSortedMutableMap
 import io.writeopia.sdk.utils.NextPositionCalculator
 import io.writeopia.sdk.utils.extensions.toEditState
+import io.writeopia.sdk.utils.iterables.POSITION_GAP
+import io.writeopia.sdk.utils.iterables.mapValuesSorted
+import io.writeopia.sdk.utils.iterables.makeRoomAfter
+import io.writeopia.sdk.utils.iterables.nextKey
 import io.writeopia.ui.backstack.BackstackHandler
 import io.writeopia.ui.backstack.BackstackInform
 import io.writeopia.ui.backstack.SnapshotBackstackManager
@@ -99,7 +104,7 @@ class WriteopiaStateManager(
     private val keyboardEventFlow: Flow<KeyboardEvent>,
     private val documentRepository: DocumentRepository? = null,
     val supportedImageFiles: Set<String> = setOf("jpg", "jpeg", "png"),
-    private val drawStateModify: (List<DrawStory>, Double) -> (List<DrawStory>) = StepsModifier::modify,
+    private val drawStateModify: (List<DrawStory>, Long) -> (List<DrawStory>) = StepsModifier::modify,
     private val permanentTypes: Set<Int> = setOf(StoryTypes.TITLE.type.number),
     private val listTypes: Set<Int> = setOf(
         StoryTypes.CHECK_ITEM.type.number,
@@ -111,7 +116,7 @@ class WriteopiaStateManager(
     private val bulkStyleParseHandler: BulkStyleParseHandler = BulkStyleParseHandler()
 ) : BackstackHandler, BackstackInform by backStackManager {
 
-    private val selectionBuffer: EventBuffer<Pair<Boolean, Double>> = EventBuffer(coroutineScope)
+    private val selectionBuffer: EventBuffer<Pair<Boolean, Long>> = EventBuffer(coroutineScope)
 
     init {
         coroutineScope.launch {
@@ -202,19 +207,19 @@ class WriteopiaStateManager(
 
     private var lastStateChange: Action.StoryStateChange? = null
 
-    private val initialContent: Map<Double, StoryStep> =
-        mapOf(0.0 to StoryStep(text = "", type = StoryTypes.TITLE.type))
+    private val initialContent: Map<Long, StoryStep> =
+        mapOf(0L to StoryStep(text = "", type = StoryTypes.TITLE.type))
 
     private var localUserId: String? = null
 
-    private val dragPosition = MutableStateFlow(-1.0)
+    private val dragPosition = MutableStateFlow(-1L)
     private val isDragging = MutableStateFlow(false)
 
     private val dragRealPosition = combine(
         dragPosition,
         isDragging
     ) { position, isDragging ->
-        if (isDragging) position else -1.0
+        if (isDragging) position else -1L
     }
 
     private val _scrollToPosition: MutableStateFlow<Int?> = MutableStateFlow(null)
@@ -246,7 +251,7 @@ class WriteopiaStateManager(
 
     val documentInfo: StateFlow<DocumentInfo> = _documentInfo.asStateFlow()
 
-    private val _onEditPositions = MutableStateFlow(setOf<Double>())
+    private val _onEditPositions = MutableStateFlow(setOf<Long>())
     val onEditPositions = _onEditPositions.asStateFlow()
 
     private val _linkCardCreated = MutableSharedFlow<LinkCardCreation>(extraBufferCapacity = 16)
@@ -262,7 +267,7 @@ class WriteopiaStateManager(
      * This is the position from which the selection extends when using shift+arrows.
      * It's null when the selection was made with mouse (unknown keyboard position).
      */
-    private var keyboardSelectionAnchor: Double? = null
+    private var keyboardSelectionAnchor: Long? = null
 
     private var sharedEditionManager: SharedEditionManager? = null
 
@@ -587,7 +592,7 @@ class WriteopiaStateManager(
         clearSelection()
     }
 
-    fun onEquationEdition(position: Double) {
+    fun onEquationEdition(position: Long) {
         getStory(position)?.let { storyStep ->
             changeStoryState(
                 stateChange = Action.StoryStateChange(
@@ -674,9 +679,9 @@ class WriteopiaStateManager(
     }
 
     fun acceptSuggestions() {
-        val changedSteps = mutableListOf<Pair<Double, StoryStep>>()
+        val changedSteps = mutableListOf<Pair<Long, StoryStep>>()
 
-        val newStories = getStories().mapValues { (position, storyStep) ->
+        val newStories = getStories().mapValuesSorted { (position, storyStep) ->
             if (storyStep.tags.contains(TagInfo(Tag.AI_SUGGESTION))) {
                 val updatedStep = storyStep.copy(
                     tags = storyStep.tags.filterNot { tagInfo ->
@@ -695,7 +700,7 @@ class WriteopiaStateManager(
             _currentStory.value.copy(stories = newStories, lastEdit = LastEdit.BulkEdition(changedSteps))
     }
 
-    fun toggleTagForPosition(position: Double, tag: TagInfo, commandInfo: CommandInfo? = null) {
+    fun toggleTagForPosition(position: Long, tag: TagInfo, commandInfo: CommandInfo? = null) {
         if (!isEditable) return
         val story = getStory(position)
         val storyText = story?.text
@@ -737,7 +742,7 @@ class WriteopiaStateManager(
         }
     }
 
-    fun toggleCollapseItem(position: Double) {
+    fun toggleCollapseItem(position: Long) {
         val state = _currentStory.value
         val isCollapsed = currentStory.value
             .stories[position]
@@ -780,7 +785,7 @@ class WriteopiaStateManager(
      * @param typeInfo [TypeInfo]
      * @param commandInfo [CommandInfo]
      */
-    fun changeStoryType(position: Double, typeInfo: TypeInfo, commandInfo: CommandInfo?) {
+    fun changeStoryType(position: Long, typeInfo: TypeInfo, commandInfo: CommandInfo?) {
         if (!isEditable) return
         if (isOnSelection) {
             clearSelection()
@@ -791,7 +796,7 @@ class WriteopiaStateManager(
 
         if (listTypes.contains(typeInfo.storyType.number)) {
             coroutineScope.launch(dispatcher) {
-                val nextPosition = getStory(position)?.nextPosition ?: (position + 1)
+                val nextPosition = positionAfter(position)
                 val newState = writeopiaManager.generateSuggestionsList(
                     storyState = { _currentStory.value },
                     storyType = typeInfo.storyType,
@@ -805,7 +810,7 @@ class WriteopiaStateManager(
         }
     }
 
-    fun removeTags(position: Double) {
+    fun removeTags(position: Long) {
         if (!isEditable) return
         _currentStory.value =
             writeopiaManager.removeTags(position, _currentStory.value)
@@ -858,7 +863,7 @@ class WriteopiaStateManager(
     private fun breakLine(
         lineBreak: Action.LineBreak,
         processCommands: Boolean
-    ): List<Pair<Double, StoryStep>> {
+    ): List<Pair<Long, StoryStep>> {
         val state = _currentStory.value
         val story = getStory(position = lineBreak.position)
 
@@ -901,7 +906,7 @@ class WriteopiaStateManager(
         return edited
     }
 
-    fun onFocusChange(position: Double, hasFocus: Boolean) {
+    fun onFocusChange(position: Long, hasFocus: Boolean) {
         if (!hasFocus) return
         val story = currentStory.value
 
@@ -919,7 +924,7 @@ class WriteopiaStateManager(
         _scrollToPosition.value = position
     }
 
-    private fun selected(isSelected: Boolean, position: Double) {
+    private fun selected(isSelected: Boolean, position: Long) {
         if (!isEditable) return
         if (_currentStory.value.stories[position] != null) {
             // Reset keyboard selection anchor when selection is modified via mouse/drag
@@ -936,12 +941,12 @@ class WriteopiaStateManager(
      * Add a [StoryStep] of a position into the selection list. Selected content can be used to
      * perform bulk actions, like bulk edition and bulk deletion.
      */
-    fun onSelected(isSelected: Boolean, position: Double) {
+    fun onSelected(isSelected: Boolean, position: Long) {
         if (!isEditable) return
         selectionBuffer.send(isSelected to position)
     }
 
-    fun onSectionSelected(position: Double) {
+    fun onSectionSelected(position: Long) {
         if (!isEditable) return
         // Reset keyboard selection anchor when selection is modified via section select
         keyboardSelectionAnchor = null
@@ -952,7 +957,7 @@ class WriteopiaStateManager(
             .filter { (posi, _) -> posi > position }
             .find { (_, story) -> story.tags.any { it.tag.isTitle() } }
             ?.key
-            ?: (stories.size - 1).toDouble()
+            ?: lastPosition()
 
         val sortedPositions = stories.keys.filter { it in position..lastPosition }.toSet()
 
@@ -963,7 +968,7 @@ class WriteopiaStateManager(
         }
     }
 
-    fun toggleSelection(position: Double) {
+    fun toggleSelection(position: Long) {
         if (!isEditable) return
         onSelected(!_onEditPositions.value.contains(position), position)
     }
@@ -974,7 +979,7 @@ class WriteopiaStateManager(
      */
     fun clickAtTheEnd() {
         val stories = _currentStory.value.stories
-        val lastPosition = (stories.size - 1).toDouble()
+        val lastPosition = lastPosition()
         val lastContentStory = stories[lastPosition]
 
         val newState = if (lastContentStory?.type == StoryTypes.TEXT.type) {
@@ -992,7 +997,7 @@ class WriteopiaStateManager(
                 )
             )
         } else {
-            val newPosition = stories.size.toDouble()
+            val newPosition = lastPosition + POSITION_GAP
             val newLastMessage = StoryStep(
                 type = StoryTypes.TEXT.type,
                 previousPosition = lastPosition
@@ -1033,7 +1038,7 @@ class WriteopiaStateManager(
             clearSelection()
 
             backStackManager.previousState(_currentStory.value)?.let { state ->
-                val stories = state.stories.mapValues { (_, story) ->
+                val stories = state.stories.mapValuesSorted { (_, story) ->
                     story.copy(localId = GenerateId.generate())
                 }
                 _currentStory.value = state.copy(stories = stories)
@@ -1053,7 +1058,7 @@ class WriteopiaStateManager(
             clearSelection()
 
             backStackManager.nextState()?.let { state ->
-                val stories = state.stories.mapValues { (_, story) ->
+                val stories = state.stories.mapValuesSorted { (_, story) ->
                     story.copy(localId = GenerateId.generate())
                 }
                 _currentStory.value = state.copy(stories = stories)
@@ -1144,7 +1149,7 @@ class WriteopiaStateManager(
         }
     }
 
-    fun onDragHover(position: Double) {
+    fun onDragHover(position: Long) {
         dragPosition.value = position
     }
 
@@ -1173,14 +1178,12 @@ class WriteopiaStateManager(
     }
 
     fun moveToNext(cursor: Int, position: Int = 1) {
-        val lastIndex = (_currentStory.value.stories.size - 1).toDouble()
-
-        val focusPosition = currentFocus()?.let { (position, _) -> position } ?: 0.0
-        nextFocusOrCreate(min(focusPosition, lastIndex), cursor)
+        val focusPosition = currentFocus()?.let { (position, _) -> position } ?: 0L
+        nextFocusOrCreate(min(focusPosition, lastPosition()), cursor)
     }
 
     fun moveToPrevious(cursor: Int, positions: Int = 1) {
-        val focusPosition = currentFocus()?.let { (position, _) -> position } ?: 0.0
+        val focusPosition = currentFocus()?.let { (position, _) -> position } ?: 0L
         previousFocus(focusPosition, cursor)
     }
 
@@ -1369,8 +1372,8 @@ class WriteopiaStateManager(
 
     private fun removeCommentSpans(conversationId: String) {
         val state = _currentStory.value
-        val changedSteps = mutableListOf<Pair<Double, StoryStep>>()
-        val stories = state.stories.mapValues { (position, story) ->
+        val changedSteps = mutableListOf<Pair<Long, StoryStep>>()
+        val stories = state.stories.mapValuesSorted { (position, story) ->
             val spans = story.spans.filterNot { span ->
                 span.span == Span.COMMENT && span.extra == conversationId
             }.toSet()
@@ -1436,8 +1439,8 @@ class WriteopiaStateManager(
         val missingConversationIds = referencedConversationIds - restored.keys
         if (missingConversationIds.isNotEmpty()) {
             val state = _currentStory.value
-            val changedSteps = mutableListOf<Pair<Double, StoryStep>>()
-            val stories = state.stories.mapValues { (position, story) ->
+            val changedSteps = mutableListOf<Pair<Long, StoryStep>>()
+            val stories = state.stories.mapValuesSorted { (position, story) ->
                 val spans = story.spans.filterNot { span ->
                     span.span == Span.COMMENT && span.extra in missingConversationIds
                 }.toSet()
@@ -1493,19 +1496,20 @@ class WriteopiaStateManager(
      * Returns Pair of (targetPosition, useInsertMode).
      */
     private fun getTitleProtectedPosition(
-        pos: Double,
+        pos: Long,
         story: StoryStep?,
         explicitPosition: Boolean
-    ): Pair<Double, Boolean> {
+    ): Pair<Long, Boolean> {
         val isOnTitle = story?.type == StoryTypes.TITLE.type
         return if (isOnTitle && !explicitPosition) {
-            Pair(pos + 1, true)
+            // Right after the title: before the story that follows it
+            Pair(positionAfter(pos), true)
         } else {
             Pair(pos, false)
         }
     }
 
-    fun addImage(imagePath: String, position: Double? = null) {
+    fun addImage(imagePath: String, position: Long? = null) {
         if (!isEditable) return
         (position ?: currentPosition())?.let { pos ->
             val story = getStory(pos)
@@ -1530,7 +1534,7 @@ class WriteopiaStateManager(
                             loading = true
                         )
 
-                        if (useInsertMode || position != null) {
+                        val imagePosition = if (useInsertMode || position != null) {
                             addAtPosition(loadingStep, targetPosition)
                         } else {
                             changeStoryStateAndTrackIt(
@@ -1544,13 +1548,14 @@ class WriteopiaStateManager(
                                     targetPosition
                                 )
                             )
+                            targetPosition
                         }
 
                         // Upload in background
                         val result = imageUploader!!.uploadImage(imagePath)
 
                         // Replace with final image
-                        val currentStory = getStory(targetPosition)
+                        val currentStory = getStory(imagePosition)
                         if (currentStory != null) {
                             val finalStep = when (result) {
                                 is io.writeopia.sdk.models.utils.ResultData.Complete -> currentStory.copy(
@@ -1568,7 +1573,7 @@ class WriteopiaStateManager(
                             }
 
                             changeStoryStateAndTrackIt(
-                                Action.StoryStateChange(finalStep, targetPosition)
+                                Action.StoryStateChange(finalStep, imagePosition)
                             )
                         }
                     } else {
@@ -1593,25 +1598,64 @@ class WriteopiaStateManager(
     }
 
     /**
-     * Adds a story in a position.
+     * Adds a story at [position], or right before the story there. The stories after are
+     * spread out when there is no room for it.
+     *
+     * @return the position the story got, [position] when the document can't be edited.
      */
-    fun addAtPosition(storyStep: StoryStep, position: Double) {
-        if (!isEditable) return
+    fun addAtPosition(storyStep: StoryStep, position: Long): Long {
+        if (!isEditable) return position
         _currentStory.value = writeopiaManager.addAtPosition(
             _currentStory.value,
             storyStep,
             position
         )
+        return positionOf(storyStep.id) ?: position
     }
 
-    fun loadingAtPosition(position: Double) {
-        if (StoryTypes.LOADING.type == getStory(position)?.type) return
+    /** The position of the story with [id], if it is in the document. */
+    private fun positionOf(id: String): Long? =
+        _currentStory.value.stories.entries.firstOrNull { (_, step) -> step.id == id }?.key
 
-        addAtPosition(
+    /**
+     * Adds a story right after the one at [position], half way to the next story. No other
+     * story moves.
+     *
+     * @return the position the story got.
+     */
+    fun addAfterPosition(storyStep: StoryStep, position: Long): Long {
+        if (!isEditable) return position
+
+        _currentStory.value = writeopiaManager.addAfterPosition(
+            _currentStory.value,
+            storyStep,
+            position
+        )
+
+        return positionOf(storyStep.id) ?: position
+    }
+
+    /**
+     * Puts a loading story at [position], or right before the story there. The story at
+     * [position] is kept when it is a loading one already.
+     *
+     * @return the position of the loading story, where the answer should go.
+     */
+    fun loadingAtPosition(position: Long): Long {
+        if (StoryTypes.LOADING.type == getStory(position)?.type) return position
+
+        return addAtPosition(
             StoryStep(type = StoryTypes.LOADING.type, ephemeral = true),
             position = position
         )
     }
+
+    /**
+     * Where a story added "right after" [position] should be asked for: the position of the
+     * story that follows it, which [addAtPosition] puts the new story before, or a free
+     * position after the last story.
+     */
+    fun positionAfter(position: Long): Long = getStories().nextKey(position) ?: (position + POSITION_GAP)
 
     /**
      * Takes the stories at [positions] out of the document and leaves one skeleton in the place
@@ -1620,7 +1664,7 @@ class WriteopiaStateManager(
      *
      * @return the position of the skeleton, or null when nothing was replaced.
      */
-    fun replaceWithSkeleton(positions: Set<Double>): Double? {
+    fun replaceWithSkeleton(positions: Set<Long>): Long? {
         if (!isEditable || positions.isEmpty()) return null
 
         val stories = _currentStory.value.stories
@@ -1632,19 +1676,17 @@ class WriteopiaStateManager(
         _onEditPositions.value = emptySet()
 
         val (remaining, deleted) = writeopiaManager.bulkDelete(sorted, stories)
-        // The skeleton links to the neighbours of the replaced range, so the text that takes its
-        // place later lands between them.
+        // The skeleton takes the place of the first replaced story, between the neighbours of
+        // the replaced range, so the text that takes its place later lands between them.
         val skeleton = StoryStep(
             type = StoryTypes.SKELETON.type,
             text = text,
             ephemeral = true,
-            dbPosition = stories[first]?.dbPosition,
-            previousPosition = stories[first]?.previousPosition,
-            nextPosition = stories[sorted.last()]?.nextPosition,
         )
 
+        val withSkeleton = remaining.toSortedMutableMap().apply { this[first] = skeleton }
         _currentStory.value = _currentStory.value.copy(
-            stories = remaining + (first to skeleton),
+            stories = NextPositionCalculator.relinkAround(withSkeleton, first),
             lastEdit = LastEdit.BulkDeleteEdition(deleted.values.map { it.id }, emptyList())
         )
         cleanupOrphanCommentConversations()
@@ -1658,7 +1700,7 @@ class WriteopiaStateManager(
      * accepted AI answer. Nothing happens when the skeleton is gone. Undo goes back to before
      * the skeleton, since [replaceWithSkeleton] kept that state.
      */
-    fun replaceSkeletonWithText(position: Double, text: String) {
+    fun replaceSkeletonWithText(position: Long, text: String) {
         if (!isEditable) return
         val skeleton = getStory(position) ?: return
         if (skeleton.type != StoryTypes.SKELETON.type) return
@@ -1688,14 +1730,16 @@ class WriteopiaStateManager(
      * the blocks the rewrite keeps, which keep their ids). The state before is kept in the back
      * stack, so the rewrite can be undone, and the stories that went away are deleted.
      *
-     * @return false when the region holds nothing.
+     * @return the region to pass to [updateRegion], whose end may be past [toExclusive] when
+     * the stories after it had to be spread out to make room; null when the region holds
+     * nothing and nothing was done.
      */
-    fun beginRegionRewrite(from: Double, toExclusive: Double?, stories: List<StoryStep>): Boolean {
-        if (!isEditable) return false
+    fun beginRegionRewrite(from: Long, toExclusive: Long?, stories: List<StoryStep>): EditRegion? {
+        if (!isEditable) return null
 
         val current = _currentStory.value
         val inside = current.stories.filterKeys { position -> position.inRegion(from, toExclusive) }
-        if (inside.isEmpty()) return false
+        if (inside.isEmpty()) return null
 
         backStackManager.addState(current)
         _onEditPositions.value = emptySet()
@@ -1705,46 +1749,84 @@ class WriteopiaStateManager(
             .filter { story -> !story.ephemeral && story.id !in keptIds }
             .map { story -> story.id }
 
+        val (merged, end) = spreadInRegion(current.stories - inside.keys, from, toExclusive, stories)
         _currentStory.value = current.copy(
-            stories = (current.stories - inside.keys) + spreadInRegion(from, toExclusive, stories),
+            stories = NextPositionCalculator.calculate(merged),
             lastEdit = LastEdit.BulkDeleteEdition(deletedIds, emptyList())
         )
         cleanupOrphanCommentConversations()
 
-        return true
+        return EditRegion(from, end)
     }
 
     /**
      * Replaces the region of [beginRegionRewrite] with [stories], in order, spread over the
      * region. While not [done] the change is not saved (the answer is still coming); when done,
      * the stories get their links to their neighbours and the document is saved whole.
+     *
+     * @return the region for the next call: see [beginRegionRewrite].
      */
-    fun updateRegion(from: Double, toExclusive: Double?, stories: List<StoryStep>, done: Boolean) {
-        if (!isEditable) return
+    fun updateRegion(region: EditRegion, stories: List<StoryStep>, done: Boolean): EditRegion {
+        if (!isEditable) return region
 
+        val (from, toExclusive) = region
         val current = _currentStory.value
         val outside = current.stories.filterKeys { position -> !position.inRegion(from, toExclusive) }
-        val merged = outside + spreadInRegion(from, toExclusive, stories)
+        // Sorted and linked: the map is drawn in its own order
+        val (spread, end) = spreadInRegion(outside, from, toExclusive, stories)
+        val merged = NextPositionCalculator.calculate(spread)
 
         _currentStory.value = if (done) {
-            current.copy(stories = NextPositionCalculator.calculate(merged), lastEdit = LastEdit.Whole)
+            current.copy(stories = merged, lastEdit = LastEdit.Whole)
         } else {
             current.copy(stories = merged, lastEdit = LastEdit.Nothing)
         }
+
+        return EditRegion(from, end)
     }
 
-    private fun Double.inRegion(from: Double, toExclusive: Double?): Boolean =
+    private fun Long.inRegion(from: Long, toExclusive: Long?): Boolean =
         this >= from && (toExclusive == null || this < toExclusive)
 
-    /** [stories] at positions inside the region, the first exactly at [from]. */
-    private fun spreadInRegion(from: Double, toExclusive: Double?, stories: List<StoryStep>): Map<Double, StoryStep> {
-        if (stories.isEmpty()) return emptyMap()
-        val step = if (toExclusive == null) 1.0 else (toExclusive - from) / (stories.size + 1)
+    /**
+     * [outside] (the document without the region) plus [stories] at positions inside the
+     * region: the first exactly at [from], the others whole numbers after it, one gap apart
+     * when there is room, spread evenly up to [toExclusive] otherwise. When not even one whole
+     * number per story fits, the stories after the region are spread out first (see
+     * [makeRoomAfter]), which moves the end of the region.
+     *
+     * @return the map and the end of the region (exclusive), null when it runs to the end.
+     */
+    private fun spreadInRegion(
+        outside: Map<Long, StoryStep>,
+        from: Long,
+        toExclusive: Long?,
+        stories: List<StoryStep>
+    ): Pair<Map<Long, StoryStep>, Long?> {
+        val map = outside.toSortedMutableMap()
+        if (stories.isEmpty()) return map to toExclusive
 
-        return stories.mapIndexed { index, story -> (from + index * step) to story }.toMap()
+        val after = stories.size - 1
+        var end = map.nextKey(from)
+        if (end != null && (end - from) / (after + 1) < 1L) {
+            map.makeRoomAfter(from, after)
+            end = map.nextKey(from)
+        }
+
+        map[from] = stories.first()
+        if (after > 0) {
+            val step = when {
+                end == null -> POSITION_GAP
+                end - from > (after + 1) * POSITION_GAP -> POSITION_GAP
+                else -> (end - from) / (after + 1)
+            }
+            stories.drop(1).forEachIndexed { index, story -> map[from + (index + 1) * step] = story }
+        }
+
+        return map to end
     }
 
-    fun removeAtPosition(position: Double) {
+    fun removeAtPosition(position: Long) {
         if (!isEditable) return
         _currentStory.value = writeopiaManager.removeAtPosition(
             _currentStory.value,
@@ -1754,7 +1836,7 @@ class WriteopiaStateManager(
 
     fun handleTextInput(
         input: TextInput,
-        position: Double,
+        position: Long,
         lineBreakByContent: Boolean,
         trackIt: Boolean = true,
         processCommands: Boolean = false
@@ -1780,7 +1862,7 @@ class WriteopiaStateManager(
             // previous keystroke ("[" when "[]" was typed). It needs the whole command to remove it.
             if (commandHandler.isExactCommand(text, step)) {
                 _currentStory.value = _currentStory.value.copy(
-                    stories = _currentStory.value.stories + (position to newStep)
+                    stories = _currentStory.value.stories.toSortedMutableMap().apply { this[position] = newStep }
                 )
             }
 
@@ -1808,7 +1890,7 @@ class WriteopiaStateManager(
      * asks the backend for one when [linkCardCreated] emits. The change is one synchronous
      * state update, made by [WriteopiaManager.createLinkCard].
      */
-    private fun createLinkCard(step: StoryStep, position: Double, url: String) {
+    private fun createLinkCard(step: StoryStep, position: Long, url: String) {
         val current = _currentStory.value
         val newState = writeopiaManager.createLinkCard(position, url, current)
         val linkCard = newState.stories[position]
@@ -1931,11 +2013,13 @@ class WriteopiaStateManager(
         }
     }
 
-    fun receiveExternalFiles(files: List<ExternalFile>, position: Double) {
+    /** Adds the images among [files] right after the story at [position], in order. */
+    fun receiveExternalFiles(files: List<ExternalFile>, position: Long) {
         files
             .filter { file -> supportedImageFiles.contains(file.extension) }
+            .reversed()
             .forEach { (filePath, _) ->
-                addImage(filePath, position)
+                addImage(filePath, positionAfter(position))
             }
     }
 
@@ -1966,7 +2050,7 @@ class WriteopiaStateManager(
         }
     }
 
-    fun getNextPosition(): Double? =
+    fun getNextPosition(): Long? =
         if (isOnSelection) {
             val maxSelected = _onEditPositions.value.maxOrNull() ?: return null
             getStory(maxSelected)?.nextPosition
@@ -1975,16 +2059,16 @@ class WriteopiaStateManager(
             getStory(currentPos)?.nextPosition
         }
 
-    fun positionAfterSelection(): Double? =
+    fun positionAfterSelection(): Long? =
         if (isOnSelection) getNextPosition() else null
 
-    fun lastPosition(): Double = getStories().keys.maxOrNull() ?: 0.0
+    fun lastPosition(): Long = getStories().lastKeyOrNull() ?: 0L
 
     /**
      * Creates a new document and replaces the story at [position] with a link to it. Without a
      * position, the last selected story is used.
      */
-    suspend fun addLinkToDocument(position: Double? = null) {
+    suspend fun addLinkToDocument(position: Long? = null) {
         if (!isEditable) return
         if (documentRepository == null) return
 
@@ -2031,7 +2115,7 @@ class WriteopiaStateManager(
             }
     }
 
-    private fun getSelectedStoriesWithPosition(): List<Pair<Double, StoryStep>> {
+    private fun getSelectedStoriesWithPosition(): List<Pair<Long, StoryStep>> {
         val stories = getStories()
         return _onEditPositions.value
             .sorted()
@@ -2058,7 +2142,7 @@ class WriteopiaStateManager(
      * deleted like any other step, with a tombstone, so no save nor sync brings it back once
      * accepted. The deletion and the lines go to the trackers in one edit.
      */
-    fun acceptStoryStep(position: Double) {
+    fun acceptStoryStep(position: Long) {
         if (!isEditable) return
         val answer = getStory(position) ?: return
         val text = answer.text ?: ""
@@ -2079,7 +2163,7 @@ class WriteopiaStateManager(
             )
             // Not saved on its own: the edit below carries it, with the deletion of the answer.
             _currentStory.value = current.copy(
-                stories = current.stories + (position to accepted),
+                stories = current.stories.toSortedMutableMap().apply { this[position] = accepted },
                 lastEdit = LastEdit.Nothing,
             )
 
@@ -2123,7 +2207,7 @@ class WriteopiaStateManager(
         }
     }
 
-    private fun addTitleToStory(storyStep: StoryStep, tag: Tag, position: Double) {
+    private fun addTitleToStory(storyStep: StoryStep, tag: Tag, position: Long) {
         val shouldRemove = storyStep.tags.any { it.tag == tag }
 
         val newTags = storyStep.tags
@@ -2149,7 +2233,7 @@ class WriteopiaStateManager(
      * @param position Double
      * @param cursor Int
      */
-    private fun nextFocusOrCreate(position: Double, cursor: Int) {
+    private fun nextFocusOrCreate(position: Long, cursor: Int) {
         if (!isEditable) return
         coroutineScope.launch(dispatcher) {
             _currentStory.value =
@@ -2181,7 +2265,7 @@ class WriteopiaStateManager(
      * Move the focus to the previous line that accepts text edition.
      * The cursor is positioned in the same place that is was in the previous line.
      */
-    private fun previousFocus(position: Double, cursor: Int) {
+    private fun previousFocus(position: Long, cursor: Int) {
         coroutineScope.launch(dispatcher) {
             writeopiaManager.previousTextStory(getStories(), position)
                 ?.let { (step, newPosition) ->
@@ -2199,7 +2283,7 @@ class WriteopiaStateManager(
         }
     }
 
-    private fun toggleStateForStories(onEdit: Set<Double>, storyTypes: StoryTypes) {
+    private fun toggleStateForStories(onEdit: Set<Long>, storyTypes: StoryTypes) {
         if (!isEditable) return
         val currentStories = currentStory.value.stories
 
@@ -2222,9 +2306,9 @@ class WriteopiaStateManager(
     }
 
     private fun toggleTagForStories(
-        onEdit: Set<Double>,
+        onEdit: Set<Long>,
         tag: TagInfo,
-        currentStories: Map<Double, StoryStep> = currentStory.value.stories
+        currentStories: Map<Long, StoryStep> = currentStory.value.stories
     ) {
         if (!isEditable) return
         trackState()
@@ -2276,7 +2360,7 @@ class WriteopiaStateManager(
         }
     }
 
-    private fun currentFocus(): Pair<Double, StoryStep>? {
+    private fun currentFocus(): Pair<Long, StoryStep>? {
         val currentFocus = currentStory.value.focus
 
         return _currentStory.value
@@ -2328,7 +2412,7 @@ class WriteopiaStateManager(
         }
     }
 
-    fun getStory(position: Double): StoryStep? = _currentStory.value.stories[position]
+    fun getStory(position: Long): StoryStep? = _currentStory.value.stories[position]
 
     /**
      * Creates a new spreadsheet with one initial row containing the specified number of empty cells.
@@ -2362,10 +2446,11 @@ class WriteopiaStateManager(
      *
      * @return The ID of the new spreadsheet, or null when the document can't be edited.
      */
-    fun insertSpreadsheet(position: Double, columnCount: Int, rowCount: Int = 3): String? {
+    fun insertSpreadsheet(position: Long, columnCount: Int, rowCount: Int = 3): String? {
         if (!isEditable) return null
 
         backStackManager.addState(_currentStory.value)
+        val before = getStories().values.mapTo(mutableSetOf()) { step -> step.id }
         val newState = writeopiaManager.createSpreadsheet(
             _currentStory.value,
             position,
@@ -2375,7 +2460,9 @@ class WriteopiaStateManager(
         )
         _currentStory.value = newState
 
-        return newState.stories[position]?.takeIf { it.type == StoryTypes.SPREADSHEET.type }?.id
+        return newState.stories.values
+            .firstOrNull { step -> step.type == StoryTypes.SPREADSHEET.type && step.id !in before }
+            ?.id
     }
 
     /**
@@ -2524,14 +2611,14 @@ class WriteopiaStateManager(
 
     private fun getStories() = _currentStory.value.stories
 
-    private fun currentPosition(): Double? =
+    private fun currentPosition(): Long? =
         _currentStory.value.focus ?: _currentStory.value.selection.position
 
     private fun getCurrentStory(): StoryStep? = currentPosition()?.let(::getStory)
 
     private fun selectAll() {
         keyboardSelectionAnchor = null
-        _onEditPositions.value = getStories().keys - setOf(0.0)
+        _onEditPositions.value = getStories().keys - setOf(0L)
     }
 
     private fun parseDocument(
@@ -2598,10 +2685,16 @@ class WriteopiaStateManager(
     }
 }
 
-private class LineBreakCommand(val text: String, val position: Double, val time: Instant)
+/**
+ * A region of the document being rewritten: from [from] (inclusive) up to [toExclusive]
+ * (exclusive), or to the end of the document when null.
+ */
+data class EditRegion(val from: Long, val toExclusive: Long?)
+
+private class LineBreakCommand(val text: String, val position: Long, val time: Instant)
 
 /** The steps an edit changed or created, by position; none for the edits that carry no steps. */
-private fun LastEdit.editedSteps(): List<Pair<Double, StoryStep>> =
+private fun LastEdit.editedSteps(): List<Pair<Long, StoryStep>> =
     when (this) {
         is LastEdit.LineEdition -> listOf(position to storyStep)
         is LastEdit.InfoEdition -> listOf(position to storyStep)

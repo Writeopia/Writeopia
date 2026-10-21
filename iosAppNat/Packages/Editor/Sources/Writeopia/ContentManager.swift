@@ -3,8 +3,10 @@ import WrModels
 
 /// Adds, removes, splits and merges steps. Mirrors `ContentHandler` of the Kotlin SDK.
 ///
-/// Every structural change renumbers the steps to 0, 1, 2... so positions stay simple, and
-/// returns where the focus and cursor should go.
+/// Positions are sort keys (see `Positions.swift`): a structural change never renumbers the
+/// document, a new step goes to a whole number between its neighbours, and only when none is
+/// left are the few steps after it spread out. Each change returns where the focus and cursor
+/// should go; the `.whole` edit saves every step whose position changed.
 public struct ContentManager {
     private let focusHandler: FocusHandler
     private let lineBreakType: (StoryType) -> StoryType
@@ -30,25 +32,25 @@ public struct ContentManager {
 
     // MARK: - Line edition
 
-    public func changeStoryState(_ change: Action.StoryStateChange, in stories: [Double: StoryStep]) -> StoryState? {
+    public func changeStoryState(_ change: Action.StoryStateChange, in stories: [Int: StoryStep]) -> StoryState? {
         guard stories[change.position] != nil else { return nil }
 
         var newStories = stories
-        newStories[change.position] = change.storyStep
+        newStories.place(change.storyStep, at: change.position)
         let cursor = change.selectionEnd ?? change.storyStep.text?.utf16.count ?? 0
 
         return StoryState(
             stories: newStories,
-            lastEdit: .lineEdition(position: change.position, storyStep: change.storyStep),
+            lastEdit: .lineEdition(position: change.position, storyStep: newStories[change.position]!),
             focus: change.position,
             selection: Selection(position: change.position, start: change.selectionStart ?? cursor, end: cursor)
         )
     }
 
     public func changeStoryType(
-        at position: Double,
+        at position: Int,
         to type: StoryType,
-        in stories: [Double: StoryStep],
+        in stories: [Int: StoryStep],
         cursor: Int = 0
     ) -> StoryState? {
         guard var step = stories[position] else { return nil }
@@ -72,9 +74,12 @@ public struct ContentManager {
 
     // MARK: - Structure
 
-    /// Splits the step at every line break of its text. The focus goes to the line that holds
-    /// the cursor.
-    public func onLineBreak(_ lineBreak: Action.LineBreak, in stories: [Double: StoryStep]) -> StoryState {
+    /// Splits the step at every line break of its text. The first line keeps the position of
+    /// the step, the others go between it and the next step. The focus goes to the line that
+    /// holds the cursor.
+    public func onLineBreak(_ lineBreak: Action.LineBreak, in stories: [Int: StoryStep]) -> StoryState {
+        guard stories[lineBreak.position] != nil else { return StoryState(stories: stories) }
+
         let step = lineBreak.storyStep
         let text = step.text ?? ""
 
@@ -99,13 +104,9 @@ public struct ContentManager {
             )
         }
 
-        var ordered = orderedSteps(stories)
-        guard let index = ordered.firstIndex(where: { $0.position == lineBreak.position }) else {
-            return StoryState(stories: stories)
-        }
-
-        ordered[index].step = first
-        ordered.insert(contentsOf: newSteps.map { (position: 0, step: $0) }, at: index + 1)
+        var newStories = stories
+        newStories.place(first, at: lineBreak.position)
+        let lineKeys = [lineBreak.position] + newStories.insert(newSteps, after: lineBreak.position).keys
 
         // Which line has the cursor, and where inside it.
         var remaining = lineBreak.cursor
@@ -120,10 +121,9 @@ public struct ContentManager {
         }
         let cursorInLine = min(max(remaining, 0), lines[focusLine].text.utf16.count)
 
-        let renumbered = renumber(ordered.map(\.step))
-        let focus = Double(index + focusLine)
+        let focus = lineKeys[focusLine]
         return StoryState(
-            stories: renumbered,
+            stories: newStories,
             lastEdit: .whole,
             focus: focus,
             selection: .cursor(cursorInLine, at: focus)
@@ -142,7 +142,7 @@ public struct ContentManager {
     /// - A heading, box or card becomes a plain paragraph first.
     /// - When the previous step isn't text (divider, link...), that step is removed.
     /// - Otherwise the text joins the previous text step, keeping its spans.
-    public func onErase(_ erase: Action.EraseStory, in stories: [Double: StoryStep]) -> StoryState? {
+    public func onErase(_ erase: Action.EraseStory, in stories: [Int: StoryStep]) -> StoryState? {
         let step = erase.storyStep
 
         if step.isListLike {
@@ -150,7 +150,7 @@ public struct ContentManager {
             newStep.type = .text
             newStep.checked = nil
             var newStories = stories
-            newStories[erase.position] = newStep
+            newStories.place(newStep, at: erase.position)
             return StoryState(stories: newStories, lastEdit: .whole, focus: erase.position)
         }
 
@@ -158,27 +158,25 @@ public struct ContentManager {
             var newStep = step
             newStep.tags.removeAll { Self.erasableTags.contains($0.tag) }
             var newStories = stories
-            newStories[erase.position] = newStep
+            newStories.place(newStep, at: erase.position)
             return StoryState(stories: newStories, lastEdit: .whole, focus: erase.position)
         }
 
-        guard !step.isTitle else { return nil }
+        guard !step.isTitle,
+              stories[erase.position] != nil,
+              let previousKey = stories.previousKey(before: erase.position),
+              let previous = stories[previousKey]
+        else { return nil }
 
-        var ordered = orderedSteps(stories)
-        guard let index = ordered.firstIndex(where: { $0.position == erase.position }), index > 0 else {
-            return nil
-        }
-
-        let previous = ordered[index - 1].step
+        var newStories = stories
 
         if !previous.isTextStep {
-            ordered.remove(at: index - 1)
-            let focus = Double(index - 1)
+            newStories.removeValue(forKey: previousKey)
             return StoryState(
-                stories: renumber(ordered.map(\.step)),
+                stories: newStories,
                 lastEdit: .whole,
-                focus: focus,
-                selection: .cursor(0, at: focus)
+                focus: erase.position,
+                selection: .cursor(0, at: erase.position)
             )
         }
 
@@ -188,64 +186,73 @@ public struct ContentManager {
         merged.text = previousText + (step.text ?? "")
         merged.spans = previous.spans + SpansHandler.shift(step.spans, by: previousLength)
 
-        ordered[index - 1].step = merged
-        ordered.remove(at: index)
+        newStories[previousKey] = merged
+        newStories.removeValue(forKey: erase.position)
 
-        let focus = Double(index - 1)
         return StoryState(
-            stories: renumber(ordered.map(\.step)),
+            stories: newStories,
             lastEdit: .whole,
-            focus: focus,
-            selection: .cursor(previousLength, at: focus)
+            focus: previousKey,
+            selection: .cursor(previousLength, at: previousKey)
         )
     }
 
-    public func onDelete(_ delete: Action.DeleteStory, in stories: [Double: StoryStep]) -> StoryState {
+    public func onDelete(_ delete: Action.DeleteStory, in stories: [Int: StoryStep]) -> StoryState {
         var newStories = stories
         newStories.removeValue(forKey: delete.position)
-        let previousFocus = focusHandler.findPreviousFocus(before: delete.position, in: newStories)
-
-        let ordered = orderedSteps(newStories)
-        let focus = previousFocus.flatMap { position in ordered.firstIndex { $0.position == position } }.map(Double.init)
-        let cursor = focus.flatMap { ordered[Int($0)].step.text?.utf16.count } ?? 0
+        let focus = focusHandler.findPreviousFocus(before: delete.position, in: newStories)
+        let cursor = focus.flatMap { newStories[$0]?.text?.utf16.count } ?? 0
 
         return StoryState(
-            stories: renumber(ordered.map(\.step)),
+            stories: newStories,
             lastEdit: .whole,
             focus: focus,
             selection: focus.map { .cursor(cursor, at: $0) }
         )
     }
 
-    /// Moves a step to right after another one. The title always stays first.
-    public func move(_ move: Action.Move, in stories: [Double: StoryStep]) -> StoryState? {
+    /// Moves a step to right after another one: half way to the step that follows the target,
+    /// so nothing else moves. The title always stays first.
+    public func move(_ move: Action.Move, in stories: [Int: StoryStep]) -> StoryState? {
         guard move.positionFrom != move.positionTo,
               let step = stories[move.positionFrom],
               !step.isTitle,
               stories[move.positionTo] != nil
         else { return nil }
 
-        var ordered = orderedSteps(stories)
-        guard let fromIndex = ordered.firstIndex(where: { $0.position == move.positionFrom }) else { return nil }
-        let moving = ordered.remove(at: fromIndex)
+        var newStories = stories
+        newStories.removeValue(forKey: move.positionFrom)
+        let newKey = newStories.insert(step, after: move.positionTo).key
 
-        guard let targetIndex = ordered.firstIndex(where: { $0.position == move.positionTo }) else { return nil }
-        ordered.insert(moving, at: targetIndex + 1)
-
-        let newIndex = Double(targetIndex + 1)
-        return StoryState(stories: renumber(ordered.map(\.step)), lastEdit: .whole, focus: newIndex)
+        return StoryState(stories: newStories, lastEdit: .whole, focus: newKey)
     }
 
-    public func add(_ step: StoryStep, after position: Double?, in stories: [Double: StoryStep]) -> StoryState {
-        var ordered = orderedSteps(stories)
-        let index = position.flatMap { position in ordered.firstIndex { $0.position == position } }.map { $0 + 1 } ?? ordered.count
-        ordered.insert((position: 0, step: step), at: index)
-        let focus = Double(index)
+    /// Adds `step` right after `position`, or at the end when `position` is nil.
+    public func add(_ step: StoryStep, after position: Int?, in stories: [Int: StoryStep]) -> StoryState {
+        var newStories = stories
+        let key: Int
+        if let position {
+            key = newStories.insert(step, after: position).key
+        } else {
+            key = newStories.append([step])[0]
+        }
         return StoryState(
-            stories: renumber(ordered.map(\.step)),
+            stories: newStories,
             lastEdit: .whole,
-            focus: step.isTextStep ? focus : nil,
-            selection: .cursor(0, at: focus)
+            focus: step.isTextStep ? key : nil,
+            selection: .cursor(0, at: key)
+        )
+    }
+
+    /// Adds `step` right before the step at `position`, or at `position` when it is free.
+    public func add(_ step: StoryStep, before position: Int, in stories: [Int: StoryStep]) -> StoryState {
+        var newStories = stories
+        let key = newStories.insert(step, before: position).key
+        return StoryState(
+            stories: newStories,
+            lastEdit: .whole,
+            focus: step.isTextStep ? key : nil,
+            selection: .cursor(0, at: key)
         )
     }
 
@@ -255,47 +262,40 @@ public struct ContentManager {
     /// the Kotlin SDK. A card can not be typed in, so the cursor goes to the text line below
     /// it, which is added when there is none. The description of the page stays empty: the app
     /// asks the backend for it.
-    public func createLinkCard(url: String, at position: Double, in stories: [Double: StoryStep]) -> StoryState {
-        var ordered = orderedSteps(stories).map(\.step)
-        guard let index = ordered.firstIndex(where: { $0.position == position }) else {
-            return StoryState(stories: stories)
-        }
+    public func createLinkCard(url: String, at position: Int, in stories: [Int: StoryStep]) -> StoryState {
+        guard var card = stories[position] else { return StoryState(stories: stories) }
 
-        var card = ordered[index]
         card.type = .linkCard
         card.url = url
         card.text = nil
         card.tags = []
         card.spans = []
-        ordered[index] = card
 
-        let below = index + 1
-        let belowIsText = below < ordered.count && ordered[below].type.number == StoryType.text.number
-        if !belowIsText {
-            ordered.insert(StoryStep(type: .text, text: "", position: 0), at: below)
+        var newStories = stories
+        newStories[position] = card
+
+        let next = newStories.nextKey(after: position)
+        let below: Int
+        if let next, newStories[next]?.type.number == StoryType.text.number {
+            below = next
+        } else {
+            below = newStories.insert(StoryStep(type: .text, text: "", position: 0), after: position).key
         }
 
-        let focus = Double(below)
         return StoryState(
-            stories: renumber(ordered),
+            stories: newStories,
             lastEdit: .whole,
-            focus: focus,
-            selection: .cursor(0, at: focus)
+            focus: below,
+            selection: .cursor(0, at: below)
         )
     }
 
-    private func orderedSteps(_ stories: [Double: StoryStep]) -> [(position: Double, step: StoryStep)] {
-        stories.keys.sorted().map { ($0, stories[$0]!) }
-    }
-
-    /// Positions 0, 1, 2... in the given order, stored in each step as well.
-    public func renumber(_ steps: [StoryStep]) -> [Double: StoryStep] {
-        var result: [Double: StoryStep] = [:]
-        for (index, step) in steps.enumerated() {
-            var step = step
-            step.position = Double(index)
-            result[Double(index)] = step
-        }
+    /// Positions one gap apart, from 0, for the steps of a new document, stored in each step
+    /// as well. Only for documents that don't exist yet: the steps of an existing document keep
+    /// their positions, see `WriteopiaManager.loadDocument`.
+    public func positioned(_ steps: [StoryStep]) -> [Int: StoryStep] {
+        var result: [Int: StoryStep] = [:]
+        result.append(steps)
         return result
     }
 }

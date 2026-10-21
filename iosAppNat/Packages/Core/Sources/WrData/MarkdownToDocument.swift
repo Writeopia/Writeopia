@@ -9,7 +9,7 @@ public enum MarkdownToDocument {
         var title: String?
         if let titleIndex = steps.firstIndex(where: { $0.hasTag("H1") }) {
             title = steps.remove(at: titleIndex).text
-            for index in steps.indices { steps[index].position = Double(index + 1) }
+            for index in steps.indices { steps[index].position = (index + 1) * positionGap }
         }
 
         guard title != nil || !steps.isEmpty else { return nil }

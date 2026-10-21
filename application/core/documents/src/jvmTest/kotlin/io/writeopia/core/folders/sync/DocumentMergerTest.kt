@@ -6,6 +6,7 @@ import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
+import io.writeopia.sdk.utils.iterables.POSITION_GAP
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Instant
@@ -13,6 +14,7 @@ import kotlin.time.Instant
 class DocumentMergerTest {
 
     private val merger = DocumentMerger()
+    private val gap = POSITION_GAP
 
     @Test
     fun `backend document without comment payload should preserve referenced local comments`() {
@@ -21,12 +23,12 @@ class DocumentMergerTest {
         val local = document(
             lastUpdatedAt = 1,
             comments = localComments,
-            content = mapOf(0.0 to step("step-1", 1, conversationId)),
+            content = mapOf(0L to step("step-1", 1, conversationId)),
         )
         val backend = document(
             lastUpdatedAt = 2,
             comments = emptyMap(),
-            content = mapOf(0.0 to step("step-1", 2, conversationId)),
+            content = mapOf(0L to step("step-1", 2, conversationId)),
         )
 
         val merged = merger.merge(local, backend)
@@ -40,13 +42,13 @@ class DocumentMergerTest {
         val local = document(
             lastUpdatedAt = 1,
             comments = commentMap(conversationId, "Local comment"),
-            content = mapOf(0.0 to step("step-1", 1, conversationId)),
+            content = mapOf(0L to step("step-1", 1, conversationId)),
         )
         val backendComments = commentMap(conversationId, "Backend comment")
         val backend = document(
             lastUpdatedAt = 2,
             comments = backendComments,
-            content = mapOf(0.0 to step("step-1", 2, conversationId)),
+            content = mapOf(0L to step("step-1", 2, conversationId)),
         )
 
         val merged = merger.merge(local, backend)
@@ -65,7 +67,7 @@ class DocumentMergerTest {
                     Comment(id = "local-reply", text = "Local reply"),
                 )
             ),
-            content = mapOf(0.0 to step("step-1", 2, conversationId)),
+            content = mapOf(0L to step("step-1", 2, conversationId)),
         )
         val backend = document(
             lastUpdatedAt = 1,
@@ -75,7 +77,7 @@ class DocumentMergerTest {
                     Comment(id = "backend-reply", text = "Backend reply"),
                 )
             ),
-            content = mapOf(0.0 to step("step-1", 1, conversationId)),
+            content = mapOf(0L to step("step-1", 1, conversationId)),
         )
 
         val merged = merger.merge(local, backend)
@@ -101,7 +103,7 @@ class DocumentMergerTest {
                     Comment(id = "comment-2", text = "Deleted", deleted = true),
                 )
             ),
-            content = mapOf(0.0 to step("step-1", 2, conversationId)),
+            content = mapOf(0L to step("step-1", 2, conversationId)),
         )
         val backend = document(
             lastUpdatedAt = 1,
@@ -111,7 +113,7 @@ class DocumentMergerTest {
                     Comment(id = "comment-2", text = "Deleted"),
                 )
             ),
-            content = mapOf(0.0 to step("step-1", 1, conversationId)),
+            content = mapOf(0L to step("step-1", 1, conversationId)),
         )
 
         val merged = merger.merge(local, backend)
@@ -135,7 +137,7 @@ class DocumentMergerTest {
             lastUpdatedAt = 1,
             comments = localComments,
             content = mapOf(
-                0.0 to step(
+                0L to step(
                     id = "local-parent",
                     updatedAt = 1,
                     children = listOf(step("local-child", 1, localId)),
@@ -145,7 +147,7 @@ class DocumentMergerTest {
         val backend = document(
             lastUpdatedAt = 2,
             comments = backendComments,
-            content = mapOf(1.0 to step("backend-step", 2, backendId)),
+            content = mapOf(1L to step("backend-step", 2, backendId)),
         )
 
         val merged = merger.merge(local, backend)
@@ -159,12 +161,12 @@ class DocumentMergerTest {
         val local = document(
             lastUpdatedAt = 1,
             comments = commentMap(conversationId, "Local comment"),
-            content = mapOf(0.0 to step("step-1", 1, conversationId)),
+            content = mapOf(0L to step("step-1", 1, conversationId)),
         )
         val backend = document(
             lastUpdatedAt = 2,
             comments = emptyMap(),
-            content = mapOf(0.0 to step("step-1", 2)),
+            content = mapOf(0L to step("step-1", 2)),
         )
 
         val merged = merger.merge(local, backend)
@@ -175,6 +177,26 @@ class DocumentMergerTest {
     private fun commentMap(id: String, text: String) = mapOf(
         id to listOf(Comment(id = "$id-comment", text = text))
     )
+
+    @Test
+    fun `two different steps at the same position both survive, in order`() {
+        val local = document(
+            lastUpdatedAt = 1,
+            comments = emptyMap(),
+            content = mapOf(0L to step("title", 1), gap to step("local-1", 1), 2 * gap to step("shared", 1)),
+        )
+        val backend = document(
+            lastUpdatedAt = 2,
+            comments = emptyMap(),
+            content = mapOf(0L to step("title", 1), gap to step("backend-1", 2), 2 * gap to step("shared", 1)),
+        )
+
+        val merged = merger.merge(local, backend)?.content ?: error("no content")
+
+        assertEquals(listOf("title", "local-1", "backend-1", "shared"), merged.values.map { it.id })
+        assertEquals(merged.keys.sorted(), merged.keys.toList())
+        assertEquals((1 * gap + gap / 2), merged.entries.first { it.value.id == "backend-1" }.key)
+    }
 
     private fun step(
         id: String,
@@ -194,7 +216,7 @@ class DocumentMergerTest {
 
     @Test
     fun `the tags of the copy updated last win`() {
-        val content = mapOf(0.0 to step("step-1", 1, null))
+        val content = mapOf(0L to step("step-1", 1, null))
         val local = document(lastUpdatedAt = 1, comments = emptyMap(), content = content, tagIds = setOf("old"))
         val backend = document(lastUpdatedAt = 2, comments = emptyMap(), content = content, tagIds = setOf("new"))
 
@@ -205,7 +227,7 @@ class DocumentMergerTest {
     private fun document(
         lastUpdatedAt: Long,
         comments: Map<String, List<Comment>>,
-        content: Map<Double, StoryStep>,
+        content: Map<Long, StoryStep>,
         tagIds: Set<String> = emptySet(),
     ) = Document(
         id = "document-1",

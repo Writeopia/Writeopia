@@ -167,7 +167,7 @@ fun WriteopiaDbBackend.getUserFavoriteDocumentIds(userId: String, workspaceId: S
  */
 fun WriteopiaDbBackend.upsertStoryStep(
     storyStep: StoryStep,
-    position: Double,
+    position: Long,
     documentId: String,
     lastUpdatedAt: Long
 ) {
@@ -180,14 +180,14 @@ fun WriteopiaDbBackend.upsertStoryStep(
 fun WriteopiaDbBackend.getStoryStepsAfterTime(
     documentId: String,
     afterTime: Long
-): List<Pair<Double, StoryStep>> {
+): List<Pair<Long, StoryStep>> {
     return getDocumentDaoFn().getStoryStepsAfterTime(documentId, afterTime)
 }
 
 /**
  * Gets a single StoryStep by its ID.
  */
-fun WriteopiaDbBackend.getStoryStepById(storyStepId: String): Pair<Double, StoryStep>? {
+fun WriteopiaDbBackend.getStoryStepById(storyStepId: String): Pair<Long, StoryStep>? {
     return getDocumentDaoFn().getStoryStepById(storyStepId)
 }
 

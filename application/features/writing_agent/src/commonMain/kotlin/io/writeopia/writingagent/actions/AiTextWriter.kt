@@ -27,7 +27,7 @@ object AiTextWriter {
      */
     suspend fun streamAt(
         manager: WriteopiaStateManager,
-        position: Double,
+        position: Long,
         answers: Flow<ResultData<String>>,
         type: StoryType = StoryTypes.AI_ANSWER.type,
         tags: Set<TagInfo> = emptySet(),
@@ -37,16 +37,18 @@ object AiTextWriter {
         // comes: nothing is saved nor synced until the stream ends, then the final text once.
         val answerId = GenerateId.generate()
         var text = ""
+        // Where the loading story went: at [position], or right before the story there.
+        var answerPosition = position
 
         fun step(ephemeral: Boolean) =
             StoryStep(id = answerId, type = type, text = prefix + text.trim(), tags = tags, ephemeral = ephemeral)
 
         answers.onStart {
-            manager.loadingAtPosition(position)
+            answerPosition = manager.loadingAtPosition(position)
         }.onCompletion { cause ->
             // Leaving the document cancels the stream: the answer is dropped, never saved.
             if (cause is CancellationException) return@onCompletion
-            manager.changeStoryState(Action.StoryStateChange(step(ephemeral = false), position), trackIt = false)
+            manager.changeStoryState(Action.StoryStateChange(step(ephemeral = false), answerPosition), trackIt = false)
             manager.trackState()
         }.map { result ->
             when (result) {
@@ -58,12 +60,12 @@ object AiTextWriter {
             }
         }.collect { chunk ->
             text = chunk
-            manager.changeStoryState(Action.StoryStateChange(step(ephemeral = true), position), trackIt = false)
+            manager.changeStoryState(Action.StoryStateChange(step(ephemeral = true), answerPosition), trackIt = false)
         }
     }
 
     /** Says in the document, at [position], that no AI could answer. */
-    fun noAiAt(manager: WriteopiaStateManager, position: Double) {
+    fun noAiAt(manager: WriteopiaStateManager, position: Long) {
         manager.addAtPosition(
             StoryStep(type = StoryTypes.AI_ANSWER.type, text = NO_AI_MESSAGE),
             position

@@ -189,7 +189,7 @@ class DocumentSyncServiceTest {
         answer = { request ->
             // The editor saved the step again while the request was in flight.
             runBlocking {
-                repository.saveStoryStep(step("a", request.requestTimestamp + 5, "edited again"), 0.0, document.id)
+                repository.saveStoryStep(step("a", request.requestTimestamp + 5, "edited again"), 0L, document.id)
             }
             StoryStepSyncResponse(request.requestTimestamp + 1, emptyList(), emptyList())
         }
@@ -208,10 +208,10 @@ class DocumentSyncServiceTest {
             StoryStepSyncResponse(
                 serverTimestamp = request.requestTimestamp + 1,
                 updatedSteps = listOf(
-                    step("mine", 200, "older elsewhere").toApi(0.0),
-                    step("theirs", 9_000, "new").toApi(1.0),
-                    step("added", 9_000, "added").toApi(3.0),
-                    step("deleted-here", 9_000, "back?").toApi(4.0),
+                    step("mine", 200, "older elsewhere").toApi(0L),
+                    step("theirs", 9_000, "new").toApi(1L),
+                    step("added", 9_000, "added").toApi(3L),
+                    step("deleted-here", 9_000, "back?").toApi(4L),
                 ),
                 deletedIds = listOf("gone")
             )
@@ -235,9 +235,9 @@ class DocumentSyncServiceTest {
             lastUpdatedAt = Instant.fromEpochMilliseconds(20),
             lastSyncedAt = Instant.fromEpochMilliseconds(20),
             content = mapOf(
-                0.0 to step("a", 3, "server a"),
-                1.0 to step("b", 9, "server b"),
-                2.0 to step("c", 9, "server c"),
+                0L to step("a", 3, "server a"),
+                1L to step("b", 9, "server b"),
+                2L to step("c", 9, "server c"),
             )
         )
 
@@ -270,7 +270,7 @@ class DocumentSyncServiceTest {
             title = "Renamed elsewhere",
             lastUpdatedAt = Instant.fromEpochMilliseconds(300),
             lastSyncedAt = Instant.fromEpochMilliseconds(300),
-            content = mapOf(0.0 to step("a", 50, "older elsewhere"))
+            content = mapOf(0L to step("a", 50, "older elsewhere"))
         )
 
         service.mergeReceivedDocument(received)
@@ -300,7 +300,7 @@ class DocumentSyncServiceTest {
         val local = storeDocument(step("a", 5), lastSyncedAt = 10, lastUpdatedAt = 10)
         val received = local.copy(
             lastUpdatedAt = Instant.fromEpochMilliseconds(20),
-            content = mapOf(0.0 to step("a", 5), 1.0 to step("stale", 20))
+            content = mapOf(0L to step("a", 5), 1L to step("stale", 20))
         )
 
         service.mergeReceivedDocument(received, excluding = setOf("stale"))
@@ -329,7 +329,7 @@ class DocumentSyncServiceTest {
         Document(
             id = id,
             title = "Doc",
-            content = steps.mapIndexed { index, step -> index.toDouble() to step }.toMap(),
+            content = steps.mapIndexed { index, step -> index.toLong() to step }.toMap(),
             createdAt = Instant.fromEpochMilliseconds(0),
             lastUpdatedAt = Instant.fromEpochMilliseconds(lastUpdatedAt),
             lastSyncedAt = lastSyncedAt?.let(Instant::fromEpochMilliseconds),

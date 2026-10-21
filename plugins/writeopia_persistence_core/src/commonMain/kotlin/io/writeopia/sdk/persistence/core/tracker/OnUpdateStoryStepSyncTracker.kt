@@ -36,7 +36,7 @@ import kotlin.time.ExperimentalTime
 class OnUpdateStoryStepSyncTracker(
     private val syncBuffer: StoryStepSyncBuffer = StoryStepSyncBuffer(),
     private val syncApi: suspend (StoryStepSyncRequest) -> StoryStepSyncResponse,
-    private val onServerUpdate: suspend (List<Pair<Double, StoryStep>>, List<String>) -> Unit = { _, _ -> },
+    private val onServerUpdate: suspend (List<Pair<Long, StoryStep>>, List<String>) -> Unit = { _, _ -> },
     private val maxRetries: Int = 3
 ) : StoryStepSyncTracker {
 

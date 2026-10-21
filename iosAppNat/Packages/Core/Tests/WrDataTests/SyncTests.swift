@@ -5,7 +5,7 @@ import WrModels
 import WrNetwork
 import WrStorage
 
-private func step(_ id: String, _ text: String, at position: Double, updated: Int64?) -> StoryStep {
+private func step(_ id: String, _ text: String, at position: Int, updated: Int64?) -> StoryStep {
     StoryStep(id: id, type: .text, text: text, position: position, lastUpdatedAt: updated)
 }
 
@@ -574,7 +574,7 @@ final class FakeBackend: HTTPTransport {
             checked: true,
             tags: [TagInfo(tag: "H2")],
             spans: [SpanInfo(start: 0, end: 4, span: "LINK", extra: "https://x.io")],
-            position: 3.5,
+            position: 35,
             documentLink: DocumentLink(id: "other", title: "Other"),
             lastUpdatedAt: 42
         )

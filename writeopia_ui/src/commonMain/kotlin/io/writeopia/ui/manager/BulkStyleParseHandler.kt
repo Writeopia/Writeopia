@@ -21,8 +21,8 @@ class BulkStyleParseHandler {
      */
     fun processMarkdown(
         lastEdit: LastEdit,
-        currentStories: () -> Map<Double, StoryStep>,
-        onCommandProcess: (position: Double, step: StoryStep, text: String) -> Unit
+        currentStories: () -> Map<Long, StoryStep>,
+        onCommandProcess: (position: Long, step: StoryStep, text: String) -> Unit
     ): ParseResult? {
         val stepsToProcess = extractStepsToProcess(lastEdit)
         if (stepsToProcess.isEmpty()) return null
@@ -41,7 +41,7 @@ class BulkStyleParseHandler {
         return applyInlineMarkdown(positionsToTrack, currentStories())
     }
 
-    private fun extractStepsToProcess(lastEdit: LastEdit): List<Pair<Double, StoryStep>> =
+    private fun extractStepsToProcess(lastEdit: LastEdit): List<Pair<Long, StoryStep>> =
         when (lastEdit) {
             is LastEdit.BulkEdition -> lastEdit.steps
             is LastEdit.LineBreakEdition -> listOf(
@@ -52,8 +52,8 @@ class BulkStyleParseHandler {
         }
 
     private fun applyInlineMarkdown(
-        positionsToTrack: Set<Double>,
-        stories: Map<Double, StoryStep>
+        positionsToTrack: Set<Long>,
+        stories: Map<Long, StoryStep>
     ): ParseResult? {
         if (positionsToTrack.isEmpty()) return null
 
@@ -86,7 +86,7 @@ class BulkStyleParseHandler {
      * Result of markdown parsing containing the updated stories and lastEdit.
      */
     data class ParseResult(
-        val stories: Map<Double, StoryStep>,
+        val stories: Map<Long, StoryStep>,
         val lastEdit: LastEdit?
     )
 }

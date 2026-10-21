@@ -230,7 +230,7 @@ private val HEADER_IMAGE_HEIGHT = 230.dp
 fun headerDrawer(
     manager: WriteopiaStateManager,
     headerClick: () -> Unit,
-    onKeyEvent: (KeyEvent, TextFieldValue, StoryStep, Double, EmptyErase, Int, EndOfText) -> Boolean,
+    onKeyEvent: (KeyEvent, TextFieldValue, StoryStep, Long, EmptyErase, Int, EndOfText) -> Boolean,
     modifier: Modifier = Modifier,
     lineBreakByContent: Boolean,
     selectionState: StateFlow<Boolean>,

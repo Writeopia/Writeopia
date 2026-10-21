@@ -12,7 +12,7 @@ class InDocumentSearchSqlRepository(
         documentId
     )
 
-    override suspend fun insertForFts(storyStep: StoryStep, documentId: String, position: Double) {
+    override suspend fun insertForFts(storyStep: StoryStep, documentId: String, position: Long) {
         storyStepFtsSqlDelightDao.insertForFts(storyStep, documentId, position)
     }
 }

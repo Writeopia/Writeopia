@@ -7,19 +7,20 @@ import kotlin.test.assertEquals
 
 class AiCommandContextTest {
 
-    private fun document(paragraphs: Int): Map<Double, StoryStep> = buildMap {
-        put(0.0, StoryStep(type = StoryTypes.TITLE.type, text = "Title"))
+    private fun document(paragraphs: Int): Map<Long, StoryStep> = buildMap {
+        put(0L, StoryStep(type = StoryTypes.TITLE.type, text = "Title"))
         repeat(paragraphs) { index ->
-            put((index + 1).toDouble(), StoryStep(type = StoryTypes.TEXT.type, text = "p${index + 1}"))
+            // Ten apart, so a test can put a story between two paragraphs
+            put((index + 1) * 10L, StoryStep(type = StoryTypes.TEXT.type, text = "p${index + 1}"))
         }
     }
 
     @Test
     fun `the selected lines and the whole document go together`() {
-        val context = AiCommandContext.build(document(paragraphs = 6), selectedPositions = listOf(4.0, 3.0))
+        val context = AiCommandContext.build(document(paragraphs = 6), selectedPositions = listOf(40L, 30L))
 
         assertEquals("p3\np4", context.selectedText)
-        assertEquals(listOf(3.0, 4.0), context.selectedPositions)
+        assertEquals(listOf(30L, 40L), context.selectedPositions)
         assertEquals((1..6).joinToString("\n") { "p$it" }, context.documentText)
     }
 
@@ -36,14 +37,14 @@ class AiCommandContextTest {
     fun `blank and ephemeral stories are left out`() {
         val stories = document(paragraphs = 3) +
             mapOf(
-                1.5 to StoryStep(type = StoryTypes.TEXT.type, text = "   "),
-                2.5 to StoryStep(type = StoryTypes.LOADING.type, text = "spinner", ephemeral = true),
+                15L to StoryStep(type = StoryTypes.TEXT.type, text = "   "),
+                25L to StoryStep(type = StoryTypes.LOADING.type, text = "spinner", ephemeral = true),
             )
 
-        val context = AiCommandContext.build(stories, selectedPositions = listOf(1.5, 2.0))
+        val context = AiCommandContext.build(stories, selectedPositions = listOf(15L, 20L))
 
         assertEquals("p2", context.selectedText)
-        assertEquals(listOf(2.0), context.selectedPositions)
+        assertEquals(listOf(20L), context.selectedPositions)
         assertEquals("p1\np2\np3", context.documentText)
     }
 

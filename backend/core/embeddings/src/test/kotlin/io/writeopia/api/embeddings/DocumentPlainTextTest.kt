@@ -19,7 +19,7 @@ class DocumentPlainTextTest {
             id = "doc",
             title = title,
             content = steps.withIndex().associate { (index, step) ->
-                index.toDouble() to StoryStep(type = step.first.type, text = step.second)
+                index.toLong() to StoryStep(type = step.first.type, text = step.second)
             },
             createdAt = now,
             lastUpdatedAt = now,

@@ -16,10 +16,10 @@ object DrawingDrawerFactory {
      * This should be merged with other drawers when setting up the WriteopiaEditor.
      */
     fun createDrawingDrawers(
-        onDrawingClick: (StoryStep, Double) -> Unit,
+        onDrawingClick: (StoryStep, Long) -> Unit,
         onDelete: (Action.DeleteStory) -> Unit,
         drawConfig: DrawConfig,
-        onSelected: (Boolean, Double) -> Unit = { _, _ -> },
+        onSelected: (Boolean, Long) -> Unit = { _, _ -> },
         onDragStart: () -> Unit = {},
         onDragStop: () -> Unit = {},
     ): Map<Int, StoryStepDrawer> {

@@ -11,7 +11,7 @@ class SnapshotBackstackManager(
     private val textEditLimit: Int = DEFAULT_TEXT_EDIT_LIMIT,
 ) : BackstackInform {
 
-    private var lastEditPosition: Double = -1.0
+    private var lastEditPosition: Long = -1L
     private var textEditCount = 0
 
     private val _canUndo = MutableStateFlow(false)
@@ -74,7 +74,7 @@ class SnapshotBackstackManager(
         }
     }
 
-    fun addTextState(state: StoryState, position: Double) {
+    fun addTextState(state: StoryState, position: Long) {
         if (position == lastEditPosition) {
             if (textEditCount < textEditLimit) {
                 textEditCount++
