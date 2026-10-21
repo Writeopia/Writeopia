@@ -287,7 +287,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - id: filter
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@v4
         with:
           filters: |
             ios:
