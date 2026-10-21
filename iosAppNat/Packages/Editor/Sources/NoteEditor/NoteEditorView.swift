@@ -514,6 +514,7 @@ public struct NoteEditorView: View {
         .sheet(isPresented: $showAiDialog) {
             AiDialog(
                 cursorActions: aiCursorActions,
+                isRunning: viewModel.isAiRunning,
                 onCommand: { command, mode in viewModel.runAi(command, mode: mode) },
                 onFreeCommand: { command in viewModel.runAiCommand(command) }
             )
@@ -523,6 +524,7 @@ public struct NoteEditorView: View {
         .sheet(isPresented: $showSelectedLinesAiDialog) {
             AiDialog(
                 fixedMode: .selectedLines,
+                isRunning: viewModel.isAiRunning,
                 onCommand: { command, mode in viewModel.runAi(command, mode: mode) },
                 onFreeCommand: { command in viewModel.runAiCommand(command) }
             )

@@ -6,6 +6,7 @@ import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.sync.DocumentMerger
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.repository.DocumentRepository
 import kotlin.time.ExperimentalTime
@@ -73,8 +74,20 @@ class DocumentLoadUseCase(
             .toSet()
         if (tombstoned.isEmpty()) return this
 
-        return copy(content = content.filterNot { (_, step) -> step.id in tombstoned })
+        return copy(
+            content = content
+                .filterNot { (_, step) -> step.id in tombstoned }
+                .mapValues { (_, step) -> step.withoutSteps(tombstoned) }
+        )
     }
+
+    /** The step without the nested steps with an id in [ids], at any depth. */
+    private fun StoryStep.withoutSteps(ids: Set<String>): StoryStep =
+        if (steps.isEmpty()) {
+            this
+        } else {
+            copy(steps = steps.filterNot { step -> step.id in ids }.map { step -> step.withoutSteps(ids) })
+        }
 
     private suspend fun fetchFromBackend(documentId: String, workspaceId: String): Document? =
         try {

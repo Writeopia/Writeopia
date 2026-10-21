@@ -158,6 +158,29 @@ class DocumentRewriteTest {
     }
 
     @Test
+    fun `a block the answer repeats stands once`() {
+        val rewrite = assertNotNull(DocumentRewrite.build(stories, cursor = null))
+
+        val parsed = rewrite.parse("Text\n[[writeopia-block-1]]\n[[writeopia-block-1]]\nMore")
+
+        assertEquals(listOf("Text", null, "More"), parsed.stories.map { story -> story.text })
+        assertEquals(1, parsed.stories.count { story -> story.id == spreadsheet.id })
+        assertEquals(listOf(image), parsed.pendingBlocks)
+    }
+
+    @Test
+    fun `a paragraph alone over the limit cannot be rewritten`() {
+        val huge = mapOf(
+            0.0 to StoryStep(type = StoryTypes.TITLE.type, text = "Title"),
+            1.0 to StoryStep(type = StoryTypes.TEXT.type, text = "short"),
+            2.0 to StoryStep(type = StoryTypes.TEXT.type, text = "x".repeat(50)),
+        )
+
+        assertNull(DocumentRewrite.build(huge, cursor = 2.0, limit = 40))
+        assertNotNull(DocumentRewrite.build(huge, cursor = 1.0, limit = 40))
+    }
+
+    @Test
     fun `an empty document has nothing to rewrite`() {
         assertNull(DocumentRewrite.build(mapOf(0.0 to StoryStep(type = StoryTypes.TITLE.type, text = "T")), cursor = null))
     }

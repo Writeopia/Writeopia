@@ -66,9 +66,12 @@ class DocumentRewrite private constructor(
 
             val placeholder = PLACEHOLDER.matchEntire(trimmed)?.groupValues?.get(1)?.toIntOrNull()
             if (placeholder != null) {
-                keptBlocks[placeholder]?.let { block ->
-                    used += placeholder
-                    stories += block
+                // A block stands once in the document, whatever the answer repeats.
+                if (placeholder !in used) {
+                    keptBlocks[placeholder]?.let { block ->
+                        used += placeholder
+                        stories += block
+                    }
                 }
                 continue
             }
@@ -167,6 +170,8 @@ class DocumentRewrite private constructor(
             if (sizes.sum() > limit) {
                 val center = entries.indexOfFirst { (position, _) -> cursor != null && position >= cursor }
                     .takeIf { index -> index >= 0 } ?: entries.lastIndex
+                // A paragraph alone over the limit would reach the AI cut, and come back cut.
+                if (sizes[center] > limit) return null
                 low = center
                 high = center
                 var size = sizes[center]

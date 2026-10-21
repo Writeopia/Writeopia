@@ -8,6 +8,7 @@ import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.ui.manager.WriteopiaStateManager
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -95,24 +96,30 @@ object AiCommandService {
         var answer = ""
         var error: Exception? = null
 
-        stream(ai, request).collect { result ->
-            when (result) {
-                is ResultData.Complete -> {
-                    answer = result.data
-                    val parsed = rewrite.parse(answer)
-                    writeopiaManager.updateRegion(
-                        from,
-                        toExclusive,
-                        parsed.stories + skeleton + parsed.pendingBlocks,
-                        done = false
-                    )
-                }
+        try {
+            stream(ai, request).collect { result ->
+                when (result) {
+                    is ResultData.Complete -> {
+                        answer = result.data
+                        val parsed = rewrite.parse(answer)
+                        writeopiaManager.updateRegion(
+                            from,
+                            toExclusive,
+                            parsed.stories + skeleton + parsed.pendingBlocks,
+                            done = false
+                        )
+                    }
 
-                is ResultData.Error -> error = result.exception ?: Exception("The AI could not answer")
-                is ResultData.Loading,
-                is ResultData.Idle,
-                is ResultData.InProgress -> {}
+                    is ResultData.Error -> error = result.exception ?: Exception("The AI could not answer")
+                    is ResultData.Loading,
+                    is ResultData.Idle,
+                    is ResultData.InProgress -> {}
+                }
             }
+        } catch (e: CancellationException) {
+            // Stopped by the writer (or the editor closed): the document comes back as it was.
+            writeopiaManager.updateRegion(from, toExclusive, rewrite.restoredStories(), done = true)
+            throw e
         }
 
         val parsed = rewrite.parse(answer)
@@ -144,14 +151,20 @@ object AiCommandService {
         var answer = ""
         var error: Exception? = null
 
-        stream(ai, request.copy(intent = AiCommandIntent.REPLACE)).collect { result ->
-            when (result) {
-                is ResultData.Complete -> answer = result.data
-                is ResultData.Error -> error = result.exception ?: Exception("The AI could not answer")
-                is ResultData.Loading,
-                is ResultData.Idle,
-                is ResultData.InProgress -> {}
+        try {
+            stream(ai, request.copy(intent = AiCommandIntent.REPLACE)).collect { result ->
+                when (result) {
+                    is ResultData.Complete -> answer = result.data
+                    is ResultData.Error -> error = result.exception ?: Exception("The AI could not answer")
+                    is ResultData.Loading,
+                    is ResultData.Idle,
+                    is ResultData.InProgress -> {}
+                }
             }
+        } catch (e: CancellationException) {
+            // Stopped by the writer (or the editor closed): the lines come back where they were.
+            writeopiaManager.replaceSkeletonWithText(skeletonPosition, context.selectedText)
+            throw e
         }
 
         val failure = error ?: if (answer.isBlank()) Exception("The AI answered nothing") else null

@@ -165,6 +165,41 @@ class DocumentLoadUseCaseTest {
         coVerify(exactly = 0) { documentRepository.saveDocument(any()) }
     }
 
+    @Test
+    fun `a newer backend parent does not bring back a nested step deleted here`() = runBlocking {
+        val documentRepository = mockk<DocumentRepository>(relaxed = true)
+        val documentsApi = mockk<DocumentsApi>()
+        val authRepository = mockk<AuthRepository>(relaxed = true)
+        val keptChild = StoryStep(id = "child-1", type = StoryTypes.TEXT.type, text = "Kept", lastUpdatedAt = 1)
+        val deletedChild = StoryStep(id = "child-2", type = StoryTypes.TEXT.type, text = "Gone", lastUpdatedAt = 1)
+        val localParent = StoryStep(id = "parent", type = StoryTypes.TEXT.type, steps = listOf(keptChild), lastUpdatedAt = 1)
+        val backendParent = localParent.copy(steps = listOf(keptChild, deletedChild), lastUpdatedAt = 2)
+        val local = document(lastUpdatedAt = 1, content = mapOf(0.0 to localParent), commentText = "Same")
+        val backend = document(lastUpdatedAt = 2, content = mapOf(0.0 to backendParent), commentText = "Same")
+
+        coEvery { documentRepository.loadDocumentById(local.id, local.workspaceId) } returns local
+        coEvery { documentRepository.loadStoryStepTombstones(local.workspaceId) } returns listOf(
+            StoryStepTombstone(stepId = "child-2", documentId = local.id, workspaceId = local.workspaceId, deletedAt = 3)
+        )
+        coEvery { documentsApi.getDocumentById(local.id, local.workspaceId) } returns ResultData.Complete(backend)
+
+        val useCase = DocumentLoadUseCase(
+            documentRepository = documentRepository,
+            documentsApi = documentsApi,
+            documentMerger = DocumentMerger(),
+            authRepository = authRepository,
+        )
+        var reloaded: Document? = null
+
+        useCase.fetchAndMergeFromBackend(local.id, local.workspaceId) { merged -> reloaded = merged }
+
+        val parent = assertNotNull(reloaded).content.getValue(0.0)
+        assertEquals(listOf("child-1"), parent.steps.map { step -> step.id })
+        coVerify(exactly = 1) {
+            documentRepository.saveDocument(match { saved -> saved.content.getValue(0.0).steps.none { step -> step.id == "child-2" } })
+        }
+    }
+
     private fun document(
         lastUpdatedAt: Long,
         content: Map<Double, StoryStep>,

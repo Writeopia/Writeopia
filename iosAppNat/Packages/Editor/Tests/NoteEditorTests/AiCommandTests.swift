@@ -221,6 +221,16 @@ import WrModels
         #expect(rewrite.parse("## Intro\nA paragraph.").steps.map(\.id) == Array(steps.prefix(2).map(\.id)))
     }
 
+    @Test func aBlockTheAnswerRepeatsStandsOnce() throws {
+        let rewrite = try #require(DocumentRewrite.build(content, cursorStepId: nil))
+
+        let parsed = rewrite.parse("Text\n[[writeopia-block-1]]\n[[writeopia-block-1]]\nMore")
+
+        #expect(parsed.steps.map { $0.text ?? "" } == ["Text", "", "More"])
+        #expect(parsed.steps.filter { $0.id == "i" }.count == 1)
+        #expect(parsed.pendingBlocks.map(\.id) == ["k"])
+    }
+
     @Test func theBlocksTheAnswerLeavesOutArePending() throws {
         let rewrite = try #require(DocumentRewrite.build(content, cursorStepId: nil))
 

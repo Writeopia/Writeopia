@@ -363,6 +363,8 @@ struct AiDialog: View {
     var fixedMode: AiTargetMode?
     /// Actions for the line with the cursor (write a section, suggest list items).
     var cursorActions: [AiCursorAction] = []
+    /// An AI command is running: a new one would be dropped, so Run waits for it.
+    var isRunning = false
     let onCommand: (AiCommand, AiTargetMode) -> Void
     /// Runs the free command typed in the command tab.
     let onFreeCommand: (String) -> Void
@@ -425,7 +427,7 @@ struct AiDialog: View {
             } label: {
                 Label("Run", systemImage: "paperplane")
             }
-            .disabled(trimmedCommand.isEmpty)
+            .disabled(trimmedCommand.isEmpty || isRunning)
             .accessibilityIdentifier("ai.run")
         }
     }

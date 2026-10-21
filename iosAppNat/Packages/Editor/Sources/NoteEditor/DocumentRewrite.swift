@@ -143,7 +143,8 @@ struct DocumentRewrite {
             let line = rawLine.trimmingCharacters(in: .whitespaces)
             if let number = Self.placeholderNumber(line) {
                 flush()
-                if let block = keptBlocks[number] {
+                // A block stands once in the document, whatever the answer repeats.
+                if !used.contains(number), let block = keptBlocks[number] {
                     used.insert(number)
                     steps.append(block)
                 }

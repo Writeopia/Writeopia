@@ -113,6 +113,11 @@ object PromptService {
         }.onCompletion { cause ->
             // Leaving the document cancels the stream: the answer is dropped, never saved.
             if (cause is CancellationException) return@onCompletion
+            // An answer with nothing in it leaves no block behind, only the spinner goes.
+            if (text.isBlank()) {
+                writeopiaManager.removeAtPosition(position)
+                return@onCompletion
+            }
             writeopiaManager.changeStoryState(
                 Action.StoryStateChange(storyStep = answerStep(answerId, text, ephemeral = false), position = position),
                 trackIt = false

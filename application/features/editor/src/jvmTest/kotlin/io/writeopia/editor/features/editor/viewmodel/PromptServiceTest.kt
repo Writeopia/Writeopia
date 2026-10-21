@@ -73,4 +73,18 @@ class PromptServiceTest {
         assertEquals(listOf(true, true, false), edits.map { step -> step.ephemeral })
         assertFalse(answer.ephemeral)
     }
+
+    @Test
+    fun `an answer with nothing in it leaves no block behind`() = runTest {
+        val manager = manager()
+
+        PromptService.prompt(
+            prompt = "Summarize",
+            writeopiaManager = manager,
+            streamFn = { flowOf(ResultData.Loading(), ResultData.Complete("")) },
+            promptPosition = 2.0,
+        )
+
+        assertEquals(setOf(0.0, 1.0), manager.currentStory.value.stories.keys)
+    }
 }
