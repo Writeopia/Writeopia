@@ -15,14 +15,14 @@ class DesktopUpdateCheckerTest {
     @Test
     fun `returns update with writeopia download URL when newer version exists`() = runTest {
         val checker = checker(
-            latestVersion = "0.48L",
-            currentVersion = "0.47L",
+            latestVersion = "0.48.0",
+            currentVersion = "0.47.0",
             platform = DesktopPlatform.WINDOWS
         )
 
         val result = assertIs<DesktopUpdateCheckResult.UpdateAvailable>(checker.checkForUpdate())
 
-        assertEquals("0.48L", result.update.latestVersion)
+        assertEquals("0.48.0", result.update.latestVersion)
         assertEquals(
             "https://writeopia.io/apps-download/latest/Writeopia.msi",
             result.update.downloadUrl
@@ -31,14 +31,14 @@ class DesktopUpdateCheckerTest {
 
     @Test
     fun `returns no update when latest version matches current version`() = runTest {
-        val checker = checker(latestVersion = "0.47L", currentVersion = "0.47L")
+        val checker = checker(latestVersion = "0.47.0", currentVersion = "0.47.0")
 
         assertSame(DesktopUpdateCheckResult.NoUpdate, checker.checkForUpdate())
     }
 
     @Test
     fun `returns no update when server version is older`() = runTest {
-        val checker = checker(latestVersion = "0.46.9", currentVersion = "0.47L")
+        val checker = checker(latestVersion = "0.46.9", currentVersion = "0.47.0")
 
         assertSame(DesktopUpdateCheckResult.NoUpdate, checker.checkForUpdate())
     }
@@ -46,8 +46,8 @@ class DesktopUpdateCheckerTest {
     @Test
     fun `selects macOS download URL`() = runTest {
         val checker = checker(
-            latestVersion = "0.48L",
-            currentVersion = "0.47L",
+            latestVersion = "0.48.0",
+            currentVersion = "0.47.0",
             platform = DesktopPlatform.MAC
         )
 
@@ -64,7 +64,7 @@ class DesktopUpdateCheckerTest {
         val cause = IllegalStateException("network failure")
         val checker = DesktopUpdateChecker(
             versionSource = DesktopUpdateVersionSource { throw cause },
-            currentVersion = "0.47L",
+            currentVersion = "0.47.0",
             downloadBaseUrl = "https://writeopia.io",
             platformProvider = { DesktopPlatform.LINUX }
         )
@@ -76,8 +76,8 @@ class DesktopUpdateCheckerTest {
 
     @Test
     fun `compares multi digit version parts numerically`() {
-        assertEquals(true, isNewerVersion("0.10L", "0.9.9"))
-        assertEquals(false, isNewerVersion("0.9.9", "0.10L"))
+        assertEquals(true, isNewerVersion("0.10.0", "0.9.9"))
+        assertEquals(false, isNewerVersion("0.9.9", "0.10.0"))
     }
 
     @Test

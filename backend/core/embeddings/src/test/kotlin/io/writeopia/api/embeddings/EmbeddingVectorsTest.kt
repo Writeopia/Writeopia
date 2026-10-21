@@ -48,8 +48,8 @@ class EmbeddingVectorsTest {
 
     @Test
     fun `cosine similarity`() {
-        assertEquals(1L, EmbeddingVectors.cosine(floatArrayOf(1f, 2f), floatArrayOf(2f, 4f)), 1e-6)
-        assertEquals(0L, EmbeddingVectors.cosine(floatArrayOf(1f, 0f), floatArrayOf(0f, 1f)), 1e-6)
-        assertEquals(0L, EmbeddingVectors.cosine(floatArrayOf(0f, 0f), floatArrayOf(0f, 1f)), 1e-6)
+        assertEquals(1.0, EmbeddingVectors.cosine(floatArrayOf(1f, 2f), floatArrayOf(2f, 4f)), 1e-6)
+        assertEquals(0.0, EmbeddingVectors.cosine(floatArrayOf(1f, 0f), floatArrayOf(0f, 1f)), 1e-6)
+        assertEquals(0.0, EmbeddingVectors.cosine(floatArrayOf(0f, 0f), floatArrayOf(0f, 1f)), 1e-6)
     }
 }

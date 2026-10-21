@@ -91,7 +91,7 @@ class AiAuthorizationTest {
             inputTokens = 5000,
             outputTokens = 5000,
             totalTokens = 10000,
-            model = "gemini-2L-flash"
+            model = "gemini-2.0-flash"
         )
 
         val now = System.currentTimeMillis()
@@ -112,7 +112,7 @@ class AiAuthorizationTest {
             inputTokens = 60000,
             outputTokens = 50000,
             totalTokens = 110000,
-            model = "gemini-2L-flash"
+            model = "gemini-2.0-flash"
         )
 
         val now = System.currentTimeMillis()
@@ -131,7 +131,7 @@ class AiAuthorizationTest {
             inputTokens = 5000,
             outputTokens = 5000,
             totalTokens = 10000,
-            model = "gemini-2L-flash"
+            model = "gemini-2.0-flash"
         )
 
         // Get now AFTER insert to ensure record timestamp is included
@@ -157,7 +157,7 @@ class AiAuthorizationTest {
                 inputTokens = 10000,
                 outputTokens = 10000,
                 totalTokens = 20000,
-                model = "gemini-2L-flash"
+                model = "gemini-2.0-flash"
             )
         }
 
@@ -198,7 +198,7 @@ class AiAuthorizationTest {
                 inputTokens = 50000,
                 outputTokens = 50000,
                 totalTokens = 100000,
-                model = "gemini-2L-flash"
+                model = "gemini-2.0-flash"
             )
 
             // Add usage for other user
@@ -209,7 +209,7 @@ class AiAuthorizationTest {
                 inputTokens = 5000,
                 outputTokens = 5000,
                 totalTokens = 10000,
-                model = "gemini-2L-flash"
+                model = "gemini-2.0-flash"
             )
 
             val now = System.currentTimeMillis()
