@@ -57,7 +57,6 @@ import io.writeopia.common.utils.configuration.LocalPlatform
 import io.writeopia.common.utils.configuration.PlatformType
 import io.writeopia.common.utils.date.formatCompactNumber
 import io.writeopia.common.utils.icons.WrIcons
-import io.writeopia.commonui.autocomplete.AutocompleteField
 import io.writeopia.commonui.SettingsPanel
 import io.writeopia.commonui.buttons.CommonButton
 import io.writeopia.commonui.workplace.WorkspacePathSelector
@@ -785,21 +784,11 @@ private fun AddUserToWorkspace(
     Spacer(modifier = Modifier.height(6.dp))
 
     Row(verticalAlignment = Alignment.CenterVertically) {
-        AutocompleteField<SearchUserApi>(
+        UserAutocompleteField(
             value = usernameInput,
             suggestions = searchResults,
             onValueChange = onUserSearchQueryChange,
             onSuggestionSelect = onUserSuggestionSelect,
-            suggestionContent = { user -> UserSuggestionItem(user) },
-            placeholder = {
-                BasicText(
-                    WrStrings.username(),
-                    style = MaterialTheme
-                        .typography
-                        .titleSmall
-                        .copy(color = WriteopiaTheme.colorScheme.textLighter)
-                )
-            },
         )
 
         Spacer(modifier = Modifier.width(8.dp))
@@ -839,27 +828,6 @@ private fun AddUserToWorkspace(
         else -> {
             CircularProgressIndicator()
         }
-    }
-}
-
-@Composable
-private fun UserSuggestionItem(user: SearchUserApi) {
-    Column {
-        Text(
-            text = user.name,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 1,
-            softWrap = false
-        )
-        Text(
-            text = "@${user.username}",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            softWrap = false
-        )
     }
 }
 
