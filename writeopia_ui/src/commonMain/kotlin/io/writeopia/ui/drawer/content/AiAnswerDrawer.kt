@@ -21,10 +21,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.TextStyle
@@ -70,7 +75,9 @@ class AiAnswerDrawer(
     private val moveRequest: (Action.Move) -> Unit,
     private val receiveExternalFile: (List<ExternalFile>, Double) -> Unit,
     private val acceptStoryStep: (Double) -> Unit,
-    private val showActionsAlways: Boolean = false
+    private val showActionsAlways: Boolean = false,
+    private val isDesktop: Boolean = true,
+    private val onFocusChanged: (Double, Boolean) -> Unit = { _, _ -> },
 ) : StoryStepDrawer {
 
     @Composable
@@ -79,6 +86,10 @@ class AiAnswerDrawer(
         val interactionSource = remember { MutableInteractionSource() }
         val isHovered by interactionSource.collectIsHoveredAsState()
         val showActions = isHovered || showActionsAlways
+        val focusRequester = remember { FocusRequester() }
+        // Touch platforms have no hover, so a tap on the answer keeps the drag handle visible
+        // while the answer is focused, the same way text rows do.
+        var showDragIcon by remember { mutableStateOf(false) }
 
         val (paddingBottom, paddingTop) = step.tags
             .any { it.tag.isTitle() }
@@ -136,22 +147,38 @@ class AiAnswerDrawer(
                     DragRowTarget(
                         modifier = Modifier.fillMaxWidth(),
                         dataToDrop = dropInfo,
-                        showIcon = isHovered && enabled,
+                        showIcon = showDragIcon || isHovered && enabled,
                         position = drawInfo.position,
                         dragIconWidth = dragIconWidth,
                         onDragStart = onDragStart,
                         onDragStop = onDragStop,
                         isHoldDraggable = drawInfo.selectMode,
-                        emptySpaceClick = {},
+                        emptySpaceClick = {
+                            focusRequester.requestFocus()
+                        },
                         onClick = {
                             onSelected(!drawInfo.selectMode, drawInfo.position)
                         }
                     ) {
                         BasicTextField(
-                            modifier = Modifier.padding(
-                                horizontal = config.iaAnswerHorizontalPadding.dp,
-                                vertical = config.iaAnswerHorizontalPadding.dp
-                            ),
+                            modifier = Modifier
+                                .weight(1F)
+                                .focusRequester(focusRequester)
+                                .onFocusChanged { focusState ->
+                                    showDragIcon = !isDesktop && focusState.hasFocus
+                                    onFocusChanged(drawInfo.position, focusState.isFocused)
+                                }
+                                // A tap on the padding around the text also focuses the answer.
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null
+                                ) {
+                                    focusRequester.requestFocus()
+                                }
+                                .padding(
+                                    horizontal = config.iaAnswerHorizontalPadding.dp,
+                                    vertical = config.iaAnswerHorizontalPadding.dp
+                                ),
                             value = step.text ?: "",
                             onValueChange = {},
                             textStyle = TextStyle(

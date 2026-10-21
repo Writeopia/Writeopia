@@ -168,7 +168,9 @@ object CommonDrawers {
             onDragStop = manager::onDragStop,
             moveRequest = manager::moveRequest,
             acceptStoryStep = manager::acceptStoryStep,
-            showActionsAlways = !isDesktop
+            showActionsAlways = !isDesktop,
+            isDesktop = isDesktop,
+            onFocusChanged = manager::onFocusChange
         )
 
         val dividerDrawer = DividerDrawer(
