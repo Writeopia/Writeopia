@@ -107,19 +107,21 @@ object PromptService {
         // comes: nothing is saved nor synced until the stream ends, then the final text once.
         val answerId = GenerateId.generate()
         var text = ""
+        // Where the loading story went: at [position], or right before the story there.
+        var answerPosition = position
 
         this.onStart {
-            writeopiaManager.loadingAtPosition(position)
+            answerPosition = writeopiaManager.loadingAtPosition(position)
         }.onCompletion { cause ->
             // Leaving the document cancels the stream: the answer is dropped, never saved.
             if (cause is CancellationException) return@onCompletion
             // An answer with nothing in it leaves no block behind, only the spinner goes.
             if (text.isBlank()) {
-                writeopiaManager.removeAtPosition(position)
+                writeopiaManager.removeAtPosition(answerPosition)
                 return@onCompletion
             }
             writeopiaManager.changeStoryState(
-                Action.StoryStateChange(storyStep = answerStep(answerId, text, ephemeral = false), position = position),
+                Action.StoryStateChange(storyStep = answerStep(answerId, text, ephemeral = false), position = answerPosition),
                 trackIt = false
             )
             writeopiaManager.trackState()
@@ -134,7 +136,7 @@ object PromptService {
         }.collect { resultText ->
             text = resultText
             writeopiaManager.changeStoryState(
-                Action.StoryStateChange(storyStep = answerStep(answerId, text, ephemeral = true), position = position),
+                Action.StoryStateChange(storyStep = answerStep(answerId, text, ephemeral = true), position = answerPosition),
                 trackIt = false
             )
         }

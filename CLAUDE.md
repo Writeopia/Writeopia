@@ -309,3 +309,12 @@ See `CLAUDE_CODE_WRITEOPIA_MANUAL.md` for complete document format specification
 - `docker/postgres/docker-compose.yml` - Local development database
 - `backend/core/database/src/main/sqldelight/` - Backend SQL schema
 - `application/core/persistence_sqldelight/src/commonMain/sqldelight/` - App SQL schema
+
+## Story Step Positions
+
+The key of a step in `Document.content` (`Map<Double, StoryStep>`) is its **position**: a sort key, not a list index, and the same value goes to the `position` column (local databases and backend) and to the sync API. The rules:
+
+- **Never renumber**: inserting, deleting or moving a step never changes the position of another step. A new step goes to a free position between its neighbours (`keyBefore`/`keyAfter` in `writeopia/.../utils/iterables/MapOperations.kt`: 1.5 between 1 and 2). `addAtPosition(p)` puts the step at `p` when free, otherwise right before the step at `p`; `addAfterPosition(p)` puts it right after the step at `p`.
+- **Save the keys**: whole-document saves (`insertDocumentWithContent` in SQLDelight, Room and the backend) write each step at its map key, never at its index; per-step saves use the key passed in. `StoryStep.dbPosition` is only informational (the position the step was loaded with) and is never preferred over the key.
+- **Maps are sorted by key**: every state the manager emits is sorted (`toSortedMutableMap`, `NextPositionCalculator.calculate`), and the editor draws the map in its own order. Code that builds a map with `+` must pass it through `NextPositionCalculator.calculate` (which sorts and relinks).
+- **Neighbours come from the map**: `nextPosition`/`previousPosition` on a step are a cache for the UI (drag targets, keyboard selection). Every state the manager emits is a sorted map (`toSortedMutableMap`, `mapValuesSorted`, `NextPositionCalculator`); never build a state with `mapValues`, `+` or `toMap()`, which return a `LinkedHashMap` and lose the O(log n) lookups. Structural operations (line break, delete, move) read the neighbours from the keys (`nextKey`/`previousKey`, backed by `lowerKeyOrNull`/`higherKeyOrNull`/`lastKeyOrNull` in `SortedMapFactory.kt`: O(log n) on the JVM `TreeMap`, a scan elsewhere) and relink afterwards, so a stale link can never place a step on top of another. A single insert or removal relinks only its neighbours (`NextPositionCalculator.relinkAround`); multi-step changes use `calculate`.

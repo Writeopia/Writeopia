@@ -48,9 +48,10 @@ object StepsModifier {
                 emptyMap()
             }
 
+            // A drop on the space goes right after the previous story, whatever its position
             val spaceDraw = DrawStory(
                 storyStep = spaceStory.copy(tags = newTags),
-                position = (index - 1),
+                position = previousPosition ?: (index - 1),
                 extraInfo = spaceExtraInfo
             )
 
@@ -65,8 +66,8 @@ object StepsModifier {
             lastSpace
         }
 
-        val lastIndex = parsed.lastIndex
-        val fullStory = parsed + DrawStory(storyStep = lastSpaceStory, position = lastIndex.toDouble())
+        // A drop on the last space goes right after the last story
+        val fullStory = parsed + DrawStory(storyStep = lastSpaceStory, position = lastStoryPosition ?: 0.0)
 
         val fixedPositions = addPositionToTags(fullStory)
         val fixedCodeBlockPositions = addPositionToCodeBlocks(fixedPositions)

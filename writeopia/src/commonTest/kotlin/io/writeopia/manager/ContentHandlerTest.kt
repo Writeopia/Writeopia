@@ -33,11 +33,12 @@ class ContentHandlerTest {
         val storyStep = StoryStep(type = StoryTypes.TEXT.type)
         val newStory = contentHandler.addNewContent(input, storyStep, 1.0)
 
+        // The new step goes right before the one at 1.0, which keeps its position
         val expected = mapOf<Double, StoryStep>(
             0.0 to StoryStep(type = StoryTypes.IMAGE.type),
-            1.0 to storyStep,
+            0.5 to storyStep,
+            1.0 to StoryStep(type = StoryTypes.IMAGE.type),
             2.0 to StoryStep(type = StoryTypes.IMAGE.type),
-            3.0 to StoryStep(type = StoryTypes.IMAGE.type),
         ).mapValues { (_, storyStep) ->
             storyStep.type
         }

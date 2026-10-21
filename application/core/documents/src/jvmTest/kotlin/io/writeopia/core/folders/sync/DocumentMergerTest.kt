@@ -176,6 +176,26 @@ class DocumentMergerTest {
         id to listOf(Comment(id = "$id-comment", text = text))
     )
 
+    @Test
+    fun `two different steps at the same position both survive, in order`() {
+        val local = document(
+            lastUpdatedAt = 1,
+            comments = emptyMap(),
+            content = mapOf(0.0 to step("title", 1), 1.0 to step("local-1", 1), 2.0 to step("shared", 1)),
+        )
+        val backend = document(
+            lastUpdatedAt = 2,
+            comments = emptyMap(),
+            content = mapOf(0.0 to step("title", 1), 1.0 to step("backend-1", 2), 2.0 to step("shared", 1)),
+        )
+
+        val merged = merger.merge(local, backend)?.content ?: error("no content")
+
+        assertEquals(listOf("title", "local-1", "backend-1", "shared"), merged.values.map { it.id })
+        assertEquals(merged.keys.sorted(), merged.keys.toList())
+        assertEquals(1.5, merged.entries.first { it.value.id == "backend-1" }.key)
+    }
+
     private fun step(
         id: String,
         updatedAt: Long,

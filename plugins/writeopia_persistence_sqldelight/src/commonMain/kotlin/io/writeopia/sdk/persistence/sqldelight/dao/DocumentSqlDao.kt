@@ -92,8 +92,9 @@ class DocumentSqlDao(
 
             storyStepQueries?.deleteByDocumentId(document.id)
             val tombstoned = tombstonedIdsAmong(document.content.values.flatMap { step -> step.allIds() })
-            document.content.values.forEachIndexed { i, storyStep ->
-                insertStoryStep(storyStep, i.toDouble(), document.id, tombstoned)
+            // Each step at its position: the key is the position, never the index in the map
+            document.content.forEach { (position, storyStep) ->
+                insertStoryStep(storyStep, position, document.id, tombstoned)
             }
 
             commentQueries?.deleteByDocumentId(document.id)

@@ -93,10 +93,11 @@ class DocumentSqlBeDao(
             val tombstoned = tombstones?.tombstonedAmong(document.content.values.flatMap { step -> step.allIds() }, document.workspaceId)
                 ?: emptySet()
 
-            document.content.values.forEachIndexed { i, storyStep ->
-                if (storyStep.id in tombstoned) return@forEachIndexed
-                if (!storyStep.isNewerThan(stored[storyStep.id], stored.containsKey(storyStep.id))) return@forEachIndexed
-                insertStoryStep(storyStep, i.toDouble(), document.id)
+            // Each step at its position: the key is the position, never the index in the map
+            document.content.forEach { (position, storyStep) ->
+                if (storyStep.id in tombstoned) return@forEach
+                if (!storyStep.isNewerThan(stored[storyStep.id], stored.containsKey(storyStep.id))) return@forEach
+                insertStoryStep(storyStep, position, document.id)
             }
 
             replaceTagLinks(document)

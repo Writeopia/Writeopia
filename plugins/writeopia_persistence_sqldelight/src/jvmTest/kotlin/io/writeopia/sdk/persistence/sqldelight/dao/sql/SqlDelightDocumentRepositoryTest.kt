@@ -358,4 +358,38 @@ class SqlDelightDocumentRepositoryTest {
     fun aDocumentWithMoreStepsThanOneQueryCanBindIsSaved() = runTest {
         DocumentRepositoryTests(documentRepository).aDocumentWithMoreStepsThanOneQueryCanBindIsSaved()
     }
+
+    @Test
+    fun `a document saved whole keeps the positions of its steps, not their order in the map`() = runTest {
+        val workspaceId = "workspaceId"
+        val content = mapOf(
+            0.0 to StoryStep(type = StoryTypes.TEXT.type, text = "title"),
+            1.0 to StoryStep(type = StoryTypes.TEXT.type, text = "a"),
+            1.5 to StoryStep(type = StoryTypes.TEXT.type, text = "between"),
+            2.0 to StoryStep(type = StoryTypes.TEXT.type, text = "c"),
+        )
+        val document = Document(
+            createdAt = Clock.System.now(),
+            lastUpdatedAt = Clock.System.now(),
+            lastSyncedAt = null,
+            workspaceId = workspaceId,
+            parentId = "",
+            content = content,
+        )
+
+        documentRepository.saveDocument(document)
+
+        val loaded = documentRepository.loadDocumentById(document.id, workspaceId)
+        assertEquals(listOf(0.0, 1.0, 1.5, 2.0), loaded?.content?.keys?.toList())
+        assertEquals(listOf("title", "a", "between", "c"), loaded?.content?.values?.map { it.text })
+
+        // A step saved alone at its position keeps its place among the others
+        documentRepository.saveStoryStep(
+            content.getValue(1.5).copy(text = "edited"),
+            position = 1.5,
+            documentId = document.id
+        )
+        val reloaded = documentRepository.loadDocumentById(document.id, workspaceId)
+        assertEquals(listOf("title", "a", "edited", "c"), reloaded?.content?.values?.map { it.text })
+    }
 }

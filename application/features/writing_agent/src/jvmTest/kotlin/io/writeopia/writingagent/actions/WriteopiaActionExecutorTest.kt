@@ -101,7 +101,8 @@ class WriteopiaActionExecutorTest {
             listOf(StoryTypes.TITLE, StoryTypes.TEXT, StoryTypes.CODE_BLOCK, StoryTypes.TEXT),
             manager.typesInOrder()
         )
-        assertEquals("", manager.currentStory.value.stories[2.0]?.text)
+        // Right after the paragraph at 1.0, half way to the one at 2.0
+        assertEquals("", manager.currentStory.value.stories[1.5]?.text)
     }
 
     @Test
@@ -158,7 +159,8 @@ class WriteopiaActionExecutorTest {
         executor.execute(WritingSuggestionAction.SECTION_HEADING, "p2", WritingAgentUi.None)
 
         assertEquals(listOf("Groceries", "We need milk.", "Shopping list", "And eggs."), manager.textsInOrder())
-        val heading = manager.currentStory.value.stories[2.0]
+        // Right before the paragraph at 2.0, which keeps its position
+        val heading = manager.currentStory.value.stories[1.5]
         assertNotNull(heading)
         assertTrue(heading.tags.any { it.tag == Tag.H2 })
     }
@@ -205,7 +207,9 @@ class WriteopiaActionExecutorTest {
         executor.execute(WritingSuggestionAction.DOCUMENT_TITLE, null, WritingAgentUi.None)
 
         assertEquals(listOf(StoryTypes.TITLE, StoryTypes.TEXT, StoryTypes.TEXT), manager.typesInOrder())
-        assertEquals("Groceries", manager.currentStory.value.stories[0.0]?.text)
+        // Before the first paragraph, which keeps its position
+        assertEquals("Groceries", manager.textsInOrder().first())
+        assertEquals("We need milk.", manager.currentStory.value.stories[0.0]?.text)
     }
 
     @Test
@@ -231,7 +235,8 @@ class WriteopiaActionExecutorTest {
             manager.textsInOrder()
         )
         // The TL;DR is a card under the title; the conclusion is a plain AI answer.
-        val tldr = manager.currentStory.value.stories[1.0]
+        // Right after the title, half way to the paragraph at 1.0
+        val tldr = manager.currentStory.value.stories[0.5]
         assertNotNull(tldr)
         assertEquals(StoryTypes.TEXT.type, tldr.type)
         assertTrue(tldr.tags.any { it.tag == Tag.CARD_BLOCK })
@@ -284,7 +289,8 @@ class WriteopiaActionExecutorTest {
 
         executor.execute(WritingSuggestionAction.SPREADSHEET, "p1", WritingAgentUi.None)
 
-        val spreadsheet = manager.currentStory.value.stories[2.0]
+        // Right after the paragraph at 1.0, half way to the one at 2.0
+        val spreadsheet = manager.currentStory.value.stories[1.5]
         assertNotNull(spreadsheet)
         assertEquals(StoryTypes.SPREADSHEET.type, spreadsheet.type)
         assertEquals(
@@ -329,7 +335,8 @@ class WriteopiaActionExecutorTest {
             listOf(StoryTypes.TITLE, StoryTypes.TEXT, StoryTypes.IMAGE, StoryTypes.TEXT),
             manager.typesInOrder()
         )
-        val image = manager.currentStory.value.stories[2.0]
+        // Right after the paragraph at 1.0, half way to the one at 2.0
+        val image = manager.currentStory.value.stories[1.5]
         assertNotNull(image)
         assertEquals("https://images.test/milk.png", image.url)
         assertTrue(picked.isEmpty(), "the picker should not open when the cloud draws")
@@ -362,6 +369,7 @@ class WriteopiaActionExecutorTest {
 
         executor.execute(WritingSuggestionAction.IMAGE, "p1", ui)
 
-        assertEquals(listOf("/tmp/cat.png" to 2.0), added)
+        // Right after the paragraph at 1.0, half way to the one at 2.0
+        assertEquals(listOf("/tmp/cat.png" to 1.5), added)
     }
 }

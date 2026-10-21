@@ -242,8 +242,7 @@ class RoomDocumentRepository(
         documentEntityDao.getSoftDeletedByWorkspace(workspaceId).map { it.toModel() }
 
     override suspend fun saveStoryStep(storyStep: StoryStep, position: Double, documentId: String) {
-        val dbPos = storyStep.dbPosition ?: position
-        insertStepsKeepingTombstones(listOf(storyStep.toEntity(dbPos, documentId)))
+        insertStepsKeepingTombstones(listOf(storyStep.toEntity(position, documentId)))
     }
 
     override suspend fun saveStorySteps(steps: List<Pair<Double, StoryStep>>, documentId: String) {
@@ -320,8 +319,7 @@ class RoomDocumentRepository(
     }
 
     override suspend fun updateStoryStep(storyStep: StoryStep, position: Double, documentId: String) {
-        val dbPos = storyStep.dbPosition ?: position
-        storyUnitEntityDao?.updateStoryStep(storyStep.toEntity(dbPos, documentId))
+        storyUnitEntityDao?.updateStoryStep(storyStep.toEntity(position, documentId))
     }
 
     override suspend fun deleteByWorkspace(userId: String) {

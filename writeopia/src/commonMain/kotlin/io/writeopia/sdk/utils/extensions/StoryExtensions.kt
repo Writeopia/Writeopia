@@ -3,9 +3,10 @@ package io.writeopia.sdk.utils.extensions
 import io.writeopia.sdk.model.story.Section
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.utils.collections.sortedMutableMapOf
+import io.writeopia.sdk.utils.iterables.mapValuesSorted
 
 fun Map<Double, StoryStep>.toEditState(): MutableMap<Double, List<StoryStep>> =
-    mapValues { (_, story) -> listOf(story) }.toMutableMap()
+    mapValuesSorted { (_, story) -> listOf(story) }
 
 fun <T> Iterable<T>.associateWithPosition(): Map<Double, T> {
     var acc = -1.0

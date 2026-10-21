@@ -2,10 +2,13 @@ package io.writeopia.sdk.manager
 
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
+import io.writeopia.sdk.utils.iterables.nextKey
+import io.writeopia.sdk.utils.iterables.previousKey
 
 /**
- * This class is responsible to control the focus of the edition of story. (example: If the text
- * of a story is being edited, this story has the current focus.)
+ * Finds the story that should receive the focus after or before a position. It walks from the
+ * position through the neighbours, so finding the story next door costs one lookup: O(log n)
+ * on a sorted map on JVM.
  */
 class FocusHandler(
     private val isMessageFn: (Int) -> Boolean = { typeNumber ->
@@ -16,19 +19,21 @@ class FocusHandler(
     }
 ) {
 
-    fun findNextFocus(position: Double, stories: Map<Double, StoryStep>): Double? =
-        stories.entries
-            .sortedBy { (key, _) -> key }
-            .find { (key, storyStep) ->
-                key > position && isMessageFn(storyStep.type.number)
-            }
-            ?.key
+    fun findNextFocus(position: Double, stories: Map<Double, StoryStep>): Double? {
+        var key = stories.nextKey(position)
+        while (key != null) {
+            if (stories[key]?.let { story -> isMessageFn(story.type.number) } == true) return key
+            key = stories.nextKey(key)
+        }
+        return null
+    }
 
-    fun findPreviousFocus(position: Double, stories: Map<Double, StoryStep>): Double? =
-        stories.entries
-            .sortedByDescending { (key, _) -> key }
-            .find { (key, storyStep) ->
-                key < position && isMessageFn(storyStep.type.number)
-            }
-            ?.key
+    fun findPreviousFocus(position: Double, stories: Map<Double, StoryStep>): Double? {
+        var key = stories.previousKey(position)
+        while (key != null) {
+            if (stories[key]?.let { story -> isMessageFn(story.type.number) } == true) return key
+            key = stories.previousKey(key)
+        }
+        return null
+    }
 }

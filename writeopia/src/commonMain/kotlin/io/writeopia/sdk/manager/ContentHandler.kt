@@ -15,11 +15,18 @@ import io.writeopia.sdk.models.story.StoryType
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
 import io.writeopia.sdk.models.story.TagInfo
+import io.writeopia.sdk.utils.NextPositionCalculator
 import io.writeopia.sdk.utils.alias.UnitsNormalizationMap
 import io.writeopia.sdk.utils.collections.toSortedMutableMap
 import io.writeopia.sdk.utils.extensions.toEditState
+import io.writeopia.sdk.utils.iterables.addElementAfterPosition
 import io.writeopia.sdk.utils.iterables.addElementInPosition
-import io.writeopia.sdk.utils.iterables.mergeSortedMaps
+import io.writeopia.sdk.utils.iterables.insertAll
+import io.writeopia.sdk.utils.iterables.insertElementsBefore
+import io.writeopia.sdk.utils.iterables.keyAfter
+import io.writeopia.sdk.utils.iterables.keyBefore
+import io.writeopia.sdk.utils.iterables.nextKey
+import io.writeopia.sdk.utils.iterables.previousKey
 import io.writeopia.sdk.utils.iterables.removeBy
 import io.writeopia.sdk.utils.iterables.removeElementInPosition
 
@@ -107,12 +114,9 @@ class ContentHandler(
             )
         }
 
-        // Collect only the changed steps with their db positions
+        // Only the changed steps, at their positions
         val changedSteps = positions.mapNotNull { position ->
-            newMap[position]?.let { step ->
-                val dbPos = step.dbPosition ?: position
-                dbPos to step
-            }
+            newMap[position]?.let { step -> position to step }
         }
 
         val lastEdit = if (changedSteps.isNotEmpty()) {
@@ -181,22 +185,66 @@ class ContentHandler(
             this + tagInfo
         }
 
-    // Todo: Add unit test
+    /**
+     * Adds [newStoryUnit] at [position], or right before the step already there (half way to
+     * the previous step). No other step moves. The links of the neighbours are updated.
+     */
     fun addNewContent(
         currentStory: Map<Double, StoryStep>,
         newStoryUnit: StoryStep,
         position: Double
-    ): Map<Double, StoryStep> = currentStory.addElementInPosition(newStoryUnit, position)
+    ): Map<Double, StoryStep> {
+        val newPosition = currentStory.keyBefore(position)
+        return NextPositionCalculator.relinkAround(
+            currentStory.addElementInPosition(newStoryUnit, position),
+            newPosition
+        )
+    }
 
+    /**
+     * Adds [newStoryUnit] right after the step at [position] (half way to the next step). No
+     * other step moves. The links of the neighbours are updated.
+     */
+    fun addNewContentAfter(
+        currentStory: Map<Double, StoryStep>,
+        newStoryUnit: StoryStep,
+        position: Double
+    ): Map<Double, StoryStep> {
+        val newPosition = currentStory.keyAfter(position)
+        return NextPositionCalculator.relinkAround(
+            currentStory.addElementAfterPosition(newStoryUnit, position),
+            newPosition
+        )
+    }
+
+    /**
+     * Adds [newStoryUnits], in order, at [position] or right before the step already there:
+     * they are spread between the previous step and that one. No other step moves. The links
+     * are updated.
+     */
+    fun addNewContents(
+        currentStory: Map<Double, StoryStep>,
+        newStoryUnits: List<StoryStep>,
+        position: Double
+    ): Map<Double, StoryStep> {
+        val mutable = currentStory.toSortedMutableMap()
+        val keys = mutable.insertElementsBefore(newStoryUnits, position)
+        keys.forEach { key -> NextPositionCalculator.relinkAround(mutable, key) }
+        return mutable
+    }
+
+    /** Removes the step at [position]. No other step moves. The links of the neighbours are updated. */
     fun removeContent(
         currentStory: Map<Double, StoryStep>,
         position: Double
-    ): Map<Double, StoryStep> = currentStory.removeElementInPosition(position)
+    ): Map<Double, StoryStep> =
+        NextPositionCalculator.relinkAround(currentStory.removeElementInPosition(position), position)
 
+    /** Removes the steps matching [predicate]. No other step moves. The links are updated. */
     fun removeBy(
         currentStory: Map<Double, StoryStep>,
         predicate: (StoryStep) -> Boolean
-    ): Map<Double, StoryStep> = currentStory.removeBy(predicate)
+    ): Map<Double, StoryStep> = NextPositionCalculator.calculate(currentStory.removeBy(predicate))
 
     /**
      * Adds a link to a new document inside a document
@@ -242,7 +290,7 @@ class ContentHandler(
             spans = emptySet()
         )
 
-        val next = step.nextPosition
+        val next = currentStory.nextKey(position)
         val nextStory = next?.let { currentStory[it] }
 
         if (next != null && nextStory?.type?.number == StoryTypes.TEXT.type.number) {
@@ -271,10 +319,19 @@ class ContentHandler(
         return broken.copy(stories = stories, lastEdit = lastEdit, selection = Selection.start())
     }
 
+    /**
+     * Adds the steps of [newStory], each at its position or right before the step already
+     * there. No step of [currentStory] moves. The links are updated.
+     */
     fun addNewContentBulk(
         currentStory: Map<Double, StoryStep>,
         newStory: Map<Double, StoryStep>,
-    ): Map<Double, StoryStep> = currentStory.mergeSortedMaps(newStory)
+    ): Map<Double, StoryStep> {
+        val mutable = currentStory.toSortedMutableMap()
+        val keys = mutable.insertAll(newStory)
+        keys.forEach { key -> NextPositionCalculator.relinkAround(mutable, key) }
+        return mutable
+    }
 
     fun onLineBreak(
         currentStory: Map<Double, StoryStep>,
@@ -289,10 +346,9 @@ class ContentHandler(
             ?.let { lines -> splitSpansByLines(lines, storyStep.spans) }
             ?: listOf(storyStep.spans)
 
-        val next = storyStep.nextPosition
+        // The neighbour comes from the map, the links of the step may be older than the map.
+        val next = currentStory.nextKey(position)
         val nextPosition = if (next != null) (next + position) / 2 else position + 1
-
-        println("online break. next $next, position: $position")
 
         // Update the original line with the first part of the split text
         // The original step now points to the new step as its next
@@ -332,8 +388,6 @@ class ContentHandler(
                     mutable[next] = nextStory.copy(previousPosition = nextPosition)
                 }
             }
-
-            println("next focus: $nextPosition")
 
             return nextPosition.toInt() to StoryState(
                 stories = mutable,
@@ -471,9 +525,9 @@ class ContentHandler(
         val mutableSteps = history.toSortedMutableMap()
 
         return if (parentId == null) {
-            // Update position references before removing
-            val prevPos = step.previousPosition
-            val nextPos = step.nextPosition
+            // The neighbours come from the map, the links of the step may be older than the map
+            val prevPos = history.previousKey(deleteInfo.position)
+            val nextPos = history.nextKey(deleteInfo.position)
 
             mutableSteps.remove(deleteInfo.position)
 
@@ -527,9 +581,9 @@ class ContentHandler(
         val mutableSteps = history.toSortedMutableMap()
         val deletedStep = deleteInfo.storyStep
 
-        // Get position references before removing
-        val prevPos = deletedStep.previousPosition
-        val nextPos = deletedStep.nextPosition
+        // The neighbours come from the map, the links of the step may be older than the map
+        val prevPos = history.previousKey(deleteInfo.position)
+        val nextPos = history.nextKey(deleteInfo.position)
 
         mutableSteps.remove(deleteInfo.position)
 
@@ -597,6 +651,8 @@ class ContentHandler(
             }
         }
 
+        // The steps around the deleted ones link to each other now
+        deleted.keys.forEach { position -> NextPositionCalculator.relinkAround(newState, position) }
         return newState to deleted
     }
 
@@ -619,25 +675,19 @@ class ContentHandler(
             mutable[position] = step.copy(tags = step.tags.merge(tagInfo))
         }
 
-        val sortedPositions = storyMap.keys.sorted().filter { it > position }
-        var nextHeaderFound = false
+        // Walks to the next header, one neighbour at a time
+        var pos = storyMap.nextKey(position)
+        while (pos != null) {
+            val step = storyMap[pos] ?: break
+            if (step.tags.any { it.tag.isTitle() }) break
 
-        for (pos in sortedPositions) {
-            if (nextHeaderFound) break
-            val step = storyMap[pos]
-
-            if (step != null) {
-                if (step.tags.any { it.tag.isTitle() }) {
-                    nextHeaderFound = true
-                } else {
-                    val tagInfo = setOf(TagInfo(tag = Tag.HIDDEN_HX))
-                    mutable[pos] = step.copy(tags = step.tags.merge(tagInfo))
-                }
-            }
+            val tagInfo = setOf(TagInfo(tag = Tag.HIDDEN_HX))
+            mutable[pos] = step.copy(tags = step.tags.merge(tagInfo))
+            pos = storyMap.nextKey(pos)
         }
 
         return StoryState(
-            mutable.toMap(),
+            mutable,
             lastEdit = LastEdit.LineEdition(position, storyMap[position]!!),
             focus = position
         )
@@ -656,25 +706,19 @@ class ContentHandler(
                 step.copy(tags = step.tags.filterNotTo(mutableSetOf()) { it.tag == Tag.COLLAPSED })
         }
 
-        val sortedPositions = storyMap.keys.sorted().filter { it > position }
-        var nextHeaderFound = false
+        // Walks to the next header, one neighbour at a time
+        var pos = storyMap.nextKey(position)
+        while (pos != null) {
+            val step = storyMap[pos] ?: break
+            if (step.tags.any { it.tag.isTitle() }) break
 
-        for (pos in sortedPositions) {
-            if (nextHeaderFound) break
-            val step = storyMap[pos]
-
-            if (step != null) {
-                if (step.tags.any { it.tag.isTitle() }) {
-                    nextHeaderFound = true
-                } else {
-                    val tagInfo = step.tags.filterNotTo(mutableSetOf()) { it.tag == Tag.HIDDEN_HX }
-                    mutable[pos] = step.copy(tags = tagInfo)
-                }
-            }
+            val tagInfo = step.tags.filterNotTo(mutableSetOf()) { it.tag == Tag.HIDDEN_HX }
+            mutable[pos] = step.copy(tags = tagInfo)
+            pos = storyMap.nextKey(pos)
         }
 
         return StoryState(
-            mutable.toMap(),
+            mutable,
             lastEdit = LastEdit.LineEdition(position, storyMap[position]!!),
             focus = position
         )
@@ -686,13 +730,17 @@ class ContentHandler(
         columnCount: Int,
         rowCount: Int = 3,
         insertMode: Boolean = false
-    ): Map<Double, StoryStep> = spreadsheetHandler.createSpreadsheet(
-        currentStory,
-        position,
-        columnCount,
-        rowCount,
-        insertMode
-    )
+    ): Map<Double, StoryStep> {
+        val spreadsheetPosition = if (insertMode) currentStory.keyBefore(position) else position
+        val stories = spreadsheetHandler.createSpreadsheet(
+            currentStory,
+            position,
+            columnCount,
+            rowCount,
+            insertMode
+        )
+        return NextPositionCalculator.relinkAround(stories, spreadsheetPosition)
+    }
 
     fun updateSpreadsheetCell(
         currentStory: Map<Double, StoryStep>,

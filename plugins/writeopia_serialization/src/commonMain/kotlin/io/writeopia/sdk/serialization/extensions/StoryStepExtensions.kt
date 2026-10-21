@@ -29,7 +29,7 @@ fun StoryStep.toApi(position: Double): StoryStepApi =
         tags = this.tags.mapTo(mutableSetOf()) { it.toApi() },
         spans = this.spans.mapTo(mutableSetOf()) { it.toApi() },
         decoration = this.decoration.toApi(),
-        position = this.dbPosition ?: position,
+        position = position,
         documentLink = this.documentLink?.toApi(),
         lastUpdatedAt = this.lastUpdatedAt
     )

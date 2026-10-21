@@ -21,7 +21,8 @@ CREATE TABLE storyStepEntity (
 selectByDocumentId:
 SELECT *
 FROM storyStepEntity
-WHERE document_id = ?;
+WHERE document_id = ?
+ORDER BY position;
 
 selectUnSyncedSteps:
 SELECT *
@@ -72,7 +73,8 @@ WHERE id = ?;
 selectByDocumentIdAfterTime:
 SELECT *
 FROM storyStepEntity
-WHERE document_id = ? AND last_updated_at > ?;
+WHERE document_id = ? AND last_updated_at > ?
+ORDER BY position;
 
 selectByParentId:
 SELECT *

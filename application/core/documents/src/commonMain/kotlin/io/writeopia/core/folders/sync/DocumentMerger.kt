@@ -138,7 +138,29 @@ class DocumentMerger {
             mergedSteps.add(position to step)
         }
 
-        // Sort by position and rebuild the map
-        return mergedSteps.sortedBy { it.first }.toMap()
+        return mergedSteps.sortedBy { it.first }.withDistinctPositions()
+    }
+
+    /**
+     * The steps as a map, in order. Two different steps at the same position (each side added
+     * one there) can't share a key: the later one goes half way to the next position, so no
+     * step is lost and the order holds.
+     */
+    private fun List<Pair<Double, StoryStep>>.withDistinctPositions(): Map<Double, StoryStep> {
+        val result = linkedMapOf<Double, StoryStep>()
+        var lastKey: Double? = null
+
+        forEachIndexed { index, (position, step) ->
+            val key = if (lastKey == null || position > lastKey) {
+                position
+            } else {
+                val nextDistinct = subList(index + 1, size).firstOrNull { (next, _) -> next > position }?.first
+                if (nextDistinct == null) lastKey + 1.0 else (lastKey + nextDistinct) / 2.0
+            }
+            result[key] = step
+            lastKey = key
+        }
+
+        return result
     }
 }

@@ -22,6 +22,7 @@ import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.normalization.builder.StepsMapNormalizationBuilder
 import io.writeopia.sdk.utils.alias.UnitsNormalizationMap
 import io.writeopia.sdk.utils.collections.toSortedMutableMap
+import io.writeopia.sdk.utils.iterables.keyBefore
 import io.writeopia.sdk.utils.extensions.toEditState
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -302,7 +303,7 @@ class WriteopiaManager(
                 spanHandler.toggleSpansForManyStories(it, span, extra)
             }
 
-        val newStories = storyState.stories + newMap
+        val newStories = storyState.stories.toSortedMutableMap().apply { putAll(newMap) }
         val changedSteps = newMap.map { (pos, story) -> pos to story }
 
         return storyState.copy(
@@ -322,7 +323,7 @@ class WriteopiaManager(
                 spans = spanHandler.toggleSpans(spans, spanInfo)
             )
 
-            val newStories = storyState.stories + (position to newStory)
+            val newStories = storyState.stories.toSortedMutableMap().apply { this[position] = newStory }
 
             storyState.copy(
                 stories = newStories,
@@ -342,9 +343,28 @@ class WriteopiaManager(
 
         return storyState.copy(
             stories = newStory,
-            lastEdit = LastEdit.LineEdition(position, storyStep)
+            lastEdit = newStory.editionOf(storyStep)
         )
     }
+
+    /**
+     * Adds a story right after the one at [position]: half way to the next story, so nothing
+     * else moves.
+     */
+    fun addAfterPosition(storyState: StoryState, storyStep: StoryStep, position: Double): StoryState {
+        val newStory = contentHandler.addNewContentAfter(storyState.stories, storyStep, position)
+
+        return storyState.copy(
+            stories = newStory,
+            lastEdit = newStory.editionOf(storyStep)
+        )
+    }
+
+    /** The edition that saves [storyStep] at the position it has in this map. */
+    private fun Map<Double, StoryStep>.editionOf(storyStep: StoryStep): LastEdit =
+        entries.firstOrNull { (_, step) -> step.id == storyStep.id }
+            ?.let { (position, step) -> LastEdit.LineEdition(position, step) }
+            ?: LastEdit.Nothing
 
     fun removeAtPosition(storyState: StoryState, position: Double): StoryState {
         val newStory = contentHandler.removeContent(storyState.stories, position)
@@ -399,11 +419,13 @@ class WriteopiaManager(
             rowCount = rowCount,
             insertMode = insertMode
         )
-        val spreadsheet = newStories[position]
+        // Inserted at the position, or right before the story there
+        val spreadsheetPosition = if (insertMode) storyState.stories.keyBefore(position) else position
+        val spreadsheet = newStories[spreadsheetPosition]
         return storyState.copy(
             stories = newStories,
             lastEdit = if (spreadsheet != null) {
-                LastEdit.LineEdition(position, spreadsheet)
+                LastEdit.LineEdition(spreadsheetPosition, spreadsheet)
             } else {
                 LastEdit.Nothing
             }
@@ -687,21 +709,18 @@ class WriteopiaManager(
             val originalState = storyState()
             val originalStories = originalState.stories
 
-            val finalState = suggestions.mapIndexed { i, suggestion ->
+            val suggestionSteps = suggestions.mapIndexed { i, suggestion ->
                 val tags = if (i == 0) {
                     setOf(TagInfo(Tag.AI_SUGGESTION), TagInfo(Tag.FIRST_AI_SUGGESTION))
                 } else {
                     setOf(TagInfo(Tag.AI_SUGGESTION))
                 }
-                StoryStep(text = suggestion, type = storyType, tags = tags)
-            }.reversed()
-                .fold(originalState) { state, story ->
-                    addAtPosition(
-                        state,
-                        story.copy(ephemeral = true),
-                        position
-                    )
-                }
+                StoryStep(text = suggestion, type = storyType, tags = tags, ephemeral = true)
+            }
+            // In order, at the position or right before the story there: nothing else moves
+            val finalState = originalState.copy(
+                stories = contentHandler.addNewContents(originalStories, suggestionSteps, position)
+            )
 
             // Find all changed stories
             val changedSteps = finalState.stories.filter { (pos, story) ->

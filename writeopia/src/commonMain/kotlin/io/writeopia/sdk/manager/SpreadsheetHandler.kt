@@ -26,7 +26,7 @@ class SpreadsheetHandler {
         columnCount: Int,
         rowCount: Int = 3,
         insertMode: Boolean = false
-    ): Map<Double, StoryStep> {
+    ): MutableMap<Double, StoryStep> {
         // Create rows with cells
         val rows = (0 until rowCount).map {
             val cells = (0 until columnCount).map {
