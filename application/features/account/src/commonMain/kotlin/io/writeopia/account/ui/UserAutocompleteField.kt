@@ -1,14 +1,17 @@
-package io.writeopia.commonui.autocomplete
+package io.writeopia.account.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.requiredWidthIn
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -23,25 +26,24 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
+import io.writeopia.app.dto.SearchUserApi
+import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.models.utils.ResultData
+import io.writeopia.theme.WriteopiaTheme
 
 private val MIN_DROPDOWN_WIDTH = 112.dp
 
 @Composable
-fun <T> AutocompleteField(
+internal fun UserAutocompleteField(
     value: String,
-    suggestions: ResultData<List<T>>,
+    suggestions: ResultData<List<SearchUserApi>>,
     onValueChange: (String) -> Unit,
-    onSuggestionSelect: (T) -> Unit,
-    suggestionContent: @Composable (T) -> Unit,
+    onSuggestionSelect: (SearchUserApi) -> Unit,
     modifier: Modifier = Modifier,
-    placeholder: @Composable (() -> Unit)? = null,
-    textStyle: TextStyle = MaterialTheme.typography.titleSmall
-        .copy(color = MaterialTheme.colorScheme.onBackground),
 ) {
     val items = (suggestions as? ResultData.Complete)?.data ?: emptyList()
     val isSearching = suggestions is ResultData.Loading || suggestions is ResultData.InProgress
@@ -56,7 +58,7 @@ fun <T> AutocompleteField(
         selectedIndex = -1
     }
 
-    fun select(item: T) {
+    fun select(item: SearchUserApi) {
         closePopup()
         onSuggestionSelect(item)
     }
@@ -105,7 +107,15 @@ fun <T> AutocompleteField(
                 },
             shape = MaterialTheme.shapes.large,
             singleLine = true,
-            placeholder = placeholder,
+            placeholder = {
+                BasicText(
+                    WrStrings.username(),
+                    style = MaterialTheme
+                        .typography
+                        .titleSmall
+                        .copy(color = WriteopiaTheme.colorScheme.textLighter)
+                )
+            },
             trailingIcon = {
                 if (isSearching) {
                     CircularProgressIndicator(
@@ -114,29 +124,28 @@ fun <T> AutocompleteField(
                     )
                 }
             },
-            textStyle = textStyle
+            textStyle = MaterialTheme.typography.titleSmall
+                .copy(color = MaterialTheme.colorScheme.onBackground)
         )
 
-        SuggestionsDropdown(
+        UserSuggestionsDropdown(
             expanded = isExpanded,
             suggestions = items,
             selectedIndex = selectedIndex,
             minWidth = fieldWidth,
             onSelect = ::select,
             onDismiss = ::closePopup,
-            itemContent = suggestionContent,
         )
     }
 }
 
 @Composable
-private fun <T> SuggestionsDropdown(
+private fun UserSuggestionsDropdown(
     expanded: Boolean,
-    suggestions: List<T>,
+    suggestions: List<SearchUserApi>,
     selectedIndex: Int,
-    onSelect: (T) -> Unit,
+    onSelect: (SearchUserApi) -> Unit,
     onDismiss: () -> Unit,
-    itemContent: @Composable (T) -> Unit,
     minWidth: Dp = MIN_DROPDOWN_WIDTH,
 ) {
     DropdownMenu(
@@ -146,10 +155,9 @@ private fun <T> SuggestionsDropdown(
             min = if (minWidth > 0.dp) minWidth else MIN_DROPDOWN_WIDTH,
             max = Dp.Unspecified
         ),
-        
         properties = PopupProperties(focusable = false)
     ) {
-        suggestions.forEachIndexed { index, item ->
+        suggestions.forEachIndexed { index, user ->
             DropdownMenuItem(
                 modifier = Modifier
                     .requiredWidthIn(min = MIN_DROPDOWN_WIDTH, max = Dp.Unspecified)
@@ -160,9 +168,30 @@ private fun <T> SuggestionsDropdown(
                             Color.Transparent
                         }
                     ),
-                text = { itemContent(item) },
-                onClick = { onSelect(item) }
+                text = { UserSuggestionItem(user) },
+                onClick = { onSelect(user) }
             )
         }
+    }
+}
+
+@Composable
+private fun UserSuggestionItem(user: SearchUserApi) {
+    Column {
+        Text(
+            text = user.name,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            softWrap = false
+        )
+        Text(
+            text = "@${user.username}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            softWrap = false
+        )
     }
 }
