@@ -75,6 +75,18 @@ class PromptServiceTest {
     }
 
     @Test
+    fun `a free command with nothing selected answers at the end of the document`() = runTest {
+        val manager = manager()
+        // The cursor is on the title, as it is when the command field took the focus.
+        manager.onFocusChange(0L, hasFocus = true)
+
+        val target = AiCommandService.answerTarget(manager)
+
+        assertEquals(AiTargetMode.DOCUMENT, target)
+        assertEquals(manager.positionAfter(1L), PromptService.answerPosition(target, manager))
+    }
+
+    @Test
     fun `an answer with nothing in it leaves no block behind`() = runTest {
         val manager = manager()
 

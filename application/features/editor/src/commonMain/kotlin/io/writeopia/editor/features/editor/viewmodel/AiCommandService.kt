@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.Flow
  * Runs a free command typed by the writer, about the document and the lines selected when it
  * was typed, if any. The cloud decides first (with Jev) whether the command asks for new
  * content or changes the text the writer has. New content streams in as an AI suggestion,
- * after the selection or after the cursor. A change replaces the selected lines, or rewrites
+ * after the selection or at the end of the document. A change replaces the selected lines, or rewrites
  * the document when nothing is selected; a skeleton stands in for the text meanwhile. A local
  * AI has no judge, so its answers are always added.
  */
@@ -46,7 +46,7 @@ object AiCommandService {
         }
 
         return when (intent) {
-            // New content: an AI suggestion after the selection, or after the cursor.
+            // New content: an AI suggestion after the selection, or at the end of the document.
             AiCommandIntent.ADD -> {
                 val position = PromptService.answerPosition(answerTarget(writeopiaManager), writeopiaManager)
                 stream(ai, request.copy(intent = AiCommandIntent.ADD))
@@ -135,9 +135,12 @@ object AiCommandService {
         }
     }
 
-    /** Where the answer goes: after the selected lines, or after the cursor. */
+    /**
+     * Where the answer goes: after the selected lines, or at the end of the document. The command
+     * is typed in its own field, so the cursor is not where the writer is looking.
+     */
     fun answerTarget(writeopiaManager: WriteopiaStateManager): AiTargetMode =
-        if (writeopiaManager.isOnSelection) AiTargetMode.SELECTED_LINES else AiTargetMode.CURSOR
+        if (writeopiaManager.isOnSelection) AiTargetMode.SELECTED_LINES else AiTargetMode.DOCUMENT
 
     private suspend fun replace(
         ai: ResolvedAi,

@@ -519,9 +519,10 @@ public final class NoteEditorViewModel {
 
     /// Runs a free `command` typed by the user, about the document and the lines selected
     /// right now, if any. The AI decides first (with Jev, on the backend) whether the command
-    /// asks for new content, which streams in as an answer like the quick actions, or changes
-    /// the text the user has: the selected lines, replaced, or the document, rewritten. A
-    /// skeleton stands in for the text meanwhile. An AI without a judge always adds.
+    /// asks for new content, which streams in as an answer after the selection or at the end
+    /// of the document, or changes the text the user has: the selected lines, replaced, or the
+    /// document, rewritten. A skeleton stands in for the text meanwhile. An AI without a judge
+    /// always adds.
     public func runAiCommand(_ command: String) {
         let text = command.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let aiClient, !isAiRunning, !text.isEmpty, writeopiaManager.isEditable else { return }
@@ -534,10 +535,9 @@ public final class NoteEditorViewModel {
             documentTitle: manager.title,
             documentText: String(manager.documentText.prefix(Self.commandContextLimit))
         )
-        // New content goes after the selection, or after the cursor.
-        let answerPosition = selectedLines.isEmpty
-            ? (manager.currentTextStep?.position ?? manager.lastPosition)
-            : manager.selectedPositions.last
+        // New content goes after the selection, or at the end of the document: the command is
+        // typed in its own field, so the cursor is not where the user is looking.
+        let answerPosition = selectedLines.isEmpty ? manager.lastPosition : manager.selectedPositions.last
 
         isAiRunning = true
         aiTask = Task { [weak self] in
