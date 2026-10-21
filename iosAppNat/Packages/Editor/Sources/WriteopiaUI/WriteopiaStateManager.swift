@@ -86,7 +86,11 @@ public final class WriteopiaStateManager {
     public var title: String { writeopiaManager.title(currentStory) }
 
     /// The document content, ready to be stored.
-    public var documentContent: [StoryStep] { writeopiaManager.documentContent(currentStory) }
+    /// The steps that make the document content, to save and send. An AI answer still being
+    /// written is left out: nothing of it is saved nor sent until the stream ends, then once.
+    public var documentContent: [StoryStep] {
+        writeopiaManager.documentContent(currentStory).filter { $0.id != streamingAnswerId }
+    }
 
     // MARK: - Document
 
@@ -595,9 +599,12 @@ public final class WriteopiaStateManager {
     /// The AI answer still being written; it can't be accepted yet.
     public private(set) var streamingAnswerId: String?
 
-    /// The answer with `stepId` is complete (or failed).
+    /// The answer with `stepId` is complete (or failed): it becomes part of the content, so
+    /// the final text is saved and sent now, once.
     public func aiAnswerFinished(stepId: String) {
-        if streamingAnswerId == stepId { streamingAnswerId = nil }
+        guard streamingAnswerId == stepId else { return }
+        streamingAnswerId = nil
+        changeCount += 1
     }
 
     /// Shows `text` as an AI answer in the step with `stepId` (the loading step at first).

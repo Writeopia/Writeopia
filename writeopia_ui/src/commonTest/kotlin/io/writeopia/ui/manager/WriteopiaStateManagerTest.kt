@@ -1569,6 +1569,38 @@ class WriteopiaStateManagerTest {
     }
 
     @Test
+    fun acceptStoryStepOfAnAnswerNeverSavedDeletesNothing() = runTest {
+        val now = Clock.System.now()
+
+        val storyManager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        )
+        // An answer still coming is ephemeral: not in the database, nothing to tombstone.
+        val answer = StoryStep(type = StoryTypes.AI_ANSWER.type, text = "Partial answer", ephemeral = true)
+        storyManager.loadDocument(
+            Document(
+                content = mapOf(0.0 to answer),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+            )
+        )
+
+        storyManager.acceptStoryStep(0.0)
+        advanceUntilIdle()
+
+        val state = storyManager.currentStory.value
+        val line = state.stories[0.0]!!
+        assertEquals("Partial answer", line.text)
+        assertFalse(line.ephemeral, "The accepted line should be saved")
+        assertEquals(LastEdit.BulkEdition(listOf(0.0 to line)), state.lastEdit)
+    }
+
+    @Test
     fun acceptStoryStepOfOneLineDeletesTheAnswerToo() = runTest {
         val now = Clock.System.now()
 

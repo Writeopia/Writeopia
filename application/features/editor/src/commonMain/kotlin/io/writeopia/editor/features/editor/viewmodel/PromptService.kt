@@ -6,6 +6,7 @@ import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.ui.manager.WriteopiaStateManager
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
@@ -102,13 +103,20 @@ object PromptService {
         writeopiaManager: WriteopiaStateManager,
         position: Double
     ) {
-        // One step for the whole answer, rewritten at each chunk. A new step per chunk would be
-        // saved and synced one by one, and the ones before the last would outlive the answer.
+        // One step for the whole answer, rewritten at each chunk and ephemeral while the answer
+        // comes: nothing is saved nor synced until the stream ends, then the final text once.
         val answerId = GenerateId.generate()
+        var text = ""
 
         this.onStart {
             writeopiaManager.loadingAtPosition(position)
-        }.onCompletion {
+        }.onCompletion { cause ->
+            // Leaving the document cancels the stream: the answer is dropped, never saved.
+            if (cause is CancellationException) return@onCompletion
+            writeopiaManager.changeStoryState(
+                Action.StoryStateChange(storyStep = answerStep(answerId, text, ephemeral = false), position = position),
+                trackIt = false
+            )
             writeopiaManager.trackState()
         }.map { result ->
             when (result) {
@@ -119,17 +127,14 @@ object PromptService {
                 is ResultData.InProgress -> ""
             }
         }.collect { resultText ->
+            text = resultText
             writeopiaManager.changeStoryState(
-                Action.StoryStateChange(
-                    storyStep = StoryStep(
-                        id = answerId,
-                        type = StoryTypes.AI_ANSWER.type,
-                        text = resultText
-                    ),
-                    position = position,
-                ),
+                Action.StoryStateChange(storyStep = answerStep(answerId, text, ephemeral = true), position = position),
                 trackIt = false
             )
         }
     }
+
+    private fun answerStep(id: String, text: String, ephemeral: Boolean): StoryStep =
+        StoryStep(id = id, type = StoryTypes.AI_ANSWER.type, text = text, ephemeral = ephemeral)
 }

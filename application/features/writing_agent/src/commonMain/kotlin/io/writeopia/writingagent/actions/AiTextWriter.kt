@@ -10,6 +10,7 @@ import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.TagInfo
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.ui.manager.WriteopiaStateManager
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
@@ -32,13 +33,20 @@ object AiTextWriter {
         tags: Set<TagInfo> = emptySet(),
         prefix: String = "",
     ) {
-        // One step for the whole answer, rewritten at each chunk. A new step per chunk would be
-        // saved and synced one by one, and the ones before the last would outlive the answer.
+        // One step for the whole answer, rewritten at each chunk and ephemeral while the answer
+        // comes: nothing is saved nor synced until the stream ends, then the final text once.
         val answerId = GenerateId.generate()
+        var text = ""
+
+        fun step(ephemeral: Boolean) =
+            StoryStep(id = answerId, type = type, text = prefix + text.trim(), tags = tags, ephemeral = ephemeral)
 
         answers.onStart {
             manager.loadingAtPosition(position)
-        }.onCompletion {
+        }.onCompletion { cause ->
+            // Leaving the document cancels the stream: the answer is dropped, never saved.
+            if (cause is CancellationException) return@onCompletion
+            manager.changeStoryState(Action.StoryStateChange(step(ephemeral = false), position), trackIt = false)
             manager.trackState()
         }.map { result ->
             when (result) {
@@ -48,14 +56,9 @@ object AiTextWriter {
                 is ResultData.Idle,
                 is ResultData.InProgress -> ""
             }
-        }.collect { text ->
-            manager.changeStoryState(
-                Action.StoryStateChange(
-                    storyStep = StoryStep(id = answerId, type = type, text = prefix + text.trim(), tags = tags),
-                    position = position,
-                ),
-                trackIt = false
-            )
+        }.collect { chunk ->
+            text = chunk
+            manager.changeStoryState(Action.StoryStateChange(step(ephemeral = true), position), trackIt = false)
         }
     }
 

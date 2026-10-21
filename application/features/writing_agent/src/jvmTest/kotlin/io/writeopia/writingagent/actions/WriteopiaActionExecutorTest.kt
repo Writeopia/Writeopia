@@ -241,12 +241,12 @@ class WriteopiaActionExecutorTest {
     @Test
     fun `a streamed answer is one step, rewritten at each chunk`() = runTest {
         val manager = manager()
-        val answerIds = mutableSetOf<String>()
+        val edits = mutableListOf<StoryStep>()
         val watching = launch(UnconfinedTestDispatcher(testScheduler)) {
             manager.currentStory.collect { state ->
                 (state.lastEdit as? LastEdit.LineEdition)?.storyStep
                     ?.takeIf { step -> step.type == StoryTypes.AI_ANSWER.type }
-                    ?.let { step -> answerIds.add(step.id) }
+                    ?.let(edits::add)
             }
         }
         val executor = WriteopiaActionExecutor(manager, resolveAi = { ai("Short version.") })
@@ -254,11 +254,14 @@ class WriteopiaActionExecutorTest {
         executor.execute(WritingSuggestionAction.CONCLUSION, "title", WritingAgentUi.None)
         watching.cancel()
 
-        // The fake AI streams two chunks: both went to the same step, so only one is ever saved.
+        // The fake AI streams two chunks: both went to the same step, so only one is ever saved,
+        // and only once the stream ended: the chunks are ephemeral, the final text is not.
         val answer = manager.currentStory.value.stories.values.last()
         assertEquals(StoryTypes.AI_ANSWER.type, answer.type)
         assertEquals("Short version.", answer.text)
-        assertEquals(setOf(answer.id), answerIds)
+        assertEquals(setOf(answer.id), edits.map { step -> step.id }.toSet())
+        assertEquals(listOf(true, true, false), edits.map { step -> step.ephemeral })
+        assertTrue(!answer.ephemeral)
     }
 
     @Test

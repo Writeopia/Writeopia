@@ -69,6 +69,20 @@ import WrModels
         #expect(manager.streamingAnswerId == nil)
     }
 
+    @Test func answerIsNotPartOfTheContentUntilItsStreamEnds() async {
+        let viewModel = await viewModel(FakeAi())
+        let manager = viewModel.writeopiaManager
+
+        let answerId = manager.loadingAtPosition(manager.lastPosition)
+        manager.showAiAnswer("Bring clothes", stepId: answerId)
+        #expect(!manager.documentContent.contains { $0.id == answerId })
+
+        let changesBefore = manager.changeCount
+        manager.aiAnswerFinished(stepId: answerId)
+        #expect(manager.documentContent.contains { $0.id == answerId && $0.text == "Bring clothes" })
+        #expect(manager.changeCount == changesBefore + 1)
+    }
+
     // MARK: - Generate section
 
     @Test func sectionIsWrittenBelowTheHeadingWithTheDesktopPrompt() async {

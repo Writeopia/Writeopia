@@ -30,6 +30,9 @@ class DocumentLoadUseCase(
      *
      * @param documentId The ID of the document to fetch
      * @param workspaceId The workspace ID
+     * A step deleted on this device never comes back this way: the steps with a tombstone here
+     * (deleted, and the backend not told yet) are left out of the backend's copy.
+     *
      * @param onMergeComplete Callback with the merged document if backend had changes
      */
     suspend fun fetchAndMergeFromBackend(
@@ -41,8 +44,9 @@ class DocumentLoadUseCase(
         val localDocument = documentRepository.loadDocumentById(documentId, workspaceId)
 
         // Step 2: Fetch from backend
-        val backendDocument = fetchFromBackend(documentId, workspaceId) ?: return
-        if (backendDocument.id != documentId || backendDocument.workspaceId != workspaceId) return
+        val fetched = fetchFromBackend(documentId, workspaceId) ?: return
+        if (fetched.id != documentId || fetched.workspaceId != workspaceId) return
+        val backendDocument = fetched.withoutStepsDeletedHere(workspaceId)
 
         // Step 3: Merge documents
         val mergedDocument = documentMerger.merge(localDocument, backendDocument) ?: return
@@ -60,6 +64,16 @@ class DocumentLoadUseCase(
             // Step 6: Notify that merge is complete so the UI can reload
             onMergeComplete(mergedDocument)
         }
+    }
+
+    /** The document without the steps that have a tombstone here: deleted, and the backend not told yet. */
+    private suspend fun Document.withoutStepsDeletedHere(workspaceId: String): Document {
+        val tombstoned = documentRepository.loadStoryStepTombstones(workspaceId)
+            .map { tombstone -> tombstone.stepId }
+            .toSet()
+        if (tombstoned.isEmpty()) return this
+
+        return copy(content = content.filterNot { (_, step) -> step.id in tombstoned })
     }
 
     private suspend fun fetchFromBackend(documentId: String, workspaceId: String): Document? =

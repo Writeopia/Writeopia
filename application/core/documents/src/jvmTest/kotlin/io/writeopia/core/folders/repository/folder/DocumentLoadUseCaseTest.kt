@@ -11,6 +11,7 @@ import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.sdk.models.story.StoryStep
+import io.writeopia.sdk.models.story.StoryStepTombstone
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.repository.DocumentRepository
@@ -125,6 +126,43 @@ class DocumentLoadUseCaseTest {
 
         assertEquals(setOf("tag-1"), assertNotNull(reloaded).tagIds)
         coVerify(exactly = 1) { documentRepository.saveDocument(match { saved -> saved.tagIds == setOf("tag-1") }) }
+    }
+
+    @Test
+    fun `a step deleted here is not brought back from the backend`() = runBlocking {
+        val documentRepository = mockk<DocumentRepository>(relaxed = true)
+        val documentsApi = mockk<DocumentsApi>()
+        val authRepository = mockk<AuthRepository>(relaxed = true)
+        // The comment span keeps the conversation of document() alive through the merge.
+        val kept = StoryStep(
+            id = "step-1",
+            type = StoryTypes.TEXT.type,
+            text = "Kept",
+            spans = setOf(SpanInfo.create(0, 4, Span.COMMENT, "conversation-1")),
+            lastUpdatedAt = 1,
+        )
+        val deletedHere = StoryStep(id = "step-2", type = StoryTypes.AI_ANSWER.type, text = "Gone", lastUpdatedAt = 5)
+        val local = document(lastUpdatedAt = 1, content = mapOf(0.0 to kept), commentText = "Same")
+        val backend = document(lastUpdatedAt = 1, content = mapOf(0.0 to kept, 1.0 to deletedHere), commentText = "Same")
+
+        coEvery { documentRepository.loadDocumentById(local.id, local.workspaceId) } returns local
+        coEvery { documentRepository.loadStoryStepTombstones(local.workspaceId) } returns listOf(
+            StoryStepTombstone(stepId = "step-2", documentId = local.id, workspaceId = local.workspaceId, deletedAt = 6)
+        )
+        coEvery { documentsApi.getDocumentById(local.id, local.workspaceId) } returns ResultData.Complete(backend)
+
+        val useCase = DocumentLoadUseCase(
+            documentRepository = documentRepository,
+            documentsApi = documentsApi,
+            documentMerger = DocumentMerger(),
+            authRepository = authRepository,
+        )
+
+        useCase.fetchAndMergeFromBackend(local.id, local.workspaceId) {
+            error("The backend copy only differs by the step deleted here: nothing to reload")
+        }
+
+        coVerify(exactly = 0) { documentRepository.saveDocument(any()) }
     }
 
     private fun document(

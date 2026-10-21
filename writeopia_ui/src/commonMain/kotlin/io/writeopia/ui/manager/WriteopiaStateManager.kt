@@ -2075,6 +2075,7 @@ class WriteopiaStateManager(
                 id = GenerateId.generate(),
                 localId = GenerateId.generate(),
                 type = StoryTypes.TEXT.type,
+                ephemeral = false,
             )
             // Not saved on its own: the edit below carries it, with the deletion of the answer.
             _currentStory.value = current.copy(
@@ -2097,7 +2098,12 @@ class WriteopiaStateManager(
                 .mapNotNull { linePosition -> stories[linePosition]?.let { step -> linePosition to step } }
 
             _currentStory.value = _currentStory.value.copy(
-                lastEdit = LastEdit.BulkDeleteEdition(listOf(answer.id), lines)
+                // An answer still ephemeral (its stream never ended) was never saved: nothing to delete.
+                lastEdit = if (answer.ephemeral) {
+                    LastEdit.BulkEdition(lines)
+                } else {
+                    LastEdit.BulkDeleteEdition(listOf(answer.id), lines)
+                }
             )
         }
     }

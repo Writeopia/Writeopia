@@ -14,6 +14,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
@@ -45,12 +46,12 @@ class PromptServiceTest {
     @Test
     fun `a streamed answer is one step, rewritten at each chunk`() = runTest {
         val manager = manager()
-        val answerIds = mutableSetOf<String>()
+        val edits = mutableListOf<StoryStep>()
         val watching = launch(UnconfinedTestDispatcher(testScheduler)) {
             manager.currentStory.collect { state ->
                 (state.lastEdit as? LastEdit.LineEdition)?.storyStep
                     ?.takeIf { step -> step.type == StoryTypes.AI_ANSWER.type }
-                    ?.let { step -> answerIds.add(step.id) }
+                    ?.let(edits::add)
             }
         }
 
@@ -66,6 +67,10 @@ class PromptServiceTest {
         val answer = manager.currentStory.value.stories[2.0]!!
         assertEquals(StoryTypes.AI_ANSWER.type, answer.type)
         assertEquals("Short version.", answer.text)
-        assertEquals(setOf(answer.id), answerIds)
+        assertEquals(setOf(answer.id), edits.map { step -> step.id }.toSet())
+        // Nothing is saved while the answer comes: the chunks are ephemeral, the final text is not.
+        assertEquals(listOf("Sho", "Short version.", "Short version."), edits.map { step -> step.text })
+        assertEquals(listOf(true, true, false), edits.map { step -> step.ephemeral })
+        assertFalse(answer.ephemeral)
     }
 }
