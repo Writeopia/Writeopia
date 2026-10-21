@@ -3,6 +3,7 @@ package io.writeopia.writingagent.actions
 import io.writeopia.ai.AiCommand
 import io.writeopia.ai.AiStreaming
 import io.writeopia.sdk.model.action.Action
+import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryType
 import io.writeopia.sdk.models.story.StoryTypes
@@ -31,6 +32,10 @@ object AiTextWriter {
         tags: Set<TagInfo> = emptySet(),
         prefix: String = "",
     ) {
+        // One step for the whole answer, rewritten at each chunk. A new step per chunk would be
+        // saved and synced one by one, and the ones before the last would outlive the answer.
+        val answerId = GenerateId.generate()
+
         answers.onStart {
             manager.loadingAtPosition(position)
         }.onCompletion {
@@ -46,7 +51,7 @@ object AiTextWriter {
         }.collect { text ->
             manager.changeStoryState(
                 Action.StoryStateChange(
-                    storyStep = StoryStep(type = type, text = prefix + text.trim(), tags = tags),
+                    storyStep = StoryStep(id = answerId, type = type, text = prefix + text.trim(), tags = tags),
                     position = position,
                 ),
                 trackIt = false

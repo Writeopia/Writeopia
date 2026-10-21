@@ -5,6 +5,7 @@ import io.writeopia.ai.AiImageGenerator
 import io.writeopia.ai.AiStreaming
 import io.writeopia.app.dto.writingagent.WritingSuggestionAction
 import io.writeopia.sdk.manager.WriteopiaManager
+import io.writeopia.sdk.model.story.LastEdit
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
@@ -14,6 +15,7 @@ import io.writeopia.ui.manager.WriteopiaStateManager
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -234,6 +236,29 @@ class WriteopiaActionExecutorTest {
         assertEquals(StoryTypes.TEXT.type, tldr.type)
         assertTrue(tldr.tags.any { it.tag == Tag.CARD_BLOCK })
         assertEquals(StoryTypes.AI_ANSWER, manager.typesInOrder().last())
+    }
+
+    @Test
+    fun `a streamed answer is one step, rewritten at each chunk`() = runTest {
+        val manager = manager()
+        val answerIds = mutableSetOf<String>()
+        val watching = launch(UnconfinedTestDispatcher(testScheduler)) {
+            manager.currentStory.collect { state ->
+                (state.lastEdit as? LastEdit.LineEdition)?.storyStep
+                    ?.takeIf { step -> step.type == StoryTypes.AI_ANSWER.type }
+                    ?.let { step -> answerIds.add(step.id) }
+            }
+        }
+        val executor = WriteopiaActionExecutor(manager, resolveAi = { ai("Short version.") })
+
+        executor.execute(WritingSuggestionAction.CONCLUSION, "title", WritingAgentUi.None)
+        watching.cancel()
+
+        // The fake AI streams two chunks: both went to the same step, so only one is ever saved.
+        val answer = manager.currentStory.value.stories.values.last()
+        assertEquals(StoryTypes.AI_ANSWER.type, answer.type)
+        assertEquals("Short version.", answer.text)
+        assertEquals(setOf(answer.id), answerIds)
     }
 
     @Test

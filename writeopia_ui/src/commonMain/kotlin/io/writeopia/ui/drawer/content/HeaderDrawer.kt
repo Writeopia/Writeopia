@@ -52,6 +52,8 @@ import io.writeopia.ui.manager.WriteopiaStateManager
 import io.writeopia.ui.model.DrawConfig
 import io.writeopia.ui.model.DrawInfo
 import io.writeopia.ui.model.EmptyErase
+import io.writeopia.ui.utils.OutlinedTitle
+import io.writeopia.ui.utils.Spans
 import io.writeopia.ui.utils.transparentTextInputColors
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -70,6 +72,15 @@ class HeaderDrawer(
     private val showsEditButton: Boolean = true,
     private val headerClick: () -> Unit = {},
     private val textDrawer: () -> SimpleTextDrawer,
+    /** The theme, which picks the outline of the title: dark on a dark theme, light on a light one. */
+    private val isDarkTheme: Boolean = false,
+    /** The style of the title, which the outline behind it copies so both line up. */
+    private val titleStyle: @Composable () -> TextStyle = {
+        MaterialTheme.typography.displaySmall.copy(
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+    },
 //    private val multipleSelection: (Int) -> Unit,
     private val placeHolderStyle: @Composable () -> TextStyle = {
         MaterialTheme.typography.displaySmall.copy(
@@ -110,7 +121,7 @@ class HeaderDrawer(
                             if (backgroundColor != null) {
                                 modifierLet
                                     .background(Color(backgroundColor))
-                                    .padding(top = 114.dp)
+                                    .padding(top = 131.dp)
                             } else {
                                 modifierLet.padding(top = 14.dp)
                             }
@@ -150,7 +161,24 @@ class HeaderDrawer(
                         decorationBox = @Composable { innerTextField ->
                             TextFieldDefaults.DecorationBox(
                                 value = step.text ?: "",
-                                innerTextField = innerTextField,
+                                innerTextField = {
+                                    // Over a color or a picture the title gets an outline, so
+                                    // it reads on any background.
+                                    if (backgroundColor != null || imageUrl != null) {
+                                        OutlinedTitle(
+                                            text = Spans.createStringWithSpans(
+                                                step.text,
+                                                step.spans,
+                                                isDarkTheme
+                                            ),
+                                            style = titleStyle(),
+                                            isDarkTheme = isDarkTheme,
+                                            content = innerTextField,
+                                        )
+                                    } else {
+                                        innerTextField()
+                                    }
+                                },
                                 enabled = true,
                                 singleLine = false,
                                 visualTransformation = VisualTransformation.None,
@@ -197,7 +225,7 @@ class HeaderDrawer(
 }
 
 /** The height of the picture of a header, a band above the title. */
-private val HEADER_IMAGE_HEIGHT = 200.dp
+private val HEADER_IMAGE_HEIGHT = 230.dp
 
 fun headerDrawer(
     manager: WriteopiaStateManager,
@@ -232,7 +260,9 @@ fun headerDrawer(
         headerClick = headerClick,
         forceEditorButtonAppear = forceEditorButtonAppear,
         showsEditButton = enabled,
-        placeHolderStyle = { drawConfig.titlePlaceHolderStyle(fontFamily) }
+        placeHolderStyle = { drawConfig.titlePlaceHolderStyle(fontFamily) },
+        isDarkTheme = isDarkTheme,
+        titleStyle = { drawConfig.titleStyle(fontFamily) },
     )
 
 @Preview

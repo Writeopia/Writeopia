@@ -1,6 +1,7 @@
 package io.writeopia.editor.features.editor.viewmodel
 
 import io.writeopia.sdk.model.action.Action
+import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.utils.ResultData
@@ -101,6 +102,10 @@ object PromptService {
         writeopiaManager: WriteopiaStateManager,
         position: Double
     ) {
+        // One step for the whole answer, rewritten at each chunk. A new step per chunk would be
+        // saved and synced one by one, and the ones before the last would outlive the answer.
+        val answerId = GenerateId.generate()
+
         this.onStart {
             writeopiaManager.loadingAtPosition(position)
         }.onCompletion {
@@ -117,6 +122,7 @@ object PromptService {
             writeopiaManager.changeStoryState(
                 Action.StoryStateChange(
                     storyStep = StoryStep(
+                        id = answerId,
                         type = StoryTypes.AI_ANSWER.type,
                         text = resultText
                     ),

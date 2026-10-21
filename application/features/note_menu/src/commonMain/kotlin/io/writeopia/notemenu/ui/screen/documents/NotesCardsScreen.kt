@@ -844,7 +844,8 @@ private fun previewDrawers(isDarkTheme: Boolean): Map<Int, StoryStepDrawer> {
         StoryTypes.TITLE.type.number to HeaderPreviewDrawer(
             style = MaterialTheme.typography.titleLarge.copy(
                 fontWeight = FontWeight.Bold,
-            )
+            ),
+            isDarkTheme = isDarkTheme,
         ),
         StoryTypes.CHECK_ITEM.type.number to CheckItemPreviewDrawer(),
         StoryTypes.TEXT.type.number to TextPreviewDrawer(isDarkTheme = isDarkTheme),

@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -26,6 +27,7 @@ import io.writeopia.ui.model.DrawInfo
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.ui.drawer.StoryStepDrawer
+import io.writeopia.ui.utils.OutlinedTitle
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /**
@@ -33,12 +35,17 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
  */
 class HeaderPreviewDrawer(
     private val modifier: Modifier = Modifier,
-    private val style: TextStyle? = null
+    private val style: TextStyle? = null,
+    /** The theme, which picks the outline of the title: dark on a dark theme, light on a light one. */
+    private val isDarkTheme: Boolean = false,
 ) : StoryStepDrawer {
 
     @Composable
     override fun Step(step: StoryStep, drawInfo: DrawInfo) {
         val textColor = MaterialTheme.colorScheme.onBackground
+        // The picture of the header takes the place of its color.
+        val imageUrl = step.url?.takeIf { it.isNotBlank() }
+        val backgroundColor = step.decoration.backgroundColor.takeIf { imageUrl == null }
 
         Box(
             modifier = modifier
@@ -46,7 +53,6 @@ class HeaderPreviewDrawer(
                 .fillMaxWidth()
                 .defaultMinSize(minHeight = if (hasContent(step, drawInfo) || !step.url.isNullOrBlank()) 70.dp else 20.dp)
                 .let { modifierLet ->
-                    val backgroundColor = step.decoration.backgroundColor.takeIf { step.url.isNullOrBlank() }
                     if (backgroundColor != null) {
                         modifierLet.background(Color(backgroundColor))
                     } else {
@@ -55,7 +61,6 @@ class HeaderPreviewDrawer(
                 }
         ) {
             // The picture of the header fills the band, like its color does.
-            val imageUrl = step.url?.takeIf { it.isNotBlank() }
             if (imageUrl != null) {
                 AsyncImage(
                     model = imageUrl,
@@ -98,14 +103,36 @@ class HeaderPreviewDrawer(
                         Spacer(modifier = Modifier.width(12.dp))
                     }
 
-                    Text(
-                        text = step.text ?: "",
-                        style = style ?: MaterialTheme.typography.titleLarge,
-                        color = textColor,
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(end = 12.dp)
-                    )
+                    val titleStyle = (style ?: MaterialTheme.typography.titleLarge).copy(color = textColor)
+                    val title = AnnotatedString(step.text ?: "")
+
+                    // Over a color or a picture the title gets an outline, so it reads on any
+                    // background.
+                    if (backgroundColor != null || imageUrl != null) {
+                        OutlinedTitle(
+                            text = title,
+                            style = titleStyle,
+                            isDarkTheme = isDarkTheme,
+                            maxLines = 3,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(end = 12.dp),
+                        ) {
+                            Text(
+                                text = title,
+                                style = titleStyle,
+                                maxLines = 3,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    } else {
+                        Text(
+                            text = title,
+                            style = titleStyle,
+                            maxLines = 3,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(end = 12.dp)
+                        )
+                    }
                 }
             }
         }

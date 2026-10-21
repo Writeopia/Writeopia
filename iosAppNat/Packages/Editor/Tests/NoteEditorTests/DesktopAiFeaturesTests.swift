@@ -53,6 +53,9 @@ import WrModels
         #expect(steps[5].type == .unorderedListItem)
         #expect(steps[6].type == .checkItem && steps[6].checked == false)
         #expect(!steps.contains { $0.type.number == StoryType.aiAnswer.number })
+        // The answer is deleted (its id is gone, so the save leaves a tombstone and no sync
+        // brings it back) and its lines are new steps.
+        #expect(!steps.contains { $0.id == answer.id })
         #expect(manager.documentContent.count == 7)
     }
 

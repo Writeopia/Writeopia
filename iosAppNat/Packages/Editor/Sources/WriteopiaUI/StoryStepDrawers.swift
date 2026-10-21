@@ -197,7 +197,7 @@ struct TitleDrawer: View {
         #endif
     }()
 
-    /// Space above the title inside a colored header. The Compose app uses 114; the Mac window
+    /// Space above the title inside a colored header. The Compose app uses 131; the Mac window
     /// is taller, so the band gets a little more room there.
     private static let coloredHeaderTopPadding: CGFloat = {
         #if os(macOS)

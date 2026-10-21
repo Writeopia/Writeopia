@@ -384,6 +384,16 @@ class OnUpdateDocumentTracker(
                         )
                     }
 
+                    // What the deletion changed: the neighbours, or the steps that took the
+                    // place of the deleted ones (an accepted AI answer, say).
+                    val updatedSteps = lastEdit.updatedSteps.filter { (_, step) -> !step.ephemeral }
+                    if (updatedSteps.isNotEmpty()) {
+                        documentUpdate.saveStorySteps(
+                            steps = updatedSteps.stamped(),
+                            documentId = documentInfo.id
+                        )
+                    }
+
                     val stories = storyState.stories
                     val titleFromContent = stories.values
                         .firstOrNull { storyStep ->
