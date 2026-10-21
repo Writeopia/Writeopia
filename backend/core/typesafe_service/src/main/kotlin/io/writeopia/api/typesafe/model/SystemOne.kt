@@ -35,6 +35,17 @@ data class SystemOneQuestion(
                 }
             )
 
+        /**
+         * One of [options]. The answer is the option with the highest probability, with the
+         * probability of each. Each option maps its name to what it means.
+         */
+        fun choice(instructions: String, options: Map<String, String>): SystemOneQuestion =
+            SystemOneQuestion(
+                type = CHOICE,
+                instructions = JsonPrimitive(instructions),
+                criteria = JsonObject(options.mapValues { (_, meaning) -> JsonPrimitive(meaning) })
+            )
+
         const val NOUL = "noul"
         const val CHOICE = "choice"
         const val SCORE = "score"

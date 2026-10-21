@@ -503,13 +503,134 @@ public final class NoteEditorViewModel {
 
     public var isAiAvailable: Bool { aiClient != nil }
 
-    /// Commands offered for each target, like the AI dialog of the Compose editor: the cursor
-    /// only supports a free prompt.
+    /// The quick actions offered for each target, like the AI dialog of the Compose editor.
+    /// They all work on existing text, so there is none for the cursor: the command tab is the
+    /// way there.
     public static func commands(for mode: AiTargetMode) -> [AiCommand] {
         switch mode {
-        case .document, .selectedLines: AiCommand.allCases
-        case .cursor: [.prompt]
+        case .document, .selectedLines: AiCommand.quickActions
+        case .cursor: []
         }
+    }
+
+    /// Characters of the document sent with a free command. The backend cuts it further for
+    /// the judge; a rewrite sends `DocumentRewrite.markdownLimit` at most.
+    static let commandContextLimit = 24_000
+
+    /// Runs a free `command` typed by the user, about the document and the lines selected
+    /// right now, if any. The AI decides first (with Jev, on the backend) whether the command
+    /// asks for new content, which streams in as an answer like the quick actions, or changes
+    /// the text the user has: the selected lines, replaced, or the document, rewritten. A
+    /// skeleton stands in for the text meanwhile. An AI without a judge always adds.
+    public func runAiCommand(_ command: String) {
+        let text = command.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let aiClient, !isAiRunning, !text.isEmpty, writeopiaManager.isEditable else { return }
+
+        let manager = writeopiaManager
+        let selectedLines = manager.selectedLines
+        let request = AiCommandRequest(
+            command: text,
+            selectedText: manager.selectedLinesText,
+            documentTitle: manager.title,
+            documentText: String(manager.documentText.prefix(Self.commandContextLimit))
+        )
+        // New content goes after the selection, or after the cursor.
+        let answerPosition = selectedLines.isEmpty
+            ? (manager.currentTextStep?.position ?? manager.lastPosition)
+            : manager.selectedPositions.last
+
+        isAiRunning = true
+        aiTask = Task { [weak self] in
+            // Adding never loses text, so it is what happens when the judge is unavailable.
+            let intent = ((try? await aiClient.commandIntent(request)) ?? nil) ?? .add
+            guard let self, !Task.isCancelled else {
+                self?.isAiRunning = false
+                return
+            }
+
+            switch intent {
+            case .add:
+                var addRequest = request
+                addRequest.intent = .add
+                let answerId = writeopiaManager.loadingAtPosition(answerPosition)
+                await writeAnswer(aiClient.streamCommand(addRequest), answerId: answerId)
+            case .replace where !selectedLines.isEmpty:
+                await replaceSelectedLines(selectedLines, request: request, ai: aiClient)
+            case .replace, .rewrite:
+                await rewriteDocument(request, ai: aiClient)
+            }
+            isAiRunning = false
+        }
+    }
+
+    /// Replaces `lines` by the answer of the AI about them. A skeleton stands in for them
+    /// meanwhile; they come back as they were if the AI fails.
+    private func replaceSelectedLines(_ lines: [StoryStep], request: AiCommandRequest, ai: AiStreaming) async {
+        let manager = writeopiaManager
+        let skeleton = StoryStep(type: .skeleton, text: request.selectedText, position: 0)
+        guard manager.beginAiRewrite(of: Set(lines.map(\.id)), with: [skeleton]) else { return }
+
+        var replaceRequest = request
+        replaceRequest.intent = .replace
+        let (answer, error) = await collect(ai.streamCommand(replaceRequest))
+        let steps = MarkdownSteps.parse(answer)
+
+        if error != nil || steps.isEmpty {
+            manager.updateAiRewrite(of: [skeleton.id], with: lines)
+        } else {
+            manager.updateAiRewrite(of: [skeleton.id], with: steps)
+        }
+    }
+
+    /// Rewrites the document (or the part of it around the cursor that fits) with the answer
+    /// of the AI, which gets it as Markdown and returns it whole. The lines take their new
+    /// shape as the answer arrives; blocks the AI cannot write stay as they are.
+    private func rewriteDocument(_ request: AiCommandRequest, ai: AiStreaming) async {
+        let manager = writeopiaManager
+        guard let rewrite = DocumentRewrite.build(manager.documentContent, cursorStepId: manager.currentTextStep?.step.id) else { return }
+
+        var rewriteRequest = request
+        rewriteRequest.intent = .rewrite
+        rewriteRequest.selectedText = ""
+        rewriteRequest.documentText = rewrite.markdown
+
+        let skeleton = StoryStep(type: .skeleton, text: rewrite.originalText, position: 0)
+        let first = [skeleton] + rewrite.keptBlocksInOrder
+        guard manager.beginAiRewrite(of: Set(rewrite.stepIds), with: first) else { return }
+        var regionIds = Set(first.map(\.id))
+
+        var answer = ""
+        var failure: Error?
+        do {
+            for try await partial in ai.streamCommand(rewriteRequest) {
+                answer = partial
+                let parsed = rewrite.parse(answer)
+                let next = parsed.steps + [skeleton] + parsed.pendingBlocks
+                manager.updateAiRewrite(of: regionIds, with: next)
+                regionIds = Set(next.map(\.id))
+            }
+        } catch {
+            failure = error
+        }
+
+        let parsed = rewrite.parse(answer)
+        if failure != nil || parsed.steps.isEmpty {
+            // The document comes back as it was, so nothing is lost when the AI fails.
+            manager.updateAiRewrite(of: regionIds, with: rewrite.originalSteps)
+        } else {
+            manager.updateAiRewrite(of: regionIds, with: parsed.steps + parsed.pendingBlocks)
+        }
+    }
+
+    /// The whole answer of `stream`, and the error that ended it, if any.
+    private func collect(_ stream: AsyncThrowingStream<String, Error>) async -> (String, Error?) {
+        var answer = ""
+        do {
+            for try await partial in stream { answer = partial }
+        } catch {
+            return (answer, error)
+        }
+        return (answer, nil)
     }
 
     /// Sends the text of `mode` to the AI and streams the answer into the document, below the
@@ -607,27 +728,32 @@ public final class NoteEditorViewModel {
 
         let answerId = writeopiaManager.loadingAtPosition(position)
         isAiRunning = true
-
         aiTask = Task { [weak self] in
-            var receivedAnswer = false
-            do {
-                for try await answer in aiClient.stream(command, prompt: prompt) {
-                    receivedAnswer = true
-                    self?.writeopiaManager.showAiAnswer(answer, stepId: answerId)
-                }
-                if !receivedAnswer {
-                    self?.writeopiaManager.removeStep(stepId: answerId)
-                }
-            } catch is CancellationError {
-                if !receivedAnswer { self?.writeopiaManager.removeStep(stepId: answerId) }
-            } catch let error as AiStreamError {
-                self?.writeopiaManager.showAiAnswer(String(localized: "Error. Message: \(error.message)"), stepId: answerId)
-            } catch {
-                self?.writeopiaManager.showAiAnswer(String(localized: "Error. Message: \(error.userMessage)"), stepId: answerId)
-            }
-            self?.writeopiaManager.aiAnswerFinished(stepId: answerId)
+            await self?.writeAnswer(aiClient.stream(command, prompt: prompt), answerId: answerId)
             self?.isAiRunning = false
         }
+    }
+
+    /// Writes the answer of `stream` into the loading step `answerId`, as it comes, which
+    /// becomes the AI answer with the first part of it.
+    private func writeAnswer(_ stream: AsyncThrowingStream<String, Error>, answerId: String) async {
+        var receivedAnswer = false
+        do {
+            for try await answer in stream {
+                receivedAnswer = true
+                writeopiaManager.showAiAnswer(answer, stepId: answerId)
+            }
+            if !receivedAnswer {
+                writeopiaManager.removeStep(stepId: answerId)
+            }
+        } catch is CancellationError {
+            if !receivedAnswer { writeopiaManager.removeStep(stepId: answerId) }
+        } catch let error as AiStreamError {
+            writeopiaManager.showAiAnswer(String(localized: "Error. Message: \(error.message)"), stepId: answerId)
+        } catch {
+            writeopiaManager.showAiAnswer(String(localized: "Error. Message: \(error.userMessage)"), stepId: answerId)
+        }
+        writeopiaManager.aiAnswerFinished(stepId: answerId)
     }
 
     public func cancelAi() {

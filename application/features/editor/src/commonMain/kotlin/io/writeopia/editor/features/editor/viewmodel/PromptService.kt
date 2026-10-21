@@ -1,10 +1,12 @@
 package io.writeopia.editor.features.editor.viewmodel
 
 import io.writeopia.sdk.model.action.Action
+import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.ui.manager.WriteopiaStateManager
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
@@ -64,38 +66,62 @@ object PromptService {
         targetMode: AiTargetMode,
         writeopiaManager: WriteopiaStateManager
     ): Pair<String?, Double> {
-        val lastPos = writeopiaManager.lastPosition()
-        return when (targetMode) {
-            AiTargetMode.DOCUMENT -> {
-                val docText = writeopiaManager.getDocumentText()
-                val pos = writeopiaManager.getStory(lastPos)?.nextPosition ?: (lastPos + 1)
-                docText to pos
-            }
-            AiTargetMode.SELECTED_LINES -> {
-                val selText = writeopiaManager.getCurrentSelectionText()
-                val pos = writeopiaManager.positionAfterSelection()
-                    ?: writeopiaManager.getNextPosition()
-                    ?: writeopiaManager.getStory(lastPos)?.nextPosition
-                    ?: (lastPos + 1)
-                selText to pos
-            }
-            AiTargetMode.CURSOR -> {
-                val cursorText = writeopiaManager.getCurrentText()
-                val pos = writeopiaManager.getNextPosition()
-                    ?: writeopiaManager.getStory(lastPos)?.nextPosition
-                    ?: (lastPos + 1)
-                cursorText to pos
-            }
+        val text = when (targetMode) {
+            AiTargetMode.DOCUMENT -> writeopiaManager.getDocumentText()
+            AiTargetMode.SELECTED_LINES -> writeopiaManager.getCurrentSelectionText()
+            AiTargetMode.CURSOR -> writeopiaManager.getCurrentText()
         }
+
+        return text to answerPosition(targetMode, writeopiaManager)
+    }
+
+    /** Where an answer about the text [targetMode] points to goes: right after that text. */
+    internal fun answerPosition(targetMode: AiTargetMode, writeopiaManager: WriteopiaStateManager): Double {
+        val lastPos = writeopiaManager.lastPosition()
+        val afterDocument = writeopiaManager.getStory(lastPos)?.nextPosition ?: (lastPos + 1)
+
+        return when (targetMode) {
+            AiTargetMode.DOCUMENT -> afterDocument
+            AiTargetMode.SELECTED_LINES ->
+                writeopiaManager.positionAfterSelection()
+                    ?: writeopiaManager.getNextPosition()
+                    ?: afterDocument
+            AiTargetMode.CURSOR -> writeopiaManager.getNextPosition() ?: afterDocument
+        }
+    }
+
+    /** Streams [answer] into the document at [position]: a spinner first, then the text as it comes. */
+    internal suspend fun streamIntoDocument(
+        answer: Flow<ResultData<String>>,
+        writeopiaManager: WriteopiaStateManager,
+        position: Double
+    ) {
+        answer.handleStream(writeopiaManager, position)
     }
 
     private suspend fun Flow<ResultData<String>>.handleStream(
         writeopiaManager: WriteopiaStateManager,
         position: Double
     ) {
+        // One step for the whole answer, rewritten at each chunk and ephemeral while the answer
+        // comes: nothing is saved nor synced until the stream ends, then the final text once.
+        val answerId = GenerateId.generate()
+        var text = ""
+
         this.onStart {
             writeopiaManager.loadingAtPosition(position)
-        }.onCompletion {
+        }.onCompletion { cause ->
+            // Leaving the document cancels the stream: the answer is dropped, never saved.
+            if (cause is CancellationException) return@onCompletion
+            // An answer with nothing in it leaves no block behind, only the spinner goes.
+            if (text.isBlank()) {
+                writeopiaManager.removeAtPosition(position)
+                return@onCompletion
+            }
+            writeopiaManager.changeStoryState(
+                Action.StoryStateChange(storyStep = answerStep(answerId, text, ephemeral = false), position = position),
+                trackIt = false
+            )
             writeopiaManager.trackState()
         }.map { result ->
             when (result) {
@@ -106,16 +132,14 @@ object PromptService {
                 is ResultData.InProgress -> ""
             }
         }.collect { resultText ->
+            text = resultText
             writeopiaManager.changeStoryState(
-                Action.StoryStateChange(
-                    storyStep = StoryStep(
-                        type = StoryTypes.AI_ANSWER.type,
-                        text = resultText
-                    ),
-                    position = position,
-                ),
+                Action.StoryStateChange(storyStep = answerStep(answerId, text, ephemeral = true), position = position),
                 trackIt = false
             )
         }
     }
+
+    private fun answerStep(id: String, text: String, ephemeral: Boolean): StoryStep =
+        StoryStep(id = id, type = StoryTypes.AI_ANSWER.type, text = text, ephemeral = ephemeral)
 }

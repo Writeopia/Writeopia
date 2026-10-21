@@ -1526,6 +1526,117 @@ class WriteopiaStateManagerTest {
     }
 
     @Test
+    fun acceptStoryStepDeletesTheAnswerAndKeepsItsTextAsNewSteps() = runTest {
+        val now = Clock.System.now()
+
+        val storyManager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        )
+        storyManager.loadDocument(
+            Document(
+                content = MapStoryData.aiAnswerWithListItems(),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+            )
+        )
+        val answer = storyManager.currentStory.value.stories[0.0]!!
+
+        storyManager.acceptStoryStep(0.0)
+        advanceUntilIdle()
+
+        val state = storyManager.currentStory.value
+        val lines = state.stories.entries.sortedBy { it.key }.map { it.value }
+        assertEquals(listOf("First item", "Second item", "Third item"), lines.map { it.text })
+
+        // The answer is deleted like any other step, so it never comes back from a sync, and
+        // the lines are new steps: a step with the answer's id would never be saved again.
+        assertTrue(lines.none { line -> line.id == answer.id }, "The answer's id should be gone")
+        assertTrue(lines.none { line -> line.ephemeral }, "The lines should be saved")
+
+        val lastEdit = state.lastEdit as LastEdit.BulkDeleteEdition
+        assertEquals(listOf(answer.id), lastEdit.deletedIds)
+        assertEquals(lines.map { it.id }, lastEdit.updatedSteps.map { (_, step) -> step.id })
+        assertEquals(
+            List(3) { StoryTypes.UNORDERED_LIST_ITEM.type },
+            lastEdit.updatedSteps.map { (_, step) -> step.type },
+            "The edit should carry the lines as the commands left them"
+        )
+    }
+
+    @Test
+    fun acceptStoryStepOfAnAnswerNeverSavedDeletesNothing() = runTest {
+        val now = Clock.System.now()
+
+        val storyManager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        )
+        // An answer still coming is ephemeral: not in the database, nothing to tombstone.
+        val answer = StoryStep(type = StoryTypes.AI_ANSWER.type, text = "Partial answer", ephemeral = true)
+        storyManager.loadDocument(
+            Document(
+                content = mapOf(0.0 to answer),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+            )
+        )
+
+        storyManager.acceptStoryStep(0.0)
+        advanceUntilIdle()
+
+        val state = storyManager.currentStory.value
+        val line = state.stories[0.0]!!
+        assertEquals("Partial answer", line.text)
+        assertFalse(line.ephemeral, "The accepted line should be saved")
+        assertEquals(LastEdit.BulkEdition(listOf(0.0 to line)), state.lastEdit)
+    }
+
+    @Test
+    fun acceptStoryStepOfOneLineDeletesTheAnswerToo() = runTest {
+        val now = Clock.System.now()
+
+        val storyManager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        )
+        val answer = StoryStep(type = StoryTypes.AI_ANSWER.type, text = "Just one line")
+        storyManager.loadDocument(
+            Document(
+                content = mapOf(0.0 to answer),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+            )
+        )
+
+        storyManager.acceptStoryStep(0.0)
+        advanceUntilIdle()
+
+        val state = storyManager.currentStory.value
+        val line = state.stories[0.0]!!
+        assertEquals(1, state.stories.size)
+        assertEquals(StoryTypes.TEXT.type, line.type)
+        assertEquals("Just one line", line.text)
+        assertTrue(line.id != answer.id, "The line should be a new step")
+
+        val lastEdit = state.lastEdit as LastEdit.BulkDeleteEdition
+        assertEquals(listOf(answer.id), lastEdit.deletedIds)
+        assertEquals(listOf(0.0 to line), lastEdit.updatedSteps)
+    }
+
+    @Test
     @Ignore
     fun acceptStoryStepShouldConvertCheckboxesToCheckItems() = runTest {
         val now = Clock.System.now()
@@ -1763,23 +1874,23 @@ class WriteopiaStateManagerTest {
         // Wait for coroutine to complete
         advanceUntilIdle()
 
-        // Verify the lastEdit is a BulkEdition containing all modified steps
+        // Verify the lastEdit is one deletion of the answer carrying all the lines it became
         val lastEdit = storyManager.currentStory.value.lastEdit
-        require(lastEdit is LastEdit.BulkEdition) {
-            "LastEdit should be BulkEdition to preserve all modified steps, but was ${lastEdit::class.simpleName}"
+        require(lastEdit is LastEdit.BulkDeleteEdition) {
+            "LastEdit should be BulkDeleteEdition to delete the answer with its lines, but was ${lastEdit::class.simpleName}"
         }
         assertEquals(
             3,
-            lastEdit.steps.size,
-            "BulkEdition should contain all 3 modified list items"
+            lastEdit.updatedSteps.size,
+            "The edit should carry all 3 list items"
         )
 
-        // Verify each step in the BulkEdition has the correct type
-        lastEdit.steps.forEach { (_, step) ->
+        // Verify each step in the edit has the correct type
+        lastEdit.updatedSteps.forEach { (_, step) ->
             assertEquals(
                 StoryTypes.UNORDERED_LIST_ITEM.type,
                 step.type,
-                "Each step in BulkEdition should be UNORDERED_LIST_ITEM"
+                "Each step in the edit should be UNORDERED_LIST_ITEM"
             )
         }
     }

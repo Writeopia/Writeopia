@@ -227,6 +227,13 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 
     fun aiSection(position: Double)
 
+    /**
+     * Runs a free [command] typed by the user about the document and the lines selected right
+     * now, if any. The AI decides whether its answer replaces those lines or is added to the
+     * document.
+     */
+    fun aiCommand(command: String)
+
     fun addPage()
 
     fun copySelection()

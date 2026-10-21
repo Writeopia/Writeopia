@@ -352,57 +352,56 @@ extension View {
     }
 }
 
-/// Picks what the AI should do, like `MobileAiDialog` of the Compose app. Picking a command
-/// closes the dialog so the answer can be seen streaming into the document.
+/// The AI options, like `AiOptionsTabs` of the Compose app, in two tabs: a free command about
+/// the document and the lines selected when it is typed, which the AI either applies to that
+/// text or answers after it, and the quick actions (summary, action points, FAQ, tags), with
+/// "Apply to" picking the text they work on. Picking something closes the dialog so the answer
+/// can be seen arriving in the document.
 struct AiDialog: View {
-    /// When set, the dialog works on this target and doesn't offer the picker, like the dialog
-    /// the Compose app opens for selected lines.
+    /// When set, the quick actions work on this target and don't offer the picker, like the
+    /// dialog the Compose app opens for selected lines.
     var fixedMode: AiTargetMode?
     /// Actions for the line with the cursor (write a section, suggest list items).
     var cursorActions: [AiCursorAction] = []
+    /// An AI command is running: a new one would be dropped, so Run waits for it.
+    var isRunning = false
     let onCommand: (AiCommand, AiTargetMode) -> Void
+    /// Runs the free command typed in the command tab.
+    let onFreeCommand: (String) -> Void
+    @State private var tab: Tab = .command
     @State private var pickedMode: AiTargetMode = .document
+    @State private var freeCommand = ""
     @Environment(\.dismiss) private var dismiss
 
+    enum Tab: Hashable {
+        case command
+        case quickActions
+    }
+
     private var mode: AiTargetMode { fixedMode ?? pickedMode }
+    private var trimmedCommand: String { freeCommand.trimmingCharacters(in: .whitespacesAndNewlines) }
 
     var body: some View {
         NavigationStack {
             WrSheetList {
-                Section("Apply to:") {
-                    if let fixedMode {
-                        Text(fixedMode.title)
-                            .font(.headline)
-                    } else {
-                        Picker("Apply to", selection: $pickedMode) {
-                            ForEach(AiTargetMode.pickable) { mode in
-                                Text(mode.title).tag(mode)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                        .labelsHidden()
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets())
+                Section {
+                    Picker("Tab", selection: $tab) {
+                        Text("Command").tag(Tab.command)
+                        Text("Quick actions").tag(Tab.quickActions)
                     }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets())
+                    .accessibilityIdentifier("ai.tabs")
                 }
 
-                Section {
-                    ForEach(NoteEditorViewModel.commands(for: mode)) { command in
-                        WrSheetRow(verbatim: command.title, systemImage: command.systemImage) {
-                            dismiss()
-                            onCommand(command, mode)
-                        }
-                        .accessibilityIdentifier("ai.\(command.rawValue)")
-                    }
-                    if mode == .cursor {
-                        ForEach(cursorActions) { action in
-                            WrSheetRow(verbatim: action.title, systemImage: action.systemImage) {
-                                dismiss()
-                                action.run()
-                            }
-                            .accessibilityIdentifier("ai.\(action.id)")
-                        }
-                    }
+                switch tab {
+                case .command:
+                    commandSection
+                case .quickActions:
+                    applyToSection
+                    quickActionsSection
                 }
             }
             .navigationTitle("Ask AI")
@@ -413,12 +412,73 @@ struct AiDialog: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.medium, .large])
         .tint(WrColors.accent)
+    }
+
+    private var commandSection: some View {
+        Section {
+            TextField("Tell the AI what to do with the text", text: $freeCommand, axis: .vertical)
+                .lineLimit(3...6)
+                .accessibilityIdentifier("ai.command")
+            Button {
+                dismiss()
+                onFreeCommand(trimmedCommand)
+            } label: {
+                Label("Run", systemImage: "paperplane")
+            }
+            .disabled(trimmedCommand.isEmpty || isRunning)
+            .accessibilityIdentifier("ai.run")
+        }
+    }
+
+    private var applyToSection: some View {
+        Section("Apply to:") {
+            if let fixedMode {
+                Text(fixedMode.title)
+                    .font(.headline)
+            } else {
+                Picker("Apply to", selection: $pickedMode) {
+                    ForEach(AiTargetMode.pickable) { mode in
+                        Text(mode.title).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets())
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var quickActionsSection: some View {
+        let commands = NoteEditorViewModel.commands(for: mode)
+        let actions = mode == .cursor ? cursorActions : []
+
+        Section {
+            ForEach(commands) { command in
+                WrSheetRow(verbatim: command.title, systemImage: command.systemImage) {
+                    dismiss()
+                    onCommand(command, mode)
+                }
+                .accessibilityIdentifier("ai.\(command.rawValue)")
+            }
+            ForEach(actions) { action in
+                WrSheetRow(verbatim: action.title, systemImage: action.systemImage) {
+                    dismiss()
+                    action.run()
+                }
+                .accessibilityIdentifier("ai.\(action.id)")
+            }
+            if commands.isEmpty && actions.isEmpty {
+                Text("Quick actions work on the document or on selected lines.")
+                    .foregroundStyle(.secondary)
+            }
+        }
     }
 }
 
-/// An AI action on the line with the cursor, beyond the commands.
 struct AiCursorAction: Identifiable {
     let id: String
     let title: String

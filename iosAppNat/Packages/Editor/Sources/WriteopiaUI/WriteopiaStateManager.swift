@@ -86,7 +86,11 @@ public final class WriteopiaStateManager {
     public var title: String { writeopiaManager.title(currentStory) }
 
     /// The document content, ready to be stored.
-    public var documentContent: [StoryStep] { writeopiaManager.documentContent(currentStory) }
+    /// The steps that make the document content, to save and send. An AI answer still being
+    /// written is left out: nothing of it is saved nor sent until the stream ends, then once.
+    public var documentContent: [StoryStep] {
+        writeopiaManager.documentContent(currentStory).filter { $0.id != streamingAnswerId }
+    }
 
     // MARK: - Document
 
@@ -595,9 +599,12 @@ public final class WriteopiaStateManager {
     /// The AI answer still being written; it can't be accepted yet.
     public private(set) var streamingAnswerId: String?
 
-    /// The answer with `stepId` is complete (or failed).
+    /// The answer with `stepId` is complete (or failed): it becomes part of the content, so
+    /// the final text is saved and sent now, once.
     public func aiAnswerFinished(stepId: String) {
-        if streamingAnswerId == stepId { streamingAnswerId = nil }
+        guard streamingAnswerId == stepId else { return }
+        streamingAnswerId = nil
+        changeCount += 1
     }
 
     /// Shows `text` as an AI answer in the step with `stepId` (the loading step at first).
@@ -621,6 +628,30 @@ public final class WriteopiaStateManager {
             lines = [StoryStep(type: .text, text: step.text ?? "", position: 0)]
         }
         currentStory = writeopiaManager.replaceStep(id: stepId, with: lines, state: currentStory)
+        changeCount += 1
+    }
+
+    // MARK: - AI rewrites
+
+    /// Starts a rewrite by the AI: the steps with `stepIds` go away and `steps` (a skeleton,
+    /// and the blocks the rewrite keeps) take their place. The document before is kept in the
+    /// history, so the rewrite can be undone; the steps that went away are deleted when saved.
+    /// Returns false when none of the steps is in the document.
+    @discardableResult
+    public func beginAiRewrite(of stepIds: Set<String>, with steps: [StoryStep]) -> Bool {
+        guard isEditable, currentStory.stories.values.contains(where: { stepIds.contains($0.id) }) else { return false }
+        selectedStepIds.removeAll()
+        textSelection = nil
+        textSelectionRect = nil
+        commit(writeopiaManager.replaceSteps(ids: stepIds, with: steps, state: currentStory))
+        return true
+    }
+
+    /// Shows the next shape of a rewrite: `steps` take the place of the steps with `stepIds`.
+    /// No history entry, so an undo goes back to before the rewrite began.
+    public func updateAiRewrite(of stepIds: Set<String>, with steps: [StoryStep]) {
+        guard isEditable else { return }
+        currentStory = writeopiaManager.replaceSteps(ids: stepIds, with: steps, state: currentStory)
         changeCount += 1
     }
 

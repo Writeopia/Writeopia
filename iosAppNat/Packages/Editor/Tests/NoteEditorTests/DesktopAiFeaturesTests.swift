@@ -53,6 +53,9 @@ import WrModels
         #expect(steps[5].type == .unorderedListItem)
         #expect(steps[6].type == .checkItem && steps[6].checked == false)
         #expect(!steps.contains { $0.type.number == StoryType.aiAnswer.number })
+        // The answer is deleted (its id is gone, so the save leaves a tombstone and no sync
+        // brings it back) and its lines are new steps.
+        #expect(!steps.contains { $0.id == answer.id })
         #expect(manager.documentContent.count == 7)
     }
 
@@ -64,6 +67,20 @@ import WrModels
         #expect(manager.streamingAnswerId == loadingId)
         manager.aiAnswerFinished(stepId: loadingId)
         #expect(manager.streamingAnswerId == nil)
+    }
+
+    @Test func answerIsNotPartOfTheContentUntilItsStreamEnds() async {
+        let viewModel = await viewModel(FakeAi())
+        let manager = viewModel.writeopiaManager
+
+        let answerId = manager.loadingAtPosition(manager.lastPosition)
+        manager.showAiAnswer("Bring clothes", stepId: answerId)
+        #expect(!manager.documentContent.contains { $0.id == answerId })
+
+        let changesBefore = manager.changeCount
+        manager.aiAnswerFinished(stepId: answerId)
+        #expect(manager.documentContent.contains { $0.id == answerId && $0.text == "Bring clothes" })
+        #expect(manager.changeCount == changesBefore + 1)
     }
 
     // MARK: - Generate section

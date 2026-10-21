@@ -14,10 +14,24 @@ import WrNetwork
 final class FakeAi: AiStreaming {
     var answers: [String] = []
     var error: Error?
+    /// What the judge answers for a free command; nil for an AI without a judge.
+    var intent: AiCommandIntent?
     private(set) var requests: [(AiCommand, String)] = []
+    private(set) var commandRequests: [AiCommandRequest] = []
 
     func stream(_ command: AiCommand, prompt: String) -> AsyncThrowingStream<String, Error> {
         requests.append((command, prompt))
+        return answersStream()
+    }
+
+    func commandIntent(_ request: AiCommandRequest) async throws -> AiCommandIntent? { intent }
+
+    func streamCommand(_ request: AiCommandRequest) -> AsyncThrowingStream<String, Error> {
+        commandRequests.append(request)
+        return answersStream()
+    }
+
+    private func answersStream() -> AsyncThrowingStream<String, Error> {
         let answers = answers
         let error = error
         return AsyncThrowingStream { continuation in
@@ -67,8 +81,8 @@ private func waitForAi(_ viewModel: NoteEditorViewModel) async {
     @Test func aiIsOnlyAvailableWithAClient() async {
         #expect(await loadedViewModel(nil).isAiAvailable == false)
         #expect(await loadedViewModel(FakeAi()).isAiAvailable)
-        #expect(NoteEditorViewModel.commands(for: .cursor) == [.prompt])
-        #expect(NoteEditorViewModel.commands(for: .document) == AiCommand.allCases)
+        #expect(NoteEditorViewModel.commands(for: .cursor) == [])
+        #expect(NoteEditorViewModel.commands(for: .document) == AiCommand.quickActions)
     }
 
     @Test func summaryOfDocumentStreamsIntoAnAnswerAtTheEnd() async {
@@ -378,7 +392,7 @@ final class CreatingRepository: DocumentsRepository {
 
         #expect(ai.requests.first?.1 == "First idea")
         #expect(viewModel.writeopiaManager.currentStory.sortedStories.map { $0.text ?? "" } == ["Plan", "First idea", "Summary", "Second idea"])
-        #expect(NoteEditorViewModel.commands(for: .selectedLines) == AiCommand.allCases)
+        #expect(NoteEditorViewModel.commands(for: .selectedLines) == AiCommand.quickActions)
         #expect(!AiTargetMode.pickable.contains(.selectedLines))
     }
 }

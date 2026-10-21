@@ -319,12 +319,16 @@ jobs:
         with:
           xcode-version: latest-stable
 
+      - name: Make the folder of the result bundles
+        run: mkdir -p "$RUNNER_TEMP/xcresults"
+
       - name: Core package tests
         working-directory: iosAppNat/Packages/Core
         run: >-
           xcodebuild test
           -scheme Core-Package
           -destination "platform=macOS"
+          -resultBundlePath "$RUNNER_TEMP/xcresults/Core-Package-macos.xcresult"
           -derivedDataPath "$DERIVED_DATA"
           CODE_SIGNING_ALLOWED=NO
 
@@ -334,6 +338,7 @@ jobs:
           xcodebuild test
           -scheme Editor-Package
           -destination "platform=macOS"
+          -resultBundlePath "$RUNNER_TEMP/xcresults/Editor-Package-macos.xcresult"
           -derivedDataPath "$DERIVED_DATA"
           CODE_SIGNING_ALLOWED=NO
 
@@ -343,6 +348,7 @@ jobs:
           xcodebuild test
           -scheme Features-Package
           -destination "platform=macOS"
+          -resultBundlePath "$RUNNER_TEMP/xcresults/Features-Package-macos.xcresult"
           -derivedDataPath "$DERIVED_DATA"
           CODE_SIGNING_ALLOWED=NO
 
@@ -354,6 +360,24 @@ jobs:
           -destination "platform=macOS"
           -derivedDataPath "$DERIVED_DATA"
           CODE_SIGNING_ALLOWED=NO
+
+      # The results of every package that ran, even after a failure: the failing tests with
+      # their messages in the job summary, and the result bundles as an artifact.
+      - name: Test results summary
+        if: always()
+        working-directory: ${{ github.workspace }}
+        run: |
+          shopt -s nullglob
+          python3 .github/scripts/xcresult_summary.py "$RUNNER_TEMP"/xcresults/*.xcresult
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: test-results-native-macos
+          path: ${{ runner.temp }}/xcresults/
+          if-no-files-found: ignore
+          retention-days: 7
 
   ios_native_ios:
     name: iOS native - iOS tests and app
@@ -374,6 +398,9 @@ jobs:
         uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: latest-stable
+
+      - name: Make the folder of the result bundles
+        run: mkdir -p "$RUNNER_TEMP/xcresults"
 
       - name: Pick an iPhone simulator
         id: simulator
@@ -401,6 +428,7 @@ jobs:
           xcodebuild test
           -scheme Editor-Package
           -destination "id=${{ steps.simulator.outputs.udid }}"
+          -resultBundlePath "$RUNNER_TEMP/xcresults/Editor-Package-ios.xcresult"
           -derivedDataPath "$DERIVED_DATA"
           CODE_SIGNING_ALLOWED=NO
 
@@ -410,6 +438,7 @@ jobs:
           xcodebuild test
           -scheme Features-Package
           -destination "id=${{ steps.simulator.outputs.udid }}"
+          -resultBundlePath "$RUNNER_TEMP/xcresults/Features-Package-ios.xcresult"
           -derivedDataPath "$DERIVED_DATA"
           CODE_SIGNING_ALLOWED=NO
 
@@ -421,3 +450,21 @@ jobs:
           -destination "id=${{ steps.simulator.outputs.udid }}"
           -derivedDataPath "$DERIVED_DATA"
           CODE_SIGNING_ALLOWED=NO
+
+      # The results of every package that ran, even after a failure: the failing tests with
+      # their messages in the job summary, and the result bundles as an artifact.
+      - name: Test results summary
+        if: always()
+        working-directory: ${{ github.workspace }}
+        run: |
+          shopt -s nullglob
+          python3 .github/scripts/xcresult_summary.py "$RUNNER_TEMP"/xcresults/*.xcresult
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: test-results-native-ios
+          path: ${{ runner.temp }}/xcresults/
+          if-no-files-found: ignore
+          retention-days: 7

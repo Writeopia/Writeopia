@@ -922,8 +922,11 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
     }
 
     /// Opens the document: the backend copy is merged into the local one step by step and the
-    /// result returned when something changed.
+    /// result returned when something changed. The deletions pending here go first, so the
+    /// copy comes without the steps deleted on this device; the ones the backend could not
+    /// take are left out of it by the merge, which skips the tombstoned steps.
     public func fetchAndMerge(documentId: String) async throws -> WrDocument? {
+        _ = try? await stepSync.sendDeletedSteps()
         let remoteCopy = try await api.document(id: documentId)
         guard remoteCopy.id == documentId else { return nil }
         return try stepSync.mergeReceived(remoteCopy)

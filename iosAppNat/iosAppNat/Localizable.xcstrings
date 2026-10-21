@@ -1136,6 +1136,17 @@
         }
       }
     },
+    "Command" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comando"
+          }
+        }
+      }
+    },
     "Configuration Failed" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3332,6 +3343,28 @@
         }
       }
     },
+    "Quick actions" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ações rápidas"
+          }
+        }
+      }
+    },
+    "Quick actions work on the document or on selected lines." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As ações rápidas funcionam no documento ou nas linhas selecionadas."
+          }
+        }
+      }
+    },
     "Red highlight" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3519,6 +3552,17 @@
         }
       }
     },
+    "Run" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Executar"
+          }
+        }
+      }
+    },
     "Run AI with" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3624,6 +3668,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Selecionar linha"
+          }
+        }
+      }
+    },
+    "Select lines in the document first" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selecione linhas no documento primeiro"
           }
         }
       }
@@ -4056,6 +4111,17 @@
         }
       }
     },
+    "Tab" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aba"
+          }
+        }
+      }
+    },
     "Tags" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4107,6 +4173,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Times precisam de uma conta"
+          }
+        }
+      }
+    },
+    "Tell the AI what to do with the text" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diga à IA o que fazer com o texto"
           }
         }
       }

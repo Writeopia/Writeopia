@@ -369,4 +369,9 @@
   <string name="header_image_failed">The AI could not draw a header. Try again.</string>
   <string name="header_image_cost">Uses your AI tokens</string>
   <string name="header_image_save_failed">The image could not be saved to the workspace. Try again.</string>
+  <string name="quick_actions">Quick actions</string>
+  <string name="ai_command">Command</string>
+  <string name="ai_command_hint">Tell the AI what to do with the text</string>
+  <string name="ai_command_run">Run</string>
+  <string name="quick_actions_cursor_hint">Quick actions work on the document or on selected lines.</string>
 </resources>

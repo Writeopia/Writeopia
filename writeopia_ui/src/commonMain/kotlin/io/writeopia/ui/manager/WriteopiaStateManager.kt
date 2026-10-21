@@ -844,44 +844,61 @@ class WriteopiaStateManager(
         }
 
         coroutineScope.launch(dispatcher) {
-            val state = _currentStory.value
-            val story = getStory(position = lineBreak.position)
+            breakLine(lineBreak, processCommands)
+        }
+    }
 
-            val expanded: StoryState = if (story?.tags?.any { it.tag.isTitle() } == true) {
-                writeopiaManager.expandItem(state, lineBreak.position)
-            } else {
-                state
-            }
+    /**
+     * Splits the line of [lineBreak] by the line breaks of its text, in the current state, and
+     * reads the Markdown of the lines (headings, lists, checks, inline marks) when
+     * [processCommands].
+     *
+     * @return the steps the split changed or created, by position, as they are in the state.
+     */
+    private fun breakLine(
+        lineBreak: Action.LineBreak,
+        processCommands: Boolean
+    ): List<Pair<Double, StoryStep>> {
+        val state = _currentStory.value
+        val story = getStory(position = lineBreak.position)
 
-            writeopiaManager.onLineBreak(lineBreak, expanded).let { (_, newState) ->
-                // Todo: Fix this when the inner position are completed
-                //  backStackManager.addAction(BackstackAction.Add(newStory, newPosition))
+        val expanded: StoryState = if (story?.tags?.any { it.tag.isTitle() } == true) {
+            writeopiaManager.expandItem(state, lineBreak.position)
+        } else {
+            state
+        }
 
-                // First apply the line break state
-                _currentStory.value = newState.copy(selection = Selection.start())
+        val (_, newState) = writeopiaManager.onLineBreak(lineBreak, expanded)
+        // Todo: Fix this when the inner position are completed
+        //  backStackManager.addAction(BackstackAction.Add(newStory, newPosition))
 
-                // Process markdown commands on each newly created line
-                if (processCommands) {
-                    val parseResult = bulkStyleParseHandler.processMarkdown(
-                        lastEdit = newState.lastEdit,
-                        currentStories = { _currentStory.value.stories },
-                        onCommandProcess = { pos, step, text ->
-                            commandHandler.handleCommand(text, step, pos)
-                        }
-                    )
+        // First apply the line break state
+        _currentStory.value = newState.copy(selection = Selection.start())
+        var edited = newState.lastEdit.editedSteps()
 
-                    parseResult?.let { result ->
-                        _currentStory.value = _currentStory.value.copy(
-                            stories = result.stories,
-                            lastEdit = result.lastEdit ?: _currentStory.value.lastEdit
-                        )
-                    }
+        // Process markdown commands on each newly created line
+        if (processCommands) {
+            val parseResult = bulkStyleParseHandler.processMarkdown(
+                lastEdit = newState.lastEdit,
+                currentStories = { _currentStory.value.stories },
+                onCommandProcess = { pos, step, text ->
+                    commandHandler.handleCommand(text, step, pos)
                 }
+            )
 
-                cleanupOrphanCommentConversations()
-                _scrollToPosition.value = -1
+            parseResult?.let { result ->
+                _currentStory.value = _currentStory.value.copy(
+                    stories = result.stories,
+                    lastEdit = result.lastEdit ?: _currentStory.value.lastEdit
+                )
+                result.lastEdit?.let { lastEdit -> edited = lastEdit.editedSteps() }
             }
         }
+
+        cleanupOrphanCommentConversations()
+        _scrollToPosition.value = -1
+
+        return edited
     }
 
     fun onFocusChange(position: Double, hasFocus: Boolean) {
@@ -1596,6 +1613,137 @@ class WriteopiaStateManager(
         )
     }
 
+    /**
+     * Takes the stories at [positions] out of the document and leaves one skeleton in the place
+     * of the first, holding their text, while the AI rewrites them. The state before is kept in
+     * the back stack, so the change can be undone.
+     *
+     * @return the position of the skeleton, or null when nothing was replaced.
+     */
+    fun replaceWithSkeleton(positions: Set<Double>): Double? {
+        if (!isEditable || positions.isEmpty()) return null
+
+        val stories = _currentStory.value.stories
+        val sorted = positions.sorted().filter { position -> stories.containsKey(position) }
+        val first = sorted.firstOrNull() ?: return null
+        val text = sorted.mapNotNull { position -> stories[position]?.text }.joinToString("\n")
+
+        backStackManager.addState(_currentStory.value)
+        _onEditPositions.value = emptySet()
+
+        val (remaining, deleted) = writeopiaManager.bulkDelete(sorted, stories)
+        // The skeleton links to the neighbours of the replaced range, so the text that takes its
+        // place later lands between them.
+        val skeleton = StoryStep(
+            type = StoryTypes.SKELETON.type,
+            text = text,
+            ephemeral = true,
+            dbPosition = stories[first]?.dbPosition,
+            previousPosition = stories[first]?.previousPosition,
+            nextPosition = stories[sorted.last()]?.nextPosition,
+        )
+
+        _currentStory.value = _currentStory.value.copy(
+            stories = remaining + (first to skeleton),
+            lastEdit = LastEdit.BulkDeleteEdition(deleted.values.map { it.id }, emptyList())
+        )
+        cleanupOrphanCommentConversations()
+
+        return first
+    }
+
+    /**
+     * Puts [text] where the skeleton of [replaceWithSkeleton] is, as regular content: its lines
+     * become stories and its Markdown marks (lists, headings, checks) are applied, like an
+     * accepted AI answer. Nothing happens when the skeleton is gone. Undo goes back to before
+     * the skeleton, since [replaceWithSkeleton] kept that state.
+     */
+    fun replaceSkeletonWithText(position: Double, text: String) {
+        if (!isEditable) return
+        val skeleton = getStory(position) ?: return
+        if (skeleton.type != StoryTypes.SKELETON.type) return
+
+        val step = skeleton.copy(
+            type = StoryTypes.TEXT.type,
+            text = text,
+            ephemeral = false,
+            localId = GenerateId.generate()
+        )
+        val styled = inTextMarkdownHandler?.handleMarkdown(step) ?: step
+
+        changeStoryState(Action.StoryStateChange(styled, position), trackIt = false)
+
+        // Typed text goes through changeStoryText, which tracks every change; here the state
+        // before the skeleton is the only one to go back to.
+        if (text.contains("\n")) {
+            onLineBreak(Action.LineBreak(styled, position), processCommands = true)
+        } else {
+            commandHandler.handleCommand(text, styled, position)
+        }
+    }
+
+    /**
+     * Starts rewriting the region of the document from [from] up to [toExclusive] (to the end
+     * when null): every story in it goes away, replaced by [stories] (typically a skeleton and
+     * the blocks the rewrite keeps, which keep their ids). The state before is kept in the back
+     * stack, so the rewrite can be undone, and the stories that went away are deleted.
+     *
+     * @return false when the region holds nothing.
+     */
+    fun beginRegionRewrite(from: Double, toExclusive: Double?, stories: List<StoryStep>): Boolean {
+        if (!isEditable) return false
+
+        val current = _currentStory.value
+        val inside = current.stories.filterKeys { position -> position.inRegion(from, toExclusive) }
+        if (inside.isEmpty()) return false
+
+        backStackManager.addState(current)
+        _onEditPositions.value = emptySet()
+
+        val keptIds = stories.map { story -> story.id }.toSet()
+        val deletedIds = inside.values
+            .filter { story -> !story.ephemeral && story.id !in keptIds }
+            .map { story -> story.id }
+
+        _currentStory.value = current.copy(
+            stories = (current.stories - inside.keys) + spreadInRegion(from, toExclusive, stories),
+            lastEdit = LastEdit.BulkDeleteEdition(deletedIds, emptyList())
+        )
+        cleanupOrphanCommentConversations()
+
+        return true
+    }
+
+    /**
+     * Replaces the region of [beginRegionRewrite] with [stories], in order, spread over the
+     * region. While not [done] the change is not saved (the answer is still coming); when done,
+     * the stories get their links to their neighbours and the document is saved whole.
+     */
+    fun updateRegion(from: Double, toExclusive: Double?, stories: List<StoryStep>, done: Boolean) {
+        if (!isEditable) return
+
+        val current = _currentStory.value
+        val outside = current.stories.filterKeys { position -> !position.inRegion(from, toExclusive) }
+        val merged = outside + spreadInRegion(from, toExclusive, stories)
+
+        _currentStory.value = if (done) {
+            current.copy(stories = NextPositionCalculator.calculate(merged), lastEdit = LastEdit.Whole)
+        } else {
+            current.copy(stories = merged, lastEdit = LastEdit.Nothing)
+        }
+    }
+
+    private fun Double.inRegion(from: Double, toExclusive: Double?): Boolean =
+        this >= from && (toExclusive == null || this < toExclusive)
+
+    /** [stories] at positions inside the region, the first exactly at [from]. */
+    private fun spreadInRegion(from: Double, toExclusive: Double?, stories: List<StoryStep>): Map<Double, StoryStep> {
+        if (stories.isEmpty()) return emptyMap()
+        val step = if (toExclusive == null) 1.0 else (toExclusive - from) / (stories.size + 1)
+
+        return stories.mapIndexed { index, story -> (from + index * step) to story }.toMap()
+    }
+
     fun removeAtPosition(position: Double) {
         if (!isEditable) return
         _currentStory.value = writeopiaManager.removeAtPosition(
@@ -1904,25 +2052,59 @@ class WriteopiaStateManager(
             ?.first()
             ?.text
 
+    /**
+     * Accepts the AI answer at [position]: its text stays, as regular lines read as Markdown,
+     * and the answer itself goes away for good. The lines are new steps and the answer is
+     * deleted like any other step, with a tombstone, so no save nor sync brings it back once
+     * accepted. The deletion and the lines go to the trackers in one edit.
+     */
     fun acceptStoryStep(position: Double) {
-        getStory(position)?.let { storyStep ->
-            val text = storyStep.text
+        if (!isEditable) return
+        val answer = getStory(position) ?: return
+        val text = answer.text ?: ""
 
-            changeStoryState(
-                Action.StoryStateChange(
-                    storyStep.copy(type = StoryTypes.TEXT.type),
-                    position
-                ),
-                trackIt = false
+        backStackManager.addState(_currentStory.value)
+
+        coroutineScope.launch(dispatcher) {
+            val current = _currentStory.value
+            if (current.stories[position]?.id != answer.id) return@launch
+
+            // The text takes the answer's place as a new step: the answer's id is deleted below,
+            // and a step with it would never be saved again.
+            val accepted = answer.copy(
+                id = GenerateId.generate(),
+                localId = GenerateId.generate(),
+                type = StoryTypes.TEXT.type,
+                ephemeral = false,
             )
-            handleTextInput(
-                TextInput(text ?: ""),
-                position,
-                lineBreakByContent = true,
-                trackIt = false,
-                processCommands = true
+            // Not saved on its own: the edit below carries it, with the deletion of the answer.
+            _currentStory.value = current.copy(
+                stories = current.stories + (position to accepted),
+                lastEdit = LastEdit.Nothing,
             )
-            trackState()
+
+            val edited = if (text.contains("\n")) {
+                breakLine(Action.LineBreak(accepted, position), processCommands = true)
+            } else {
+                commandHandler.handleCommand(text, accepted, position)
+                listOf(position to accepted)
+            }
+
+            // The lines as they are now: the commands may have changed their type and text.
+            val stories = _currentStory.value.stories
+            val lines = (edited.map { (editedPosition, _) -> editedPosition } + position)
+                .distinct()
+                .sorted()
+                .mapNotNull { linePosition -> stories[linePosition]?.let { step -> linePosition to step } }
+
+            _currentStory.value = _currentStory.value.copy(
+                // An answer still ephemeral (its stream never ended) was never saved: nothing to delete.
+                lastEdit = if (answer.ephemeral) {
+                    LastEdit.BulkEdition(lines)
+                } else {
+                    LastEdit.BulkDeleteEdition(listOf(answer.id), lines)
+                }
+            )
         }
     }
 
@@ -2417,3 +2599,15 @@ class WriteopiaStateManager(
 }
 
 private class LineBreakCommand(val text: String, val position: Double, val time: Instant)
+
+/** The steps an edit changed or created, by position; none for the edits that carry no steps. */
+private fun LastEdit.editedSteps(): List<Pair<Double, StoryStep>> =
+    when (this) {
+        is LastEdit.LineEdition -> listOf(position to storyStep)
+        is LastEdit.InfoEdition -> listOf(position to storyStep)
+        is LastEdit.LineBreakEdition -> listOf(originalStep, newStep)
+        is LastEdit.BulkEdition -> steps
+        is LastEdit.EraseEdition -> listOf(updatedStep)
+        is LastEdit.BulkDeleteEdition -> updatedSteps
+        is LastEdit.DeleteEdition, LastEdit.Metadata, LastEdit.Nothing, LastEdit.Whole -> emptyList()
+    }

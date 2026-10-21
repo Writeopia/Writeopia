@@ -67,7 +67,7 @@ import io.writeopia.editor.configuration.ui.NoteGlobalActionsMenu
 import io.writeopia.editor.features.editor.ui.TextEditor
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.SideEditorOptions
 import io.writeopia.editor.features.editor.ui.folders.FolderSelectionDialog
-import io.writeopia.editor.features.editor.ui.mobile.MobileAiDialog
+import io.writeopia.editor.features.editor.ui.mobile.MobileAiSheet
 import io.writeopia.editor.features.editor.ui.publish.PremiumOnlyDialog
 import io.writeopia.editor.features.editor.ui.publish.PublishDialog
 import io.writeopia.editor.features.editor.ui.tags.AddDocumentTagDialog
@@ -299,7 +299,7 @@ internal fun NoteEditorScreen(
                     exportJson = noteEditorViewModel::exportJson,
                     moveToRoot = noteEditorViewModel::moveToRootFolder,
                     moveToClick = { showFolderSelection = true },
-                    askAiWithMode = noteEditorViewModel::askAiWithMode,
+                    aiCommand = noteEditorViewModel::aiCommand,
                     addPage = noteEditorViewModel::addPage,
                     deleteDocument = { showDeleteConfirmation = true },
                     toggleFavorite = noteEditorViewModel::toggleFavorite,
@@ -466,32 +466,26 @@ internal fun NoteEditorScreen(
             }
 
             if (showAiDialog) {
-                MobileAiDialog(
+                MobileAiSheet(
                     onDismissRequest = { showAiDialog = false },
-                    currentModel = noteEditorViewModel.currentModel,
-                    models = noteEditorViewModel.models,
                     hasSelectedLinesState = noteEditorViewModel.hasSelectedLines,
-                    selectModel = noteEditorViewModel::selectModel,
-                    askAiWithMode = noteEditorViewModel::askAiWithMode,
                     aiSummary = noteEditorViewModel::aiSummary,
                     aiActionPoints = noteEditorViewModel::aiActionPoints,
                     aiFaq = noteEditorViewModel::aiFaq,
                     aiTags = noteEditorViewModel::aiTags,
+                    aiCommand = noteEditorViewModel::aiCommand,
                 )
             }
 
             if (showSelectedLinesAiDialog) {
-                MobileAiDialog(
+                MobileAiSheet(
                     onDismissRequest = { showSelectedLinesAiDialog = false },
-                    currentModel = noteEditorViewModel.currentModel,
-                    models = noteEditorViewModel.models,
                     hasSelectedLinesState = noteEditorViewModel.hasSelectedLines,
-                    selectModel = noteEditorViewModel::selectModel,
-                    askAiWithMode = noteEditorViewModel::askAiWithMode,
                     aiSummary = noteEditorViewModel::aiSummary,
                     aiActionPoints = noteEditorViewModel::aiActionPoints,
                     aiFaq = noteEditorViewModel::aiFaq,
                     aiTags = noteEditorViewModel::aiTags,
+                    aiCommand = noteEditorViewModel::aiCommand,
                     fixedTargetMode = AiTargetMode.SELECTED_LINES,
                 )
             }

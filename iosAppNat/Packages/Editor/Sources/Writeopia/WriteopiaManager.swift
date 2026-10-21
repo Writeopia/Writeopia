@@ -299,6 +299,16 @@ public struct WriteopiaManager {
         return StoryState(stories: contentManager.renumber(ordered), lastEdit: .whole, focus: nil)
     }
 
+    /// Puts `steps` where the steps with `ids` are: in the place of the first of them, the
+    /// others going away. Nothing happens when none of them is in the document.
+    public func replaceSteps(ids: Set<String>, with steps: [StoryStep], state: StoryState) -> StoryState {
+        var ordered = state.sortedStories
+        guard let index = ordered.firstIndex(where: { ids.contains($0.id) }) else { return state }
+        ordered.removeAll { ids.contains($0.id) }
+        ordered.insert(contentsOf: steps, at: index)
+        return StoryState(stories: contentManager.renumber(ordered), lastEdit: .whole, focus: nil)
+    }
+
     /// Adds `steps`, in order, right after `position`.
     public func addSteps(_ steps: [StoryStep], after position: Double, state: StoryState) -> StoryState {
         var ordered = state.sortedStories

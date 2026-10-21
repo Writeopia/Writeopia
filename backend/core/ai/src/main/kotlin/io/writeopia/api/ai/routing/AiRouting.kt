@@ -25,6 +25,7 @@ import io.writeopia.api.embeddings.Embeddings
 import io.writeopia.api.embeddings.EmbeddingsSetup
 import io.writeopia.api.genai.service.GenAiService
 import io.writeopia.databse.HikariCp
+import io.writeopia.api.typesafe.service.CommandIntentService
 import io.writeopia.api.typesafe.service.FolderSuggestionsService
 import io.writeopia.api.typesafe.service.TagSuggestionsService
 import io.writeopia.api.typesafe.service.WritingSuggestionsService
@@ -84,6 +85,10 @@ fun Routing.aiRoute(
         writeopiaDb,
         ranker = FolderCandidateRanker(folderEmbeddings)
     )
+
+    // Free commands: Jev decides whether the answer replaces the text or adds to it; Gemini writes it.
+    commandIntentRoute(CommandIntentService(), debugMode, writeopiaDb)
+    aiCommandRoute(genAiService, debugMode, writeopiaDb)
 
     // Document tags: Jev picks the catalogue tags a document should carry; Gemini makes up new ones.
     tagSuggestionsRoute(TagSuggestionsService(), debugMode, writeopiaDb)
@@ -291,6 +296,30 @@ private suspend fun RoutingContext.handleAiRequest(
         return
     }
 
+    respondAiRequest(
+        request = request,
+        endpointName = endpointName,
+        userId = userId,
+        writeopiaDb = writeopiaDb,
+        debugMode = debugMode,
+        streamGenerator = streamGenerator,
+        syncGenerator = syncGenerator
+    )
+}
+
+/**
+ * Runs an already parsed generation [request] through [AiService] and answers with the result:
+ * the text, the SSE stream, or the error.
+ */
+internal suspend fun RoutingContext.respondAiRequest(
+    request: AiGenerateRequest,
+    endpointName: String,
+    userId: String?,
+    writeopiaDb: WriteopiaDbBackend?,
+    debugMode: Boolean,
+    streamGenerator: (String, String?, (TokenUsage) -> Unit) -> Flow<AiGenerateResponse>,
+    syncGenerator: suspend (String, String?) -> Pair<AiGenerateResponse, TokenUsage>
+) {
     val result = AiService.processAiRequest(
         request = request,
         userId = userId,

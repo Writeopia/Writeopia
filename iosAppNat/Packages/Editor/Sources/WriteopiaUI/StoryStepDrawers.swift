@@ -106,6 +106,8 @@ struct StoryStepDrawer: View {
             }
         case StoryType.loading.number:
             LoadingDrawer()
+        case StoryType.skeleton.number:
+            SkeletonDrawer(step: step)
         case StoryType.space.number, StoryType.onDragSpace.number:
             SpaceDrawer(draw: draw, manager: manager)
         case StoryType.lastSpace.number:
@@ -195,7 +197,7 @@ struct TitleDrawer: View {
         #endif
     }()
 
-    /// Space above the title inside a colored header. The Compose app uses 114; the Mac window
+    /// Space above the title inside a colored header. The Compose app uses 131; the Mac window
     /// is taller, so the band gets a little more room there.
     private static let coloredHeaderTopPadding: CGFloat = {
         #if os(macOS)
@@ -921,6 +923,38 @@ struct LoadingDrawer: View {
             .controlSize(.small)
             .padding(.leading, EditorLayout.gutter + 5)
             .padding(.vertical, 6)
+    }
+}
+
+/// The placeholder of text the AI is rewriting: pulsing bars, one per line of the text that was
+/// there, so the document keeps about the same shape until the new text arrives.
+struct SkeletonDrawer: View {
+    let step: StoryStep
+    @State private var pulsing = false
+
+    private var lines: Int {
+        let count = (step.text ?? "").split(separator: "\n", omittingEmptySubsequences: false).count
+        return min(max(count, 1), 8)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(0..<lines, id: \.self) { index in
+                GeometryReader { geometry in
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color.secondary.opacity(0.3))
+                        .frame(width: geometry.size.width * (index == lines - 1 && lines > 1 ? 0.6 : 0.95))
+                }
+                .frame(height: 14)
+            }
+        }
+        .opacity(pulsing ? 0.9 : 0.35)
+        .padding(.leading, EditorLayout.gutter + 5)
+        .padding(.trailing, 16)
+        .padding(.vertical, 6)
+        .onAppear {
+            withAnimation(.easeInOut(duration: 0.7).repeatForever(autoreverses: true)) { pulsing = true }
+        }
     }
 }
 
