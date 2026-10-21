@@ -34,8 +34,8 @@ class LinkCardEditorUiTest {
         manager.loadDocument(
             Document(
                 content = mapOf(
-                    0.0 to StoryStep(type = StoryTypes.TITLE.type, text = "Title"),
-                    1.0 to StoryStep(type = StoryTypes.TEXT.type, text = "")
+                    0L to StoryStep(type = StoryTypes.TITLE.type, text = "Title"),
+                    1L to StoryStep(type = StoryTypes.TEXT.type, text = "")
                 ),
                 workspaceId = "",
                 createdAt = now,
@@ -75,14 +75,14 @@ class LinkCardEditorUiTest {
             }
         }
 
-        onNodeWithTag("MessageDrawer_1.0").assertIsDisplayed()
+        onNodeWithTag("MessageDrawer_1").assertIsDisplayed()
 
         // A paste delivers the whole address in one input.
-        onNodeWithTag("MessageDrawer_1.0").performTextInput("https://writeopia.io")
+        onNodeWithTag("MessageDrawer_1").performTextInput("https://writeopia.io")
         waitForIdle()
 
-        onNodeWithTag("LinkCard_1.0").assertIsDisplayed()
+        onNodeWithTag("LinkCard_1").assertIsDisplayed()
         onNodeWithText("https://writeopia.io").assertIsDisplayed()
-        onNodeWithTag("LinkCardCopy_1.0").assertIsDisplayed()
+        onNodeWithTag("LinkCardCopy_1").assertIsDisplayed()
     }
 }

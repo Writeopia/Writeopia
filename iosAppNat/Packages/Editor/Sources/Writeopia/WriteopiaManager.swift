@@ -27,13 +27,14 @@ public struct WriteopiaManager {
             .sorted { $0.position < $1.position }
             .filter { !StoryTypes.ephemeral.contains($0.type.number) }
 
-        var stories: [Double: StoryStep] = [:]
-        var lastKey: Double?
+        var stories: [Int: StoryStep] = [:]
+        var lastKey: Int?
         for (index, step) in steps.enumerated() {
-            let key: Double
+            let key: Int
             if let lastKey, step.position <= lastKey {
+                // A whole number, like every position; the next steps are nudged in turn when it is taken
                 let nextDistinct = steps[(index + 1)...].first { $0.position > step.position }?.position
-                key = nextDistinct.map { (lastKey + $0) / 2 } ?? lastKey + 1
+                key = nextDistinct.map { Swift.max((lastKey + $0) / 2, lastKey + 1) } ?? lastKey + positionGap
             } else {
                 key = step.position
             }
@@ -45,10 +46,10 @@ public struct WriteopiaManager {
         let firstKey = stories.keys.min() ?? 0
         if let titleKey = stories.first(where: { $0.value.isTitle })?.key {
             if titleKey != firstKey, let title = stories.removeValue(forKey: titleKey) {
-                stories.place(title, at: firstKey - 1)
+                stories.place(title, at: firstKey - positionGap)
             }
         } else {
-            let key = stories.isEmpty ? 0 : firstKey - 1
+            let key = stories.isEmpty ? 0 : firstKey - positionGap
             stories.place(StoryStep(type: .title, text: document.title, position: key), at: key)
         }
 
@@ -59,7 +60,7 @@ public struct WriteopiaManager {
         contentManager.changeStoryState(change, in: state.stories) ?? state
     }
 
-    public func changeStoryType(at position: Double, to type: StoryType, state: StoryState) -> StoryState {
+    public func changeStoryType(at position: Int, to type: StoryType, state: StoryState) -> StoryState {
         let cursor = state.selection.position == position ? state.selection.end : 0
         return contentManager.changeStoryType(at: position, to: type, in: state.stories, cursor: cursor) ?? state
     }
@@ -82,7 +83,7 @@ public struct WriteopiaManager {
 
     /// Toggles an inline span on `start..<end` of the step at `position`. Highlights replace
     /// each other: applying a color removes the other colors from the range.
-    public func toggleSpan(_ span: Span, at position: Double, start: Int, end: Int, state: StoryState) -> StoryState {
+    public func toggleSpan(_ span: Span, at position: Int, start: Int, end: Int, state: StoryState) -> StoryState {
         updateSpans(at: position, start: start, end: end, state: state) { spans, start, end in
             var spans = spans
             let isAdding = !SpansHandler.isFullyCovered(spans, span: span.rawValue, start: start, end: end)
@@ -96,7 +97,7 @@ public struct WriteopiaManager {
     }
 
     /// Whether the whole text of every step at `positions` has `span`. Empty steps are ignored.
-    public func isSpanOnSteps(_ span: Span, positions: [Double], state: StoryState) -> Bool {
+    public func isSpanOnSteps(_ span: Span, positions: [Int], state: StoryState) -> Bool {
         let steps = positions.compactMap { state.stories[$0] }.filter { $0.isTextStep && !($0.text ?? "").isEmpty }
         guard !steps.isEmpty else { return false }
         return steps.allSatisfy { step in
@@ -106,7 +107,7 @@ public struct WriteopiaManager {
 
     /// Toggles `span` on the whole text of the steps at `positions`, like the formatting buttons
     /// of the SDK when lines are selected: if all of them have it, it's removed from all.
-    public func toggleSpanOnSteps(_ span: Span, positions: [Double], state: StoryState) -> StoryState {
+    public func toggleSpanOnSteps(_ span: Span, positions: [Int], state: StoryState) -> StoryState {
         let shouldRemove = isSpanOnSteps(span, positions: positions, state: state)
         var newState = state
 
@@ -139,7 +140,7 @@ public struct WriteopiaManager {
 
     /// Changes each step at `positions` to `type`, or back to a paragraph when it already is of
     /// that type, like `toggleStateForStories` of the SDK. The title never changes.
-    public func toggleType(_ type: StoryType, positions: [Double], state: StoryState) -> StoryState {
+    public func toggleType(_ type: StoryType, positions: [Int], state: StoryState) -> StoryState {
         mapSteps(positions, state: state) { step in
             guard step.isTextStep else { return step }
             var step = step
@@ -151,7 +152,7 @@ public struct WriteopiaManager {
 
     /// Adds `tag` to each step at `positions`, or removes it from the steps that have it, like
     /// `toggleTagForStories` of the SDK.
-    public func toggleTag(_ tag: BlockTag, positions: [Double], state: StoryState) -> StoryState {
+    public func toggleTag(_ tag: BlockTag, positions: [Int], state: StoryState) -> StoryState {
         mapSteps(positions, state: state) { step in
             var step = step
             if step.hasTag(tag.rawValue) {
@@ -165,7 +166,7 @@ public struct WriteopiaManager {
 
     /// Makes each step at `positions` a heading of `tag`'s level, replacing other levels, or a
     /// regular paragraph when it already is. Mirrors `addTitle` of the SDK.
-    public func toggleHeading(_ tag: BlockTag, positions: [Double], state: StoryState) -> StoryState {
+    public func toggleHeading(_ tag: BlockTag, positions: [Int], state: StoryState) -> StoryState {
         guard tag.isHeading else { return state }
         return mapSteps(positions, state: state) { step in
             guard step.isTextStep else { return step }
@@ -180,7 +181,7 @@ public struct WriteopiaManager {
     }
 
     /// Deletes the steps at `positions`, except the title. The other steps keep their positions.
-    public func deleteSteps(_ positions: [Double], state: StoryState) -> StoryState {
+    public func deleteSteps(_ positions: [Int], state: StoryState) -> StoryState {
         var stories = state.stories
         for position in positions where stories[position]?.isTitle == false {
             stories.removeValue(forKey: position)
@@ -190,7 +191,7 @@ public struct WriteopiaManager {
     }
 
     /// Text of the steps at `positions`, one per line, like `copySelection` of the SDK.
-    public func text(of positions: [Double], state: StoryState) -> String {
+    public func text(of positions: [Int], state: StoryState) -> String {
         positions.sorted()
             .compactMap { state.stories[$0] }
             .filter { $0.isTextStep || $0.type.number == StoryType.documentLink.number }
@@ -199,7 +200,7 @@ public struct WriteopiaManager {
     }
 
     /// Adds a link to the document `documentId` right after `position`.
-    public func addDocumentLink(after position: Double, documentId: String, title: String, state: StoryState) -> StoryState {
+    public func addDocumentLink(after position: Int, documentId: String, title: String, state: StoryState) -> StoryState {
         let link = StoryStep(
             type: .documentLink,
             text: title,
@@ -211,7 +212,7 @@ public struct WriteopiaManager {
         return newState
     }
 
-    private func mapSteps(_ positions: [Double], state: StoryState, change: (StoryStep) -> StoryStep) -> StoryState {
+    private func mapSteps(_ positions: [Int], state: StoryState, change: (StoryStep) -> StoryStep) -> StoryState {
         var newState = state
         for position in positions {
             guard let step = newState.stories[position], !step.isTitle else { continue }
@@ -224,7 +225,7 @@ public struct WriteopiaManager {
     }
 
     /// Links `start..<end` of the step at `position` to `url`, or removes the link when `url` is nil.
-    public func setLink(_ url: String?, at position: Double, start: Int, end: Int, state: StoryState) -> StoryState {
+    public func setLink(_ url: String?, at position: Int, start: Int, end: Int, state: StoryState) -> StoryState {
         updateSpans(at: position, start: start, end: end, state: state) { spans, start, end in
             if let url {
                 SpansHandler.setLink(url, start: start, end: end, in: spans)
@@ -235,7 +236,7 @@ public struct WriteopiaManager {
     }
 
     private func updateSpans(
-        at position: Double,
+        at position: Int,
         start: Int,
         end: Int,
         state: StoryState,
@@ -255,7 +256,7 @@ public struct WriteopiaManager {
         return newState
     }
 
-    public func checkItem(at position: Double, checked: Bool, state: StoryState) -> StoryState {
+    public func checkItem(at position: Int, checked: Bool, state: StoryState) -> StoryState {
         guard var step = state.stories[position] else { return state }
         step.checked = checked
 
@@ -266,7 +267,7 @@ public struct WriteopiaManager {
     }
 
     /// Moves the focus to the next text step, keeping the cursor.
-    public func nextFocus(after position: Double, cursor: Int, state: StoryState) -> StoryState {
+    public func nextFocus(after position: Int, cursor: Int, state: StoryState) -> StoryState {
         guard let next = focusHandler.findNextFocus(after: position, in: state.stories) else { return state }
         var newState = state
         newState.focus = next
@@ -291,12 +292,12 @@ public struct WriteopiaManager {
     }
 
     /// Adds `step` right after `position`, or at the end when `position` is nil.
-    public func addAtPosition(_ step: StoryStep, after position: Double?, state: StoryState) -> StoryState {
+    public func addAtPosition(_ step: StoryStep, after position: Int?, state: StoryState) -> StoryState {
         contentManager.add(step, after: position, in: state.stories)
     }
 
     /// Turns the text step at `position` into a link card for `url`. See `ContentManager`.
-    public func createLinkCard(url: String, at position: Double, state: StoryState) -> StoryState {
+    public func createLinkCard(url: String, at position: Int, state: StoryState) -> StoryState {
         contentManager.createLinkCard(url: url, at: position, in: state.stories)
     }
 
@@ -327,21 +328,21 @@ public struct WriteopiaManager {
         for key in replaced { stories.removeValue(forKey: key) }
         if let first = steps.first {
             stories.place(first, at: firstKey)
-            stories.place(Array(steps.dropFirst()), after: firstKey)
+            stories.insert(Array(steps.dropFirst()), after: firstKey)
         }
         return StoryState(stories: stories, lastEdit: .whole, focus: nil)
     }
 
     /// Adds `steps`, in order, right after `position`: spread between it and the next step.
-    public func addSteps(_ steps: [StoryStep], after position: Double, state: StoryState) -> StoryState {
+    public func addSteps(_ steps: [StoryStep], after position: Int, state: StoryState) -> StoryState {
         guard !steps.isEmpty, state.stories[position] != nil else { return state }
         var stories = state.stories
-        stories.place(steps, after: position)
+        stories.insert(steps, after: position)
         return keepingFocus(of: state, in: stories)
     }
 
     /// Adds `step` right before the step at `position`: half way to the previous step.
-    public func addStep(_ step: StoryStep, before position: Double, state: StoryState) -> StoryState {
+    public func addStep(_ step: StoryStep, before position: Int, state: StoryState) -> StoryState {
         guard state.stories[position] != nil else { return state }
         return contentManager.add(step, before: position, in: state.stories)
     }
@@ -354,7 +355,7 @@ public struct WriteopiaManager {
     }
 
     /// `stories` with the focus still on the step that had it in `state`, if it's still there.
-    private func keepingFocus(of state: StoryState, in stories: [Double: StoryStep]) -> StoryState {
+    private func keepingFocus(of state: StoryState, in stories: [Int: StoryStep]) -> StoryState {
         let focusId = state.focus.flatMap { state.stories[$0]?.id }
         let focus = focusId.flatMap { id in stories.first { $0.value.id == id }?.key }
         return StoryState(stories: stories, lastEdit: .whole, focus: focus)

@@ -598,8 +598,8 @@ private fun FolderItem(
             ) {
                 DragCardTarget(
                     modifier = Modifier.clip(MaterialTheme.shapes.large),
-                    position = position.toDouble(),
-                    dataToDrop = DropInfo(folderUi, position.toDouble()),
+                    position = position.toLong(),
+                    dataToDrop = DropInfo(folderUi, position.toLong()),
                     iconTintOnHover = MaterialTheme.colorScheme.onBackground,
                     onIconClick = onDragIconClick,
                 ) {
@@ -757,8 +757,8 @@ private fun DocumentItem(
                 activeColor = backgroundColor
             ) {
                 DragCardTarget(
-                    position = position.toDouble(),
-                    dataToDrop = DropInfo(documentUi, position.toDouble()),
+                    position = position.toLong(),
+                    dataToDrop = DropInfo(documentUi, position.toLong()),
                     iconTintOnHover = MaterialTheme.colorScheme.onBackground,
                     onIconClick = onDragIconClick
                 ) {
@@ -785,7 +785,7 @@ private fun DocumentItem(
                                 step = storyStep,
                                 drawInfo = DrawInfo(
                                     editable = false,
-                                    position = i.toDouble(),
+                                    position = i.toLong(),
                                     selectMode = documentUi.selected,
                                     extraData = extraData
                                 ),

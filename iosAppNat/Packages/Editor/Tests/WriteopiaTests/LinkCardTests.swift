@@ -48,9 +48,10 @@ private func state(_ steps: [StoryStep]) -> StoryState {
         #expect(card.url == "https://writeopia.io")
         #expect(card.text == nil)
         #expect(result.sortedStories.count == 3)
-        #expect(result.stories[2]?.type == .text)
-        #expect(result.stories[2]?.text == "")
-        #expect(result.focus == 2)
+        // The new line goes one gap after the card, the last step
+        #expect(result.stories[1 + positionGap]?.type == .text)
+        #expect(result.stories[1 + positionGap]?.text == "")
+        #expect(result.focus == 1 + positionGap)
         #expect(result.lastEdit == .whole)
     }
 

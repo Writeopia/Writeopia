@@ -90,8 +90,9 @@ object AiCommandService {
         val from = rewrite.from
         val toExclusive = rewrite.toExclusive
 
-        val begun = writeopiaManager.beginRegionRewrite(from, toExclusive, listOf(skeleton) + rewrite.keptBlocksInOrder)
-        if (!begun) return Result.failure(IllegalStateException("There is nothing to rewrite in the document"))
+        // The region may grow at its end when the stories after it are spread out to make room
+        var region = writeopiaManager.beginRegionRewrite(from, toExclusive, listOf(skeleton) + rewrite.keptBlocksInOrder)
+            ?: return Result.failure(IllegalStateException("There is nothing to rewrite in the document"))
 
         var answer = ""
         var error: Exception? = null
@@ -102,9 +103,8 @@ object AiCommandService {
                     is ResultData.Complete -> {
                         answer = result.data
                         val parsed = rewrite.parse(answer)
-                        writeopiaManager.updateRegion(
-                            from,
-                            toExclusive,
+                        region = writeopiaManager.updateRegion(
+                            region,
                             parsed.stories + skeleton + parsed.pendingBlocks,
                             done = false
                         )
@@ -118,7 +118,7 @@ object AiCommandService {
             }
         } catch (e: CancellationException) {
             // Stopped by the writer (or the editor closed): the document comes back as it was.
-            writeopiaManager.updateRegion(from, toExclusive, rewrite.restoredStories(), done = true)
+            writeopiaManager.updateRegion(region, rewrite.restoredStories(), done = true)
             throw e
         }
 
@@ -127,10 +127,10 @@ object AiCommandService {
 
         return if (failure != null) {
             // The document comes back as it was, so nothing is lost when the AI fails.
-            writeopiaManager.updateRegion(from, toExclusive, rewrite.restoredStories(), done = true)
+            writeopiaManager.updateRegion(region, rewrite.restoredStories(), done = true)
             Result.failure(failure)
         } else {
-            writeopiaManager.updateRegion(from, toExclusive, parsed.stories + parsed.pendingBlocks, done = true)
+            writeopiaManager.updateRegion(region, parsed.stories + parsed.pendingBlocks, done = true)
             Result.success(Unit)
         }
     }

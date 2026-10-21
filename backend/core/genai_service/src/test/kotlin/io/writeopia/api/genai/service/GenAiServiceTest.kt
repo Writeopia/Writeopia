@@ -20,7 +20,7 @@ class GenAiServiceTest {
     private fun createUnconfiguredService() = GenAiService(
         projectId = "",
         location = "us-central1",
-        defaultModel = "gemini-2.0-flash"
+        defaultModel = "gemini-2L-flash"
     )
 
     @Test
@@ -160,7 +160,7 @@ class GenAiServiceTest {
         val service = GenAiService(
             projectId = "my-project-id",
             location = "us-central1",
-            defaultModel = "gemini-2.0-flash"
+            defaultModel = "gemini-2L-flash"
         )
 
         assertTrue(service.isAvailable())

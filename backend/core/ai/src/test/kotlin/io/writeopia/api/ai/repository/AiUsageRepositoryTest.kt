@@ -35,7 +35,7 @@ class AiUsageRepositoryTest {
             inputTokens = 100,
             outputTokens = 200,
             totalTokens = 300,
-            model = "gemini-2.0-flash"
+            model = "gemini-2L-flash"
         )
 
         val now = System.currentTimeMillis()
@@ -58,7 +58,7 @@ class AiUsageRepositoryTest {
                 inputTokens = 100 * (i + 1),
                 outputTokens = 50 * (i + 1),
                 totalTokens = 150 * (i + 1),
-                model = "gemini-2.0-flash"
+                model = "gemini-2L-flash"
             )
         }
 
@@ -101,7 +101,7 @@ class AiUsageRepositoryTest {
             inputTokens = 100,
             outputTokens = 200,
             totalTokens = 300,
-            model = "gemini-2.0-flash"
+            model = "gemini-2L-flash"
         )
 
         // Query for records in the last hour - should find our record
@@ -126,7 +126,7 @@ class AiUsageRepositoryTest {
             inputTokens = 100,
             outputTokens = 200,
             totalTokens = 300,
-            model = "gemini-2.0-flash"
+            model = "gemini-2L-flash"
         )
 
         // Insert usage for another user
@@ -137,7 +137,7 @@ class AiUsageRepositoryTest {
             inputTokens = 500,
             outputTokens = 500,
             totalTokens = 1000,
-            model = "gemini-2.0-flash"
+            model = "gemini-2L-flash"
         )
 
         val now = System.currentTimeMillis()
@@ -165,7 +165,7 @@ class AiUsageRepositoryTest {
                 inputTokens = 100,
                 outputTokens = 100,
                 totalTokens = 200,
-                model = "gemini-2.0-flash"
+                model = "gemini-2L-flash"
             )
         }
 

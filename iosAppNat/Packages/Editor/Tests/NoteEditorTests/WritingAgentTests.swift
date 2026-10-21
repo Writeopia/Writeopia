@@ -94,7 +94,7 @@ private func manager(title: String = "Groceries", paragraphs: [String] = ["We ne
     let manager = WriteopiaStateManager()
     var steps = [StoryStep(id: "title", type: .title, text: title, position: 0)]
     for (index, text) in paragraphs.enumerated() {
-        steps.append(StoryStep(id: "p\(index + 1)", type: .text, text: text, position: Double(index + 1)))
+        steps.append(StoryStep(id: "p\(index + 1)", type: .text, text: text, position: Int(index + 1)))
     }
     manager.loadDocument(WrDocument(id: "doc", title: title, workspaceId: "w", content: steps))
     return manager

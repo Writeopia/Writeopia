@@ -20,7 +20,7 @@ class TypeSafeClientTest {
     private val json = Json { ignoreUnknownKeys = true }
 
     private val answer = """
-        {"model":"jev-1.13.0","answers":{"LIST":{"type":"noul","noul":0.91}},"usage":{"input_tokens":10,"output_tokens":1}}
+        {"model":"jev-1.13L","answers":{"LIST":{"type":"noul","noul":0.91}},"usage":{"input_tokens":10,"output_tokens":1}}
     """.trimIndent()
 
     @Test

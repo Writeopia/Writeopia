@@ -8,13 +8,13 @@ public struct FocusHandler {
         self.isFocusable = isFocusable
     }
 
-    public func findNextFocus(after position: Double, in stories: [Double: StoryStep]) -> Double? {
+    public func findNextFocus(after position: Int, in stories: [Int: StoryStep]) -> Int? {
         stories.reduce(nil) { best, entry in
             entry.key > position && isFocusable(entry.value) && (best == nil || entry.key < best!) ? entry.key : best
         }
     }
 
-    public func findPreviousFocus(before position: Double, in stories: [Double: StoryStep]) -> Double? {
+    public func findPreviousFocus(before position: Int, in stories: [Int: StoryStep]) -> Int? {
         stories.reduce(nil) { best, entry in
             entry.key < position && isFocusable(entry.value) && (best == nil || entry.key > best!) ? entry.key : best
         }

@@ -31,11 +31,11 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
             title = "Document1",
             content = listOf(
                 (
-                    0.0 to StoryStep(
+                    0L to StoryStep(
                         type = StoryTypes.TEXT.type,
                         text = "text",
                         tags = setOf(TagInfo(Tag.H1)),
-                        dbPosition = 0.0
+                        dbPosition = 0L
                     )
                 )
             ).toMap(),
@@ -181,14 +181,14 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
             id = GenerateId.generate(),
             title = "Document with comments",
             content = mapOf(
-                0.0 to StoryStep(
+                0L to StoryStep(
                     type = StoryTypes.TEXT.type,
                     text = "Commented text",
                     spans = setOf(
                         SpanInfo.create(0, 9, Span.COMMENT, conversationId),
                         SpanInfo.create(10, 13, Span.COMMENT, "conversation-2"),
                     ),
-                    dbPosition = 0.0,
+                    dbPosition = 0L,
                 )
             ),
             commentConversations = mapOf(
@@ -219,12 +219,12 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
         assertEquals(document.id, loadedDocument?.id)
         assertEquals(document.commentConversations, loadedDocument?.commentConversations)
         assertEquals(
-            document.content.getValue(0.0).spans,
-            loadedDocument?.content?.get(0.0)?.spans,
+            document.content.getValue(0L).spans,
+            loadedDocument?.content?.get(0L)?.spans,
         )
         assertEquals(
-            document.content.getValue(0.0).text,
-            loadedDocument?.content?.get(0.0)?.text,
+            document.content.getValue(0L).text,
+            loadedDocument?.content?.get(0L)?.text,
         )
     }
 
@@ -344,13 +344,13 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
             id = id,
             title = id,
             content = mapOf(
-                0.0 to StoryStep(
+                0L to StoryStep(
                     type = StoryTypes.TEXT.type,
                     text = "Commented",
                     spans = setOf(
                         SpanInfo.create(0, 9, Span.COMMENT, conversationId)
                     ),
-                    dbPosition = 0.0,
+                    dbPosition = 0L,
                 )
             ),
             commentConversations = mapOf(
@@ -415,7 +415,7 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
             id = GenerateId.generate(),
             title = "Document with tags",
             content = mapOf(
-                0.0 to StoryStep(type = StoryTypes.TEXT.type, text = "Tagged text", dbPosition = 0.0)
+                0L to StoryStep(type = StoryTypes.TEXT.type, text = "Tagged text", dbPosition = 0L)
             ),
             tagIds = tagIds,
             createdAt = now,
@@ -486,7 +486,7 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
         assertEquals(listOf(kept.id), documentRepository.loadDocumentById(document.id, document.workspaceId)?.stepIds())
 
         // Whatever saves it again, step by step or whole: it stays deleted.
-        documentRepository.saveStoryStep(deleted, 0.0, document.id)
+        documentRepository.saveStoryStep(deleted, 0L, document.id)
         assertEquals(listOf(kept.id), documentRepository.loadDocumentById(document.id, document.workspaceId)?.stepIds())
         documentRepository.saveDocument(document)
         assertEquals(listOf(kept.id), documentRepository.loadDocumentById(document.id, document.workspaceId)?.stepIds())
@@ -520,8 +520,8 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
     /** The time of a step's last edit survives a round trip, so the sync can compare it. */
     suspend fun stepTimestampsAreKept() {
         val content = mapOf(
-            0.0 to StoryStep(type = StoryTypes.TEXT.type, text = "stamped", lastUpdatedAt = 1_791_998_156_814L),
-            1.0 to StoryStep(type = StoryTypes.TEXT.type, text = "not stamped"),
+            0L to StoryStep(type = StoryTypes.TEXT.type, text = "stamped", lastUpdatedAt = 1_791_998_156_814L),
+            1L to StoryStep(type = StoryTypes.TEXT.type, text = "not stamped"),
         )
         val document = Document(
             createdAt = now(),
@@ -541,7 +541,7 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
     /** More steps than one SQLite query can bind (older builds allow 999 variables). */
     suspend fun aDocumentWithMoreStepsThanOneQueryCanBindIsSaved() {
         val content = (0 until 1_200).associate { index ->
-            index.toDouble() to StoryStep(type = StoryTypes.TEXT.type, text = "line $index")
+            index.toLong() to StoryStep(type = StoryTypes.TEXT.type, text = "line $index")
         }
         val document = Document(
             createdAt = now(),
@@ -585,54 +585,54 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
 
 private fun now() = Instant.fromEpochMilliseconds(Clock.System.now().toEpochMilliseconds())
 
-fun twoLines(): Map<Double, StoryStep> = mapOf(
-    0.0 to StoryStep(type = StoryTypes.TEXT.type, text = "first", dbPosition = 0.0),
-    1.0 to StoryStep(type = StoryTypes.TEXT.type, text = "second", dbPosition = 1.0),
+fun twoLines(): Map<Long, StoryStep> = mapOf(
+    0L to StoryStep(type = StoryTypes.TEXT.type, text = "first", dbPosition = 0L),
+    1L to StoryStep(type = StoryTypes.TEXT.type, text = "second", dbPosition = 1L),
 )
 
-fun simpleText(): Map<Double, StoryStep> = mapOf(
-    0.0 to StoryStep(
+fun simpleText(): Map<Long, StoryStep> = mapOf(
+    0L to StoryStep(
         type = StoryTypes.TEXT.type,
         text = "text",
-        dbPosition = 0.0
+        dbPosition = 0L
     )
 )
 
-fun simpleImage(): Map<Double, StoryStep> = mapOf(
-    0.0 to StoryStep(
+fun simpleImage(): Map<Long, StoryStep> = mapOf(
+    0L to StoryStep(
         localId = "0",
         type = StoryTypes.IMAGE.type,
-        dbPosition = 0.0
+        dbPosition = 0L
     )
 )
 
-fun imageStepsList(): Map<Double, StoryStep> = mapOf(
-    0.0 to StoryStep(
+fun imageStepsList(): Map<Long, StoryStep> = mapOf(
+    0L to StoryStep(
         localId = "0",
         type = StoryTypes.IMAGE.type,
-        dbPosition = 0.0
+        dbPosition = 0L
     ),
-    1.0 to StoryStep(
+    1L to StoryStep(
         localId = "1",
         type = StoryTypes.IMAGE.type,
-        dbPosition = 1.0
+        dbPosition = 1L
     ),
-    2.0 to StoryStep(
+    2L to StoryStep(
         localId = "2",
         type = StoryTypes.IMAGE.type,
-        dbPosition = 2.0
+        dbPosition = 2L
     ),
 )
 
-fun imageGroup(): Map<Double, StoryStep> {
+fun imageGroup(): Map<Long, StoryStep> {
     val groupId = GenerateId.generate()
 
     return mapOf(
-        0.0 to StoryStep(
+        0L to StoryStep(
             id = groupId,
             localId = "1",
             type = StoryTypes.GROUP_IMAGE.type,
-            dbPosition = 0.0,
+            dbPosition = 0L,
             steps = listOf(
                 StoryStep(
                     localId = "2",

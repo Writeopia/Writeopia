@@ -49,20 +49,20 @@ class SqlDelightDocumentRepositoryTest {
     fun `when saving a document when less content, the exceeding content should be erased`() =
         runTest {
             val smallContent = mapOf(
-                0.0 to StoryStep(
+                0L to StoryStep(
                     type = StoryTypes.TEXT.type,
                     text = "text",
-                    dbPosition = 0.0,
+                    dbPosition = 0L,
                 ),
-                1.0 to StoryStep(
+                1L to StoryStep(
                     type = StoryTypes.TEXT.type,
                     text = "text1",
-                    dbPosition = 1.0
+                    dbPosition = 1L
                 )
             )
 
             val bigContent = smallContent + (
-                2.0 to StoryStep(type = StoryTypes.TEXT.type, text = "text2", dbPosition = 2.0)
+                2L to StoryStep(type = StoryTypes.TEXT.type, text = "text2", dbPosition = 2L)
                 )
 
             val instant = Instant.parse("2023-01-01T12:05:30Z")
@@ -210,13 +210,13 @@ class SqlDelightDocumentRepositoryTest {
             id = "document-with-comments",
             title = "Comments",
             content = mapOf(
-                0.0 to StoryStep(
+                0L to StoryStep(
                     type = StoryTypes.TEXT.type,
                     text = "Commented text",
                     spans = setOf(
                         SpanInfo.create(0, 9, Span.COMMENT, conversationId)
                     ),
-                    dbPosition = 0.0,
+                    dbPosition = 0L,
                 )
             ),
             commentConversations = mapOf(
@@ -238,12 +238,12 @@ class SqlDelightDocumentRepositoryTest {
         assertEquals(document.id, loadedDocument?.id)
         assertEquals(document.commentConversations, loadedDocument?.commentConversations)
         assertEquals(
-            document.content.getValue(0.0).spans,
-            loadedDocument?.content?.get(0.0)?.spans,
+            document.content.getValue(0L).spans,
+            loadedDocument?.content?.get(0L)?.spans,
         )
         assertEquals(
-            document.content.getValue(0.0).text,
-            loadedDocument?.content?.get(0.0)?.text,
+            document.content.getValue(0L).text,
+            loadedDocument?.content?.get(0L)?.text,
         )
 
         val loadedFromWorkspace = documentRepository.loadDocumentsWorkspace(document.workspaceId)
@@ -363,10 +363,10 @@ class SqlDelightDocumentRepositoryTest {
     fun `a document saved whole keeps the positions of its steps, not their order in the map`() = runTest {
         val workspaceId = "workspaceId"
         val content = mapOf(
-            0.0 to StoryStep(type = StoryTypes.TEXT.type, text = "title"),
-            1.0 to StoryStep(type = StoryTypes.TEXT.type, text = "a"),
-            1.5 to StoryStep(type = StoryTypes.TEXT.type, text = "between"),
-            2.0 to StoryStep(type = StoryTypes.TEXT.type, text = "c"),
+            0L to StoryStep(type = StoryTypes.TEXT.type, text = "title"),
+            10L to StoryStep(type = StoryTypes.TEXT.type, text = "a"),
+            15L to StoryStep(type = StoryTypes.TEXT.type, text = "between"),
+            20L to StoryStep(type = StoryTypes.TEXT.type, text = "c"),
         )
         val document = Document(
             createdAt = Clock.System.now(),
@@ -380,13 +380,13 @@ class SqlDelightDocumentRepositoryTest {
         documentRepository.saveDocument(document)
 
         val loaded = documentRepository.loadDocumentById(document.id, workspaceId)
-        assertEquals(listOf(0.0, 1.0, 1.5, 2.0), loaded?.content?.keys?.toList())
+        assertEquals(listOf(0L, 10L, 15L, 20L), loaded?.content?.keys?.toList())
         assertEquals(listOf("title", "a", "between", "c"), loaded?.content?.values?.map { it.text })
 
         // A step saved alone at its position keeps its place among the others
         documentRepository.saveStoryStep(
-            content.getValue(1.5).copy(text = "edited"),
-            position = 1.5,
+            content.getValue(15L).copy(text = "edited"),
+            position = 15L,
             documentId = document.id
         )
         val reloaded = documentRepository.loadDocumentById(document.id, workspaceId)

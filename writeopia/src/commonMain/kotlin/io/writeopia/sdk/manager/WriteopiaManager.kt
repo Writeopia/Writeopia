@@ -22,7 +22,7 @@ import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.normalization.builder.StepsMapNormalizationBuilder
 import io.writeopia.sdk.utils.alias.UnitsNormalizationMap
 import io.writeopia.sdk.utils.collections.toSortedMutableMap
-import io.writeopia.sdk.utils.iterables.keyBefore
+import io.writeopia.sdk.utils.iterables.Insertion
 import io.writeopia.sdk.utils.extensions.toEditState
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -51,7 +51,7 @@ class WriteopiaManager(
             localId = GenerateId.generate(),
             type = StoryTypes.TITLE.type
         )
-        val stories: Map<Double, StoryStep> = mapOf(0.0 to firstMessage)
+        val stories: Map<Long, StoryStep> = mapOf(0L to firstMessage)
         val normalized = stepsNormalizer(stories.toEditState())
 
         val now = Clock.System.now()
@@ -72,7 +72,7 @@ class WriteopiaManager(
         val state = StoryState(
             normalized + normalized,
             LastEdit.Nothing,
-            focus = 0.0
+            focus = 0L
         )
 
         return info to state
@@ -82,10 +82,10 @@ class WriteopiaManager(
      * Moves the focus to the next available [StoryStep] if it can't find a step to focus, it
      * creates a new [StoryStep] at the end of the document.
      *
-     * @param position Double
+     * @param position Long
      * @param storyState [StoryState]
      */
-    fun nextFocus(position: Double, cursor: Int, storyState: StoryState): StoryState {
+    fun nextFocus(position: Long, cursor: Int, storyState: StoryState): StoryState {
         val storyMap = storyState.stories
         val nextPosition = focusHandler.findNextFocus(position, storyMap)
 
@@ -186,7 +186,7 @@ class WriteopiaManager(
         stateChange: Iterable<Action.StoryStateChange>,
     ): StoryState {
         val mutable = storyState.stories.toSortedMutableMap()
-        val changedSteps = mutableListOf<Pair<Double, StoryStep>>()
+        val changedSteps = mutableListOf<Pair<Long, StoryStep>>()
 
         stateChange.forEach { change ->
             mutable[change.position] = change.storyStep
@@ -201,12 +201,12 @@ class WriteopiaManager(
      * Commands normally change the type of a message. From a message to a unordered list item, for
      * example.
      *
-     * @param position Double
+     * @param position Long
      * @param storyType [StoryStep]
      * @param commandInfo [CommandInfo]
      */
     fun changeStoryType(
-        position: Double,
+        position: Long,
         typeInfo: TypeInfo,
         commandInfo: CommandInfo?,
         storyState: StoryState
@@ -220,13 +220,13 @@ class WriteopiaManager(
 
     fun bulkChangeStoryType(
         storyState: StoryState,
-        change: Iterable<Pair<Double, TypeInfo>>
+        change: Iterable<Pair<Long, TypeInfo>>
     ): StoryState = contentHandler.bulkChangeStoryType(storyState.stories, change)
 
     /**
      * Removes all tags from a story step
      */
-    fun removeTags(position: Double, storyState: StoryState): StoryState =
+    fun removeTags(position: Long, storyState: StoryState): StoryState =
         contentHandler.removeTags(storyState.stories, position)
 
     /**
@@ -245,7 +245,7 @@ class WriteopiaManager(
      * Turns the text step at [position] into a link card for [url], with the cursor on the
      * line below it. See [ContentHandler.createLinkCard].
      */
-    fun createLinkCard(position: Double, url: String, storyState: StoryState): StoryState =
+    fun createLinkCard(position: Long, url: String, storyState: StoryState): StoryState =
         contentHandler.createLinkCard(storyState.stories, position, url) ?: storyState
 
     /**
@@ -270,27 +270,27 @@ class WriteopiaManager(
         contentHandler.eraseStory(deleteStory, storyState.stories)
 
     fun previousTextStory(
-        storyMap: Map<Double, StoryStep>,
-        position: Double,
-    ): Pair<StoryStep, Double>? = contentHandler.previousTextStory(storyMap, position)
+        storyMap: Map<Long, StoryStep>,
+        position: Long,
+    ): Pair<StoryStep, Long>? = contentHandler.previousTextStory(storyMap, position)
 
     /**
      * Deletes the whole selection. All [StoryStep] in the selection will be deleted.
      */
     fun bulkDelete(
-        positions: Iterable<Double>,
-        stories: Map<Double, StoryStep>
+        positions: Iterable<Long>,
+        stories: Map<Long, StoryStep>
     ) = contentHandler.bulkDeletion(positions, stories)
 
-    fun collapseItem(storyState: StoryState, position: Double) =
+    fun collapseItem(storyState: StoryState, position: Long) =
         contentHandler.collapseItem(storyState.stories, position)
 
-    fun expandItem(storyState: StoryState, position: Double): StoryState =
+    fun expandItem(storyState: StoryState, position: Long): StoryState =
         contentHandler.expandItem(storyState.stories, position)
 
     fun addSpanToStories(
         storyState: StoryState,
-        positions: Set<Double>,
+        positions: Set<Long>,
         span: Span,
         extra: String? = null,
     ): StoryState {
@@ -315,7 +315,7 @@ class WriteopiaManager(
     /**
      * Adds a Span like, Bold, Italic, Underline to a story.
      */
-    fun addSpan(storyState: StoryState, position: Double, spanInfo: SpanInfo): StoryState =
+    fun addSpan(storyState: StoryState, position: Long, spanInfo: SpanInfo): StoryState =
         storyState.stories[position]?.let { story ->
             val spans = story.spans
             val newStory = story.copy(
@@ -338,35 +338,31 @@ class WriteopiaManager(
      * Adds a story in a position. Useful to add stories that were not created by the end user, but
      * by an API call or different event.
      */
-    fun addAtPosition(storyState: StoryState, storyStep: StoryStep, position: Double): StoryState {
-        val newStory = contentHandler.addNewContent(storyState.stories, storyStep, position)
-
-        return storyState.copy(
-            stories = newStory,
-            lastEdit = newStory.editionOf(storyStep)
-        )
-    }
+    fun addAtPosition(storyState: StoryState, storyStep: StoryStep, position: Long): StoryState =
+        storyState.with(contentHandler.addNewContent(storyState.stories, storyStep, position))
 
     /**
      * Adds a story right after the one at [position]: half way to the next story, so nothing
      * else moves.
      */
-    fun addAfterPosition(storyState: StoryState, storyStep: StoryStep, position: Double): StoryState {
-        val newStory = contentHandler.addNewContentAfter(storyState.stories, storyStep, position)
+    fun addAfterPosition(storyState: StoryState, storyStep: StoryStep, position: Long): StoryState =
+        storyState.with(contentHandler.addNewContentAfter(storyState.stories, storyStep, position))
 
-        return storyState.copy(
-            stories = newStory,
-            lastEdit = newStory.editionOf(storyStep)
-        )
+    /**
+     * The state after [insertion]: its edition saves the steps added and the steps moved to
+     * make room for them.
+     */
+    private fun StoryState.with(insertion: Insertion<StoryStep>): StoryState {
+        val steps = (insertion.keys + insertion.moved).map { key -> key to insertion.map.getValue(key) }
+        val lastEdit = when (steps.size) {
+            0 -> LastEdit.Nothing
+            1 -> LastEdit.LineEdition(steps.single().first, steps.single().second)
+            else -> LastEdit.BulkEdition(steps)
+        }
+        return copy(stories = insertion.map, lastEdit = lastEdit)
     }
 
-    /** The edition that saves [storyStep] at the position it has in this map. */
-    private fun Map<Double, StoryStep>.editionOf(storyStep: StoryStep): LastEdit =
-        entries.firstOrNull { (_, step) -> step.id == storyStep.id }
-            ?.let { (position, step) -> LastEdit.LineEdition(position, step) }
-            ?: LastEdit.Nothing
-
-    fun removeAtPosition(storyState: StoryState, position: Double): StoryState {
+    fun removeAtPosition(storyState: StoryState, position: Long): StoryState {
         val newStory = contentHandler.removeContent(storyState.stories, position)
         return storyState.copy(stories = newStory)
     }
@@ -378,7 +374,7 @@ class WriteopiaManager(
 
     fun addDocumentLink(
         storyState: StoryState,
-        position: Double,
+        position: Long,
         documentId: String,
         text: String
     ): StoryState {
@@ -407,30 +403,19 @@ class WriteopiaManager(
      */
     fun createSpreadsheet(
         storyState: StoryState,
-        position: Double,
+        position: Long,
         columnCount: Int,
         rowCount: Int = 3,
         insertMode: Boolean = false
-    ): StoryState {
-        val newStories = contentHandler.createSpreadsheet(
+    ): StoryState = storyState.with(
+        contentHandler.createSpreadsheet(
             storyState.stories,
             position,
             columnCount,
             rowCount = rowCount,
             insertMode = insertMode
         )
-        // Inserted at the position, or right before the story there
-        val spreadsheetPosition = if (insertMode) storyState.stories.keyBefore(position) else position
-        val spreadsheet = newStories[spreadsheetPosition]
-        return storyState.copy(
-            stories = newStories,
-            lastEdit = if (spreadsheet != null) {
-                LastEdit.LineEdition(spreadsheetPosition, spreadsheet)
-            } else {
-                LastEdit.Nothing
-            }
-        )
-    }
+    )
 
     /**
      * Updates the text of a specific cell within a spreadsheet.
@@ -694,7 +679,7 @@ class WriteopiaManager(
     suspend fun generateSuggestionsList(
         storyState: () -> StoryState,
         storyType: StoryType,
-        position: Double,
+        position: Long,
         context: String,
         userId: String,
     ): StoryState {
@@ -717,9 +702,9 @@ class WriteopiaManager(
                 }
                 StoryStep(text = suggestion, type = storyType, tags = tags, ephemeral = true)
             }
-            // In order, at the position or right before the story there: nothing else moves
+            // In order, at the position or right before the story there
             val finalState = originalState.copy(
-                stories = contentHandler.addNewContents(originalStories, suggestionSteps, position)
+                stories = contentHandler.addNewContents(originalStories, suggestionSteps, position).map
             )
 
             // Find all changed stories

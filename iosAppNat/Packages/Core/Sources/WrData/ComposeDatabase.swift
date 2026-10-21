@@ -26,7 +26,7 @@ struct ComposeDatabase {
         let id: String
         let presentationId: String
         let slideIndex: Int64
-        let position: Double
+        let position: Int
         let content: String
     }
 
@@ -154,7 +154,7 @@ struct ComposeDatabase {
                 path: row.text(5),
                 tags: Self.tags(row.text(10)),
                 spans: Self.spans(row.text(11)),
-                position: row.real(8) ?? 0,
+                position: Int((row.real(8) ?? 0).rounded(.down)),
                 documentLink: row.text(12).map { DocumentLink(id: $0) },
                 parentId: row.text(3),
                 decoration: row.integer(9).map { Decoration(backgroundColor: Int($0)) },
@@ -169,9 +169,17 @@ struct ComposeDatabase {
             let children = Dictionary(grouping: all.filter { $0.parentId != nil }, by: { $0.parentId! })
             let ids = Set(all.map(\.id))
             // A child whose group is gone is kept at the top level instead of being lost.
+            // In their order, one gap apart: the Compose database may hold fractions from before
+            // the gaps, or indexes 0, 1, 2...
             result[documentId] = all
                 .filter { $0.parentId == nil || !ids.contains($0.parentId!) }
                 .map { Self.nesting($0, children: children, depth: 0) }
+                .enumerated()
+                .map { index, step in
+                    var step = step
+                    step.position = index * positionGap
+                    return step
+                }
         }
         return result
     }
@@ -217,7 +225,7 @@ struct ComposeDatabase {
                 id: id,
                 presentationId: presentationId,
                 slideIndex: row.integer(2) ?? 0,
-                position: row.real(3) ?? 0,
+                position: Int((row.real(3) ?? 0).rounded(.down)),
                 content: content
             )
         }

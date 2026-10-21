@@ -132,11 +132,11 @@ class SqlDelightDocumentRepository(
         refreshDocuments()
     }
 
-    override suspend fun saveStoryStep(storyStep: StoryStep, position: Double, documentId: String) {
+    override suspend fun saveStoryStep(storyStep: StoryStep, position: Long, documentId: String) {
         documentSqlDao.insertStoryStep(storyStep, position, documentId)
     }
 
-    override suspend fun saveStorySteps(steps: List<Pair<Double, StoryStep>>, documentId: String) {
+    override suspend fun saveStorySteps(steps: List<Pair<Long, StoryStep>>, documentId: String) {
         documentSqlDao.insertStorySteps(steps, documentId)
     }
 
@@ -212,7 +212,7 @@ class SqlDelightDocumentRepository(
 
     override suspend fun updateStoryStep(
         storyStep: StoryStep,
-        position: Double,
+        position: Long,
         documentId: String
     ) {
         TODO("Not yet implemented")

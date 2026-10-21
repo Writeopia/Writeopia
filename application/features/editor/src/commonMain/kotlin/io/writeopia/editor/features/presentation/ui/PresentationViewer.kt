@@ -168,8 +168,8 @@ private fun SlideContent(
 private fun Slide.asDocument(id: String): Document {
     val now = Clock.System.now()
     val content = buildMap {
-        put(0.0, StoryStep(id = "$id-title", type = StoryTypes.TITLE.type, text = title))
-        this@asDocument.content.forEachIndexed { index, step -> put((index + 1).toDouble(), step) }
+        put(0L, StoryStep(id = "$id-title", type = StoryTypes.TITLE.type, text = title))
+        this@asDocument.content.forEachIndexed { index, step -> put((index + 1).toLong(), step) }
     }
     return Document(
         id = id,

@@ -862,8 +862,8 @@ internal class ChooseNoteKmpViewModel(
                     favorite = false,
                     title = "",
                     content = mapOf(
-                        0.0 to StoryStep(type = StoryTypes.TITLE.type, text = ""),
-                        1.0 to StoryStep(type = StoryTypes.IMAGE.type, path = path)
+                        0L to StoryStep(type = StoryTypes.TITLE.type, text = ""),
+                        1L to StoryStep(type = StoryTypes.IMAGE.type, path = path)
                     )
                 )
             }

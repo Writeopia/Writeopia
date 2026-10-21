@@ -34,7 +34,7 @@ fun unOrderedListItemDrawer(
     dragIconWidth: Dp = 16.dp,
     checkBoxPadding: PaddingValues = PaddingValues(0.dp),
     config: DrawConfig,
-    receiveExternalFile: (List<ExternalFile>, Double) -> Unit,
+    receiveExternalFile: (List<ExternalFile>, Long) -> Unit,
     messageDrawer: @Composable RowScope.() -> SimpleTextDrawer
 ): StoryStepDrawer = unOrderedListItemDrawer(
     isDesktop = isDesktop,
@@ -58,16 +58,16 @@ fun unOrderedListItemDrawer(
     modifier: Modifier = Modifier,
     customBackgroundColor: Color = Color.Transparent,
     clickable: Boolean = true,
-    onSelected: (Boolean, Double) -> Unit = { _, _ -> },
+    onSelected: (Boolean, Long) -> Unit = { _, _ -> },
     enabled: Boolean,
     dragIconWidth: Dp = 16.dp,
     checkBoxPadding: PaddingValues = PaddingValues(0.dp),
     config: DrawConfig,
-    onDragHover: (Double) -> Unit,
+    onDragHover: (Long) -> Unit,
     onDragStart: () -> Unit,
     onDragStop: () -> Unit,
     moveRequest: (Action.Move) -> Unit = {},
-    receiveExternalFile: (List<ExternalFile>, Double) -> Unit,
+    receiveExternalFile: (List<ExternalFile>, Long) -> Unit,
     startContent: @Composable ((StoryStep, DrawInfo) -> Unit)? = { _, _ ->
         Text(
             modifier = Modifier.padding(checkBoxPadding),

@@ -45,9 +45,9 @@ class LinkCardStateManagerTest {
             userRepository = userRepository,
         )
         val content = buildMap {
-            put(0.0, StoryStep(type = StoryTypes.TITLE.type, text = "Title"))
+            put(0L, StoryStep(type = StoryTypes.TITLE.type, text = "Title"))
             lines.forEachIndexed { index, text ->
-                put(index + 1.0, StoryStep(type = StoryTypes.TEXT.type, text = text))
+                put(index + 1L, StoryStep(type = StoryTypes.TEXT.type, text = text))
             }
         }
         manager.loadDocument(
@@ -72,24 +72,24 @@ class LinkCardStateManagerTest {
 
         manager.handleTextInput(
             TextInput(text = "https://writeopia.io/docs", start = 25, end = 25),
-            position = 1.0,
+            position = 1L,
             lineBreakByContent = true
         )
         advanceUntilIdle()
 
-        val card = manager.currentStory.value.stories[1.0]!!
+        val card = manager.currentStory.value.stories[1L]!!
         assertEquals(StoryTypes.LINK_CARD.type, card.type)
         assertEquals("https://writeopia.io/docs", card.url)
         assertNull(card.text, "the description comes from the backend later")
 
         assertEquals(1, creations.size)
         assertEquals(card.id, creations.single().storyStep.id)
-        assertEquals(1.0, creations.single().position)
+        assertEquals(1L, creations.single().position)
 
         // The card can not be typed in: an empty line was added below it and has the cursor.
         val state = manager.currentStory.value
         assertEquals(3, state.stories.size)
-        val below = state.stories.entries.first { (position, _) -> position > 1.0 }
+        val below = state.stories.entries.first { (position, _) -> position > 1L }
         assertEquals(StoryTypes.TEXT.type, below.value.type)
         assertEquals("", below.value.text)
         assertEquals(below.key, state.focus)
@@ -104,20 +104,20 @@ class LinkCardStateManagerTest {
 
         manager.handleTextInput(
             TextInput(text = "https://www.google.com/", start = 23, end = 23),
-            position = 1.0,
+            position = 1L,
             lineBreakByContent = true
         )
         val rightAfter = manager.currentStory.value
-        assertEquals(StoryTypes.LINK_CARD.type, rightAfter.stories[1.0]!!.type)
+        assertEquals(StoryTypes.LINK_CARD.type, rightAfter.stories[1L]!!.type)
         assertEquals(3, rightAfter.stories.size)
 
         advanceUntilIdle()
 
         val settled = manager.currentStory.value
-        assertEquals(StoryTypes.LINK_CARD.type, settled.stories[1.0]!!.type, "the card was overwritten later")
-        assertEquals("https://www.google.com/", settled.stories[1.0]!!.url)
+        assertEquals(StoryTypes.LINK_CARD.type, settled.stories[1L]!!.type, "the card was overwritten later")
+        assertEquals("https://www.google.com/", settled.stories[1L]!!.url)
         assertEquals(3, settled.stories.size)
-        val below = settled.stories.entries.first { (position, _) -> position > 1.0 }
+        val below = settled.stories.entries.first { (position, _) -> position > 1L }
         assertEquals(StoryTypes.TEXT.type, below.value.type)
         assertEquals(below.key, settled.focus)
     }
@@ -128,16 +128,16 @@ class LinkCardStateManagerTest {
 
         manager.handleTextInput(
             TextInput(text = "https://writeopia.io", start = 20, end = 20),
-            position = 1.0,
+            position = 1L,
             lineBreakByContent = true
         )
         advanceUntilIdle()
 
         val state = manager.currentStory.value
-        assertEquals(StoryTypes.LINK_CARD.type, state.stories[1.0]!!.type)
+        assertEquals(StoryTypes.LINK_CARD.type, state.stories[1L]!!.type)
         assertEquals(3, state.stories.size, "no line is added when a text line is already below")
-        assertEquals("below", state.stories[2.0]!!.text)
-        assertEquals(2.0, state.focus)
+        assertEquals("below", state.stories[2L]!!.text)
+        assertEquals(2L, state.focus)
     }
 
     @Test
@@ -146,12 +146,12 @@ class LinkCardStateManagerTest {
 
         manager.handleTextInput(
             TextInput(text = "See https://writeopia.io", start = 24, end = 24),
-            position = 1.0,
+            position = 1L,
             lineBreakByContent = true
         )
         advanceUntilIdle()
 
-        val step = manager.currentStory.value.stories[1.0]!!
+        val step = manager.currentStory.value.stories[1L]!!
         assertEquals(StoryTypes.TEXT.type, step.type)
         assertEquals("See https://writeopia.io", step.text)
     }
@@ -162,12 +162,12 @@ class LinkCardStateManagerTest {
 
         manager.handleTextInput(
             TextInput(text = "h", start = 1, end = 1),
-            position = 1.0,
+            position = 1L,
             lineBreakByContent = true
         )
         advanceUntilIdle()
 
-        val step = manager.currentStory.value.stories[1.0]!!
+        val step = manager.currentStory.value.stories[1L]!!
         assertEquals(StoryTypes.TEXT.type, step.type)
         assertEquals("h", step.text)
     }
@@ -177,17 +177,17 @@ class LinkCardStateManagerTest {
         val manager = managerWith(null)
         manager.handleTextInput(
             TextInput(text = "https://writeopia.io", start = 20, end = 20),
-            position = 1.0,
+            position = 1L,
             lineBreakByContent = true
         )
         advanceUntilIdle()
-        val card = manager.currentStory.value.stories[1.0]!!
+        val card = manager.currentStory.value.stories[1L]!!
 
         val applied = manager.applyServerStoryStep(card.copy(text = "A text editor for everyone."))
         advanceUntilIdle()
 
         assertTrue(applied)
-        val described = manager.currentStory.value.stories[1.0]!!
+        val described = manager.currentStory.value.stories[1L]!!
         assertEquals(card.id, described.id)
         assertEquals(StoryTypes.LINK_CARD.type, described.type)
         assertEquals("A text editor for everyone.", described.text)
@@ -203,6 +203,6 @@ class LinkCardStateManagerTest {
         )
 
         assertTrue(!applied)
-        assertEquals("hello", manager.currentStory.value.stories[1.0]!!.text)
+        assertEquals("hello", manager.currentStory.value.stories[1L]!!.text)
     }
 }

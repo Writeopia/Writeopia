@@ -55,7 +55,7 @@ fun HeaderEdition(
 fun HeaderEditionContent(noteEditorViewModel: NoteEditorViewModel) {
     val currentStory by noteEditorViewModel.writeopiaManager.currentStory.collectAsState()
     val headerImages by noteEditorViewModel.headerImages.collectAsState()
-    val header = currentStory.stories[0.0]
+    val header = currentStory.stories[0L]
 
     HeaderEditionOptions(
         availableColors = ColorUtils.headerColors(),

@@ -12,13 +12,13 @@ class DocumentToMarkdownTest {
     @Test
     fun testMarkDown() {
         val content = mapOf(
-            0.0 to StoryStep(
+            0L to StoryStep(
                 type = StoryTypes.TEXT.type,
                 text = "Title!!",
                 tags = setOf(TagInfo(Tag.H1))
             ),
-            1.0 to StoryStep(type = StoryTypes.TEXT.type, text = "some text"),
-            2.0 to StoryStep(
+            1L to StoryStep(type = StoryTypes.TEXT.type, text = "some text"),
+            2L to StoryStep(
                 type = StoryTypes.TEXT.type,
                 text = "Subtitle!!",
                 tags = setOf(TagInfo(Tag.H2))
@@ -42,22 +42,22 @@ class DocumentToMarkdownTest {
     @Test
     fun testMarkdownPrettyPrintFalse() {
         val content = mapOf(
-            0.0 to StoryStep(
+            0L to StoryStep(
                 type = StoryTypes.TEXT.type,
                 text = "Title!!",
                 tags = setOf(TagInfo(Tag.H1))
             ),
-            1.0 to StoryStep(type = StoryTypes.TEXT.type, text = "some text"),
-            2.0 to StoryStep(
+            1L to StoryStep(type = StoryTypes.TEXT.type, text = "some text"),
+            2L to StoryStep(
                 type = StoryTypes.TEXT.type,
                 text = "Subtitle!!",
                 tags = setOf(TagInfo(Tag.H2))
             ),
-            3.0 to StoryStep(
+            3L to StoryStep(
                 type = StoryTypes.CHECK_ITEM.type,
                 text = "Check this"
             ),
-            4.0 to StoryStep(
+            4L to StoryStep(
                 type = StoryTypes.UNORDERED_LIST_ITEM.type,
                 text = "This is a list item"
             )
@@ -78,10 +78,10 @@ class DocumentToMarkdownTest {
     @Test
     fun `link cards become links, with labels and addresses that can not break them`() {
         val content = mapOf(
-            0.0 to StoryStep(type = StoryTypes.LINK_CARD.type, url = "https://writeopia.io", text = "A text editor."),
-            1.0 to StoryStep(type = StoryTypes.LINK_CARD.type, url = "https://writeopia.io"),
-            2.0 to StoryStep(type = StoryTypes.LINK_CARD.type, url = "https://writeopia.io", text = "Editor [beta] done"),
-            3.0 to StoryStep(type = StoryTypes.LINK_CARD.type, url = "https://w.io/a b(c)", text = "Odd address")
+            0L to StoryStep(type = StoryTypes.LINK_CARD.type, url = "https://writeopia.io", text = "A text editor."),
+            1L to StoryStep(type = StoryTypes.LINK_CARD.type, url = "https://writeopia.io"),
+            2L to StoryStep(type = StoryTypes.LINK_CARD.type, url = "https://writeopia.io", text = "Editor [beta] done"),
+            3L to StoryStep(type = StoryTypes.LINK_CARD.type, url = "https://w.io/a b(c)", text = "Odd address")
         )
 
         val expected = buildString {

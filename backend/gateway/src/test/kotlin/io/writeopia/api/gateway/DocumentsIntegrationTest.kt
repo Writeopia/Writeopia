@@ -230,11 +230,11 @@ class DocumentationIntegrationTests {
         val client = defaultClient()
         val workspace = Random.nextInt().toString()
 
-        val content: Map<Double, StoryStepApi> = mapOf(
-            0.0 to StoryStep(type = StoryTypes.TEXT.type, text = "message1"),
-            1.0 to StoryStep(type = StoryTypes.TEXT.type, text = "message2"),
-            2.0 to StoryStep(type = StoryTypes.TEXT.type, text = "message3"),
-            3.0 to StoryStep(type = StoryTypes.TEXT.type, text = "message4"),
+        val content: Map<Long, StoryStepApi> = mapOf(
+            0L to StoryStep(type = StoryTypes.TEXT.type, text = "message1"),
+            1L to StoryStep(type = StoryTypes.TEXT.type, text = "message2"),
+            2L to StoryStep(type = StoryTypes.TEXT.type, text = "message3"),
+            3L to StoryStep(type = StoryTypes.TEXT.type, text = "message4"),
         ).mapValues { (position, step) ->
             step.toApi(position)
         }
@@ -1577,15 +1577,15 @@ class DocumentationIntegrationTests {
         val workspaceId = Random.nextInt().toString()
 
         // Create content for documents
-        val content1: Map<Double, StoryStepApi> = mapOf(
-            0.0 to StoryStep(id = "step1", type = StoryTypes.TEXT.type, text = "message1"),
-            1.0 to StoryStep(id = "step2", type = StoryTypes.TEXT.type, text = "message2"),
+        val content1: Map<Long, StoryStepApi> = mapOf(
+            0L to StoryStep(id = "step1", type = StoryTypes.TEXT.type, text = "message1"),
+            1L to StoryStep(id = "step2", type = StoryTypes.TEXT.type, text = "message2"),
         ).mapValues { (position, step) ->
             step.toApi(position)
         }
 
-        val content2: Map<Double, StoryStepApi> = mapOf(
-            0.0 to StoryStep(id = "step3", type = StoryTypes.TEXT.type, text = "content A"),
+        val content2: Map<Long, StoryStepApi> = mapOf(
+            0L to StoryStep(id = "step3", type = StoryTypes.TEXT.type, text = "content A"),
         ).mapValues { (position, step) ->
             step.toApi(position)
         }

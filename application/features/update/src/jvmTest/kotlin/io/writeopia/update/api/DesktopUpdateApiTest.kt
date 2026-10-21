@@ -23,7 +23,7 @@ class DesktopUpdateApiTest {
             MockEngine { request ->
                 requestedUrl = request.url.toString()
                 respond(
-                    content = """{"version":"0.48.0"}""",
+                    content = """{"version":"0.48L"}""",
                     status = HttpStatusCode.OK,
                     headers = headersOf(HttpHeaders.ContentType, "application/json")
                 )
@@ -39,7 +39,7 @@ class DesktopUpdateApiTest {
             baseUrl = "https://writeopia.io"
         ).latestVersion()
 
-        assertEquals("0.48.0", response.version)
+        assertEquals("0.48L", response.version)
         assertEquals(
             "https://writeopia.io/api/auth/app/version",
             requestedUrl

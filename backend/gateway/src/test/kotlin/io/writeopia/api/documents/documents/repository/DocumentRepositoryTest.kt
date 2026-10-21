@@ -21,11 +21,11 @@ class DocumentRepositoryTest {
 
         val now = Clock.System.now()
 
-        val content: Map<Double, StoryStep> = mapOf(
-            0.0 to StoryStep(type = StoryTypes.TEXT.type, text = "message1"),
-            1.0 to StoryStep(type = StoryTypes.TEXT.type, text = "message2"),
-            2.0 to StoryStep(type = StoryTypes.TEXT.type, text = "message3"),
-            3.0 to StoryStep(type = StoryTypes.TEXT.type, text = "message4"),
+        val content: Map<Long, StoryStep> = mapOf(
+            0L to StoryStep(type = StoryTypes.TEXT.type, text = "message1"),
+            1L to StoryStep(type = StoryTypes.TEXT.type, text = "message2"),
+            2L to StoryStep(type = StoryTypes.TEXT.type, text = "message3"),
+            3L to StoryStep(type = StoryTypes.TEXT.type, text = "message4"),
         )
 
         val workspaceId = GenerateId.generate()

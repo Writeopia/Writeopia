@@ -24,19 +24,19 @@ class LinkCardContentHandlerTest {
     @Test
     fun `the last empty line becomes a card and a text line is added below it`() {
         val stories = mapOf(
-            0.0 to StoryStep(type = StoryTypes.TITLE.type, text = "Title", nextPosition = 1.0),
-            1.0 to StoryStep(type = StoryTypes.TEXT.type, text = "", previousPosition = 0.0)
+            0L to StoryStep(type = StoryTypes.TITLE.type, text = "Title", nextPosition = 1L),
+            1L to StoryStep(type = StoryTypes.TEXT.type, text = "", previousPosition = 0L)
         )
 
-        val state = handler.createLinkCard(stories, 1.0, "https://writeopia.io")!!
+        val state = handler.createLinkCard(stories, 1L, "https://writeopia.io")!!
 
-        val card = state.stories[1.0]!!
+        val card = state.stories[1L]!!
         assertEquals(StoryTypes.LINK_CARD.type, card.type)
         assertEquals("https://writeopia.io", card.url)
         assertNull(card.text)
 
         assertEquals(3, state.stories.size)
-        val below = state.stories.entries.first { (position, _) -> position > 1.0 }
+        val below = state.stories.entries.first { (position, _) -> position > 1L }
         assertEquals(StoryTypes.TEXT.type, below.value.type)
         assertEquals("", below.value.text)
         assertEquals(below.key, state.focus)
@@ -49,22 +49,22 @@ class LinkCardContentHandlerTest {
     @Test
     fun `an existing text line below keeps its place and takes the cursor`() {
         val stories = mapOf(
-            0.0 to StoryStep(type = StoryTypes.TITLE.type, text = "Title", nextPosition = 1.0),
-            1.0 to StoryStep(type = StoryTypes.TEXT.type, text = "", previousPosition = 0.0, nextPosition = 2.0),
-            2.0 to StoryStep(type = StoryTypes.TEXT.type, text = "below", previousPosition = 1.0)
+            0L to StoryStep(type = StoryTypes.TITLE.type, text = "Title", nextPosition = 1L),
+            1L to StoryStep(type = StoryTypes.TEXT.type, text = "", previousPosition = 0L, nextPosition = 2L),
+            2L to StoryStep(type = StoryTypes.TEXT.type, text = "below", previousPosition = 1L)
         )
 
-        val state = handler.createLinkCard(stories, 1.0, "https://writeopia.io")!!
+        val state = handler.createLinkCard(stories, 1L, "https://writeopia.io")!!
 
-        assertEquals(StoryTypes.LINK_CARD.type, state.stories[1.0]!!.type)
+        assertEquals(StoryTypes.LINK_CARD.type, state.stories[1L]!!.type)
         assertEquals(3, state.stories.size)
-        assertEquals("below", state.stories[2.0]!!.text)
-        assertEquals(2.0, state.focus)
+        assertEquals("below", state.stories[2L]!!.text)
+        assertEquals(2L, state.focus)
         assertIs<LastEdit.LineEdition>(state.lastEdit)
     }
 
     @Test
     fun `nothing happens for a position without a step`() {
-        assertNull(handler.createLinkCard(emptyMap(), 1.0, "https://writeopia.io"))
+        assertNull(handler.createLinkCard(emptyMap(), 1L, "https://writeopia.io"))
     }
 }

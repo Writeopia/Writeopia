@@ -15,6 +15,6 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class LinkCardDescriptionRequest(
     val storyStep: StoryStepApi,
-    val position: Double,
+    val position: Long,
     val requestTimestamp: Long
 )

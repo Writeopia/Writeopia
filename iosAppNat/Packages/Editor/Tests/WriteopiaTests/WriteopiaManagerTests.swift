@@ -6,6 +6,8 @@ private func state(_ steps: [StoryStep]) -> StoryState {
     StoryState(stories: ContentManager().positioned(steps))
 }
 
+private let gap = positionGap
+
 private func texts(_ state: StoryState) -> [String] {
     state.sortedStories.map { $0.text ?? "<\($0.type.name)>" }
 }
@@ -54,18 +56,18 @@ private func texts(_ state: StoryState) -> [String] {
             StoryStep(type: .title, text: "Title", position: 0),
             StoryStep(type: .text, text: "Hello world", spans: [SpanInfo(start: 6, end: 11, span: "BOLD")], position: 1),
         ])
-        var step = initial.stories[1]!
+        var step = initial.stories[gap]!
         // The text view adjusts the spans for the typed "\n" before asking for the line break.
         step.spans = SpansHandler.adjust(step.spans, from: "Hello world", to: "Hello \nworld")
         step.text = "Hello \nworld"
 
-        let result = manager.onLineBreak(Action.LineBreak(storyStep: step, position: 1, cursor: 7), state: initial)
+        let result = manager.onLineBreak(Action.LineBreak(storyStep: step, position: gap, cursor: 7), state: initial)
 
         #expect(texts(result) == ["Title", "Hello ", "world"])
-        #expect(result.stories[2]?.spans == [SpanInfo(start: 0, end: 5, span: "BOLD")])
-        #expect(result.stories[2]?.type == .text)
-        #expect(result.focus == 2)
-        #expect(result.selection == .cursor(0, at: 2))
+        #expect(result.stories[2 * gap]?.spans == [SpanInfo(start: 0, end: 5, span: "BOLD")])
+        #expect(result.stories[2 * gap]?.type == .text)
+        #expect(result.focus == 2 * gap)
+        #expect(result.selection == .cursor(0, at: 2 * gap))
     }
 
     @Test func lineBreakInTitleCreatesParagraph() {
@@ -76,8 +78,8 @@ private func texts(_ state: StoryState) -> [String] {
         let result = manager.onLineBreak(Action.LineBreak(storyStep: title, position: 0, cursor: 6), state: initial)
 
         #expect(texts(result) == ["Title", ""])
-        #expect(result.stories[1]?.type.number == StoryType.text.number)
-        #expect(result.focus == 1)
+        #expect(result.stories[gap]?.type.number == StoryType.text.number)
+        #expect(result.focus == gap)
     }
 
     @Test func lineBreakInChecklistContinuesTheList() {
@@ -85,13 +87,13 @@ private func texts(_ state: StoryState) -> [String] {
             StoryStep(type: .title, text: "T", position: 0),
             StoryStep(type: .checkItem, text: "Milk", checked: true, position: 1),
         ])
-        var item = initial.stories[1]!
+        var item = initial.stories[gap]!
         item.text = "Milk\n"
 
-        let result = manager.onLineBreak(Action.LineBreak(storyStep: item, position: 1, cursor: 5), state: initial)
+        let result = manager.onLineBreak(Action.LineBreak(storyStep: item, position: gap, cursor: 5), state: initial)
 
-        #expect(result.stories[2]?.type == .checkItem)
-        #expect(result.stories[2]?.checked == false)
+        #expect(result.stories[2 * gap]?.type == .checkItem)
+        #expect(result.stories[2 * gap]?.checked == false)
     }
 
     @Test func lineBreakOnEmptyItemAddsAnotherItem() {
@@ -100,31 +102,31 @@ private func texts(_ state: StoryState) -> [String] {
                 StoryStep(type: .title, text: "T", position: 0),
                 StoryStep(type: type, text: "", checked: type == .checkItem ? false : nil, position: 1),
             ])
-            var item = initial.stories[1]!
+            var item = initial.stories[gap]!
             item.text = "\n"
 
-            let result = manager.onLineBreak(Action.LineBreak(storyStep: item, position: 1, cursor: 1), state: initial)
+            let result = manager.onLineBreak(Action.LineBreak(storyStep: item, position: gap, cursor: 1), state: initial)
 
             #expect(result.stories.count == 3)
-            #expect(result.stories[1]?.type == type)
-            #expect(result.stories[1]?.text == "")
-            #expect(result.stories[2]?.type == type)
-            #expect(result.stories[2]?.checked == (type == .checkItem ? false : nil))
-            #expect(result.focus == 2)
+            #expect(result.stories[gap]?.type == type)
+            #expect(result.stories[gap]?.text == "")
+            #expect(result.stories[2 * gap]?.type == type)
+            #expect(result.stories[2 * gap]?.checked == (type == .checkItem ? false : nil))
+            #expect(result.focus == 2 * gap)
         }
     }
 
     @Test func pastedLinesBecomeSteps() {
         let initial = state([StoryStep(type: .title, text: "T", position: 0), StoryStep(type: .text, text: "", position: 1)])
-        var step = initial.stories[1]!
+        var step = initial.stories[gap]!
         step.text = "a\nb\nc"
 
-        let result = manager.onLineBreak(Action.LineBreak(storyStep: step, position: 1, cursor: 5), state: initial)
+        let result = manager.onLineBreak(Action.LineBreak(storyStep: step, position: gap, cursor: 5), state: initial)
 
         #expect(texts(result) == ["T", "a", "b", "c"])
         // The new lines go after the step at 1, which keeps its position
-        #expect(result.sortedPositions == [0, 1, 2, 3])
-        #expect(result.selection == .cursor(1, at: 3))
+        #expect(result.sortedPositions == [0, gap, 2 * gap, 3 * gap])
+        #expect(result.selection == .cursor(1, at: 3 * gap))
     }
 
     @Test func eraseMergesTextAndSpansIntoPreviousLine() {
@@ -134,11 +136,11 @@ private func texts(_ state: StoryState) -> [String] {
             StoryStep(type: .text, text: "world", spans: [SpanInfo(start: 0, end: 5, span: "ITALIC")], position: 2),
         ])
 
-        let result = manager.onErase(Action.EraseStory(storyStep: initial.stories[2]!, position: 2), state: initial)
+        let result = manager.onErase(Action.EraseStory(storyStep: initial.stories[2 * gap]!, position: 2 * gap), state: initial)
 
         #expect(texts(result) == ["T", "Hello world"])
-        #expect(result.stories[1]?.spans == [SpanInfo(start: 6, end: 11, span: "ITALIC")])
-        #expect(result.selection == .cursor(6, at: 1))
+        #expect(result.stories[gap]?.spans == [SpanInfo(start: 6, end: 11, span: "ITALIC")])
+        #expect(result.selection == .cursor(6, at: gap))
     }
 
     @Test func eraseAfterDividerRemovesTheDivider() {
@@ -148,11 +150,11 @@ private func texts(_ state: StoryState) -> [String] {
             StoryStep(type: .text, text: "after", position: 2),
         ])
 
-        let result = manager.onErase(Action.EraseStory(storyStep: initial.stories[2]!, position: 2), state: initial)
+        let result = manager.onErase(Action.EraseStory(storyStep: initial.stories[2 * gap]!, position: 2 * gap), state: initial)
 
         #expect(texts(result) == ["T", "after"])
         // The step keeps its position, only the divider went away
-        #expect(result.focus == 2)
+        #expect(result.focus == 2 * gap)
     }
 
     @Test func eraseOnHeadingOrBlockRemovesTheTagFirst() {
@@ -162,25 +164,25 @@ private func texts(_ state: StoryState) -> [String] {
             StoryStep(type: .text, text: "Heading", tags: [TagInfo(tag: "H2"), TagInfo(tag: "HIGH_LIGHT_BLOCK")], position: 2),
         ])
 
-        let plain = manager.onErase(Action.EraseStory(storyStep: initial.stories[2]!, position: 2), state: initial)
+        let plain = manager.onErase(Action.EraseStory(storyStep: initial.stories[2 * gap]!, position: 2 * gap), state: initial)
         #expect(plain.stories.count == 3)
-        #expect(plain.stories[2]?.text == "Heading")
-        #expect(plain.stories[2]?.tags.isEmpty == true)
-        #expect(plain.focus == 2)
+        #expect(plain.stories[2 * gap]?.text == "Heading")
+        #expect(plain.stories[2 * gap]?.tags.isEmpty == true)
+        #expect(plain.focus == 2 * gap)
 
         // The next Backspace merges as usual.
-        let merged = manager.onErase(Action.EraseStory(storyStep: plain.stories[2]!, position: 2), state: plain)
+        let merged = manager.onErase(Action.EraseStory(storyStep: plain.stories[2 * gap]!, position: 2 * gap), state: plain)
         #expect(merged.stories.count == 2)
-        #expect(merged.stories[1]?.text == "BeforeHeading")
+        #expect(merged.stories[gap]?.text == "BeforeHeading")
     }
 
     @Test func eraseOnListItemTurnsItIntoParagraph() {
         let initial = state([StoryStep(type: .title, text: "T", position: 0), StoryStep(type: .checkItem, text: "x", checked: true, position: 1)])
 
-        let result = manager.onErase(Action.EraseStory(storyStep: initial.stories[1]!, position: 1), state: initial)
+        let result = manager.onErase(Action.EraseStory(storyStep: initial.stories[gap]!, position: gap), state: initial)
 
-        #expect(result.stories[1]?.type.number == StoryType.text.number)
-        #expect(result.stories[1]?.checked == nil)
+        #expect(result.stories[gap]?.type.number == StoryType.text.number)
+        #expect(result.stories[gap]?.checked == nil)
     }
 
     @Test func eraseAtTheTitleDoesNothing() {
@@ -196,17 +198,17 @@ private func texts(_ state: StoryState) -> [String] {
             StoryStep(type: .text, text: "c", position: 3),
         ])
 
-        let moved = manager.moveRequest(Action.Move(positionFrom: 1, positionTo: 3), state: initial)
+        let moved = manager.moveRequest(Action.Move(positionFrom: gap, positionTo: 3 * gap), state: initial)
         #expect(texts(moved) == ["T", "b", "c", "a"])
-        #expect(moved.sortedPositions == [0, 2, 3, 4])
-        #expect(moved.stories[4]?.position == 4)
+        #expect(moved.sortedPositions == [0, 2 * gap, 3 * gap, 4 * gap])
+        #expect(moved.stories[4 * gap]?.position == 4 * gap)
 
-        let toTop = manager.moveRequest(Action.Move(positionFrom: 3, positionTo: 0), state: initial)
+        let toTop = manager.moveRequest(Action.Move(positionFrom: 3 * gap, positionTo: 0), state: initial)
         #expect(texts(toTop) == ["T", "c", "a", "b"])
         // Half way between the title and the step at 1, nothing else moves
-        #expect(toTop.sortedPositions == [0, 0.5, 1, 2])
+        #expect(toTop.sortedPositions == [0, (gap / 2), gap, 2 * gap])
 
-        #expect(manager.moveRequest(Action.Move(positionFrom: 0, positionTo: 2), state: initial) == initial)
+        #expect(manager.moveRequest(Action.Move(positionFrom: 0, positionTo: 2 * gap), state: initial) == initial)
     }
 
     @Test func loadDocumentPutsTitleFirstAndDropsEphemeralSteps() {
@@ -224,9 +226,9 @@ private func texts(_ state: StoryState) -> [String] {
         let loaded = manager.loadDocument(document)
 
         #expect(texts(loaded) == ["Plan", "<divider>", "body"])
-        // The steps keep their positions; the title goes before the first
-        #expect(loaded.sortedPositions == [1, 2, 5])
-        #expect(loaded.sortedStories.map(\.position) == [1, 2, 5])
+        // The steps keep their positions; the title goes one gap before the first
+        #expect(loaded.sortedPositions == [2 - gap, 2, 5])
+        #expect(loaded.sortedStories.map(\.position) == [2 - gap, 2, 5])
     }
 
     @Test func clickAtTheEndAddsParagraphOnce() {
@@ -234,11 +236,11 @@ private func texts(_ state: StoryState) -> [String] {
 
         let added = manager.clickAtTheEnd(state: initial)
         #expect(texts(added) == ["T", "<divider>", ""])
-        #expect(added.focus == 2)
+        #expect(added.focus == 2 * gap)
 
         let again = manager.clickAtTheEnd(state: added)
         #expect(again.stories.count == 3)
-        #expect(again.focus == 2)
+        #expect(again.focus == 2 * gap)
     }
 }
 
@@ -287,41 +289,41 @@ private func texts(_ state: StoryState) -> [String] {
     ]))
 
     @Test func italicAndUnderlineToggleLikeBold() {
-        var state = manager.toggleSpan(.italic, at: 1, start: 0, end: 5, state: initial)
-        state = manager.toggleSpan(.underline, at: 1, start: 6, end: 11, state: state)
-        #expect(state.stories[1]?.spans == [
+        var state = manager.toggleSpan(.italic, at: gap, start: 0, end: 5, state: initial)
+        state = manager.toggleSpan(.underline, at: gap, start: 6, end: 11, state: state)
+        #expect(state.stories[gap]?.spans == [
             SpanInfo(start: 0, end: 5, span: "ITALIC"),
             SpanInfo(start: 6, end: 11, span: "UNDERLINE"),
         ])
 
-        state = manager.toggleSpan(.italic, at: 1, start: 0, end: 5, state: state)
-        #expect(state.stories[1]?.spans == [SpanInfo(start: 6, end: 11, span: "UNDERLINE")])
+        state = manager.toggleSpan(.italic, at: gap, start: 0, end: 5, state: state)
+        #expect(state.stories[gap]?.spans == [SpanInfo(start: 6, end: 11, span: "UNDERLINE")])
     }
 
     @Test func highlightColorsReplaceEachOther() {
-        var state = manager.toggleSpan(.highlightYellow, at: 1, start: 0, end: 11, state: initial)
-        state = manager.toggleSpan(.highlightGreen, at: 1, start: 0, end: 5, state: state)
+        var state = manager.toggleSpan(.highlightYellow, at: gap, start: 0, end: 11, state: initial)
+        state = manager.toggleSpan(.highlightGreen, at: gap, start: 0, end: 5, state: state)
 
-        #expect(state.stories[1]?.spans.sorted { $0.start < $1.start } == [
+        #expect(state.stories[gap]?.spans.sorted { $0.start < $1.start } == [
             SpanInfo(start: 0, end: 5, span: "HIGHLIGHT_GREEN"),
             SpanInfo(start: 5, end: 11, span: "HIGHLIGHT"),
         ])
     }
 
     @Test func linksAreSetReplacedAndRemoved() {
-        var state = manager.setLink("https://a.io", at: 1, start: 0, end: 5, state: initial)
-        #expect(state.stories[1]?.spans == [SpanInfo(start: 0, end: 5, span: "LINK", extra: "https://a.io")])
+        var state = manager.setLink("https://a.io", at: gap, start: 0, end: 5, state: initial)
+        #expect(state.stories[gap]?.spans == [SpanInfo(start: 0, end: 5, span: "LINK", extra: "https://a.io")])
 
         // A neighbouring link keeps its own URL instead of merging.
-        state = manager.setLink("https://b.io", at: 1, start: 5, end: 11, state: state)
-        #expect(state.stories[1]?.spans.count == 2)
+        state = manager.setLink("https://b.io", at: gap, start: 5, end: 11, state: state)
+        #expect(state.stories[gap]?.spans.count == 2)
 
-        state = manager.setLink(nil, at: 1, start: 0, end: 11, state: state)
-        #expect(state.stories[1]?.spans.isEmpty == true)
+        state = manager.setLink(nil, at: gap, start: 0, end: 11, state: state)
+        #expect(state.stories[gap]?.spans.isEmpty == true)
     }
 
     @Test func spansNeedASelection() {
-        #expect(manager.toggleSpan(.bold, at: 1, start: 3, end: 3, state: initial) == initial)
+        #expect(manager.toggleSpan(.bold, at: gap, start: 3, end: 3, state: initial) == initial)
         #expect(manager.toggleSpan(.bold, at: 0, start: 0, end: 50, state: initial).stories[0]?.spans
             == [SpanInfo(start: 0, end: 1, span: "BOLD")])
     }
@@ -353,105 +355,155 @@ private func texts(_ state: StoryState) -> [String] {
     ]))
 
     @Test func typeTogglesPerLineLikeTheSdk() {
-        let state = manager.toggleType(.checkItem, positions: [0, 1, 2, 3], state: initial)
+        let state = manager.toggleType(.checkItem, positions: [0, gap, 2 * gap, 3 * gap], state: initial)
 
         #expect(state.stories[0]?.type.number == StoryType.title.number)
-        #expect(state.stories[1]?.type.number == StoryType.checkItem.number)
-        #expect(state.stories[1]?.checked == false)
-        #expect(state.stories[2]?.type.number == StoryType.text.number)
-        #expect(state.stories[2]?.checked == nil)
-        #expect(state.stories[3]?.type.number == StoryType.divider.number)
+        #expect(state.stories[gap]?.type.number == StoryType.checkItem.number)
+        #expect(state.stories[gap]?.checked == false)
+        #expect(state.stories[2 * gap]?.type.number == StoryType.text.number)
+        #expect(state.stories[2 * gap]?.checked == nil)
+        #expect(state.stories[3 * gap]?.type.number == StoryType.divider.number)
     }
 
     @Test func boxAndCardTagsToggle() {
-        var state = manager.toggleTag(.box, positions: [1, 2], state: initial)
-        #expect(state.stories[1]?.hasTag("HIGH_LIGHT_BLOCK") == true)
-        state = manager.toggleTag(.box, positions: [1], state: state)
-        #expect(state.stories[1]?.hasTag("HIGH_LIGHT_BLOCK") == false)
-        #expect(state.stories[2]?.hasTag("HIGH_LIGHT_BLOCK") == true)
+        var state = manager.toggleTag(.box, positions: [gap, 2 * gap], state: initial)
+        #expect(state.stories[gap]?.hasTag("HIGH_LIGHT_BLOCK") == true)
+        state = manager.toggleTag(.box, positions: [gap], state: state)
+        #expect(state.stories[gap]?.hasTag("HIGH_LIGHT_BLOCK") == false)
+        #expect(state.stories[2 * gap]?.hasTag("HIGH_LIGHT_BLOCK") == true)
     }
 
     @Test func headingsReplaceEachOther() {
-        var state = manager.toggleHeading(.h1, positions: [1], state: initial)
-        #expect(state.stories[1]?.headingLevel == 1)
-        state = manager.toggleHeading(.h3, positions: [1], state: state)
-        #expect(state.stories[1]?.headingLevel == 3)
-        #expect(state.stories[1]?.tags.count == 1)
-        state = manager.toggleHeading(.h3, positions: [1], state: state)
-        #expect(state.stories[1]?.headingLevel == nil)
+        var state = manager.toggleHeading(.h1, positions: [gap], state: initial)
+        #expect(state.stories[gap]?.headingLevel == 1)
+        state = manager.toggleHeading(.h3, positions: [gap], state: state)
+        #expect(state.stories[gap]?.headingLevel == 3)
+        #expect(state.stories[gap]?.tags.count == 1)
+        state = manager.toggleHeading(.h3, positions: [gap], state: state)
+        #expect(state.stories[gap]?.headingLevel == nil)
     }
 
     @Test func deleteKeepsTheTitle() {
-        let state = manager.deleteSteps([0, 1, 3], state: initial)
+        let state = manager.deleteSteps([0, gap, 3 * gap], state: initial)
         #expect(state.sortedStories.map(\.id) == ["t", "b"])
     }
 
     @Test func textAndDocumentLinks() {
-        #expect(manager.text(of: [2, 1, 3], state: initial) == "One\nTwo")
+        #expect(manager.text(of: [2 * gap, gap, 3 * gap], state: initial) == "One\nTwo")
 
-        let state = manager.addDocumentLink(after: 1, documentId: "p", title: "One", state: initial)
-        // Half way between 1 and 2
-        #expect(state.stories[1.5]?.type.number == StoryType.documentLink.number)
-        #expect(state.stories[1.5]?.documentLink == DocumentLink(id: "p", title: "One"))
+        let state = manager.addDocumentLink(after: gap, documentId: "p", title: "One", state: initial)
+        // Half way between the first and the second step
+        #expect(state.stories[(gap + gap / 2)]?.type.number == StoryType.documentLink.number)
+        #expect(state.stories[(gap + gap / 2)]?.documentLink == DocumentLink(id: "p", title: "One"))
     }
 }
 
 @Suite struct PositionKeepingTests {
     let manager = WriteopiaManager()
 
+    /// title, a, b, c at 0, 1, 1.5 and 2 gaps.
     private func document() -> StoryState {
-        var stories: [Double: StoryStep] = [:]
+        var stories: [Int: StoryStep] = [:]
         stories.place(StoryStep(id: "t", type: .title, text: "T", position: 0), at: 0)
-        stories.place(StoryStep(id: "a", type: .text, text: "a", position: 0), at: 1)
-        stories.place(StoryStep(id: "b", type: .text, text: "b", position: 0), at: 1.5)
-        stories.place(StoryStep(id: "c", type: .text, text: "c", position: 0), at: 2)
+        stories.place(StoryStep(id: "a", type: .text, text: "a", position: 0), at: gap)
+        stories.place(StoryStep(id: "b", type: .text, text: "b", position: 0), at: (gap + gap / 2))
+        stories.place(StoryStep(id: "c", type: .text, text: "c", position: 0), at: 2 * gap)
         return StoryState(stories: stories)
     }
 
     @Test func neighboursComeFromTheKeys() {
         let stories = document().stories
-        #expect(stories.previousKey(before: 1.5) == 1)
-        #expect(stories.nextKey(after: 1.5) == 2)
-        #expect(stories.nextKey(after: 2) == nil)
-        #expect(stories.keyBefore(1.5) == 1.25)
-        #expect(stories.keyBefore(7) == 7)
-        #expect(stories.keyAfter(1) == 1.25)
-        #expect(stories.keyAfter(2) == 3)
-        #expect(stories.keysAfter(1, count: 3) == [1.125, 1.25, 1.375])
-        #expect(stories.lastKey == 2)
+        #expect(stories.previousKey(before: (gap + gap / 2)) == gap)
+        #expect(stories.nextKey(after: (gap + gap / 2)) == 2 * gap)
+        #expect(stories.nextKey(after: 2 * gap) == nil)
+        #expect(stories.lastKey == 2 * gap)
+    }
+
+    @Test func insertsTakeTheMiddleOrOneGapAfterTheLast() {
+        var stories = document().stories
+        #expect(stories.insert(StoryStep(type: .text, text: "x", position: 0), after: gap).key == (gap + gap / 4))
+        #expect(stories.insert(StoryStep(type: .text, text: "y", position: 0), after: 2 * gap).key == 3 * gap)
+        #expect(stories.insert(StoryStep(type: .text, text: "z", position: 0), before: (gap + gap / 2)).key == (gap + 3 * gap / 8))
+        #expect(StoryState(stories: stories).sortedStories.map(\.text) == ["T", "a", "x", "z", "b", "c", "y"])
+    }
+
+    @Test func insertingWithPlentyOfRoomGoesOneGapFurther() {
+        var stories: [Int: StoryStep] = [:]
+        stories.place(StoryStep(type: .title, text: "T", position: 0), at: 0)
+        stories.place(StoryStep(type: .text, text: "far", position: 0), at: 10 * gap)
+
+        let insertion = stories.insert(
+            [StoryStep(type: .text, text: "x", position: 0), StoryStep(type: .text, text: "y", position: 0)],
+            after: 0
+        )
+
+        #expect(insertion.keys == [gap, 2 * gap])
+    }
+
+    @Test func whenNoWholeNumberIsLeftTheNextStepsAreSpreadOut() {
+        var stories: [Int: StoryStep] = [:]
+        stories.place(StoryStep(type: .title, text: "T", position: 0), at: 0)
+        stories.place(StoryStep(type: .text, text: "a", position: 0), at: 1)
+        stories.place(StoryStep(type: .text, text: "b", position: 0), at: 2)
+        stories.place(StoryStep(type: .text, text: "c", position: 0), at: 3)
+
+        let insertion = stories.insert(StoryStep(type: .text, text: "new", position: 0), after: 1)
+
+        let state = StoryState(stories: stories)
+        #expect(state.sortedStories.map(\.text) == ["T", "a", "new", "b", "c"])
+        #expect(stories[1]?.text == "a")
+        #expect(insertion.key == 1 + gap)
+        #expect(insertion.moved == [1 + 2 * gap, 1 + 3 * gap])
+        #expect(state.sortedStories.map(\.position) == state.sortedPositions)
     }
 
     @Test func aLineBreakGoesBetweenTheLineAndTheNextOne() {
         let initial = document()
-        var step = initial.stories[1.5]!
+        var step = initial.stories[(gap + gap / 2)]!
         step.text = "b\n"
 
-        let result = manager.onLineBreak(Action.LineBreak(storyStep: step, position: 1.5, cursor: 2), state: initial)
+        let result = manager.onLineBreak(Action.LineBreak(storyStep: step, position: (gap + gap / 2), cursor: 2), state: initial)
 
         #expect(result.sortedStories.map(\.text) == ["T", "a", "b", "", "c"])
-        #expect(result.sortedPositions == [0, 1, 1.5, 1.75, 2])
-        #expect(result.focus == 1.75)
-        #expect(result.stories[1.75]?.position == 1.75)
+        #expect(result.sortedPositions == [0, gap, (gap + gap / 2), (gap + 3 * gap / 4), 2 * gap])
+        #expect(result.focus == (gap + 3 * gap / 4))
+        #expect(result.stories[(gap + 3 * gap / 4)]?.position == (gap + 3 * gap / 4))
+    }
+
+    @Test func aLineBreakWithNoRoomSpreadsTheNextLinesOut() {
+        var stories: [Int: StoryStep] = [:]
+        stories.place(StoryStep(type: .title, text: "T", position: 0), at: 0)
+        stories.place(StoryStep(type: .text, text: "a", position: 0), at: 1)
+        stories.place(StoryStep(type: .text, text: "b", position: 0), at: 2)
+        let initial = StoryState(stories: stories)
+        var step = initial.stories[1]!
+        step.text = "a\n"
+
+        let result = manager.onLineBreak(Action.LineBreak(storyStep: step, position: 1, cursor: 2), state: initial)
+
+        #expect(result.sortedStories.map(\.text) == ["T", "a", "", "b"])
+        #expect(result.stories[1]?.text == "a")
+        #expect(result.sortedStories.map(\.position) == result.sortedPositions)
     }
 
     @Test func stepsAddedAfterAStepSpreadUpToTheNextOne() {
         let initial = document()
         let result = manager.addSteps(
             [StoryStep(type: .text, text: "x", position: 0), StoryStep(type: .text, text: "y", position: 0)],
-            after: 1,
+            after: gap,
             state: initial
         )
 
         #expect(result.sortedStories.map(\.text) == ["T", "a", "x", "y", "b", "c"])
-        #expect(result.stories[1]?.text == "a")
-        #expect(result.stories[1.5]?.text == "b")
+        #expect(result.stories[gap]?.text == "a")
+        #expect(result.stories[(gap + gap / 2)]?.text == "b")
     }
 
     @Test func aStepAddedBeforeAnotherGoesHalfWayToThePrevious() {
-        let result = manager.addStep(StoryStep(type: .text, text: "h", position: 0), before: 1.5, state: document())
+        let result = manager.addStep(StoryStep(type: .text, text: "h", position: 0), before: (gap + gap / 2), state: document())
 
         #expect(result.sortedStories.map(\.text) == ["T", "a", "h", "b", "c"])
-        #expect(result.stories[1.25]?.text == "h")
+        #expect(result.stories[(gap + gap / 4)]?.text == "h")
     }
 
     @Test func replacingAStepKeepsItsPositionForTheFirstReplacement() {
@@ -462,18 +514,18 @@ private func texts(_ state: StoryState) -> [String] {
         )
 
         #expect(result.sortedStories.map(\.text) == ["T", "a", "b1", "b2", "c"])
-        #expect(result.stories[1.5]?.text == "b1")
-        #expect(result.stories[1.75]?.text == "b2")
-        #expect(result.stories[2]?.text == "c")
+        #expect(result.stories[(gap + gap / 2)]?.text == "b1")
+        #expect(result.stories[(gap + 3 * gap / 4)]?.text == "b2")
+        #expect(result.stories[2 * gap]?.text == "c")
     }
 
     @Test func deletingKeepsThePositionsOfTheOthers() {
-        let result = manager.deleteSteps([1.5], state: document())
-        #expect(result.sortedPositions == [0, 1, 2])
+        let result = manager.deleteSteps([(gap + gap / 2)], state: document())
+        #expect(result.sortedPositions == [0, gap, 2 * gap])
 
-        let erased = manager.onErase(Action.EraseStory(storyStep: document().stories[2]!, position: 2), state: document())
-        #expect(erased.sortedPositions == [0, 1, 1.5])
-        #expect(erased.stories[1.5]?.text == "bc")
+        let erased = manager.onErase(Action.EraseStory(storyStep: document().stories[2 * gap]!, position: 2 * gap), state: document())
+        #expect(erased.sortedPositions == [0, gap, (gap + gap / 2)])
+        #expect(erased.stories[(gap + gap / 2)]?.text == "bc")
     }
 
     @Test func loadingResolvesTwoStepsAtTheSamePosition() {
@@ -483,15 +535,15 @@ private func texts(_ state: StoryState) -> [String] {
             workspaceId: "w",
             content: [
                 StoryStep(id: "t", type: .title, text: "Plan", position: 0),
-                StoryStep(id: "x", type: .text, text: "x", position: 1),
-                StoryStep(id: "y", type: .text, text: "y", position: 1),
-                StoryStep(id: "z", type: .text, text: "z", position: 2),
+                StoryStep(id: "x", type: .text, text: "x", position: gap),
+                StoryStep(id: "y", type: .text, text: "y", position: gap),
+                StoryStep(id: "z", type: .text, text: "z", position: 2 * gap),
             ]
         )
 
         let loaded = manager.loadDocument(document)
 
         #expect(loaded.sortedStories.map(\.id) == ["t", "x", "y", "z"])
-        #expect(loaded.sortedPositions == [0, 1, 1.5, 2])
+        #expect(loaded.sortedPositions == [0, gap, (gap + gap / 2), 2 * gap])
     }
 }

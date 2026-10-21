@@ -10,11 +10,11 @@ class MergeNormalization(private val stepMergers: List<StepsMergerCoordinator>) 
 
     /**
      * When using the Map version of the normalizer, it is necessary to end up with
-     * Map<Double, StoryUnit> instead of Map<Double, List<StoryUnit>> so if some list contains more than
+     * Map<Long, StoryUnit> instead of Map<Long, List<StoryUnit>> so if some list contains more than
      * one item, this means that some incorrect merge was made. No elements that can't be merged
      * should be together. This normalizer removes the elements that could not be merged.
      */
-    fun mergeSteps(stories: Map<Double, List<StoryStep>>): Map<Double, StoryStep> =
+    fun mergeSteps(stories: Map<Long, List<StoryStep>>): Map<Long, StoryStep> =
         stories.mapValuesSorted { (_, steps) -> reducePossibleSteps(steps).first() }
 
     /**

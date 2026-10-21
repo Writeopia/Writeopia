@@ -36,16 +36,16 @@ import io.writeopia.ui.model.DrawInfo
  */
 class DividerDrawer(
     private val modifier: Modifier = Modifier,
-    private val onSelected: (Boolean, Double) -> Unit,
+    private val onSelected: (Boolean, Long) -> Unit,
     private val dragIconWidth: Dp,
     private val config: DrawConfig,
-    private val onDragHover: (Double) -> Unit,
+    private val onDragHover: (Long) -> Unit,
     private val onDragStart: () -> Unit,
     private val onDragStop: () -> Unit,
     private val moveRequest: (Action.Move) -> Unit,
     private val enabled: Boolean,
     private val color: Color,
-    private val receiveExternalFile: (List<ExternalFile>, Double) -> Unit,
+    private val receiveExternalFile: (List<ExternalFile>, Long) -> Unit,
     private val paddingValues: PaddingValues = PaddingValues(0.dp),
 ) : StoryStepDrawer {
 
@@ -72,7 +72,7 @@ class DividerDrawer(
                     },
                     onExit = {},
                     onFileReceived = { files ->
-                        receiveExternalFile(files, drawInfo.position + 1)
+                        receiveExternalFile(files, drawInfo.position)
                     }
                 )
             )
@@ -132,7 +132,7 @@ class DividerDrawer(
         }
     }
 
-    private fun handleDrag(position: Double, data: DropInfo?) {
+    private fun handleDrag(position: Long, data: DropInfo?) {
         onDragHover(position)
 
         if (data != null) {

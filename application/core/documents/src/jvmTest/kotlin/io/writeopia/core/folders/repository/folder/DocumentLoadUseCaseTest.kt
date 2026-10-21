@@ -30,7 +30,7 @@ class DocumentLoadUseCaseTest {
         val authRepository = mockk<AuthRepository>(relaxed = true)
         val conversationId = "conversation-1"
         val content = mapOf(
-            0.0 to StoryStep(
+            0L to StoryStep(
                 id = "step-1",
                 type = StoryTypes.TEXT.type,
                 text = "Text",
@@ -106,7 +106,7 @@ class DocumentLoadUseCaseTest {
         val documentsApi = mockk<DocumentsApi>()
         val authRepository = mockk<AuthRepository>(relaxed = true)
         val content = mapOf(
-            0.0 to StoryStep(id = "step-1", type = StoryTypes.TEXT.type, text = "Text", lastUpdatedAt = 1)
+            0L to StoryStep(id = "step-1", type = StoryTypes.TEXT.type, text = "Text", lastUpdatedAt = 1)
         )
         val local = document(lastUpdatedAt = 1, content = content, commentText = "Same", tagIds = emptySet())
         val backend = document(lastUpdatedAt = 2, content = content, commentText = "Same", tagIds = setOf("tag-1"))
@@ -142,8 +142,8 @@ class DocumentLoadUseCaseTest {
             lastUpdatedAt = 1,
         )
         val deletedHere = StoryStep(id = "step-2", type = StoryTypes.AI_ANSWER.type, text = "Gone", lastUpdatedAt = 5)
-        val local = document(lastUpdatedAt = 1, content = mapOf(0.0 to kept), commentText = "Same")
-        val backend = document(lastUpdatedAt = 1, content = mapOf(0.0 to kept, 1.0 to deletedHere), commentText = "Same")
+        val local = document(lastUpdatedAt = 1, content = mapOf(0L to kept), commentText = "Same")
+        val backend = document(lastUpdatedAt = 1, content = mapOf(0L to kept, 1L to deletedHere), commentText = "Same")
 
         coEvery { documentRepository.loadDocumentById(local.id, local.workspaceId) } returns local
         coEvery { documentRepository.loadStoryStepTombstones(local.workspaceId) } returns listOf(
@@ -174,8 +174,8 @@ class DocumentLoadUseCaseTest {
         val deletedChild = StoryStep(id = "child-2", type = StoryTypes.TEXT.type, text = "Gone", lastUpdatedAt = 1)
         val localParent = StoryStep(id = "parent", type = StoryTypes.TEXT.type, steps = listOf(keptChild), lastUpdatedAt = 1)
         val backendParent = localParent.copy(steps = listOf(keptChild, deletedChild), lastUpdatedAt = 2)
-        val local = document(lastUpdatedAt = 1, content = mapOf(0.0 to localParent), commentText = "Same")
-        val backend = document(lastUpdatedAt = 2, content = mapOf(0.0 to backendParent), commentText = "Same")
+        val local = document(lastUpdatedAt = 1, content = mapOf(0L to localParent), commentText = "Same")
+        val backend = document(lastUpdatedAt = 2, content = mapOf(0L to backendParent), commentText = "Same")
 
         coEvery { documentRepository.loadDocumentById(local.id, local.workspaceId) } returns local
         coEvery { documentRepository.loadStoryStepTombstones(local.workspaceId) } returns listOf(
@@ -193,16 +193,16 @@ class DocumentLoadUseCaseTest {
 
         useCase.fetchAndMergeFromBackend(local.id, local.workspaceId) { merged -> reloaded = merged }
 
-        val parent = assertNotNull(reloaded).content.getValue(0.0)
+        val parent = assertNotNull(reloaded).content.getValue(0L)
         assertEquals(listOf("child-1"), parent.steps.map { step -> step.id })
         coVerify(exactly = 1) {
-            documentRepository.saveDocument(match { saved -> saved.content.getValue(0.0).steps.none { step -> step.id == "child-2" } })
+            documentRepository.saveDocument(match { saved -> saved.content.getValue(0L).steps.none { step -> step.id == "child-2" } })
         }
     }
 
     private fun document(
         lastUpdatedAt: Long,
-        content: Map<Double, StoryStep>,
+        content: Map<Long, StoryStep>,
         commentText: String,
         tagIds: Set<String> = emptySet(),
     ) = Document(

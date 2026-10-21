@@ -27,7 +27,7 @@ object AiTextWriter {
      */
     suspend fun streamAt(
         manager: WriteopiaStateManager,
-        position: Double,
+        position: Long,
         answers: Flow<ResultData<String>>,
         type: StoryType = StoryTypes.AI_ANSWER.type,
         tags: Set<TagInfo> = emptySet(),
@@ -65,7 +65,7 @@ object AiTextWriter {
     }
 
     /** Says in the document, at [position], that no AI could answer. */
-    fun noAiAt(manager: WriteopiaStateManager, position: Double) {
+    fun noAiAt(manager: WriteopiaStateManager, position: Long) {
         manager.addAtPosition(
             StoryStep(type = StoryTypes.AI_ANSWER.type, text = NO_AI_MESSAGE),
             position

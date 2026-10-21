@@ -79,16 +79,16 @@ class TextDrawer(
     private val modifier: Modifier = Modifier,
     private val isDarkTheme: Boolean,
     private val aiExplanation: String,
-    private val onKeyEvent: (KeyEvent, TextFieldValue, StoryStep, Double, EmptyErase, Int, EndOfText) -> Boolean =
+    private val onKeyEvent: (KeyEvent, TextFieldValue, StoryStep, Long, EmptyErase, Int, EndOfText) -> Boolean =
         { _, _, _, _, _, _, _ -> false },
     private val textStyle: @Composable (StoryStep) -> TextStyle = { defaultTextStyle(it) },
-    private val onTextEdit: (TextInput, Double, Boolean) -> Unit = { _, _, _ -> },
+    private val onTextEdit: (TextInput, Long, Boolean) -> Unit = { _, _, _ -> },
     private val lineBreakByContent: Boolean = true,
     private val enabled: Boolean = true,
     private val emptyErase: EmptyErase = EmptyErase.CHANGE_TYPE,
-    override var onFocusChanged: (Double, FocusState) -> Unit = { _, _ -> },
+    override var onFocusChanged: (Long, FocusState) -> Unit = { _, _ -> },
     private val selectionState: StateFlow<Boolean>,
-    private val onSelectionLister: (Double) -> Unit,
+    private val onSelectionLister: (Long) -> Unit,
     private val textToolbox: @Composable (Boolean) -> Unit = {},
     private val slashCommands: List<SlashCommand> = defaultSlashCommands,
     private val slashCommandsEnabled: Boolean = true,
@@ -423,9 +423,9 @@ private fun SlashCommandPopup(
     inputText: TextFieldValue,
     slashStartPosition: Int,
     spans: Set<SpanInfo>,
-    position: Double,
+    position: Long,
     lineBreakByContent: Boolean,
-    onTextEdit: (TextInput, Double, Boolean) -> Unit,
+    onTextEdit: (TextInput, Long, Boolean) -> Unit,
     onInputTextChange: (TextFieldValue) -> Unit,
     onDismiss: () -> Unit
 ) {

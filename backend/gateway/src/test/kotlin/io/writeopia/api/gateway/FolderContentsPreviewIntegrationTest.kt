@@ -43,7 +43,7 @@ class FolderContentsPreviewIntegrationTest {
         lastUpdatedAt = 2000L,
         lastSyncedAt = 0L,
         content = (0 until steps).map { index ->
-            StoryStep(type = StoryTypes.TEXT.type, text = "step $index").toApi(index.toDouble())
+            StoryStep(type = StoryTypes.TEXT.type, text = "step $index").toApi(index.toLong())
         }
     )
 

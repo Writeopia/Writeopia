@@ -34,7 +34,7 @@ class StoryStepSyncTest {
             workspaceId = workspaceId,
             lastSyncTimestamp = lastSync,
             requestTimestamp = requestTimestamp,
-            changes = listOf(StoryStepChangeApi(storyStep = step.toApi(1.0), position = 1.0)),
+            changes = listOf(StoryStepChangeApi(storyStep = step.toApi(1L), position = 1L)),
             deletions = emptyList()
         )
 
@@ -48,7 +48,7 @@ class StoryStepSyncTest {
                 lastSyncedAt = Instant.fromEpochMilliseconds(lastSyncedAt),
                 workspaceId = workspaceId,
                 parentId = "root",
-                content = mapOf(0.0 to StoryStep(id = "title", type = StoryTypes.TITLE.type, text = "Plan"))
+                content = mapOf(0L to StoryStep(id = "title", type = StoryTypes.TITLE.type, text = "Plan"))
             )
         )
     }

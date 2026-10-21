@@ -21,7 +21,7 @@ class GenAiServiceIntegrationTest {
         val service = GenAiService(
             projectId = "",
             location = "us-central1",
-            defaultModel = "gemini-2.0-flash"
+            defaultModel = "gemini-2L-flash"
         )
 
         assertNotNull(service)
@@ -79,7 +79,7 @@ class GenAiServiceIntegrationTest {
         val service = GenAiService(
             projectId = "",
             location = "us-central1",
-            defaultModel = "gemini-2.0-flash"
+            defaultModel = "gemini-2L-flash"
         )
 
         assertFalse(service.isAvailable())
@@ -93,7 +93,7 @@ class GenAiServiceIntegrationTest {
         val service = GenAiService(
             projectId = "   ",
             location = "us-central1",
-            defaultModel = "gemini-2.0-flash"
+            defaultModel = "gemini-2L-flash"
         )
 
         assertFalse(service.isAvailable())

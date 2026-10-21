@@ -28,7 +28,7 @@ public struct Slide: Codable, Equatable, Sendable {
     public func asDocument(id: String, now: Int64 = Date.nowMillis) -> WrDocument {
         var content = [StoryStep(id: "\(id)-title", type: .title, text: title, position: 0, lastUpdatedAt: now)]
         for (offset, var step) in steps.enumerated() {
-            step.position = Double(offset + 1)
+            step.position = offset + 1
             content.append(step)
         }
         return WrDocument(id: id, title: title, workspaceId: "", content: content, createdAt: now, lastUpdatedAt: now)

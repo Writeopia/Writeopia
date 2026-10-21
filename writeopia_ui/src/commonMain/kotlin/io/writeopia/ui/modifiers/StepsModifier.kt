@@ -12,7 +12,7 @@ object StepsModifier {
     const val CODE_BLOCK_LINE_NUMBER_KEY = "codeBlockLineNumber"
     const val IS_INSIDE_CODE_BLOCK_KEY = "isInsideCodeBlock"
 
-    fun modify(stories: List<DrawStory>, dragPosition: Double): List<DrawStory> {
+    fun modify(stories: List<DrawStory>, dragPosition: Long): List<DrawStory> {
         val space = { StoryStep(type = StoryTypes.SPACE.type, localId = GenerateId.generate()) }
         val onDragSpace = StoryStep(type = StoryTypes.ON_DRAG_SPACE.type, localId = "onDragSpace")
         val lastSpace = StoryStep(type = StoryTypes.LAST_SPACE.type)
@@ -67,7 +67,7 @@ object StepsModifier {
         }
 
         // A drop on the last space goes right after the last story
-        val fullStory = parsed + DrawStory(storyStep = lastSpaceStory, position = lastStoryPosition ?: 0.0)
+        val fullStory = parsed + DrawStory(storyStep = lastSpaceStory, position = lastStoryPosition ?: 0L)
 
         val fixedPositions = addPositionToTags(fullStory)
         val fixedCodeBlockPositions = addPositionToCodeBlocks(fixedPositions)

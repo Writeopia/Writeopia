@@ -6,6 +6,7 @@ import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.story.StoryStep
+import io.writeopia.sdk.utils.iterables.POSITION_GAP
 import kotlin.time.ExperimentalTime
 
 /**
@@ -58,7 +59,7 @@ class DocumentMerger {
     }
 
     private fun mergeCommentConversations(
-        mergedContent: Map<Double, StoryStep>,
+        mergedContent: Map<Long, StoryStep>,
         primary: Map<String, List<Comment>>,
         fallback: Map<String, List<Comment>>,
     ): Map<String, List<Comment>> {
@@ -104,15 +105,15 @@ class DocumentMerger {
     }
 
     private fun mergeContent(
-        localContent: Map<Double, StoryStep>,
-        backendContent: Map<Double, StoryStep>
-    ): Map<Double, StoryStep> {
+        localContent: Map<Long, StoryStep>,
+        backendContent: Map<Long, StoryStep>
+    ): Map<Long, StoryStep> {
         // Build maps from StoryStep ID to (position, StoryStep) for lookup
         val localById = localContent.entries.associate { (pos, step) -> step.id to (pos to step) }
         val backendById = backendContent.entries.associate { (pos, step) -> step.id to (pos to step) }
 
         val allStepIds = localById.keys + backendById.keys
-        val mergedSteps = mutableListOf<Pair<Double, StoryStep>>()
+        val mergedSteps = mutableListOf<Pair<Long, StoryStep>>()
 
         for (stepId in allStepIds) {
             val localEntry = localById[stepId]
@@ -146,16 +147,17 @@ class DocumentMerger {
      * one there) can't share a key: the later one goes half way to the next position, so no
      * step is lost and the order holds.
      */
-    private fun List<Pair<Double, StoryStep>>.withDistinctPositions(): Map<Double, StoryStep> {
-        val result = linkedMapOf<Double, StoryStep>()
-        var lastKey: Double? = null
+    private fun List<Pair<Long, StoryStep>>.withDistinctPositions(): Map<Long, StoryStep> {
+        val result = linkedMapOf<Long, StoryStep>()
+        var lastKey: Long? = null
 
         forEachIndexed { index, (position, step) ->
             val key = if (lastKey == null || position > lastKey) {
                 position
             } else {
                 val nextDistinct = subList(index + 1, size).firstOrNull { (next, _) -> next > position }?.first
-                if (nextDistinct == null) lastKey + 1.0 else (lastKey + nextDistinct) / 2.0
+                // A whole number, like every position; the next steps are nudged in turn when it is taken
+                if (nextDistinct == null) lastKey + POSITION_GAP else maxOf((lastKey + nextDistinct) / 2, lastKey + 1)
             }
             result[key] = step
             lastKey = key

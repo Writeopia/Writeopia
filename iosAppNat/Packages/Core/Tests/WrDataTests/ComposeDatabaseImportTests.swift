@@ -55,14 +55,14 @@ import WrModels
     }
 
     func insertStep(
-        _ db: SQLiteDatabase, id: String, document: String, type: Int64, text: String?, position: Double,
+        _ db: SQLiteDatabase, id: String, document: String, type: Int64, text: String?, position: Int,
         parent: String? = nil, checked: Bool = false, tags: String = "", spans: String = "", link: String? = nil,
         color: Int64? = nil
     ) throws {
         try db.run(
             "INSERT INTO storyStepEntity VALUES (?, ?, ?, ?, NULL, NULL, ?, ?, ?, ?, 0, 0, ?, ?, ?, ?, 1800)",
             [
-                .text(id), .text(UUID().uuidString), .integer(type), .text(parent), .text(text), .bool(checked), .real(position),
+                .text(id), .text(UUID().uuidString), .integer(type), .text(parent), .text(text), .bool(checked), .real(Double(position)),
                 .text(document), .integer(color), .text(tags), .text(spans), .text(link),
             ]
         )

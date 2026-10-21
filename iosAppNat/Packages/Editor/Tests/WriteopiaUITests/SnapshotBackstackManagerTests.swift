@@ -6,9 +6,9 @@ import WrModels
 /// The history by itself, like `SnapshotBackstackManagerTest` of the Kotlin SDK.
 @Suite struct SnapshotBackstackManagerTests {
     private func state(_ texts: String...) -> StoryState {
-        var stories: [Double: StoryStep] = [:]
+        var stories: [Int: StoryStep] = [:]
         for (index, text) in texts.enumerated() {
-            stories[Double(index)] = StoryStep(id: "s\(index)", type: .text, text: text, position: Double(index))
+            stories[index] = StoryStep(id: "s\(index)", type: .text, text: text, position: Int(index))
         }
         return StoryState(stories: stories)
     }

@@ -36,7 +36,7 @@ internal fun TextEditor(
         drawStory.desktopKey + (drawStory.cursor?.position?.toInt() ?: 0)
     },
     onDocumentLinkClick: (String) -> Unit,
-    onDrawingClick: (StoryStep, Double) -> Unit = { _, _ -> },
+    onDrawingClick: (StoryStep, Long) -> Unit = { _, _ -> },
     listState: LazyListState = rememberLazyListState(),
 ) {
     val storyState by noteEditorViewModel.toDrawWithDecoration.collectAsState()

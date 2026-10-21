@@ -84,12 +84,12 @@ class StoryStepTombstoneTest {
     fun `a document save keeps the steps it doesn't carry and the newer copies of the ones it does`() = runBlocking {
         val document = storeDocument(step("a", editedAt, "a"), step("b", editedAt, "b"))
 
-        db.saveDocument(document.copy(content = mapOf(0.0 to step("a", editedAt - 1, "older a"))))
+        db.saveDocument(document.copy(content = mapOf(0L to step("a", editedAt - 1, "older a"))))
         var stored = db.getDocumentWithContentById(documentId, workspaceId)!!
         assertEquals("a", stored.text("a"))
         assertEquals("b", stored.text("b"))
 
-        db.saveDocument(document.copy(content = mapOf(0.0 to step("a", editedAt + 1, "newer a"))))
+        db.saveDocument(document.copy(content = mapOf(0L to step("a", editedAt + 1, "newer a"))))
         stored = db.getDocumentWithContentById(documentId, workspaceId)!!
         assertEquals("newer a", stored.text("a"))
         assertEquals("b", stored.text("b"))
@@ -140,7 +140,7 @@ class StoryStepTombstoneTest {
                 lastSyncedAt = Instant.fromEpochMilliseconds(editedAt),
                 workspaceId = workspaceId,
                 parentId = "root",
-                content = mapOf(0.0 to step("elsewhere"))
+                content = mapOf(0L to step("elsewhere"))
             )
         )
 
@@ -190,7 +190,7 @@ class StoryStepTombstoneTest {
         workspaceId = workspaceId,
         lastSyncTimestamp = lastSync,
         requestTimestamp = editedAt + 10,
-        changes = changes.mapIndexed { index, step -> StoryStepChangeApi(step.toApi(index + 1.0), index + 1.0) },
+        changes = changes.mapIndexed { index, step -> StoryStepChangeApi(step.toApi(index + 1L), index + 1L) },
         deletions = deletions
     )
 
@@ -204,7 +204,7 @@ class StoryStepTombstoneTest {
             lastSyncedAt = Instant.fromEpochMilliseconds(editedAt),
             workspaceId = workspaceId,
             parentId = "root",
-            content = content.mapIndexed { index, step -> index.toDouble() to step }.toMap()
+            content = content.mapIndexed { index, step -> index.toLong() to step }.toMap()
         )
         db.saveDocument(document)
         return document

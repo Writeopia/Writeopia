@@ -22,13 +22,13 @@ class DesktopUpdateViewModelTest {
     fun `exposes available update and download failure state`() = runTest {
         Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
         try {
-            val viewModel = DesktopUpdateViewModel(checker("0.48.0"))
+            val viewModel = DesktopUpdateViewModel(checker("0.48L"))
 
             assertSame(DesktopUpdateUiState.Idle, viewModel.uiState.value)
             viewModel.checkForUpdate()
 
             val available = assertIs<DesktopUpdateUiState.UpdateAvailable>(viewModel.uiState.value)
-            assertEquals("0.48.0", available.update.latestVersion)
+            assertEquals("0.48L", available.update.latestVersion)
 
             viewModel.onDownloadOpenFailed()
             assertEquals(
@@ -47,7 +47,7 @@ class DesktopUpdateViewModelTest {
     fun `exposes idle when no update exists`() = runTest {
         Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
         try {
-            val viewModel = DesktopUpdateViewModel(checker("0.47.0"))
+            val viewModel = DesktopUpdateViewModel(checker("0.47L"))
 
             viewModel.checkForUpdate()
 
@@ -63,7 +63,7 @@ class DesktopUpdateViewModelTest {
         try {
             val checker = DesktopUpdateChecker(
                 versionSource = DesktopUpdateVersionSource { error("network failure") },
-                currentVersion = "0.47.0",
+                currentVersion = "0.47L",
                 downloadBaseUrl = "https://writeopia.io",
                 platformProvider = { DesktopPlatform.LINUX }
             )
@@ -90,7 +90,7 @@ class DesktopUpdateViewModelTest {
         versionSource = DesktopUpdateVersionSource {
             DesktopAppVersionResponse(latestVersion)
         },
-        currentVersion = "0.47.0",
+        currentVersion = "0.47L",
         downloadBaseUrl = "https://writeopia.io",
         platformProvider = { DesktopPlatform.LINUX }
     )

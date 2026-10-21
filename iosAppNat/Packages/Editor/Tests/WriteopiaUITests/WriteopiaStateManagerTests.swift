@@ -130,8 +130,9 @@ private let sample = document([
 
         #expect(manager.currentStory.sortedStories.map { $0.text ?? "-" } == ["Doc", "Hel", "lo", "Task", "-"])
         let request = try #require(manager.focusRequest)
-        // The new line went half way between "a" at 1 and "Task" at 2
-        #expect(request.stepId == manager.currentStory.stories[1.5]?.id)
+        // No whole number between "a" at 1 and "Task" at 2: the lines after were spread out and
+        // the new line went one gap after "a"
+        #expect(request.stepId == manager.currentStory.stories[1 + positionGap]?.id)
         #expect(request.cursor == 0)
     }
 
@@ -283,8 +284,9 @@ private let sample = document([
 
         manager.moveRequest(payload: manager.dragPayload(for: manager.currentStory.stories[2]!), after: 0)
 
-        // "b" went half way between the title and "a"; nothing else moved
-        #expect(manager.selectedPositions == [0.5])
+        // No whole number between the title at 0 and "a" at 1: "a" was spread out and "b" went
+        // one gap after the title
+        #expect(manager.selectedPositions == [positionGap])
         manager.clearLineSelection()
         #expect(!manager.hasSelectedLines)
     }
@@ -373,8 +375,9 @@ private let sample = document([
         manager.addImage(path: "/tmp/a.jpg")
 
         #expect(manager.currentStory.sortedStories.map(\.id)[1] == "a")
-        // Right after "a" at 1, half way to the step at 2
-        #expect(manager.currentStory.stories[1.5]?.type.number == StoryType.image.number)
+        // No whole number between "a" at 1 and the step at 2: the latter was spread out and the
+        // image went one gap after "a"
+        #expect(manager.currentStory.stories[1 + positionGap]?.type.number == StoryType.image.number)
     }
 
     @Test func withoutFocusTheImageGoesAtTheEnd() {

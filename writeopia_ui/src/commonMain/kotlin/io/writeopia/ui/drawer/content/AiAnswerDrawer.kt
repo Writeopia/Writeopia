@@ -66,18 +66,18 @@ class AiAnswerDrawer(
     private val customBackgroundColor: Color,
     private val paddingValues: PaddingValues = PaddingValues(0.dp),
     private val enabled: Boolean,
-    private val onSelected: (Boolean, Double) -> Unit,
+    private val onSelected: (Boolean, Long) -> Unit,
     private val dragIconWidth: Dp,
     private val config: DrawConfig,
-    private val onDragHover: (Double) -> Unit,
+    private val onDragHover: (Long) -> Unit,
     private val onDragStart: () -> Unit,
     private val onDragStop: () -> Unit,
     private val moveRequest: (Action.Move) -> Unit,
-    private val receiveExternalFile: (List<ExternalFile>, Double) -> Unit,
-    private val acceptStoryStep: (Double) -> Unit,
+    private val receiveExternalFile: (List<ExternalFile>, Long) -> Unit,
+    private val acceptStoryStep: (Long) -> Unit,
     private val showActionsAlways: Boolean = false,
     private val isDesktop: Boolean = true,
-    private val onFocusChanged: (Double, Boolean) -> Unit = { _, _ -> },
+    private val onFocusChanged: (Long, Boolean) -> Unit = { _, _ -> },
 ) : StoryStepDrawer {
 
     @Composable
@@ -108,7 +108,7 @@ class AiAnswerDrawer(
                     },
                     onExit = {},
                     onFileReceived = { files ->
-                        receiveExternalFile(files, drawInfo.position + 1)
+                        receiveExternalFile(files, drawInfo.position)
                     }
                 )
             )
@@ -247,7 +247,7 @@ class AiAnswerDrawer(
         }
     }
 
-    private fun handleDrag(position: Double, data: DropInfo?) {
+    private fun handleDrag(position: Long, data: DropInfo?) {
         onDragHover(position)
 
         if (data != null) {

@@ -138,9 +138,9 @@ class WritingAgentControllerTest {
     private val title = StoryStep(id = "title", type = StoryTypes.TITLE.type, text = "Groceries")
     private val paragraph = StoryStep(id = "p1", type = StoryTypes.TEXT.type, text = "We need milk")
 
-    private fun state(vararg steps: StoryStep, focus: Double? = 1.0) =
+    private fun state(vararg steps: StoryStep, focus: Long? = 1L) =
         StoryState(
-            stories = steps.withIndex().associate { (i, step) -> i.toDouble() to step },
+            stories = steps.withIndex().associate { (i, step) -> i.toLong() to step },
             focus = focus
         )
 

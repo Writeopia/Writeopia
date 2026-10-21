@@ -62,10 +62,10 @@ object SpansHandler {
     }
 
     fun toggleSpansForManyStories(
-        storySteps: Map<Double, StoryStep>,
+        storySteps: Map<Long, StoryStep>,
         newSpan: Span,
         extra: String? = null,
-    ): Map<Double, StoryStep> =
+    ): Map<Long, StoryStep> =
         if (
             storySteps.all { (_, story) ->
                 story.spans.any { span -> span.span == newSpan && span.extra == extra }

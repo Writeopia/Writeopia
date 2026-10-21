@@ -35,7 +35,7 @@ class DocumentTagsRepositoryTest {
         Document(
             id = id,
             title = "Doc $id",
-            content = mapOf(0.0 to StoryStep(type = StoryTypes.TEXT.type, text = "hello")),
+            content = mapOf(0L to StoryStep(type = StoryTypes.TEXT.type, text = "hello")),
             createdAt = Instant.fromEpochMilliseconds(100),
             lastUpdatedAt = Instant.fromEpochMilliseconds(200),
             lastSyncedAt = null,

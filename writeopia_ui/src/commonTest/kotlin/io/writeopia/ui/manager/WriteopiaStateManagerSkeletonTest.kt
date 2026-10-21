@@ -5,6 +5,7 @@ import io.writeopia.sdk.model.story.LastEdit
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
+import io.writeopia.sdk.utils.iterables.POSITION_GAP
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.repository.UserRepository
@@ -14,6 +15,7 @@ import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Clock
@@ -37,9 +39,9 @@ class WriteopiaStateManagerSkeletonTest {
             userRepository = userRepository,
         )
         val content = buildMap {
-            put(0.0, StoryStep(type = StoryTypes.TITLE.type, text = "Title"))
+            put(0L, StoryStep(type = StoryTypes.TITLE.type, text = "Title"))
             lines.forEachIndexed { index, line ->
-                put((index + 1).toDouble(), StoryStep(type = StoryTypes.TEXT.type, text = line))
+                put((index + 1).toLong(), StoryStep(type = StoryTypes.TEXT.type, text = line))
             }
         }
 
@@ -60,21 +62,21 @@ class WriteopiaStateManagerSkeletonTest {
     @Test
     fun itReplacesTheSelectedLinesWithOneSkeletonHoldingTheirText() = runTest {
         val manager = manager("one", "two", "three", "four")
-        val deletedIds = listOf(2.0, 3.0).map { manager.getStory(it)!!.id }
-        manager.onSectionSelected(2.0)
+        val deletedIds = listOf(2L, 3L).map { manager.getStory(it)!!.id }
+        manager.onSectionSelected(2L)
         assertTrue(manager.isOnSelection)
 
-        val position = manager.replaceWithSkeleton(setOf(2.0, 3.0))
+        val position = manager.replaceWithSkeleton(setOf(2L, 3L))
 
-        assertEquals(2.0, position)
+        assertEquals(2L, position)
         val stories = manager.currentStory.value.stories
-        val skeleton = stories[2.0]!!
+        val skeleton = stories[2L]!!
         assertEquals(StoryTypes.SKELETON.type, skeleton.type)
         assertEquals("two\nthree", skeleton.text)
         assertTrue(skeleton.ephemeral)
-        assertNull(stories[3.0])
-        assertEquals("one", stories[1.0]?.text)
-        assertEquals("four", stories[4.0]?.text)
+        assertNull(stories[3L])
+        assertEquals("one", stories[1L]?.text)
+        assertEquals("four", stories[4L]?.text)
         assertFalse(manager.isOnSelection)
         assertEquals(
             deletedIds,
@@ -87,14 +89,14 @@ class WriteopiaStateManagerSkeletonTest {
         val manager = manager("one")
 
         assertNull(manager.replaceWithSkeleton(emptySet()))
-        assertNull(manager.replaceWithSkeleton(setOf(9.0)))
-        assertEquals("one", manager.currentStory.value.stories[1.0]?.text)
+        assertNull(manager.replaceWithSkeleton(setOf(9L)))
+        assertEquals("one", manager.currentStory.value.stories[1L]?.text)
     }
 
     @Test
     fun itPutsTheNewTextWhereTheSkeletonWasOneStoryPerLine() = runTest {
         val manager = manager("one", "two", "three", "four")
-        val position = manager.replaceWithSkeleton(setOf(2.0, 3.0))!!
+        val position = manager.replaceWithSkeleton(setOf(2L, 3L))!!
 
         manager.replaceSkeletonWithText(position, "new two\nnew three\nnew four")
 
@@ -109,7 +111,7 @@ class WriteopiaStateManagerSkeletonTest {
     @Test
     fun itAppliesTheMarkdownMarksOfTheNewText() = runTest {
         val manager = manager("one", "two")
-        val position = manager.replaceWithSkeleton(setOf(2.0))!!
+        val position = manager.replaceWithSkeleton(setOf(2L))!!
 
         manager.replaceSkeletonWithText(position, "- first\n- second")
 
@@ -124,9 +126,9 @@ class WriteopiaStateManagerSkeletonTest {
     fun itDoesNothingWhenTheSkeletonIsGone() = runTest {
         val manager = manager("one", "two")
 
-        manager.replaceSkeletonWithText(2.0, "replacement")
+        manager.replaceSkeletonWithText(2L, "replacement")
 
-        assertEquals("two", manager.currentStory.value.stories[2.0]?.text)
+        assertEquals("two", manager.currentStory.value.stories[2L]?.text)
     }
 
     @Test
@@ -134,16 +136,17 @@ class WriteopiaStateManagerSkeletonTest {
         val manager = manager("one", "two", "three")
         val stories = manager.currentStory.value.stories
         val keptBlock = StoryStep(type = StoryTypes.IMAGE.type, url = "pic")
-        val deletedIds = listOf(2.0, 3.0).map { stories[it]!!.id }
+        val deletedIds = listOf(2L, 3L).map { stories[it]!!.id }
         val skeleton = StoryStep(type = StoryTypes.SKELETON.type, text = "two\nthree", ephemeral = true)
 
-        val begun = manager.beginRegionRewrite(from = 2.0, toExclusive = null, stories = listOf(skeleton, keptBlock))
+        val begun = manager.beginRegionRewrite(from = 2L, toExclusive = null, stories = listOf(skeleton, keptBlock))
 
-        assertTrue(begun)
+        assertNotNull(begun)
         val after = manager.currentStory.value
-        assertEquals("one", after.stories[1.0]?.text)
-        assertEquals(StoryTypes.SKELETON.type, after.stories[2.0]?.type)
-        assertEquals(keptBlock.id, after.stories[3.0]?.id)
+        assertEquals("one", after.stories[1L]?.text)
+        assertEquals(StoryTypes.SKELETON.type, after.stories[2L]?.type)
+        // The region runs to the end: the blocks after the first go one gap apart
+        assertEquals(keptBlock.id, after.stories[2L + POSITION_GAP]?.id)
         assertEquals(4, after.stories.size)
         assertEquals(deletedIds, (after.lastEdit as LastEdit.BulkDeleteEdition).deletedIds)
     }
@@ -152,48 +155,53 @@ class WriteopiaStateManagerSkeletonTest {
     fun aRegionRewriteOfNothingDoesNothing() = runTest {
         val manager = manager("one")
 
-        assertFalse(manager.beginRegionRewrite(from = 5.0, toExclusive = null, stories = emptyList()))
-        assertEquals("one", manager.currentStory.value.stories[1.0]?.text)
+        assertNull(manager.beginRegionRewrite(from = 5L, toExclusive = null, stories = emptyList()))
+        assertEquals("one", manager.currentStory.value.stories[1L]?.text)
     }
 
     @Test
     fun theRegionUpdatesStayInsideTheRegion() = runTest {
         val manager = manager("one", "two", "three", "four")
-        manager.beginRegionRewrite(from = 2.0, toExclusive = 4.0, stories = emptyList())
+        val begun = manager.beginRegionRewrite(from = 2L, toExclusive = 4L, stories = emptyList())!!
 
         val rewritten = listOf("a", "b", "c").map { StoryStep(type = StoryTypes.TEXT.type, text = it) }
-        manager.updateRegion(from = 2.0, toExclusive = 4.0, stories = rewritten, done = false)
+        // Three stories don't fit between 2 and 4: "four" is spread out and the region grows
+        val region = manager.updateRegion(begun, stories = rewritten, done = false)
 
         val texts = manager.currentStory.value.stories.entries
             .sortedBy { (position, _) -> position }
             .map { (_, step) -> step.text }
         assertEquals(listOf("Title", "one", "a", "b", "c", "four"), texts)
-        assertTrue(manager.currentStory.value.stories.keys.filter { it >= 2.0 && it < 4.0 }.size == 3)
+        assertEquals(2L, region.from)
+        val end = region.toExclusive!!
+        assertTrue(end > 4L)
+        assertTrue(manager.currentStory.value.stories.keys.filter { it >= 2L && it < end }.size == 3)
+        assertEquals("four", manager.currentStory.value.stories[end]?.text)
         assertEquals(LastEdit.Nothing, manager.currentStory.value.lastEdit)
     }
 
     @Test
     fun theFinishedRegionIsSavedWholeWithItsLinks() = runTest {
         val manager = manager("one", "two")
-        manager.beginRegionRewrite(from = 2.0, toExclusive = null, stories = emptyList())
+        val region = manager.beginRegionRewrite(from = 2L, toExclusive = null, stories = emptyList())!!
 
         val rewritten = listOf("a", "b").map { StoryStep(type = StoryTypes.TEXT.type, text = it) }
-        manager.updateRegion(from = 2.0, toExclusive = null, stories = rewritten, done = true)
+        manager.updateRegion(region, stories = rewritten, done = true)
 
         val state = manager.currentStory.value
         assertEquals(LastEdit.Whole, state.lastEdit)
-        assertEquals(3.0, state.stories[2.0]?.nextPosition)
-        assertEquals(2.0, state.stories[3.0]?.previousPosition)
-        assertNull(state.stories[3.0]?.nextPosition)
+        val second = 2L + POSITION_GAP
+        assertEquals(second, state.stories[2L]?.nextPosition)
+        assertEquals(2L, state.stories[second]?.previousPosition)
+        assertNull(state.stories[second]?.nextPosition)
     }
 
     @Test
     fun aRegionRewriteCanBeUndone() = runTest {
         val manager = manager("one", "two", "three")
-        manager.beginRegionRewrite(from = 1.0, toExclusive = null, stories = emptyList())
+        val region = manager.beginRegionRewrite(from = 1L, toExclusive = null, stories = emptyList())!!
         manager.updateRegion(
-            from = 1.0,
-            toExclusive = null,
+            region,
             stories = listOf(StoryStep(type = StoryTypes.TEXT.type, text = "rewritten")),
             done = true
         )
@@ -209,7 +217,7 @@ class WriteopiaStateManagerSkeletonTest {
     @Test
     fun theReplacementCanBeUndone() = runTest {
         val manager = manager("one", "two", "three")
-        val position = manager.replaceWithSkeleton(setOf(2.0, 3.0))!!
+        val position = manager.replaceWithSkeleton(setOf(2L, 3L))!!
         manager.replaceSkeletonWithText(position, "rewritten")
 
         manager.undo()

@@ -1,6 +1,11 @@
 import Foundation
 
 /// A block of content inside a document. See `CLAUDE_CODE_WRITEOPIA_MANUAL.md` for the format.
+/// The distance between the positions of two steps written one after the other. Positions are
+/// whole numbers, this far apart, so a step can be added between two others without moving
+/// the rest (see `Positions.swift` in the editor).
+public let positionGap = 10_000
+
 public struct StoryStep: Codable, Identifiable, Equatable, Hashable, Sendable {
     public let id: String
     public var type: StoryType
@@ -11,7 +16,7 @@ public struct StoryStep: Codable, Identifiable, Equatable, Hashable, Sendable {
     public var steps: [StoryStep]
     public var tags: [TagInfo]
     public var spans: [SpanInfo]
-    public var position: Double
+    public var position: Int
     public var documentLink: DocumentLink?
     /// Group this step belongs to, if any.
     public var parentId: String?
@@ -29,7 +34,7 @@ public struct StoryStep: Codable, Identifiable, Equatable, Hashable, Sendable {
         steps: [StoryStep] = [],
         tags: [TagInfo] = [],
         spans: [SpanInfo] = [],
-        position: Double,
+        position: Int,
         documentLink: DocumentLink? = nil,
         parentId: String? = nil,
         decoration: Decoration? = nil,
@@ -62,7 +67,15 @@ public struct StoryStep: Codable, Identifiable, Equatable, Hashable, Sendable {
         steps = try container.decodeIfPresent([StoryStep].self, forKey: .steps) ?? []
         tags = try container.decodeIfPresent([TagInfo].self, forKey: .tags) ?? []
         spans = try container.decodeIfPresent([SpanInfo].self, forKey: .spans) ?? []
-        position = try container.decodeIfPresent(Double.self, forKey: .position) ?? 0
+        // Positions are whole numbers; a step saved before they were (1.5 between 1 and 2) is
+        // read with its fraction dropped, and its document renumbered on load.
+        if let whole = try? container.decodeIfPresent(Int.self, forKey: .position) {
+            position = whole
+        } else if let fraction = try container.decodeIfPresent(Double.self, forKey: .position) {
+            position = Int(fraction.rounded(.down))
+        } else {
+            position = 0
+        }
         documentLink = try container.decodeIfPresent(DocumentLink.self, forKey: .documentLink)
         parentId = try container.decodeIfPresent(String.self, forKey: .parentId)
         decoration = try container.decodeIfPresent(Decoration.self, forKey: .decoration)

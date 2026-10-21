@@ -21,11 +21,11 @@ object NextPositionCalculator {
      * @return A new map, sorted by position, with nextPosition and previousPosition populated
      * for each StoryStep
      */
-    fun calculate(stories: Map<Double, StoryStep>): Map<Double, StoryStep> {
+    fun calculate(stories: Map<Long, StoryStep>): Map<Long, StoryStep> {
         if (stories.isEmpty()) return stories
 
         val sortedPositions = stories.keys.sorted()
-        val result = sortedMutableMapOf<Double, StoryStep>()
+        val result = sortedMutableMapOf<Long, StoryStep>()
 
         sortedPositions.forEachIndexed { index, position ->
             val storyStep = stories.getValue(position)
@@ -51,7 +51,7 @@ object NextPositionCalculator {
      * @param stories The sorted map, changed in place
      * @return [stories]
      */
-    fun relinkAround(stories: MutableMap<Double, StoryStep>, position: Double): MutableMap<Double, StoryStep> {
+    fun relinkAround(stories: MutableMap<Long, StoryStep>, position: Long): MutableMap<Long, StoryStep> {
         val previous = stories.lowerKeyOrNull(position)
         val next = stories.higherKeyOrNull(position)
         val present = stories.containsKey(position)
@@ -70,12 +70,12 @@ object NextPositionCalculator {
         return stories
     }
 
-    private fun MutableMap<Double, StoryStep>.relinkNext(position: Double, nextPosition: Double?) {
+    private fun MutableMap<Long, StoryStep>.relinkNext(position: Long, nextPosition: Long?) {
         val step = this[position] ?: return
         if (step.nextPosition != nextPosition) this[position] = step.copy(nextPosition = nextPosition)
     }
 
-    private fun MutableMap<Double, StoryStep>.relinkPrevious(position: Double, previousPosition: Double?) {
+    private fun MutableMap<Long, StoryStep>.relinkPrevious(position: Long, previousPosition: Long?) {
         val step = this[position] ?: return
         if (step.previousPosition != previousPosition) this[position] = step.copy(previousPosition = previousPosition)
     }

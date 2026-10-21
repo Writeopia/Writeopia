@@ -5,6 +5,7 @@ import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.utils.NextPositionCalculator
 import io.writeopia.sdk.utils.collections.toSortedMutableMap
 import io.writeopia.sdk.utils.extensions.toEditState
+import io.writeopia.sdk.utils.iterables.insertAfter
 import io.writeopia.sdk.utils.iterables.nextKey
 
 /**
@@ -17,7 +18,7 @@ import io.writeopia.sdk.utils.iterables.nextKey
  */
 class MovementHandler {
 
-    fun merge(stories: Map<Double, StoryStep>, info: Action.Merge): Map<Double, List<StoryStep>> {
+    fun merge(stories: Map<Long, StoryStep>, info: Action.Merge): Map<Long, List<StoryStep>> {
         val sender = info.sender
         val receiver = info.receiver
         val positionTo = info.positionTo
@@ -51,7 +52,7 @@ class MovementHandler {
      * Moves the story at [Action.Move.positionFrom] to right after [Action.Move.positionTo].
      * Nothing changes when the story is already there.
      */
-    fun move(stories: Map<Double, StoryStep>, move: Action.Move): Map<Double, StoryStep> {
+    fun move(stories: Map<Long, StoryStep>, move: Action.Move): Map<Long, StoryStep> {
         if (move.positionFrom == move.positionTo) return stories
 
         // Already right after the target
@@ -60,13 +61,13 @@ class MovementHandler {
         return moveStories(stories, setOf(move.positionFrom), move.positionTo)
     }
 
-    fun move(stories: Map<Double, StoryStep>, move: Action.BulkMove): Map<Double, StoryStep> = moveStories(
+    fun move(stories: Map<Long, StoryStep>, move: Action.BulkMove): Map<Long, StoryStep> = moveStories(
         stories,
         move.positionFrom,
         move.positionTo
     )
 
-    private fun moveStories(stories: Map<Double, StoryStep>, from: Set<Double>, to: Double): Map<Double, StoryStep> {
+    private fun moveStories(stories: Map<Long, StoryStep>, from: Set<Long>, to: Long): Map<Long, StoryStep> {
         val mutable = stories.toSortedMutableMap()
 
         // Collect stories to move before removal
@@ -77,24 +78,15 @@ class MovementHandler {
         if (storiesToMove.isEmpty()) return stories
 
         storiesToMove.forEach { (position, _) -> mutable.remove(position) }
-        val touched = storiesToMove.mapTo(mutableListOf()) { (position, _) -> position }
 
-        // The moved stories are spread between 'to' and whatever follows it once they are out.
-        // The neighbour comes from the map: the links of the stories may be older than the map.
-        val nextAfterTo = mutable.nextKey(to)
-        val endPos = nextAfterTo ?: (to + storiesToMove.size + 1)
+        // The moved stories go right after 'to', before whatever follows it once they are out;
+        // the stories after are spread out first when there is no room for them.
+        val insertion = mutable.insertAfter(storiesToMove.map { (_, story) -> story }, to)
 
-        var prevPos: Double = to
-        for ((_, story) in storiesToMove) {
-            val newPos = (prevPos + endPos) / 2.0
-            mutable[newPos] = story
-            touched += newPos
-            prevPos = newPos
-        }
-
-        // Only the moved stories and their old and new neighbours change links
-        touched.forEach { position -> NextPositionCalculator.relinkAround(mutable, position) }
-        return mutable
+        // Only the stories moved, spread out, and their old and new neighbours change links
+        val touched = storiesToMove.map { (position, _) -> position } + insertion.keys + insertion.moved
+        touched.forEach { position -> NextPositionCalculator.relinkAround(insertion.map, position) }
+        return insertion.map
     }
 }
 
