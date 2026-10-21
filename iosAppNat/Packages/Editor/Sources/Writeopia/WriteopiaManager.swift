@@ -14,25 +14,45 @@ public struct WriteopiaManager {
 
     /// A document with an empty title, focused.
     public func newDocument() -> StoryState {
-        let stories = contentManager.renumber([StoryStep(type: .title, text: "", position: 0)])
+        let stories = contentManager.positioned([StoryStep(type: .title, text: "", position: 0)])
         return StoryState(stories: stories, lastEdit: .nothing, focus: 0)
     }
 
-    /// Prepares the steps of a document for edition: sorted, renumbered, without ephemeral steps
-    /// and always starting with a title (documents created elsewhere may not have one).
+    /// Prepares the steps of a document for edition: at their positions, without ephemeral steps
+    /// and always starting with a title (documents created elsewhere may not have one). Two
+    /// steps at the same position (each device added one there) can't share a key: the later
+    /// one goes half way to the next position, so nothing is lost and the order holds.
     public func loadDocument(_ document: WrDocument) -> StoryState {
-        var steps = document.content
+        let steps = document.content
             .sorted { $0.position < $1.position }
             .filter { !StoryTypes.ephemeral.contains($0.type.number) }
 
-        if let titleIndex = steps.firstIndex(where: \.isTitle) {
-            let title = steps.remove(at: titleIndex)
-            steps.insert(title, at: 0)
-        } else {
-            steps.insert(StoryStep(type: .title, text: document.title, position: 0), at: 0)
+        var stories: [Double: StoryStep] = [:]
+        var lastKey: Double?
+        for (index, step) in steps.enumerated() {
+            let key: Double
+            if let lastKey, step.position <= lastKey {
+                let nextDistinct = steps[(index + 1)...].first { $0.position > step.position }?.position
+                key = nextDistinct.map { (lastKey + $0) / 2 } ?? lastKey + 1
+            } else {
+                key = step.position
+            }
+            stories.place(step, at: key)
+            lastKey = key
         }
 
-        return StoryState(stories: contentManager.renumber(steps), lastEdit: .nothing, focus: nil)
+        // The title comes first: before everything else when it is elsewhere or missing.
+        let firstKey = stories.keys.min() ?? 0
+        if let titleKey = stories.first(where: { $0.value.isTitle })?.key {
+            if titleKey != firstKey, let title = stories.removeValue(forKey: titleKey) {
+                stories.place(title, at: firstKey - 1)
+            }
+        } else {
+            let key = stories.isEmpty ? 0 : firstKey - 1
+            stories.place(StoryStep(type: .title, text: document.title, position: key), at: key)
+        }
+
+        return StoryState(stories: stories, lastEdit: .nothing, focus: nil)
     }
 
     public func changeStoryState(_ change: Action.StoryStateChange, state: StoryState) -> StoryState {
@@ -159,14 +179,14 @@ public struct WriteopiaManager {
         }
     }
 
-    /// Deletes the steps at `positions`, except the title.
+    /// Deletes the steps at `positions`, except the title. The other steps keep their positions.
     public func deleteSteps(_ positions: [Double], state: StoryState) -> StoryState {
-        let toDelete = Set(positions)
-        let remaining = state.sortedPositions
-            .filter { position in !toDelete.contains(position) || state.stories[position]?.isTitle == true }
-            .compactMap { state.stories[$0] }
-        guard remaining.count != state.stories.count else { return state }
-        return StoryState(stories: contentManager.renumber(remaining), lastEdit: .whole, focus: nil)
+        var stories = state.stories
+        for position in positions where stories[position]?.isTitle == false {
+            stories.removeValue(forKey: position)
+        }
+        guard stories.count != state.stories.count else { return state }
+        return StoryState(stories: stories, lastEdit: .whole, focus: nil)
     }
 
     /// Text of the steps at `positions`, one per line, like `copySelection` of the SDK.
@@ -291,38 +311,46 @@ public struct WriteopiaManager {
         return newState
     }
 
-    /// Puts `steps` in place of the step with `id`, e.g. an AI answer accepted as regular lines.
+    /// Puts `steps` in place of the step with `id`, e.g. an AI answer accepted as regular lines:
+    /// the first takes its position, the others go between it and the next step.
     public func replaceStep(id: String, with steps: [StoryStep], state: StoryState) -> StoryState {
-        var ordered = state.sortedStories
-        guard let index = ordered.firstIndex(where: { $0.id == id }) else { return state }
-        ordered.replaceSubrange(index...index, with: steps)
-        return StoryState(stories: contentManager.renumber(ordered), lastEdit: .whole, focus: nil)
+        replaceSteps(ids: [id], with: steps, state: state)
     }
 
     /// Puts `steps` where the steps with `ids` are: in the place of the first of them, the
     /// others going away. Nothing happens when none of them is in the document.
     public func replaceSteps(ids: Set<String>, with steps: [StoryStep], state: StoryState) -> StoryState {
-        var ordered = state.sortedStories
-        guard let index = ordered.firstIndex(where: { ids.contains($0.id) }) else { return state }
-        ordered.removeAll { ids.contains($0.id) }
-        ordered.insert(contentsOf: steps, at: index)
-        return StoryState(stories: contentManager.renumber(ordered), lastEdit: .whole, focus: nil)
+        let replaced = state.stories.filter { ids.contains($0.value.id) }.keys
+        guard let firstKey = replaced.min() else { return state }
+
+        var stories = state.stories
+        for key in replaced { stories.removeValue(forKey: key) }
+        if let first = steps.first {
+            stories.place(first, at: firstKey)
+            stories.place(Array(steps.dropFirst()), after: firstKey)
+        }
+        return StoryState(stories: stories, lastEdit: .whole, focus: nil)
     }
 
-    /// Adds `steps`, in order, right after `position`.
+    /// Adds `steps`, in order, right after `position`: spread between it and the next step.
     public func addSteps(_ steps: [StoryStep], after position: Double, state: StoryState) -> StoryState {
-        var ordered = state.sortedStories
-        guard !steps.isEmpty, let index = ordered.firstIndex(where: { $0.position == position }) else { return state }
-        ordered.insert(contentsOf: steps, at: index + 1)
-        return keepingFocus(of: state, in: contentManager.renumber(ordered))
+        guard !steps.isEmpty, state.stories[position] != nil else { return state }
+        var stories = state.stories
+        stories.place(steps, after: position)
+        return keepingFocus(of: state, in: stories)
+    }
+
+    /// Adds `step` right before the step at `position`: half way to the previous step.
+    public func addStep(_ step: StoryStep, before position: Double, state: StoryState) -> StoryState {
+        guard state.stories[position] != nil else { return state }
+        return contentManager.add(step, before: position, in: state.stories)
     }
 
     /// Removes every step matching `predicate`.
     public func removeSteps(where predicate: (StoryStep) -> Bool, state: StoryState) -> StoryState {
-        let ordered = state.sortedStories
-        let kept = ordered.filter { !predicate($0) }
-        guard kept.count != ordered.count else { return state }
-        return keepingFocus(of: state, in: contentManager.renumber(kept))
+        let kept = state.stories.filter { !predicate($0.value) }
+        guard kept.count != state.stories.count else { return state }
+        return keepingFocus(of: state, in: kept)
     }
 
     /// `stories` with the focus still on the step that had it in `state`, if it's still there.

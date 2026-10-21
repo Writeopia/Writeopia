@@ -3,7 +3,7 @@ import Testing
 import WrModels
 
 private func state(_ steps: [StoryStep]) -> StoryState {
-    StoryState(stories: ContentManager().renumber(steps))
+    StoryState(stories: ContentManager().positioned(steps))
 }
 
 private func texts(_ state: StoryState) -> [String] {
@@ -122,6 +122,8 @@ private func texts(_ state: StoryState) -> [String] {
         let result = manager.onLineBreak(Action.LineBreak(storyStep: step, position: 1, cursor: 5), state: initial)
 
         #expect(texts(result) == ["T", "a", "b", "c"])
+        // The new lines go after the step at 1, which keeps its position
+        #expect(result.sortedPositions == [0, 1, 2, 3])
         #expect(result.selection == .cursor(1, at: 3))
     }
 
@@ -149,7 +151,8 @@ private func texts(_ state: StoryState) -> [String] {
         let result = manager.onErase(Action.EraseStory(storyStep: initial.stories[2]!, position: 2), state: initial)
 
         #expect(texts(result) == ["T", "after"])
-        #expect(result.focus == 1)
+        // The step keeps its position, only the divider went away
+        #expect(result.focus == 2)
     }
 
     @Test func eraseOnHeadingOrBlockRemovesTheTagFirst() {
@@ -195,9 +198,13 @@ private func texts(_ state: StoryState) -> [String] {
 
         let moved = manager.moveRequest(Action.Move(positionFrom: 1, positionTo: 3), state: initial)
         #expect(texts(moved) == ["T", "b", "c", "a"])
+        #expect(moved.sortedPositions == [0, 2, 3, 4])
+        #expect(moved.stories[4]?.position == 4)
 
         let toTop = manager.moveRequest(Action.Move(positionFrom: 3, positionTo: 0), state: initial)
         #expect(texts(toTop) == ["T", "c", "a", "b"])
+        // Half way between the title and the step at 1, nothing else moves
+        #expect(toTop.sortedPositions == [0, 0.5, 1, 2])
 
         #expect(manager.moveRequest(Action.Move(positionFrom: 0, positionTo: 2), state: initial) == initial)
     }
@@ -217,7 +224,9 @@ private func texts(_ state: StoryState) -> [String] {
         let loaded = manager.loadDocument(document)
 
         #expect(texts(loaded) == ["Plan", "<divider>", "body"])
-        #expect(loaded.sortedPositions == [0, 1, 2])
+        // The steps keep their positions; the title goes before the first
+        #expect(loaded.sortedPositions == [1, 2, 5])
+        #expect(loaded.sortedStories.map(\.position) == [1, 2, 5])
     }
 
     @Test func clickAtTheEndAddsParagraphOnce() {
@@ -272,7 +281,7 @@ private func texts(_ state: StoryState) -> [String] {
 
 @Suite struct SpanKindsTests {
     let manager = WriteopiaManager()
-    let initial = StoryState(stories: ContentManager().renumber([
+    let initial = StoryState(stories: ContentManager().positioned([
         StoryStep(type: .title, text: "T", position: 0),
         StoryStep(type: .text, text: "Hello world", position: 1),
     ]))
@@ -336,7 +345,7 @@ private func texts(_ state: StoryState) -> [String] {
 
 @Suite struct SelectedLinesTests {
     let manager = WriteopiaManager()
-    let initial = StoryState(stories: ContentManager().renumber([
+    let initial = StoryState(stories: ContentManager().positioned([
         StoryStep(id: "t", type: .title, text: "T", position: 0),
         StoryStep(id: "a", type: .text, text: "One", position: 1),
         StoryStep(id: "b", type: .checkItem, text: "Two", checked: true, position: 2),
@@ -381,7 +390,108 @@ private func texts(_ state: StoryState) -> [String] {
         #expect(manager.text(of: [2, 1, 3], state: initial) == "One\nTwo")
 
         let state = manager.addDocumentLink(after: 1, documentId: "p", title: "One", state: initial)
-        #expect(state.stories[2]?.type.number == StoryType.documentLink.number)
-        #expect(state.stories[2]?.documentLink == DocumentLink(id: "p", title: "One"))
+        // Half way between 1 and 2
+        #expect(state.stories[1.5]?.type.number == StoryType.documentLink.number)
+        #expect(state.stories[1.5]?.documentLink == DocumentLink(id: "p", title: "One"))
+    }
+}
+
+@Suite struct PositionKeepingTests {
+    let manager = WriteopiaManager()
+
+    private func document() -> StoryState {
+        var stories: [Double: StoryStep] = [:]
+        stories.place(StoryStep(id: "t", type: .title, text: "T", position: 0), at: 0)
+        stories.place(StoryStep(id: "a", type: .text, text: "a", position: 0), at: 1)
+        stories.place(StoryStep(id: "b", type: .text, text: "b", position: 0), at: 1.5)
+        stories.place(StoryStep(id: "c", type: .text, text: "c", position: 0), at: 2)
+        return StoryState(stories: stories)
+    }
+
+    @Test func neighboursComeFromTheKeys() {
+        let stories = document().stories
+        #expect(stories.previousKey(before: 1.5) == 1)
+        #expect(stories.nextKey(after: 1.5) == 2)
+        #expect(stories.nextKey(after: 2) == nil)
+        #expect(stories.keyBefore(1.5) == 1.25)
+        #expect(stories.keyBefore(7) == 7)
+        #expect(stories.keyAfter(1) == 1.25)
+        #expect(stories.keyAfter(2) == 3)
+        #expect(stories.keysAfter(1, count: 3) == [1.125, 1.25, 1.375])
+        #expect(stories.lastKey == 2)
+    }
+
+    @Test func aLineBreakGoesBetweenTheLineAndTheNextOne() {
+        let initial = document()
+        var step = initial.stories[1.5]!
+        step.text = "b\n"
+
+        let result = manager.onLineBreak(Action.LineBreak(storyStep: step, position: 1.5, cursor: 2), state: initial)
+
+        #expect(result.sortedStories.map(\.text) == ["T", "a", "b", "", "c"])
+        #expect(result.sortedPositions == [0, 1, 1.5, 1.75, 2])
+        #expect(result.focus == 1.75)
+        #expect(result.stories[1.75]?.position == 1.75)
+    }
+
+    @Test func stepsAddedAfterAStepSpreadUpToTheNextOne() {
+        let initial = document()
+        let result = manager.addSteps(
+            [StoryStep(type: .text, text: "x", position: 0), StoryStep(type: .text, text: "y", position: 0)],
+            after: 1,
+            state: initial
+        )
+
+        #expect(result.sortedStories.map(\.text) == ["T", "a", "x", "y", "b", "c"])
+        #expect(result.stories[1]?.text == "a")
+        #expect(result.stories[1.5]?.text == "b")
+    }
+
+    @Test func aStepAddedBeforeAnotherGoesHalfWayToThePrevious() {
+        let result = manager.addStep(StoryStep(type: .text, text: "h", position: 0), before: 1.5, state: document())
+
+        #expect(result.sortedStories.map(\.text) == ["T", "a", "h", "b", "c"])
+        #expect(result.stories[1.25]?.text == "h")
+    }
+
+    @Test func replacingAStepKeepsItsPositionForTheFirstReplacement() {
+        let result = manager.replaceStep(
+            id: "b",
+            with: [StoryStep(type: .text, text: "b1", position: 0), StoryStep(type: .text, text: "b2", position: 0)],
+            state: document()
+        )
+
+        #expect(result.sortedStories.map(\.text) == ["T", "a", "b1", "b2", "c"])
+        #expect(result.stories[1.5]?.text == "b1")
+        #expect(result.stories[1.75]?.text == "b2")
+        #expect(result.stories[2]?.text == "c")
+    }
+
+    @Test func deletingKeepsThePositionsOfTheOthers() {
+        let result = manager.deleteSteps([1.5], state: document())
+        #expect(result.sortedPositions == [0, 1, 2])
+
+        let erased = manager.onErase(Action.EraseStory(storyStep: document().stories[2]!, position: 2), state: document())
+        #expect(erased.sortedPositions == [0, 1, 1.5])
+        #expect(erased.stories[1.5]?.text == "bc")
+    }
+
+    @Test func loadingResolvesTwoStepsAtTheSamePosition() {
+        let document = WrDocument(
+            id: "d",
+            title: "Plan",
+            workspaceId: "w",
+            content: [
+                StoryStep(id: "t", type: .title, text: "Plan", position: 0),
+                StoryStep(id: "x", type: .text, text: "x", position: 1),
+                StoryStep(id: "y", type: .text, text: "y", position: 1),
+                StoryStep(id: "z", type: .text, text: "z", position: 2),
+            ]
+        )
+
+        let loaded = manager.loadDocument(document)
+
+        #expect(loaded.sortedStories.map(\.id) == ["t", "x", "y", "z"])
+        #expect(loaded.sortedPositions == [0, 1, 1.5, 2])
     }
 }

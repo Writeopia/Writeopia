@@ -130,7 +130,8 @@ private let sample = document([
 
         #expect(manager.currentStory.sortedStories.map { $0.text ?? "-" } == ["Doc", "Hel", "lo", "Task", "-"])
         let request = try #require(manager.focusRequest)
-        #expect(request.stepId == manager.currentStory.stories[2]?.id)
+        // The new line went half way between "a" at 1 and "Task" at 2
+        #expect(request.stepId == manager.currentStory.stories[1.5]?.id)
         #expect(request.cursor == 0)
     }
 
@@ -282,7 +283,8 @@ private let sample = document([
 
         manager.moveRequest(payload: manager.dragPayload(for: manager.currentStory.stories[2]!), after: 0)
 
-        #expect(manager.selectedPositions == [1])
+        // "b" went half way between the title and "a"; nothing else moved
+        #expect(manager.selectedPositions == [0.5])
         manager.clearLineSelection()
         #expect(!manager.hasSelectedLines)
     }
@@ -371,7 +373,8 @@ private let sample = document([
         manager.addImage(path: "/tmp/a.jpg")
 
         #expect(manager.currentStory.sortedStories.map(\.id)[1] == "a")
-        #expect(manager.currentStory.stories[2]?.type.number == StoryType.image.number)
+        // Right after "a" at 1, half way to the step at 2
+        #expect(manager.currentStory.stories[1.5]?.type.number == StoryType.image.number)
     }
 
     @Test func withoutFocusTheImageGoesAtTheEnd() {

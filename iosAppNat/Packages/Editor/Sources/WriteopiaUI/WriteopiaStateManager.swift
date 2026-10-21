@@ -33,7 +33,7 @@ public final class WriteopiaStateManager {
     public private(set) var dragPosition: Double?
     public private(set) var isDragging = false
     public private(set) var focusRequest: FocusRequest?
-    /// Lines selected by sliding them sideways. Kept by id so they survive renumbering.
+    /// Lines selected by sliding them sideways. Kept by id, which is stable across edits.
     public private(set) var selectedStepIds: Set<String> = []
     /// Current selection of the focused text step. Drives the formatting buttons.
     public private(set) var textSelection: StepSelection?

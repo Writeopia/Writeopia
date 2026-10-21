@@ -864,9 +864,9 @@ public final class NoteEditorViewModel {
         var changed = false
         let steps = writeopiaManager.documentContent.map { step -> StoryStep in
             var step = step
-            if let saved = savedSteps[step.id], saved.hasSameContent(as: step) {
+            // A step that only moved is a change too: its position goes to the backend.
+            if let saved = savedSteps[step.id], saved.hasSameContent(as: step), saved.position == step.position {
                 step.lastUpdatedAt = saved.lastUpdatedAt
-                if saved.position != step.position { changed = true }
             } else {
                 step.lastUpdatedAt = now
                 changed = true
