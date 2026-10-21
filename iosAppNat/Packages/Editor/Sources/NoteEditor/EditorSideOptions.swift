@@ -32,6 +32,8 @@ struct EditorSideOptions: View {
         case page
         case text
         case export
+        /// The AI options, on the Mac only: the phones and tablets open the AI dialog instead.
+        case ai
     }
 
     var body: some View {
@@ -76,11 +78,18 @@ struct EditorSideOptions: View {
                 .accessibilityIdentifier("editor.side.presentation")
             }
             if viewModel.isAiAvailable && !viewModel.isLocked {
+                #if os(macOS)
+                // Like the Compose desktop app: the AI options open in a panel, with the command
+                // field at the bottom of the editor, never in a dialog over the text.
+                tabButton(.ai, systemImage: "sparkles", label: "AI", tint: WrColors.accent)
+                    .accessibilityIdentifier("editor.side.ai")
+                #else
                 MenuButton(systemImage: "sparkles", label: "AI", tint: WrColors.accent) {
                     tab = nil
                     onAiClick()
                 }
                 .accessibilityIdentifier("editor.side.ai")
+                #endif
             }
         }
         .padding(.vertical, 8)
@@ -92,9 +101,10 @@ struct EditorSideOptions: View {
         _ option: SideTab,
         systemImage: String,
         label: LocalizedStringKey,
+        tint: Color = .primary,
         isEnabled: Bool = true
     ) -> some View {
-        MenuButton(systemImage: systemImage, label: label, isEnabled: isEnabled, isActive: tab == option) {
+        MenuButton(systemImage: systemImage, label: label, tint: tint, isEnabled: isEnabled, isActive: tab == option) {
             tab = tab == option ? nil : option
         }
     }
@@ -119,6 +129,8 @@ struct EditorSideOptions: View {
                     )
                 case .export:
                     SideExportPanel(viewModel: viewModel, onPublishClick: onPublishClick)
+                case .ai:
+                    SideAiPanel(viewModel: viewModel)
                 }
             }
             .padding(16)
@@ -133,6 +145,57 @@ struct EditorSideOptions: View {
         return ViewThatFits(in: .vertical) {
             content
             ScrollView(showsIndicators: false) { content }
+        }
+    }
+}
+
+/// The quick actions of the AI with "Apply to", like `AiQuickActions` of the Compose desktop
+/// app. The free command is typed in the field at the bottom of the editor, which shows with
+/// this panel.
+private struct SideAiPanel: View {
+    let viewModel: NoteEditorViewModel
+    @State private var mode: AiTargetMode = .document
+
+    private var manager: WriteopiaStateManager { viewModel.writeopiaManager }
+    private var needsSelection: Bool { mode == .selectedLines && !manager.hasSelectedLines }
+
+    var body: some View {
+        PanelSection("Apply to:") {
+            Picker("Apply to", selection: $mode) {
+                ForEach([AiTargetMode.document, .selectedLines, .cursor]) { mode in
+                    Text(mode.title).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .accessibilityIdentifier("side.ai.mode")
+
+            if needsSelection {
+                Text("Select lines in the document first")
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
+        }
+
+        PanelSection("Quick actions") {
+            // The quick actions all work on existing text, so there is none for the cursor:
+            // the command field is the way there.
+            if mode == .cursor {
+                Text("Quick actions work on the document or on selected lines.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(NoteEditorViewModel.commands(for: mode)) { command in
+                    Button {
+                        viewModel.runAi(command, mode: mode)
+                    } label: {
+                        Label(command.title, systemImage: command.systemImage)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .disabled(needsSelection || viewModel.isAiRunning)
+                    .accessibilityIdentifier("side.ai.\(command.rawValue)")
+                }
+            }
         }
     }
 }

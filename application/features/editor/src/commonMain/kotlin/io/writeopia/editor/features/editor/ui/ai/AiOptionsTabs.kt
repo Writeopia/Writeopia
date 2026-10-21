@@ -89,7 +89,7 @@ internal fun AiOptionsTabs(
                 onRun = { aiCommand(command) },
             )
 
-            else -> QuickActions(
+            else -> AiQuickActions(
                 hasSelectedLinesState = hasSelectedLinesState,
                 availableTargetModes = availableTargetModes,
                 fixedTargetMode = fixedTargetMode,
@@ -104,8 +104,13 @@ internal fun AiOptionsTabs(
     }
 }
 
+/**
+ * The quick actions of the AI (summary, action points, FAQ, tags), with "Apply to" picking the
+ * text they work on. The second tab of [AiOptionsTabs], and the whole AI panel on desktop, where
+ * the free command has a field of its own at the bottom of the editor.
+ */
 @Composable
-private fun QuickActions(
+internal fun AiQuickActions(
     hasSelectedLinesState: StateFlow<Boolean>,
     availableTargetModes: List<AiTargetMode>,
     fixedTargetMode: AiTargetMode?,
@@ -113,6 +118,7 @@ private fun QuickActions(
     aiActionPoints: (AiTargetMode) -> Unit,
     aiFaq: (AiTargetMode) -> Unit,
     aiTags: (AiTargetMode) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     var targetMode by remember {
         mutableStateOf(fixedTargetMode ?: availableTargetModes.firstOrNull() ?: AiTargetMode.DOCUMENT)
@@ -122,7 +128,7 @@ private fun QuickActions(
     // Nothing runs when Selected Lines is the target but no lines are selected.
     val enabled = targetMode != AiTargetMode.SELECTED_LINES || hasSelectedLines
 
-    Column {
+    Column(modifier = modifier) {
         Text(
             text = WrStrings.applyTo(),
             style = MaterialTheme.typography.labelMedium,

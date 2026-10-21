@@ -46,6 +46,7 @@ import io.writeopia.ai.task.ui.AiTaskIndicator
 import io.writeopia.common.utils.file.fileChooserLoad
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.dialogs.confirmation.DeleteConfirmationDialog
+import io.writeopia.editor.features.editor.ui.ai.AiCommandBar
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.SideEditorOptions
 import io.writeopia.editor.features.editor.ui.folders.FolderSelectionDialog
 import io.writeopia.editor.features.editor.ui.publish.PremiumOnlyDialog
@@ -265,6 +266,21 @@ fun DesktopNoteEditorScreen(
             onAddTagClick = noteEditorViewModel::showAddTagDialog,
             onRemoveTagClick = noteEditorViewModel::removeTagFromDocument,
         )
+
+        // The command field comes with the AI options and goes with them.
+        val sideMenuTab by noteEditorViewModel.sideMenuTabState.collectAsState()
+
+        AnimatedVisibility(
+            visible = isEditable && sideMenuTab == SideMenuTab.AI,
+            modifier = Modifier.align(Alignment.BottomCenter),
+            enter = fadeIn(animationSpec = tween(durationMillis = 150)),
+            exit = fadeOut(animationSpec = tween(durationMillis = 150))
+        ) {
+            AiCommandBar(
+                onRun = noteEditorViewModel::aiCommand,
+                modifier = Modifier.padding(start = 16.dp, end = 72.dp, bottom = 16.dp)
+            )
+        }
 
         if (showDeleteConfirmation) {
             DeleteConfirmationDialog(

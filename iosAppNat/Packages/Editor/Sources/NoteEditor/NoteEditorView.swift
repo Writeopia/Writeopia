@@ -58,6 +58,8 @@ public struct NoteEditorView: View {
     @Environment(\.openEditors) private var openEditors
     /// Selection waiting for a URL. Kept here because the alert takes the focus from the text.
     @State private var sideTab: EditorSideOptions.SideTab?
+    /// The command field of the AI panel has the keyboard focus (the Mac).
+    @State private var aiCommandFocused = false
     @State private var linkSelection: StepSelection?
     @State private var linkURL = ""
     private let fallbackTitle: String
@@ -220,14 +222,15 @@ public struct NoteEditorView: View {
             Button("Link to page") { Task { await viewModel.linkSelectionToNewPage() } }
                 .keyboardShortcut("l", modifiers: .command)
                 .disabled(!canEdit || !manager.hasSelectedLines)
-            // Backspace and Delete remove the selected lines wherever the keyboard focus is;
-            // without a selection they reach the text as usual.
+            // Backspace and Delete remove the selected lines wherever the keyboard focus is,
+            // except in the AI command field, where they edit the command; without a selection
+            // they reach the text as usual.
             Button("Delete lines") { withAnimation(.snappy) { manager.deleteSelectedLines() } }
                 .keyboardShortcut(.delete, modifiers: [])
-                .disabled(!canEdit || !manager.hasSelectedLines)
+                .disabled(!canEdit || !manager.hasSelectedLines || aiCommandFocused)
             Button("Delete lines forward") { withAnimation(.snappy) { manager.deleteSelectedLines() } }
                 .keyboardShortcut(.deleteForward, modifiers: [])
-                .disabled(!canEdit || !manager.hasSelectedLines)
+                .disabled(!canEdit || !manager.hasSelectedLines || aiCommandFocused)
         }
         .opacity(0)
         .allowsHitTesting(false)
@@ -286,12 +289,35 @@ public struct NoteEditorView: View {
         }
     }
 
+    /// The free command to the AI, at the bottom of the text while the AI panel of the side
+    /// options is open, like the Compose desktop app. Only the Mac has the panel.
+    @ViewBuilder
+    private var aiCommandField: some View {
+        #if os(macOS)
+        Group {
+            if isWideLayout, sideTab == .ai, !viewModel.isLocked {
+                AiCommandField(
+                    onRun: { command in viewModel.runAiCommand(command) },
+                    onFocusChange: { focused in aiCommandFocused = focused }
+                )
+                .frame(maxWidth: 640)
+                .padding(.leading, 16)
+                .padding(.trailing, 72)
+                .padding(.bottom, 16)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(.snappy(duration: 0.27), value: sideTab)
+        #endif
+    }
+
     public var body: some View {
         Group {
             if viewModel.hasLoaded {
                 WriteopiaEditor(manager: viewModel.writeopiaManager, customDrawers: customDrawers)
                     .dropDestination(for: URL.self) { urls, _ in dropImages(urls) }
                     .overlay(alignment: .bottomTrailing) { writingSuggestions }
+                    .overlay(alignment: .bottom) { aiCommandField }
                     .safeAreaInset(edge: .bottom, spacing: 0) {
                         // A locked document can't be edited, so its menu is hidden. While lines are
                         // selected, the selection menu takes the place of the regular one.

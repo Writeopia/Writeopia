@@ -3672,6 +3672,17 @@
         }
       }
     },
+    "Select lines in the document first" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selecione linhas no documento primeiro"
+          }
+        }
+      }
+    },
     "Select Model Tier" : {
       "extractionState" : "stale",
       "localizations" : {

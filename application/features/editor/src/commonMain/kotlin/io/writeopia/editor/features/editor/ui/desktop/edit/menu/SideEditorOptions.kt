@@ -63,6 +63,7 @@ import io.writeopia.common.utils.file.fileChooserLoad
 import io.writeopia.common.utils.file.fileChooserSave
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.editor.features.editor.ui.ai.AiOptionsTabs
+import io.writeopia.editor.features.editor.ui.ai.AiQuickActions
 import io.writeopia.editor.features.editor.ui.tags.DocumentTagChipsRow
 import io.writeopia.editor.features.editor.viewmodel.AiTargetMode
 import io.writeopia.editor.features.editor.viewmodel.SideMenuTab
@@ -1224,20 +1225,37 @@ internal fun AiOptions(
             .verticalScroll(rememberScrollState())
             .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp)
     ) {
-        AiOptionsTabs(
-            hasSelectedLinesState = hasSelectedLinesState,
-            availableTargetModes = listOf(
-                AiTargetMode.DOCUMENT,
-                AiTargetMode.SELECTED_LINES,
-                AiTargetMode.CURSOR
-            ),
-            fixedTargetMode = null,
-            aiSummary = aiSummary,
-            aiActionPoints = aiActionPoints,
-            aiFaq = aiFaq,
-            aiTags = aiTags,
-            aiCommand = aiCommand,
-        )
+        val targetModes = listOf(AiTargetMode.DOCUMENT, AiTargetMode.SELECTED_LINES, AiTargetMode.CURSOR)
+
+        // On desktop and web the free command has a field at the bottom of the editor, so the
+        // panel holds the quick actions only. A tablet in landscape has no such field: it keeps
+        // the command tab, like the sheet of the phone.
+        if (LocalPlatform.current.isMobile()) {
+            AiOptionsTabs(
+                hasSelectedLinesState = hasSelectedLinesState,
+                availableTargetModes = targetModes,
+                fixedTargetMode = null,
+                aiSummary = aiSummary,
+                aiActionPoints = aiActionPoints,
+                aiFaq = aiFaq,
+                aiTags = aiTags,
+                aiCommand = aiCommand,
+            )
+        } else {
+            Title(WrStrings.askAi())
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            AiQuickActions(
+                hasSelectedLinesState = hasSelectedLinesState,
+                availableTargetModes = targetModes,
+                fixedTargetMode = null,
+                aiSummary = aiSummary,
+                aiActionPoints = aiActionPoints,
+                aiFaq = aiFaq,
+                aiTags = aiTags,
+            )
+        }
 
         // Model selection is only shown for desktop (Local AI)
         // Web uses GenAI with server-side model configuration
