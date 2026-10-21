@@ -113,7 +113,10 @@ fun SettingsDialog(
     exportWorkspaceState: StateFlow<ResultData<Unit>>,
     onExportWorkspace: (String) -> Unit,
     onResetExportState: () -> Unit,
-    searchUsers: suspend (workspaceId: String, query: String) -> List<SearchUserApi> = { _, _ -> emptyList() },
+    userSearchQuery: StateFlow<String>,
+    userSearchResults: StateFlow<ResultData<List<SearchUserApi>>>,
+    onUserSearchQueryChange: (String) -> Unit,
+    onUserSuggestionSelect: (SearchUserApi) -> Unit,
 ) {
     Dialog(
         onDismissRequest = onDismissRequest,
@@ -185,12 +188,15 @@ fun SettingsDialog(
                 },
                 teamsScreen = {
                     TeamsSection(
-                        workspaces,
-                        workspaceToEdit,
-                        selectWorkspaceToManage,
-                        addUserToTeam,
-                        usersInSelectedWorkspace,
-                        searchUsers,
+                        workspacesState = workspaces,
+                        selectedWorkspaceState = workspaceToEdit,
+                        selectWorkspace = selectWorkspaceToManage,
+                        addUserToTeam = addUserToTeam,
+                        usersInSelectedWorkspace = usersInSelectedWorkspace,
+                        userSearchQuery = userSearchQuery,
+                        userSearchResults = userSearchResults,
+                        onUserSearchQueryChange = onUserSearchQueryChange,
+                        onUserSuggestionSelect = onUserSuggestionSelect,
                     )
                 }
             )
@@ -674,7 +680,10 @@ private fun TeamsSection(
     selectWorkspace: (String) -> Unit,
     addUserToTeam: (String) -> Unit,
     usersInSelectedWorkspace: Flow<ResultData<List<String>>>,
-    searchUsers: suspend (workspaceId: String, query: String) -> List<SearchUserApi> = { _, _ -> emptyList() },
+    userSearchQuery: StateFlow<String>,
+    userSearchResults: StateFlow<ResultData<List<SearchUserApi>>>,
+    onUserSearchQueryChange: (String) -> Unit,
+    onUserSuggestionSelect: (SearchUserApi) -> Unit,
 ) {
     Column {
         val titleStyle = MaterialTheme.typography.titleLarge
@@ -716,7 +725,10 @@ private fun TeamsSection(
                                 selected = selected,
                                 usersInSelectedWorkspace = usersInSelectedWorkspace,
                                 addUserToTeam = addUserToTeam,
-                                searchUsers = searchUsers,
+                                userSearchQuery = userSearchQuery,
+                                userSearchResults = userSearchResults,
+                                onUserSearchQueryChange = onUserSearchQueryChange,
+                                onUserSuggestionSelect = onUserSuggestionSelect,
                             )
                         }
                     }
@@ -743,7 +755,10 @@ private fun AddUserToWorkspace(
     selected: Workspace,
     usersInSelectedWorkspace: Flow<ResultData<List<String>>>,
     addUserToTeam: (String) -> Unit,
-    searchUsers: suspend (workspaceId: String, query: String) -> List<SearchUserApi> = { _, _ -> emptyList() },
+    userSearchQuery: StateFlow<String>,
+    userSearchResults: StateFlow<ResultData<List<SearchUserApi>>>,
+    onUserSearchQueryChange: (String) -> Unit,
+    onUserSuggestionSelect: (SearchUserApi) -> Unit,
 ) {
     if (selected.role != "ADMIN") {
         BasicText(
@@ -764,21 +779,18 @@ private fun AddUserToWorkspace(
             .copy(color = MaterialTheme.colorScheme.onBackground)
     )
 
-    var usernameInput by remember {
-        mutableStateOf("")
-    }
+    val usernameInput by userSearchQuery.collectAsState()
+    val searchResults by userSearchResults.collectAsState()
 
     Spacer(modifier = Modifier.height(6.dp))
 
     Row(verticalAlignment = Alignment.CenterVertically) {
         AutocompleteField<SearchUserApi>(
             value = usernameInput,
-            onValueChange = { usernameInput = it },
-            search = { query -> searchUsers(selected.id, query) },
-            suggestionToText = { user -> user.username },
+            suggestions = searchResults,
+            onValueChange = onUserSearchQueryChange,
+            onSuggestionSelect = onUserSuggestionSelect,
             suggestionContent = { user -> UserSuggestionItem(user) },
-            searchKey = selected.id,
-            normalizeQuery = { it.trim().removePrefix("@") },
             placeholder = {
                 BasicText(
                     WrStrings.username(),
@@ -793,11 +805,7 @@ private fun AddUserToWorkspace(
         Spacer(modifier = Modifier.width(8.dp))
 
         CommonButton(text = WrStrings.add()) {
-            val username = usernameInput.trim().removePrefix("@")
-            if (username.isNotBlank()) {
-                addUserToTeam(username)
-                usernameInput = ""
-            }
+            addUserToTeam(usernameInput)
         }
     }
 

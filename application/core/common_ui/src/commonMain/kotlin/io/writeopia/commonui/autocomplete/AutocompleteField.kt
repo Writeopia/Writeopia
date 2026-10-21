@@ -10,7 +10,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -28,33 +27,27 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
-import kotlinx.coroutines.delay
+import io.writeopia.sdk.models.utils.ResultData
 
 private val MIN_DROPDOWN_WIDTH = 112.dp
-
 
 @Composable
 fun <T> AutocompleteField(
     value: String,
+    suggestions: ResultData<List<T>>,
     onValueChange: (String) -> Unit,
-    search: suspend (query: String) -> List<T>,
-    suggestionToText: (T) -> String,
+    onSuggestionSelect: (T) -> Unit,
     suggestionContent: @Composable (T) -> Unit,
     modifier: Modifier = Modifier,
-    onSuggestionSelect: (T) -> Unit = {},
-    searchKey: Any? = null,
     placeholder: @Composable (() -> Unit)? = null,
     textStyle: TextStyle = MaterialTheme.typography.titleSmall
         .copy(color = MaterialTheme.colorScheme.onBackground),
-    minQueryLength: Int = 2,
-    debounceMillis: Long = 300L,
-    normalizeQuery: (String) -> String = { it.trim() },
 ) {
-    var suggestions by remember { mutableStateOf<List<T>>(emptyList()) }
-    var isSearching by remember { mutableStateOf(false) }
-    var isExpanded by remember { mutableStateOf(false) }
-    var shouldSearch by remember { mutableStateOf(true) }
-    var selectedIndex by remember { mutableStateOf(-1) }
+    val items = (suggestions as? ResultData.Complete)?.data ?: emptyList()
+    val isSearching = suggestions is ResultData.Loading || suggestions is ResultData.InProgress
+
+    var isExpanded by remember(suggestions) { mutableStateOf(items.isNotEmpty()) }
+    var selectedIndex by remember(suggestions) { mutableStateOf(-1) }
     val density = LocalDensity.current
     var fieldWidth by remember { mutableStateOf(0.dp) }
 
@@ -64,38 +57,14 @@ fun <T> AutocompleteField(
     }
 
     fun select(item: T) {
-        // Stop the search from running again when the field text is set to the chosen suggestion.
-        shouldSearch = false
         closePopup()
-        onValueChange(suggestionToText(item))
         onSuggestionSelect(item)
-    }
-
-    LaunchedEffect(value, searchKey) {
-        val query = normalizeQuery(value)
-        if (query.length < minQueryLength) {
-            suggestions = emptyList()
-            closePopup()
-            return@LaunchedEffect
-        }
-        if (!shouldSearch) return@LaunchedEffect
-
-        delay(debounceMillis)
-        isSearching = true
-        try {
-            suggestions = search(query)
-            isExpanded = suggestions.isNotEmpty()
-            selectedIndex = -1
-        } finally {
-            isSearching = false
-        }
     }
 
     Box(modifier = modifier) {
         OutlinedTextField(
             value = value,
             onValueChange = {
-                shouldSearch = true
                 selectedIndex = -1
                 onValueChange(it)
             },
@@ -109,19 +78,19 @@ fun <T> AutocompleteField(
 
                     when (event.key) {
                         Key.DirectionDown -> {
-                            if (suggestions.isEmpty()) return@onPreviewKeyEvent false
-                            selectedIndex = if (selectedIndex < suggestions.lastIndex) selectedIndex + 1 else 0
+                            if (items.isEmpty()) return@onPreviewKeyEvent false
+                            selectedIndex = if (selectedIndex < items.lastIndex) selectedIndex + 1 else 0
                             true
                         }
 
                         Key.DirectionUp -> {
-                            if (suggestions.isEmpty()) return@onPreviewKeyEvent false
-                            selectedIndex = if (selectedIndex > 0) selectedIndex - 1 else suggestions.lastIndex
+                            if (items.isEmpty()) return@onPreviewKeyEvent false
+                            selectedIndex = if (selectedIndex > 0) selectedIndex - 1 else items.lastIndex
                             true
                         }
 
                         Key.Enter, Key.NumPadEnter -> {
-                            val item = suggestions.getOrNull(selectedIndex) ?: return@onPreviewKeyEvent false
+                            val item = items.getOrNull(selectedIndex) ?: return@onPreviewKeyEvent false
                             select(item)
                             true
                         }
@@ -150,7 +119,7 @@ fun <T> AutocompleteField(
 
         SuggestionsDropdown(
             expanded = isExpanded,
-            suggestions = suggestions,
+            suggestions = items,
             selectedIndex = selectedIndex,
             minWidth = fieldWidth,
             onSelect = ::select,

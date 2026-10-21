@@ -15,12 +15,14 @@ import io.writeopia.sdk.models.workspace.Workspace
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
@@ -42,6 +44,14 @@ class WorkspaceHandlerImpl(
 
     private lateinit var coroutineScope: CoroutineScope
 
+    private val _userSearchQuery = MutableStateFlow("")
+    override val userSearchQuery: StateFlow<String> = _userSearchQuery.asStateFlow()
+
+    private val _userSearchResults = MutableStateFlow<ResultData<List<SearchUserApi>>>(ResultData.Idle())
+    override val userSearchResults: StateFlow<ResultData<List<SearchUserApi>>> = _userSearchResults.asStateFlow()
+
+    private var shouldSearchUsers = true
+
     override fun initScope(coroutineScope: CoroutineScope) {
         this.coroutineScope = coroutineScope
 
@@ -51,6 +61,26 @@ class WorkspaceHandlerImpl(
                 if (newTimestamp != null) {
                     _localSyncRequired.emit(Unit)
                 }
+            }
+        }
+
+        coroutineScope.launch {
+            _userSearchQuery.collectLatest { rawQuery ->
+                if (!shouldSearchUsers) return@collectLatest
+                val workspaceId = _selectedWorkspaceId.value ?: return@collectLatest
+                val query = rawQuery.trim().removePrefix("@")
+                if (query.length < 2) {
+                    _userSearchResults.value = ResultData.Idle()
+                    return@collectLatest
+                }
+
+                delay(300)
+                _userSearchResults.value = ResultData.Loading()
+                _userSearchResults.value = workspaceApi.searchUsers(
+                    workspaceId = workspaceId,
+                    usernameQuery = query,
+                    pageSize = 5
+                ).map { it.users }
             }
         }
     }
@@ -116,6 +146,10 @@ class WorkspaceHandlerImpl(
     override fun selectWorkspaceToManage(workspaceId: String) {
         val currentSelected = _selectedWorkspaceId.value
 
+        shouldSearchUsers = false
+        _userSearchQuery.value = ""
+        _userSearchResults.value = ResultData.Idle()
+
         if (currentSelected == workspaceId) {
             _selectedWorkspaceId.value = null
         } else {
@@ -145,11 +179,18 @@ class WorkspaceHandlerImpl(
     }
 
     override fun addUserToWorkspace(username: String) {
+        val cleanUsername = username.trim().removePrefix("@")
+        if (cleanUsername.isBlank()) return
+
+        shouldSearchUsers = false
+        _userSearchQuery.value = ""
+        _userSearchResults.value = ResultData.Idle()
+
         coroutineScope.launch {
             val workspaceId = _selectedWorkspaceId.value
 
             if (workspaceId != null) {
-                val result = workspaceApi.addUserToWorkspace(workspaceId, username)
+                val result = workspaceApi.addUserToWorkspace(workspaceId, cleanUsername)
 
                 if (result is ResultData.Complete) {
                     workspaceApi.refreshUsersInWorkspace(workspaceId)
@@ -158,12 +199,19 @@ class WorkspaceHandlerImpl(
         }
     }
 
-    override suspend fun searchUsers(workspaceId: String, query: String): ResultData<List<SearchUserApi>> = workspaceApi.searchUsers(
-        workspaceId = workspaceId,
-        usernameQuery = query,
-        pageSize = 5
-    )
-        .map { it.users }
+    override fun onUserSearchQueryChange(query: String) {
+        shouldSearchUsers = true
+        _userSearchQuery.value = query
+        if (query.trim().removePrefix("@").length < 2) {
+            _userSearchResults.value = ResultData.Idle()
+        }
+    }
+
+    override fun onUserSuggestionSelect(user: SearchUserApi) {
+        shouldSearchUsers = false
+        _userSearchQuery.value = user.username
+        _userSearchResults.value = ResultData.Idle()
+    }
 
     override fun changeWorkspaceLocalPath(path: String) {
         coroutineScope.launch(Dispatchers.Default) {
@@ -227,5 +275,8 @@ class WorkspaceHandlerImpl(
         // known to be empty (the offline workspace) rather than not loaded yet.
         _availableWorkspaces.value = ResultData.Complete(emptyList())
         _selectedWorkspaceId.value = null
+        shouldSearchUsers = false
+        _userSearchQuery.value = ""
+        _userSearchResults.value = ResultData.Idle()
     }
 }
