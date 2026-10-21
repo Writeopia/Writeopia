@@ -23,6 +23,10 @@ interface WorkspaceHandler {
 
     val usersOfSelectedWorkspace: Flow<ResultData<List<String>>>
 
+    val userSearchQuery: StateFlow<String>
+
+    val userSearchResults: StateFlow<ResultData<List<SearchUserApi>>>
+
     val lastWorkspaceSync: StateFlow<ResultData<String>>
 
     val workspaceLocalPath: StateFlow<String>
@@ -37,8 +41,9 @@ interface WorkspaceHandler {
 
     fun addUserToWorkspace(username: String)
 
-    suspend fun searchUsers(workspaceId: String, query: String): ResultData<List<SearchUserApi>> =
-        ResultData.Idle()
+    fun onUserSearchQueryChange(query: String)
+
+    fun onUserSuggestionSelect(user: SearchUserApi)
 
     fun changeWorkspaceLocalPath(path: String)
 

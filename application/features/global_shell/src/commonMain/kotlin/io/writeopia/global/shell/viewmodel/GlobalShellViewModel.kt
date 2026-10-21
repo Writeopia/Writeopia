@@ -58,6 +58,10 @@ interface GlobalShellViewModel : FolderController, LocalAiConfigController {
 
     val usersOfWorkspaceToEdit: Flow<ResultData<List<String>>>
 
+    val userSearchQuery: StateFlow<String>
+
+    val userSearchResults: StateFlow<ResultData<List<SearchUserApi>>>
+
     val exportWorkspaceState: StateFlow<ResultData<Unit>>
 
     val logoutInProgress: StateFlow<Boolean>
@@ -125,7 +129,9 @@ interface GlobalShellViewModel : FolderController, LocalAiConfigController {
 
     fun addUserToTeam(username: String)
 
-    suspend fun searchUsers(workspaceId: String, query: String): List<SearchUserApi>
+    fun onUserSearchQueryChange(query: String)
+
+    fun onUserSuggestionSelect(user: SearchUserApi)
 
     fun selectWorkspaceToManage(workspaceId: String)
 

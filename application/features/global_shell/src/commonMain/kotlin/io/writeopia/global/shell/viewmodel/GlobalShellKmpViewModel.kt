@@ -334,6 +334,12 @@ class GlobalShellKmpViewModel(
     override val usersOfWorkspaceToEdit: Flow<ResultData<List<String>>> =
         workspaceHandler.usersOfSelectedWorkspace
 
+    override val userSearchQuery: StateFlow<String> =
+        workspaceHandler.userSearchQuery
+
+    override val userSearchResults: StateFlow<ResultData<List<SearchUserApi>>> =
+        workspaceHandler.userSearchResults
+
     override val exportWorkspaceState: StateFlow<ResultData<Unit>> =
         workspaceHandler.exportWorkspaceState
 
@@ -915,9 +921,12 @@ class GlobalShellKmpViewModel(
         workspaceHandler.addUserToWorkspace(username)
     }
 
-    override suspend fun searchUsers(workspaceId: String, query: String): List<SearchUserApi> {
-        val result = workspaceHandler.searchUsers(workspaceId, query)
-        return if (result is io.writeopia.sdk.models.utils.ResultData.Complete) result.data else emptyList()
+    override fun onUserSearchQueryChange(query: String) {
+        workspaceHandler.onUserSearchQueryChange(query)
+    }
+
+    override fun onUserSuggestionSelect(user: SearchUserApi) {
+        workspaceHandler.onUserSuggestionSelect(user)
     }
 
     override fun selectWorkspaceToManage(workspaceId: String) {
