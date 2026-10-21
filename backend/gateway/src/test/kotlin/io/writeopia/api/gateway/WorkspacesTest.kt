@@ -11,8 +11,9 @@ import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.server.testing.testApplication
 import io.writeopia.api.core.auth.repository.deleteUserByEmail
-import io.writeopia.api.documents.documents.repository.deleteDocumentById
+import io.writeopia.api.core.auth.repository.disableUserByEmail
 import io.writeopia.api.core.auth.repository.enableUserByEmail
+import io.writeopia.api.documents.documents.repository.deleteDocumentById
 import io.writeopia.api.geteway.configurePersistence
 import io.writeopia.api.geteway.module
 import io.writeopia.app.dto.PaginatedUserSearchResponse
@@ -663,7 +664,7 @@ class WorkspacesTest {
         val response1 = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = workspaceName,
                     name = "Owner User",
                     email = email1,
@@ -682,7 +683,7 @@ class WorkspacesTest {
         val response2 = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = "Target Workspace",
                     name = "Target Member",
                     email = email2,
@@ -764,7 +765,7 @@ class WorkspacesTest {
         val regResponse = client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = workspaceName,
                     name = "Bounds User",
                     email = email,
@@ -835,7 +836,7 @@ class WorkspacesTest {
         client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = "Security Workspace",
                     name = "Sec Owner",
                     email = ownerEmail,
@@ -856,7 +857,7 @@ class WorkspacesTest {
         client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = "Other Workspace",
                     name = "Active User",
                     email = activeEmail,
@@ -873,7 +874,7 @@ class WorkspacesTest {
         client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = "Other Workspace 2",
                     name = "Active User 2",
                     email = activeEmail2,
@@ -884,13 +885,13 @@ class WorkspacesTest {
         }
         db.enableUserByEmail(activeEmail2)
 
-        // Register unconfirmed user (do NOT enable)
+        // Register unconfirmed user (disable after registration)
         val unconfirmedEmail = "sec_unconf_$suffix@gmail.com"
         val unconfirmedUsername = "sec_unconf_$suffix"
         client.post("/api/auth/register") {
             contentType(ContentType.Application.Json)
             setBody(
-                RegisterRequest(
+                db.verifiedRegisterRequest(
                     workspaceName = "Other Workspace 3",
                     name = "Unconfirmed User",
                     email = unconfirmedEmail,
@@ -899,6 +900,7 @@ class WorkspacesTest {
                 )
             )
         }
+        db.disableUserByEmail(unconfirmedEmail)
 
         // 1. Literal underscore search: "sec_user_" should match sec_user_<suffix> but NOT secxuser<suffix>
         val underscoreSearch = client.get("/api/workspace/${workspace.id}/users/search?username=sec_user_") {
