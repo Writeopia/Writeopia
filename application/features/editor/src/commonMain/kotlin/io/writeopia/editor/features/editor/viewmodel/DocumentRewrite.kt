@@ -18,8 +18,8 @@ import io.writeopia.sdk.models.story.TagInfo
  * the paragraphs around the cursor that fit [MARKDOWN_LIMIT]; the rest stays as it is.
  */
 class DocumentRewrite private constructor(
-    val from: Long,
-    val toExclusive: Long?,
+    val from: String,
+    val toExclusive: String?,
     val markdown: String,
     /** The stories of the region before the rewrite, in order. */
     val originalStories: List<StoryStep>,
@@ -155,7 +155,7 @@ class DocumentRewrite private constructor(
          * The whole document (but the title) when its Markdown fits [limit], else the paragraphs
          * around the cursor that do.
          */
-        fun build(stories: Map<Long, StoryStep>, cursor: Long?, limit: Int = MARKDOWN_LIMIT): DocumentRewrite? {
+        fun build(stories: Map<String, StoryStep>, cursor: String?, limit: Int = MARKDOWN_LIMIT): DocumentRewrite? {
             val entries = stories.entries
                 .filter { (_, step) -> step.type != StoryTypes.TITLE.type && !step.ephemeral }
                 .sortedBy { (position, _) -> position }

@@ -1,5 +1,6 @@
 package io.writeopia.writingagent.actions
 
+import io.writeopia.sdk.utils.iterables.Rank
 import io.writeopia.ai.AiCommand
 import io.writeopia.ai.AiImageGenerator
 import io.writeopia.ai.AiStreaming
@@ -35,7 +36,7 @@ class WriteopiaActionExecutor(
     private val manager: WriteopiaStateManager,
     private val resolveAi: suspend () -> AiStreaming?,
     private val resolveImageAi: suspend () -> AiImageGenerator? = { null },
-    private val addImage: (path: String, position: Long) -> Unit = { path, position ->
+    private val addImage: (path: String, position: String) -> Unit = { path, position ->
         manager.addImage(path, position)
     },
     private val aiTaskManager: AiTaskManager? = null,
@@ -144,26 +145,26 @@ class WriteopiaActionExecutor(
 
     class NoAiException : Exception(AiTextWriter.NO_AI_MESSAGE)
 
-    private fun positionOf(storyStepId: String?): Long? {
+    private fun positionOf(storyStepId: String?): String? {
         if (storyStepId == null) return null
         return manager.currentStory.value.stories.entries.firstOrNull { (_, step) -> step.id == storyStepId }?.key
     }
 
     /** A free position right after the title, or the top of the document without one. */
-    private fun afterTitle(): Long {
+    private fun afterTitle(): String {
         val stories = manager.currentStory.value.stories
         val titlePosition = stories.entries.firstOrNull { (_, step) -> step.type == StoryTypes.TITLE.type }?.key
-        return titlePosition?.let(manager::positionAfter) ?: 0L
+        return titlePosition?.let(manager::positionAfter) ?: Rank.FIRST
     }
 
     /** Inserts an empty block of [type] right below [position] and returns where it went. */
-    private fun insertBelow(type: StoryTypes, position: Long): Long {
+    private fun insertBelow(type: StoryTypes, position: String): String {
         manager.trackState()
         return manager.addAfterPosition(StoryStep(type = type.type, text = ""), position)
     }
 
     private suspend fun generateAt(
-        position: Long,
+        position: String,
         instructions: String,
         type: StoryType = StoryTypes.AI_ANSWER.type,
         tags: Set<TagInfo> = emptySet(),
@@ -196,7 +197,7 @@ class WriteopiaActionExecutor(
      */
     private suspend fun listItems(
         storyStepId: String?,
-        position: Long,
+        position: String,
         type: StoryTypes,
         instructions: String,
     ): Result<Unit> {
@@ -231,7 +232,7 @@ class WriteopiaActionExecutor(
      * code block per line, like the editor makes them when the user types code. Without an AI an
      * empty code block is inserted, and the failure says why.
      */
-    private suspend fun codeSnippet(storyStepId: String?, position: Long): Result<Unit> {
+    private suspend fun codeSnippet(storyStepId: String?, position: String): Result<Unit> {
         val paragraph = manager.getStory(position)?.text ?: ""
         val context = "Title: ${manager.getDocument().title}\nParagraph: $paragraph\n\nDocument:\n${manager.getDocumentText()}"
 
@@ -265,7 +266,7 @@ class WriteopiaActionExecutor(
     private suspend fun generatedImage(
         generator: AiImageGenerator,
         storyStepId: String?,
-        position: Long,
+        position: String,
     ): Result<Unit> {
         val paragraph = manager.getStory(position)?.text?.takeIf { it.isNotBlank() }
             ?: return Result.failure(Exception("There is no paragraph to illustrate"))
@@ -307,7 +308,7 @@ class WriteopiaActionExecutor(
         return Result.success(Unit)
     }
 
-    private suspend fun heading(storyStepId: String?, position: Long): Result<Unit> {
+    private suspend fun heading(storyStepId: String?, position: String): Result<Unit> {
         val paragraph = manager.getStory(position)?.text ?: ""
 
         return askOneLine(HEADING_PROMPT, paragraph).map { title ->
@@ -334,7 +335,7 @@ class WriteopiaActionExecutor(
             manager.trackState()
 
             if (titleEntry == null) {
-                manager.addAtPosition(StoryStep(type = StoryTypes.TITLE.type, text = title), 0L)
+                manager.addAtPosition(StoryStep(type = StoryTypes.TITLE.type, text = title), Rank.FIRST)
             } else {
                 // The drawers reload their text when the localId changes, like undo does.
                 manager.changeStoryState(
@@ -346,7 +347,7 @@ class WriteopiaActionExecutor(
             }
         }
 
-    private suspend fun spreadsheet(storyStepId: String?, position: Long): Result<Unit> {
+    private suspend fun spreadsheet(storyStepId: String?, position: String): Result<Unit> {
         val paragraph = manager.getStory(position)?.text ?: ""
         val answer = aiOrFailure().mapCatching { ai ->
             ai.stream(AiCommand.PROMPT, "$TABLE_PROMPT\n```\n$paragraph\n```").finalTextOrError().getOrThrow()

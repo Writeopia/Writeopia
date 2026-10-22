@@ -24,10 +24,10 @@ import WrModels
         var document = try await repository.createDocument(title: "A note about many things", parentId: Folder.rootId)
         let paragraph = "This is a long paragraph of text that should wrap across the whole width of the editor, several times over, so the height of the step depends on the width it is drawn with."
         document.content = [
-            StoryStep(type: .title, text: "A note about many things", position: 0),
-            StoryStep(type: .message, text: paragraph, position: 1),
-            StoryStep(type: .checkItem, text: "A check item", position: 2),
-            StoryStep(type: .unorderedListItem, text: "A list item", position: 3),
+            StoryStep(type: .title, text: "A note about many things", position: Rank.at(0)),
+            StoryStep(type: .message, text: paragraph, position: Rank.at(1)),
+            StoryStep(type: .checkItem, text: "A check item", position: Rank.at(2)),
+            StoryStep(type: .unorderedListItem, text: "A list item", position: Rank.at(3)),
         ]
         try await repository.save(document)
 

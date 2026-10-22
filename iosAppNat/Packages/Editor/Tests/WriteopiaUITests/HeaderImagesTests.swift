@@ -42,7 +42,7 @@ private struct FakeError: LocalizedError {
 @Suite struct HeaderImageTests {
     @Test func aPictureReplacesTheColorAndAColorReplacesThePicture() {
         let manager = WriteopiaStateManager()
-        manager.loadDocument(document([StoryStep(id: "t", type: .title, text: "Doc", position: 0)]))
+        manager.loadDocument(document([StoryStep(id: "t", type: .title, text: "Doc", position: Rank.at(0))]))
 
         manager.setHeaderColor(WriteopiaStateManager.headerColors[2])
         manager.setHeaderImage("https://cdn.test/a.png")
@@ -62,7 +62,7 @@ private struct FakeError: LocalizedError {
 
     @Test func aLockedDocumentKeepsItsHeader() {
         let manager = WriteopiaStateManager()
-        manager.loadDocument(document([StoryStep(id: "t", type: .title, text: "Doc", position: 0)]))
+        manager.loadDocument(document([StoryStep(id: "t", type: .title, text: "Doc", position: Rank.at(0))]))
         manager.isEditable = false
 
         manager.setHeaderImage("https://cdn.test/a.png")

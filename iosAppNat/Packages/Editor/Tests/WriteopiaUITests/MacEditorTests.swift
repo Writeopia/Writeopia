@@ -11,9 +11,9 @@ import WrModels
     private func host() -> (WriteopiaStateManager, NSWindow, NSHostingView<WriteopiaEditor>) {
         let manager = WriteopiaStateManager()
         manager.loadDocument(WrDocument(id: "d", title: "Doc", workspaceId: "w", content: [
-            StoryStep(id: "t", type: .title, text: "Doc", position: 0),
-            StoryStep(id: "a", type: .text, text: "Hello world", position: 1),
-            StoryStep(id: "b", type: .text, text: "Second", position: 2),
+            StoryStep(id: "t", type: .title, text: "Doc", position: Rank.at(0)),
+            StoryStep(id: "a", type: .text, text: "Hello world", position: Rank.at(1)),
+            StoryStep(id: "b", type: .text, text: "Second", position: Rank.at(2)),
         ]))
         let hosting = NSHostingView(rootView: WriteopiaEditor(manager: manager))
         hosting.frame = NSRect(x: 0, y: 0, width: 600, height: 400)
@@ -64,7 +64,7 @@ import WrModels
             return
         }
         window.makeFirstResponder(textView)
-        #expect(manager.currentStory.focus == 1)
+        #expect(manager.currentStory.focus == Rank.at(1))
 
         textView.setSelectedRange(NSRange(location: 5, length: 0))
         textView.insertNewline(nil)

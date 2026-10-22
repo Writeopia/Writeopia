@@ -2,6 +2,7 @@
 
 package io.writeopia.sdk.persistence.core.sync
 
+import io.writeopia.sdk.utils.iterables.Rank
 import io.writeopia.sdk.manager.DocumentTracker
 import io.writeopia.sdk.model.document.DocumentInfo
 import io.writeopia.sdk.model.document.info
@@ -103,7 +104,7 @@ class DocumentSyncManagerTest {
         )
         val document = Document(
             id = "document-1",
-            content = mapOf(0L to initialStep),
+            content = mapOf(Rank.at(0) to initialStep),
             createdAt = now,
             lastUpdatedAt = now,
             lastSyncedAt = now,
@@ -113,7 +114,7 @@ class DocumentSyncManagerTest {
         val documentEditionFlow = MutableStateFlow(
             StoryState(
                 stories = document.content,
-                lastEdit = LastEdit.LineEdition(0L, initialStep),
+                lastEdit = LastEdit.LineEdition(Rank.at(0), initialStep),
             ) to document.info()
         )
         val workspaceIdFlow = MutableStateFlow(document.workspaceId)
@@ -142,8 +143,8 @@ class DocumentSyncManagerTest {
 
         val updatedStep = initialStep.copy(text = "two")
         documentEditionFlow.value = StoryState(
-            stories = mapOf(0L to updatedStep),
-            lastEdit = LastEdit.LineEdition(0L, updatedStep),
+            stories = mapOf(Rank.at(0) to updatedStep),
+            lastEdit = LastEdit.LineEdition(Rank.at(0), updatedStep),
         ) to document.info()
         advanceUntilIdle()
 

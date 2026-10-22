@@ -7,7 +7,7 @@ import WrModels
     @Test func linkSpansCarryTheirURL() {
         let step = StoryStep(
             id: "a", type: .text, text: "Visit writeopia.io today",
-            spans: [SpanInfo(start: 6, end: 17, span: "LINK", extra: "https://writeopia.io")], position: 0
+            spans: [SpanInfo(start: 6, end: 17, span: "LINK", extra: "https://writeopia.io")], position: Rank.at(0)
         )
         let text = TextStyles.attributedText(for: step)
 
@@ -37,7 +37,7 @@ import WrModels
     @Test func linkSpansWithoutURLAreOnlyStyled() {
         let step = StoryStep(
             id: "a", type: .text, text: "no url",
-            spans: [SpanInfo(start: 0, end: 6, span: "LINK", extra: nil)], position: 0
+            spans: [SpanInfo(start: 0, end: 6, span: "LINK", extra: nil)], position: Rank.at(0)
         )
         let text = TextStyles.attributedText(for: step)
         #expect(text.attribute(.link, at: 0, effectiveRange: nil) == nil)

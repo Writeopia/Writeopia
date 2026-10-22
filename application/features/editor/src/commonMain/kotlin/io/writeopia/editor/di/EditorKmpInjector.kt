@@ -25,7 +25,7 @@ import io.writeopia.sdk.models.drawing.DrawingData
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
-import io.writeopia.sdk.utils.iterables.POSITION_GAP
+import io.writeopia.sdk.utils.iterables.Rank
 import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.sdk.repository.DocumentRepository
@@ -53,7 +53,7 @@ import kotlinx.serialization.json.Json
 data class DrawingSaveEvent(
     val documentId: String,
     val storyStep: StoryStep,
-    val position: Long
+    val position: String
 )
 
 class EditorKmpInjector private constructor(
@@ -190,8 +190,8 @@ class EditorKmpInjector private constructor(
             }
 
             // Positions are sort keys: an existing drawing keeps its own, a new one goes after
-            // the last step, one gap further.
-            val afterLast = (document?.content?.keys?.maxOrNull() ?: -POSITION_GAP) + POSITION_GAP
+            // the last step.
+            val afterLast = document?.content?.keys?.maxOrNull()?.let(Rank::after) ?: Rank.FIRST
             val position = if (storyStepId.isNotEmpty()) {
                 document?.content?.entries?.find { it.value.id == storyStepId }?.key ?: afterLast
             } else {

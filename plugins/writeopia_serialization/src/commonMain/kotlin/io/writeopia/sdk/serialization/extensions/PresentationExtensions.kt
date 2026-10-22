@@ -2,6 +2,7 @@
 
 package io.writeopia.sdk.serialization.extensions
 
+import io.writeopia.sdk.utils.iterables.Rank
 import io.writeopia.sdk.models.presentation.Presentation
 import io.writeopia.sdk.models.presentation.Slide
 import io.writeopia.sdk.serialization.data.PresentationApi
@@ -12,7 +13,7 @@ import kotlin.time.Instant
 fun Slide.toApi(): SlideApi =
     SlideApi(
         title = title,
-        content = content.mapIndexed { index, step -> step.toApi((index + 1).toLong()) }
+        content = content.mapIndexed { index, step -> step.toApi(Rank.at(index + 1)) }
     )
 
 fun SlideApi.toModel(): Slide =

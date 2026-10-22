@@ -74,7 +74,7 @@ fun DesktopNoteEditorScreen(
     onPresentationClick: () -> Unit,
     showPresentation: Boolean = false,
     onDocumentLinkClick: (String) -> Unit,
-    onDrawingClick: (StoryStep, Long) -> Unit = { _, _ -> },
+    onDrawingClick: (StoryStep, String) -> Unit = { _, _ -> },
     onNewDrawingClick: () -> Unit = {},
     onDocumentDelete: () -> Unit,
     modifier: Modifier = Modifier,

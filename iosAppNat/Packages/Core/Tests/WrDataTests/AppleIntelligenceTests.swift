@@ -92,7 +92,7 @@ import WrModels
         #expect(steps[3].type == .unorderedListItem)
         #expect(steps[4].type == .checkItem && steps[4].checked == false)
         #expect(steps[5].type == .checkItem && steps[5].checked == true)
-        #expect(steps.map(\.position) == (1...6).map { $0 * positionGap })
+        #expect(steps.map(\.position) == (1...6).map(Rank.at))
     }
 
     @Test func fencedCodeIsKeptAsCode() {

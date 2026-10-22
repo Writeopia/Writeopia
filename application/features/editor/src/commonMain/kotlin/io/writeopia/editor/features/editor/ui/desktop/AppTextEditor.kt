@@ -33,7 +33,7 @@ fun AppTextEditor(
     drawersFactory: DrawersFactory,
     loadNoteId: String? = null,
     onDocumentLinkClick: (String) -> Unit,
-    onDrawingClick: (StoryStep, Long) -> Unit = { _, _ -> },
+    onDrawingClick: (StoryStep, String) -> Unit = { _, _ -> },
     listState: LazyListState = rememberLazyListState(),
     modifier: Modifier = Modifier
 ) {

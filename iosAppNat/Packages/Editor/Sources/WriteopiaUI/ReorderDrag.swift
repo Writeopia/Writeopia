@@ -84,20 +84,20 @@ final class ReorderCoordinator {
 
     /// Position after which the dragged step would land, or nil when dropping it there would
     /// leave it where it is.
-    func dropPosition(for drag: ActiveDrag) -> Int? {
+    func dropPosition(for drag: ActiveDrag) -> String? {
         guard let manager else { return nil }
         let state = manager.currentStory
         let positions = state.sortedPositions
         guard let from = positions.first(where: { state.stories[$0]?.id == drag.stepId }) else { return nil }
 
-        let rows = positions.compactMap { position -> (position: Int, step: StoryStep, frame: CGRect)? in
+        let rows = positions.compactMap { position -> (position: String, step: StoryStep, frame: CGRect)? in
             guard let step = state.stories[position], let frame = frames[step.id] else { return nil }
             return (position, step, frame)
         }
         guard let lastRow = rows.last else { return nil }
 
         let y = drag.location.y
-        let target: Int
+        let target: String
         if let row = rows.first(where: { y < $0.frame.maxY }) {
             if y >= row.frame.midY || row.step.isTitle {
                 // Lower half (or the title, nothing goes above it): below this step.

@@ -32,18 +32,18 @@ fun checkItemDrawer(
     modifier: Modifier = Modifier,
     customBackgroundColor: Color = Color.Transparent,
     clickable: Boolean = true,
-    onSelected: (Boolean, Long) -> Unit = { _, _ -> },
+    onSelected: (Boolean, String) -> Unit = { _, _ -> },
     dragIconWidth: Dp = 16.dp,
     config: DrawConfig,
     onCheckedChange: (Action.StoryStateChange) -> Unit = {},
-    onDragHover: (Long) -> Unit,
+    onDragHover: (String) -> Unit,
     onDragStart: () -> Unit,
     onDragStop: () -> Unit,
     moveRequest: (Action.Move) -> Unit,
     checkBoxPadding: PaddingValues = PaddingValues(0.dp),
     isDesktop: Boolean,
     enabled: Boolean,
-    receiveExternalFile: (List<ExternalFile>, Long) -> Unit,
+    receiveExternalFile: (List<ExternalFile>, String) -> Unit,
     startContent: @Composable ((StoryStep, DrawInfo) -> Unit)? = { step, drawInfo ->
         CompositionLocalProvider(LocalMinimumInteractiveComponentEnforcement provides false) {
 //            Spacer(modifier = Modifier.width(8.dp))
@@ -91,7 +91,7 @@ fun checkItemDrawer(
     checkBoxPadding: PaddingValues = PaddingValues(0.dp),
     isDesktop: Boolean,
     enabled: Boolean,
-    receiveExternalFile: (List<ExternalFile>, Long) -> Unit,
+    receiveExternalFile: (List<ExternalFile>, String) -> Unit,
     messageDrawer: @Composable RowScope.() -> SimpleTextDrawer
 ): StoryStepDrawer = checkItemDrawer(
     modifier = modifier,

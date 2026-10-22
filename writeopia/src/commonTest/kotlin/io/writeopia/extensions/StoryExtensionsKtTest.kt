@@ -1,5 +1,6 @@
 package io.writeopia.extensions
 
+import io.writeopia.sdk.utils.iterables.Rank
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
@@ -17,7 +18,7 @@ class StoryExtensionsKtTest {
     fun `it should be able to recognize an empty document`() {
         val storyStepMap = buildList {
             repeat(5) {
-                add(it.toLong() to StoryStep(type = StoryTypes.TEXT.type))
+                add(Rank.at(it) to StoryStep(type = StoryTypes.TEXT.type))
             }
         }.toMap()
 
@@ -29,14 +30,14 @@ class StoryExtensionsKtTest {
         val storyStepMap = buildList {
             repeat(5) { index ->
                 add(
-                    index.toLong() to StoryStep(
+                    Rank.at(index) to StoryStep(
                         type = StoryTypes.TEXT.type
                     )
                 )
             }
         }.toMap().toMutableMap()
 
-        storyStepMap[5L] = StoryStep(
+        storyStepMap[Rank.at(5)] = StoryStep(
             type = StoryTypes.TEXT.type,
             text = "some text"
         )
@@ -48,7 +49,7 @@ class StoryExtensionsKtTest {
     fun `it should be possible to create sections from a list of story steps`() {
         val storyStepMap = buildList {
             add(
-                0L to StoryStep(
+                Rank.at(0) to StoryStep(
                     type = StoryTypes.TEXT.type,
                     text = "Title",
                     tags = setOf(TagInfo(Tag.H1))
@@ -57,7 +58,7 @@ class StoryExtensionsKtTest {
 
             repeat(5) { i ->
                 val count = i + 1
-                add(count.toLong() to StoryStep(type = StoryTypes.TEXT.type, text = "$count"))
+                add(Rank.at(count) to StoryStep(type = StoryTypes.TEXT.type, text = "$count"))
             }
         }.toMap()
 

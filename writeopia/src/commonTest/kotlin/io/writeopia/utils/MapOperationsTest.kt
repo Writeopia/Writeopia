@@ -2,154 +2,198 @@ package io.writeopia.utils
 
 import io.writeopia.sdk.utils.collections.lastKeyOrNull
 import io.writeopia.sdk.utils.collections.sortedMutableMapOf
-import io.writeopia.sdk.utils.iterables.POSITION_GAP
+import io.writeopia.sdk.utils.iterables.Rank
 import io.writeopia.sdk.utils.iterables.insertAfter
 import io.writeopia.sdk.utils.iterables.insertAll
 import io.writeopia.sdk.utils.iterables.insertBefore
-import io.writeopia.sdk.utils.iterables.makeRoomAfter
 import io.writeopia.sdk.utils.iterables.nextKey
 import io.writeopia.sdk.utils.iterables.previousKey
 import io.writeopia.sdk.utils.iterables.removeBy
 import io.writeopia.sdk.utils.iterables.removeElementInPosition
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-/**
- * Positions are whole numbers [POSITION_GAP] apart when written in order; an insert between
- * two steps takes a whole number between them, and spreads the following steps out when
- * there is none left.
- */
+/** Positions are ranks: between any two there is always another, so nothing else ever moves. */
 class MapOperationsTest {
 
-    private val gap = POSITION_GAP
-    private val half = gap / 2
-    private val map = mapOf(0L to "title", gap to "a", gap + half to "b", 2 * gap to "c")
+    private val r0 = Rank.at(0)
+    private val r1 = Rank.at(1)
+    private val r2 = Rank.at(2)
+    private val r1b = Rank.between(r1, r2)
+    private val map = mapOf(r0 to "title", r1 to "a", r1b to "b", r2 to "c")
+
+    @BeforeTest
+    fun exactKeys() {
+        Rank.jitter = false
+    }
+
+    @AfterTest
+    fun randomKeys() {
+        Rank.jitter = true
+    }
 
     @Test
     fun `the neighbours of a position come from the keys`() {
-        assertEquals(gap, map.previousKey(gap + half))
-        assertEquals(2 * gap, map.nextKey(gap + half))
-        assertEquals(gap + half, map.previousKey(gap + half + 1))
-        assertEquals(2 * gap, map.nextKey(gap + half + 1))
-        assertNull(map.previousKey(0L))
-        assertNull(map.nextKey(2 * gap))
+        assertEquals(r1, map.previousKey(r1b))
+        assertEquals(r2, map.nextKey(r1b))
+        assertEquals(r1b, map.previousKey(r1b + "1"))
+        assertEquals(r2, map.nextKey(r1b + "1"))
+        assertNull(map.previousKey(r0))
+        assertNull(map.nextKey(r2))
     }
 
     @Test
-    fun `inserting after the last element goes one gap further`() {
-        val result = map.insertAfter("new", 2 * gap)
+    fun `inserting after the last element gets the next integer`() {
+        val result = map.insertAfter("new", r2)
 
-        assertEquals(3 * gap, result.key)
-        assertEquals("new", result.map[3 * gap])
-        assertTrue(result.moved.isEmpty())
+        assertEquals(Rank.at(3), result.key)
+        assertEquals("new", result.map[Rank.at(3)])
     }
 
     @Test
-    fun `inserting between two elements takes the middle, nothing else moves`() {
-        val result = map.insertAfter("new", gap)
+    fun `inserting between two elements takes a key between them, nothing else moves`() {
+        val result = map.insertAfter("new", r1)
 
-        assertEquals(gap + half / 2, result.key)
-        assertEquals(listOf(0L, gap, gap + half / 2, gap + half, 2 * gap), result.map.keys.toList())
-        assertTrue(result.moved.isEmpty())
+        assertTrue(result.key > r1 && result.key < r1b)
+        assertEquals(listOf(r0, r1, result.key, r1b, r2), result.map.keys.toList())
     }
 
     @Test
-    fun `inserting after a step with plenty of room goes one gap further, like writing in order`() {
-        val wide = mapOf(0L to "title", 10 * gap to "far")
+    fun `inserting after a step with room before the next takes the next integer`() {
+        val wide = mapOf(r0 to "title", Rank.at(10) to "far")
 
-        val result = wide.insertAfter(listOf("x", "y"), 0L)
+        val result = wide.insertAfter(listOf("x", "y"), r0)
 
-        assertEquals(listOf(gap, 2 * gap), result.keys)
+        assertEquals(listOf(r1, r2), result.keys)
     }
 
     @Test
-    fun `inserting before an occupied position takes the middle to the previous element`() {
-        val result = map.insertBefore("new", gap + half)
+    fun `inserting before an occupied position goes between it and the previous element`() {
+        val result = map.insertBefore("new", r1b)
 
-        assertEquals(gap + half / 2, result.key)
-        assertEquals("b", result.map[gap + half])
+        assertTrue(result.key > r1 && result.key < r1b)
+        assertEquals("b", result.map[r1b])
     }
 
     @Test
     fun `inserting at a free position uses it`() {
-        val result = map.insertBefore("new", 5 * gap)
+        val free = Rank.at(5)
+        val result = map.insertBefore("new", free)
 
-        assertEquals(5 * gap, result.key)
-        assertEquals(listOf(0L, gap, gap + half, 2 * gap, 5 * gap), result.map.keys.toList())
+        assertEquals(free, result.key)
+        assertEquals(listOf(r0, r1, r1b, r2, free), result.map.keys.toList())
     }
 
     @Test
-    fun `inserting before the first element goes one gap below it`() {
-        val result = map.insertBefore(listOf("x", "y"), 0L)
+    fun `inserting before the first element goes below it`() {
+        val result = map.insertBefore(listOf("x", "y"), r0)
 
-        assertEquals(listOf(-2 * gap, -gap), result.keys)
-        assertEquals("title", result.map[0L])
+        assertEquals(listOf("x", "y", "title", "a", "b", "c"), result.map.values.toList())
+        assertEquals("title", result.map[r0])
     }
 
     @Test
     fun `several elements keep their order before the position`() {
-        val result = map.insertBefore(listOf("x", "y", "z"), gap + half)
+        val result = map.insertBefore(listOf("x", "y", "z"), r1b)
 
         assertEquals(listOf("title", "a", "x", "y", "z", "b", "c"), result.map.values.toList())
-        assertEquals("b", result.map[gap + half])
+        assertEquals("b", result.map[r1b])
     }
 
     @Test
-    fun `when no whole number is left the following elements are spread out`() {
-        val packed = mapOf(0L to "title", 1L to "a", 2L to "b", 3L to "c")
-
-        val result = packed.insertAfter("new", 1L)
-
-        assertEquals(listOf("title", "a", "new", "b", "c"), result.map.values.toList())
-        assertEquals("a", result.map[1L])
-        // b and c moved out of the way, and are reported so they get saved
-        assertEquals(listOf(1L + 2 * gap, 1L + 3 * gap), result.moved)
-        assertEquals(1L + gap, result.key)
-    }
-
-    @Test
-    fun `spreading out moves as few elements as there is room for`() {
-        // No room between 10 and 11; 12 is far: only 11 moves
-        val packed = sortedMutableMapOf<Long, String>().apply {
-            this[10L] = "a"
-            this[11L] = "b"
-            this[12L + 5 * gap] = "c"
+    fun `there is always room between two neighbours`() {
+        var current = map
+        repeat(200) {
+            current = current.insertAfter("line $it", r1).map
         }
 
-        val moved = packed.makeRoomAfter(10L, 1)
-
-        assertEquals(1, moved.size)
-        assertEquals("b", packed[moved.single()])
-        assertTrue(moved.single() > 10L && moved.single() < 12L + 5 * gap)
-        assertEquals(listOf("a", "b", "c"), packed.values.toList())
-    }
-
-    @Test
-    fun `inserting before a packed element spreads it out with the ones after`() {
-        val packed = mapOf(0L to "title", 1L to "a", 2L to "b")
-
-        val result = packed.insertBefore("new", 2L)
-
-        assertEquals(listOf("title", "a", "new", "b"), result.map.values.toList())
-        assertTrue(result.moved.isNotEmpty())
+        assertEquals(204, current.size)
+        assertEquals(listOf("title", "a"), current.values.take(2))
+        assertEquals(listOf("b", "c"), current.values.toList().takeLast(2))
+        assertEquals(current.keys.sorted(), current.keys.toList())
     }
 
     @Test
     fun `removing keeps the keys of the others`() {
-        assertEquals(listOf(0L, gap, 2 * gap), map.removeElementInPosition(gap + half).keys.toList())
-        assertEquals(listOf(0L, gap + half, 2 * gap), map.removeBy { it == "a" }.keys.toList())
-        assertEquals(map, map.removeElementInPosition(7L))
+        assertEquals(listOf(r0, r1, r2), map.removeElementInPosition(r1b).keys.toList())
+        assertEquals(listOf(r0, r1b, r2), map.removeBy { it == "a" }.keys.toList())
+        assertEquals(map, map.removeElementInPosition(Rank.at(7)))
     }
 
     @Test
     fun `merging adds each element at its key or before the element there`() {
-        val result = map.insertAll(mapOf(gap to "x", 3 * gap to "y"))
+        val result = map.insertAll(mapOf(r1 to "x", Rank.at(3) to "y"))
 
         assertEquals(listOf("title", "x", "a", "b", "c", "y"), result.map.values.toList())
-        assertEquals("x", result.map[half])
-        assertEquals("y", result.map[3 * gap])
+        assertEquals("y", result.map[Rank.at(3)])
+    }
+}
+
+class RankTest {
+
+    @BeforeTest
+    fun exactKeys() {
+        Rank.jitter = false
+    }
+
+    @AfterTest
+    fun randomKeys() {
+        Rank.jitter = true
+    }
+
+    @Test
+    fun `ranks written in order are consecutive integers`() {
+        assertEquals("0001000000", Rank.FIRST)
+        assertEquals("0001000001", Rank.after(Rank.FIRST))
+        assertEquals(Rank.at(2), Rank.after(Rank.at(1)))
+        assertEquals("0000999999", Rank.before(Rank.FIRST))
+    }
+
+    @Test
+    fun `a rank between two is strictly between them`() {
+        val a = Rank.at(1)
+        val b = Rank.at(2)
+        val middle = Rank.between(a, b)
+        assertTrue(a < middle && middle < b)
+        assertEquals("0001000001i", middle)
+
+        val closer = Rank.between(middle, b)
+        assertTrue(middle < closer && closer < b)
+
+        val back = Rank.between(a, middle)
+        assertTrue(a < back && back < middle)
+    }
+
+    @Test
+    fun `a rank between far apart integers is the next integer`() {
+        assertEquals(Rank.at(1), Rank.between(Rank.at(0), Rank.at(5)))
+    }
+
+    @Test
+    fun `fractions never end with a zero and keep growing room`() {
+        var low = Rank.at(0)
+        val high = Rank.at(1)
+        repeat(500) {
+            val next = Rank.between(low, high)
+            assertTrue(low < next && next < high, "$low < $next < $high")
+            assertTrue(!next.endsWith("0"))
+            low = next
+        }
+    }
+
+    @Test
+    fun `jitter keeps the key between its neighbours`() {
+        Rank.jitter = true
+        repeat(200) {
+            val key = Rank.between(Rank.at(1), Rank.at(2))
+            assertTrue(Rank.at(1) < key && key < Rank.at(2))
+            val tight = Rank.between("0001000001y", "0001000001z")
+            assertTrue("0001000001y" < tight && tight < "0001000001z", tight)
+        }
     }
 }
 
@@ -157,17 +201,17 @@ class NavigableKeysTest {
 
     @Test
     fun `the navigable lookups agree with a scan on sorted and unsorted maps`() {
-        val plain = mapOf(20L to "c", 0L to "title", 15L to "b", 10L to "a")
-        val sorted = sortedMutableMapOf<Long, String>().apply { putAll(plain) }
+        val plain = mapOf("c" to "c", "a" to "title", "bb" to "b", "b" to "a")
+        val sorted = sortedMutableMapOf<String, String>().apply { putAll(plain) }
 
         listOf(plain, sorted).forEach { map ->
-            assertEquals(20L, map.lastKeyOrNull())
-            assertEquals(10L, map.previousKey(15L))
-            assertEquals(20L, map.nextKey(15L))
-            assertEquals(15L, map.previousKey(17L))
-            assertNull(map.previousKey(0L))
-            assertNull(map.nextKey(20L))
+            assertEquals("c", map.lastKeyOrNull())
+            assertEquals("b", map.previousKey("bb"))
+            assertEquals("c", map.nextKey("bb"))
+            assertEquals("bb", map.previousKey("bc"))
+            assertNull(map.previousKey("a"))
+            assertNull(map.nextKey("c"))
         }
-        assertNull(emptyMap<Long, String>().lastKeyOrNull())
+        assertNull(emptyMap<String, String>().lastKeyOrNull())
     }
 }

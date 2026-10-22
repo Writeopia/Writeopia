@@ -2,6 +2,7 @@
 
 package io.writeopia.sdk.persistence.core.tracker
 
+import io.writeopia.sdk.utils.iterables.Rank
 import io.writeopia.sdk.manager.DocumentUpdate
 import io.writeopia.sdk.model.document.info
 import io.writeopia.sdk.model.story.LastEdit
@@ -147,7 +148,7 @@ class OnUpdateDocumentTrackerTest {
         job.cancel()
 
         assertEquals(setOf("tag-1", "tag-2"), persisted.tagIds)
-        assertEquals(sourceDocument.content.getValue(0L).text, persisted.content.getValue(0L).text)
+        assertEquals(sourceDocument.content.getValue(Rank.at(0)).text, persisted.content.getValue(Rank.at(0)).text)
         assertEquals(true, persisted.lastUpdatedAt > sourceDocument.lastUpdatedAt)
     }
 
@@ -190,10 +191,10 @@ class OnUpdateDocumentTrackerTest {
             tracker.saveOnStoryChanges(
                 MutableStateFlow(
                     StoryState(
-                        stories = mapOf(0L to accepted, 1L to skeleton),
+                        stories = mapOf(Rank.at(0) to accepted, Rank.at(1) to skeleton),
                         lastEdit = LastEdit.BulkDeleteEdition(
                             deletedIds = listOf("answer-1"),
-                            updatedSteps = listOf(0L to accepted, 1L to skeleton),
+                            updatedSteps = listOf(Rank.at(0) to accepted, Rank.at(1) to skeleton),
                         ),
                     ) to sourceDocument.info()
                 ),
@@ -206,7 +207,7 @@ class OnUpdateDocumentTrackerTest {
         job.cancel()
 
         assertEquals(listOf("answer-1"), recorder.deletedStepIds)
-        assertEquals(listOf(0L), saved.map { (position, _) -> position })
+        assertEquals(listOf(Rank.at(0)), saved.map { (position, _) -> position })
         assertEquals(listOf(accepted.id), saved.map { (_, step) -> step.id })
         assertEquals(true, saved.single().second.lastUpdatedAt != null, "The step should be stamped")
     }
@@ -226,7 +227,7 @@ class OnUpdateDocumentTrackerTest {
         return Document(
             id = "document-1",
             content = mapOf(
-                0L to StoryStep(
+                Rank.at(0) to StoryStep(
                     text = "hello",
                     type = StoryTypes.TEXT.type,
                     spans = conversationId?.let { id ->
@@ -247,7 +248,7 @@ class OnUpdateDocumentTrackerTest {
 
     private class RecordingDocumentUpdate : DocumentUpdate {
         val savedDocument = CompletableDeferred<Document>()
-        val savedSteps = CompletableDeferred<List<Pair<Long, StoryStep>>>()
+        val savedSteps = CompletableDeferred<List<Pair<String, StoryStep>>>()
         val deletedStepIds = mutableListOf<String>()
 
         override suspend fun saveDocument(document: Document) {
@@ -258,18 +259,18 @@ class OnUpdateDocumentTrackerTest {
 
         override suspend fun saveStoryStep(
             storyStep: StoryStep,
-            position: Long,
+            position: String,
             documentId: String,
         ) = Unit
 
         override suspend fun updateStoryStep(
             storyStep: StoryStep,
-            position: Long,
+            position: String,
             documentId: String,
         ) = Unit
 
         override suspend fun saveStorySteps(
-            steps: List<Pair<Long, StoryStep>>,
+            steps: List<Pair<String, StoryStep>>,
             documentId: String,
         ) {
             if (!savedSteps.isCompleted) savedSteps.complete(steps)

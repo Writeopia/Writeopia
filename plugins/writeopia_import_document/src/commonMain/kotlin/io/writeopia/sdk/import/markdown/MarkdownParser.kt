@@ -1,7 +1,7 @@
 package io.writeopia.sdk.import.markdown
 
 import io.writeopia.sdk.manager.InTextMarkdownHandler
-import io.writeopia.sdk.utils.iterables.POSITION_GAP
+import io.writeopia.sdk.utils.iterables.Rank
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
 import io.writeopia.sdk.serialization.data.StoryStepApi
@@ -19,7 +19,7 @@ object MarkdownParser {
                 acc++
                 val stepApi = parseLine(acc, i, trimmed)
 
-                InTextMarkdownHandler.handleMarkdown(stepApi.toModel()).toApi(acc * POSITION_GAP)
+                InTextMarkdownHandler.handleMarkdown(stepApi.toModel()).toApi(Rank.at(acc))
             }
     }
 
@@ -31,7 +31,7 @@ object MarkdownParser {
                 StoryStepApi(
                     type = StoryTypeApi(type.name, type.number),
                     text = trimmed.drop(1).trimStart(),
-                    position = acc * POSITION_GAP
+                    position = Rank.at(acc)
                 )
             }
 
@@ -40,7 +40,7 @@ object MarkdownParser {
                 StoryStepApi(
                     type = StoryTypeApi(type.name, type.number),
                     text = "",
-                    position = acc * POSITION_GAP
+                    position = Rank.at(acc)
                 )
             }
 
@@ -50,7 +50,7 @@ object MarkdownParser {
                     type = StoryTypeApi(type.name, type.number),
                     text = trimmed.drop(4).trimStart(),
                     tags = setOf(TagInfoApi(Tag.H4.name, 0)),
-                    position = acc * POSITION_GAP
+                    position = Rank.at(acc)
                 )
             }
 
@@ -60,7 +60,7 @@ object MarkdownParser {
                     type = StoryTypeApi(type.name, type.number),
                     text = trimmed.drop(3).trimStart(),
                     tags = setOf(TagInfoApi(Tag.H3.name, 0)),
-                    position = acc * POSITION_GAP
+                    position = Rank.at(acc)
                 )
             }
 
@@ -70,7 +70,7 @@ object MarkdownParser {
                     type = StoryTypeApi(type.name, type.number),
                     text = trimmed.drop(2).trimStart(),
                     tags = setOf(TagInfoApi(Tag.H2.name, 0)),
-                    position = acc * POSITION_GAP
+                    position = Rank.at(acc)
                 )
             }
 
@@ -80,7 +80,7 @@ object MarkdownParser {
                     type = StoryTypeApi(type.name, type.number),
                     text = trimmed.drop(1).trimStart(),
                     tags = setOf(TagInfoApi(Tag.H1.name, 0)),
-                    position = acc * POSITION_GAP
+                    position = Rank.at(acc)
                 )
             }
 
@@ -92,7 +92,7 @@ object MarkdownParser {
                 val type = StoryTypes.DIVIDER.type
                 StoryStepApi(
                     type = StoryTypeApi(type.name, type.number),
-                    position = acc * POSITION_GAP
+                    position = Rank.at(acc)
                 )
             }
 
@@ -101,7 +101,7 @@ object MarkdownParser {
                 StoryStepApi(
                     type = StoryTypeApi(type.name, type.number),
                     text = trimmed.drop(3).trimStart(),
-                    position = acc * POSITION_GAP
+                    position = Rank.at(acc)
                 )
             }
 
@@ -110,7 +110,7 @@ object MarkdownParser {
                 StoryStepApi(
                     type = StoryTypeApi(type.name, type.number),
                     text = trimmed.drop(2).trimStart(),
-                    position = acc * POSITION_GAP
+                    position = Rank.at(acc)
                 )
             }
 
@@ -119,7 +119,7 @@ object MarkdownParser {
                 StoryStepApi(
                     type = StoryTypeApi(type.name, type.number),
                     text = trimmed,
-                    position = acc * POSITION_GAP
+                    position = Rank.at(acc)
                 )
             }
         }

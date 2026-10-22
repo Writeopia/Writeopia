@@ -8,12 +8,12 @@ actual class InDocumentSearchInjection {
         override fun searchInDocument(
             query: String,
             documentId: String
-        ): Set<Int> = emptySet()
+        ): Set<String> = emptySet()
 
         override suspend fun insertForFts(
             storyStep: StoryStep,
             documentId: String,
-            position: Long
+            position: String
         ) {}
     }
 

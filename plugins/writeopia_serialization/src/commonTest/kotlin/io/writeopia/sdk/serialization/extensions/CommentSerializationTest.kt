@@ -2,6 +2,7 @@
 
 package io.writeopia.sdk.serialization.extensions
 
+import io.writeopia.sdk.utils.iterables.Rank
 import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.document.Document
@@ -96,7 +97,7 @@ class CommentSerializationTest {
             id = "document-1",
             title = "Document",
             content = mapOf(
-                0L to StoryStep(
+                Rank.at(0) to StoryStep(
                     id = "step-1",
                     type = StoryTypes.TEXT.type,
                     text = "Commented text",
@@ -126,7 +127,7 @@ class CommentSerializationTest {
         assertEquals(document.title, decoded.title)
         assertEquals(document.commentConversations, decoded.commentConversations)
 
-        val decodedStep = decoded.content.getValue(0L)
+        val decodedStep = decoded.content.getValue(Rank.at(0))
         assertEquals("step-1", decodedStep.id)
         assertEquals("Commented text", decodedStep.text)
         assertEquals(

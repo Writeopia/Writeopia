@@ -2,6 +2,7 @@
 
 package io.writeopia.api.gateway
 
+import io.writeopia.sdk.utils.iterables.Rank
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.post
@@ -43,7 +44,7 @@ class FolderContentsPreviewIntegrationTest {
         lastUpdatedAt = 2000L,
         lastSyncedAt = 0L,
         content = (0 until steps).map { index ->
-            StoryStep(type = StoryTypes.TEXT.type, text = "step $index").toApi(index.toLong())
+            StoryStep(type = StoryTypes.TEXT.type, text = "step $index").toApi(Rank.at(index))
         }
     )
 

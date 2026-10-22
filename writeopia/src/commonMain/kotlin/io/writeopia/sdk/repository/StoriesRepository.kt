@@ -4,5 +4,5 @@ import io.writeopia.sdk.models.story.StoryStep
 
 interface StoriesRepository {
 
-    suspend fun history(): Map<Long, StoryStep>
+    suspend fun history(): Map<String, StoryStep>
 }

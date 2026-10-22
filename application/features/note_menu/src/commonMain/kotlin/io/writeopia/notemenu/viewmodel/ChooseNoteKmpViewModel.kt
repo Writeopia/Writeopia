@@ -2,6 +2,7 @@
 
 package io.writeopia.notemenu.viewmodel
 
+import io.writeopia.sdk.utils.iterables.Rank
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.LocalAiRepository
@@ -862,8 +863,8 @@ internal class ChooseNoteKmpViewModel(
                     favorite = false,
                     title = "",
                     content = mapOf(
-                        0L to StoryStep(type = StoryTypes.TITLE.type, text = ""),
-                        1L to StoryStep(type = StoryTypes.IMAGE.type, path = path)
+                        Rank.at(0) to StoryStep(type = StoryTypes.TITLE.type, text = ""),
+                        Rank.at(1) to StoryStep(type = StoryTypes.IMAGE.type, path = path)
                     )
                 )
             }

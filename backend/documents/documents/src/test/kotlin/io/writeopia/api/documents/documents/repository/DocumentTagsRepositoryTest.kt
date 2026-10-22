@@ -2,6 +2,7 @@
 
 package io.writeopia.api.documents.documents.repository
 
+import io.writeopia.sdk.utils.iterables.Rank
 import io.writeopia.api.documents.documents.configureTestPersistence
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.DocumentTag
@@ -35,7 +36,7 @@ class DocumentTagsRepositoryTest {
         Document(
             id = id,
             title = "Doc $id",
-            content = mapOf(0L to StoryStep(type = StoryTypes.TEXT.type, text = "hello")),
+            content = mapOf(Rank.at(0) to StoryStep(type = StoryTypes.TEXT.type, text = "hello")),
             createdAt = Instant.fromEpochMilliseconds(100),
             lastUpdatedAt = Instant.fromEpochMilliseconds(200),
             lastSyncedAt = null,

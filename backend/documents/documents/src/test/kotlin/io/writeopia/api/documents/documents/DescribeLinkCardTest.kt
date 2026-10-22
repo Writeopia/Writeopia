@@ -2,6 +2,7 @@
 
 package io.writeopia.api.documents.documents
 
+import io.writeopia.sdk.utils.iterables.Rank
 import io.writeopia.api.documents.documents.repository.getStoryStepById
 import io.writeopia.api.documents.documents.repository.getStoryStepDocumentId
 import io.writeopia.api.documents.documents.repository.getStoryStepsAfterTime
@@ -28,7 +29,7 @@ class DescribeLinkCardTest {
     private fun linkCard(id: String = "card-1", url: String? = "https://writeopia.io") =
         StoryStep(id = id, type = StoryTypes.LINK_CARD.type, url = url)
 
-    private fun request(step: StoryStep, position: Long = 1L, requestTimestamp: Long = 5_000L) =
+    private fun request(step: StoryStep, position: String = Rank.at(1), requestTimestamp: Long = 5_000L) =
         LinkCardDescriptionRequest(
             storyStep = step.toApi(position),
             position = position,
@@ -45,22 +46,22 @@ class DescribeLinkCardTest {
 
     @Test
     fun `saves the description in the card the sync delivered, where the sync put it`() = runBlocking {
-        db.upsertStoryStep(linkCard(), position = 3L, documentId = documentId, lastUpdatedAt = 1_000L)
+        db.upsertStoryStep(linkCard(), position = Rank.at(3), documentId = documentId, lastUpdatedAt = 1_000L)
 
         val result = DocumentsService.describeLinkCard(
             documentId = documentId,
             workspaceId = workspaceId,
-            request = request(linkCard(), position = 1L, requestTimestamp = 5_000L),
+            request = request(linkCard(), position = Rank.at(1), requestTimestamp = 5_000L),
             describe = { url -> "The home of $url, a text editor." },
             writeopiaDb = db
         )
 
         val success = assertIs<DocumentsService.LinkCardDescriptionResult.Success>(result)
-        assertEquals(3L, success.position)
+        assertEquals(Rank.at(3), success.position)
         assertEquals("The home of https://writeopia.io, a text editor.", success.storyStep.text)
 
         val (position, stored) = db.getStoryStepById("card-1")!!
-        assertEquals(3L, position)
+        assertEquals(Rank.at(3), position)
         assertEquals("The home of https://writeopia.io, a text editor.", stored.text)
         assertEquals("https://writeopia.io", stored.url)
         assertEquals(StoryTypes.LINK_CARD.type.number, stored.type.number)
@@ -68,7 +69,7 @@ class DescribeLinkCardTest {
 
     @Test
     fun `the described card is returned by a sync from the request time on`() = runBlocking {
-        db.upsertStoryStep(linkCard(), position = 1L, documentId = documentId, lastUpdatedAt = 1_000L)
+        db.upsertStoryStep(linkCard(), position = Rank.at(1), documentId = documentId, lastUpdatedAt = 1_000L)
 
         DocumentsService.describeLinkCard(
             documentId = documentId,
@@ -88,16 +89,16 @@ class DescribeLinkCardTest {
         val result = DocumentsService.describeLinkCard(
             documentId = documentId,
             workspaceId = workspaceId,
-            request = request(linkCard(id = "card-new"), position = 2L),
+            request = request(linkCard(id = "card-new"), position = Rank.at(2)),
             describe = { "Brand new." },
             writeopiaDb = db
         )
 
         val success = assertIs<DocumentsService.LinkCardDescriptionResult.Success>(result)
-        assertEquals(2L, success.position)
+        assertEquals(Rank.at(2), success.position)
 
         val (position, stored) = db.getStoryStepById("card-new")!!
-        assertEquals(2L, position)
+        assertEquals(Rank.at(2), position)
         assertEquals("Brand new.", stored.text)
         assertEquals("doc-link-cards", DocumentsService.getDocumentById(documentId, workspaceId, db)?.id)
     }
@@ -143,7 +144,7 @@ class DescribeLinkCardTest {
     @Test
     fun `refuses a card id that belongs to another document without asking the AI`() = runBlocking {
         val otherDocumentId = "doc-other"
-        db.upsertStoryStep(linkCard(id = "card-elsewhere"), position = 1L, documentId = otherDocumentId, lastUpdatedAt = 1_000L)
+        db.upsertStoryStep(linkCard(id = "card-elsewhere"), position = Rank.at(1), documentId = otherDocumentId, lastUpdatedAt = 1_000L)
         try {
             var asked = false
             val result = DocumentsService.describeLinkCard(
@@ -166,7 +167,7 @@ class DescribeLinkCardTest {
 
     @Test
     fun `an empty answer from the AI changes nothing`() = runBlocking {
-        db.upsertStoryStep(linkCard(), position = 1L, documentId = documentId, lastUpdatedAt = 1_000L)
+        db.upsertStoryStep(linkCard(), position = Rank.at(1), documentId = documentId, lastUpdatedAt = 1_000L)
 
         val result = DocumentsService.describeLinkCard(
             documentId = documentId,

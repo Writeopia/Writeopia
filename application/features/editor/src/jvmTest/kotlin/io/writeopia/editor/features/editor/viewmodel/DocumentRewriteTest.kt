@@ -1,5 +1,6 @@
 package io.writeopia.editor.features.editor.viewmodel
 
+import io.writeopia.sdk.utils.iterables.Rank
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
@@ -17,32 +18,32 @@ class DocumentRewriteTest {
     private val spreadsheet = StoryStep(type = StoryTypes.SPREADSHEET.type)
     private val image = StoryStep(type = StoryTypes.IMAGE.type, url = "pic.png")
 
-    private val stories: Map<Long, StoryStep> = mapOf(
-        0L to StoryStep(type = StoryTypes.TITLE.type, text = "Title"),
-        1L to StoryStep(type = StoryTypes.TEXT.type, text = "Intro", tags = setOf(TagInfo(Tag.H2))),
-        2L to StoryStep(type = StoryTypes.TEXT.type, text = "A paragraph."),
-        3L to spreadsheet,
-        4L to StoryStep(type = StoryTypes.CHECK_ITEM.type, text = "Done", checked = true),
-        5L to StoryStep(type = StoryTypes.UNORDERED_LIST_ITEM.type, text = "Item"),
-        6L to StoryStep(type = StoryTypes.CODE_BLOCK.type, text = "fun a() {}\nfun b() {}"),
-        7L to image,
-        8L to StoryStep(type = StoryTypes.DIVIDER.type),
-        9L to StoryStep(type = StoryTypes.LOADING.type, ephemeral = true),
-        10L to StoryStep(type = StoryTypes.TEXT.type, text = "Last line."),
+    private val stories: Map<String, StoryStep> = mapOf(
+        Rank.at(0) to StoryStep(type = StoryTypes.TITLE.type, text = "Title"),
+        Rank.at(1) to StoryStep(type = StoryTypes.TEXT.type, text = "Intro", tags = setOf(TagInfo(Tag.H2))),
+        Rank.at(2) to StoryStep(type = StoryTypes.TEXT.type, text = "A paragraph."),
+        Rank.at(3) to spreadsheet,
+        Rank.at(4) to StoryStep(type = StoryTypes.CHECK_ITEM.type, text = "Done", checked = true),
+        Rank.at(5) to StoryStep(type = StoryTypes.UNORDERED_LIST_ITEM.type, text = "Item"),
+        Rank.at(6) to StoryStep(type = StoryTypes.CODE_BLOCK.type, text = "fun a() {}\nfun b() {}"),
+        Rank.at(7) to image,
+        Rank.at(8) to StoryStep(type = StoryTypes.DIVIDER.type),
+        Rank.at(9) to StoryStep(type = StoryTypes.LOADING.type, ephemeral = true),
+        Rank.at(10) to StoryStep(type = StoryTypes.TEXT.type, text = "Last line."),
     )
 
-    private fun longDocument(): Map<Long, StoryStep> = buildMap {
-        put(0L, StoryStep(type = StoryTypes.TITLE.type, text = "Title"))
+    private fun longDocument(): Map<String, StoryStep> = buildMap {
+        put(Rank.at(0), StoryStep(type = StoryTypes.TITLE.type, text = "Title"))
         repeat(100) { index ->
-            put((index + 1).toLong(), StoryStep(type = StoryTypes.TEXT.type, text = "p${index + 1}"))
+            put(Rank.at(index + 1), StoryStep(type = StoryTypes.TEXT.type, text = "p${index + 1}"))
         }
     }
 
     @Test
     fun `the document goes as Markdown with placeholders for the blocks the AI cannot write`() {
-        val rewrite = assertNotNull(DocumentRewrite.build(stories, cursor = 2L))
+        val rewrite = assertNotNull(DocumentRewrite.build(stories, cursor = Rank.at(2)))
 
-        assertEquals(1L, rewrite.from)
+        assertEquals(Rank.at(1), rewrite.from)
         assertNull(rewrite.toExclusive)
         assertEquals(
             """
@@ -129,18 +130,18 @@ class DocumentRewriteTest {
 
     @Test
     fun `a long document is cut to the paragraphs around the cursor`() {
-        val rewrite = assertNotNull(DocumentRewrite.build(longDocument(), cursor = 50L, limit = 40))
+        val rewrite = assertNotNull(DocumentRewrite.build(longDocument(), cursor = Rank.at(50), limit = 40))
 
         // Each line costs 4 characters, so 10 of them fit: the cursor's, then one on each side.
-        assertEquals(45L, rewrite.from)
-        assertEquals(55L, rewrite.toExclusive)
+        assertEquals(Rank.at(45), rewrite.from)
+        assertEquals(Rank.at(55), rewrite.toExclusive)
         assertEquals((45..54).joinToString("\n") { "p$it" }, rewrite.markdown)
         assertEquals(10, rewrite.originalStories.size)
     }
 
     @Test
     fun `a cut at the end of the document reaches the end`() {
-        val rewrite = assertNotNull(DocumentRewrite.build(longDocument(), cursor = 100L, limit = 40))
+        val rewrite = assertNotNull(DocumentRewrite.build(longDocument(), cursor = Rank.at(100), limit = 40))
 
         assertNull(rewrite.toExclusive)
         assertTrue(rewrite.markdown.endsWith("p100"))
@@ -171,17 +172,17 @@ class DocumentRewriteTest {
     @Test
     fun `a paragraph alone over the limit cannot be rewritten`() {
         val huge = mapOf(
-            0L to StoryStep(type = StoryTypes.TITLE.type, text = "Title"),
-            1L to StoryStep(type = StoryTypes.TEXT.type, text = "short"),
-            2L to StoryStep(type = StoryTypes.TEXT.type, text = "x".repeat(50)),
+            Rank.at(0) to StoryStep(type = StoryTypes.TITLE.type, text = "Title"),
+            Rank.at(1) to StoryStep(type = StoryTypes.TEXT.type, text = "short"),
+            Rank.at(2) to StoryStep(type = StoryTypes.TEXT.type, text = "x".repeat(50)),
         )
 
-        assertNull(DocumentRewrite.build(huge, cursor = 2L, limit = 40))
-        assertNotNull(DocumentRewrite.build(huge, cursor = 1L, limit = 40))
+        assertNull(DocumentRewrite.build(huge, cursor = Rank.at(2), limit = 40))
+        assertNotNull(DocumentRewrite.build(huge, cursor = Rank.at(1), limit = 40))
     }
 
     @Test
     fun `an empty document has nothing to rewrite`() {
-        assertNull(DocumentRewrite.build(mapOf(0L to StoryStep(type = StoryTypes.TITLE.type, text = "T")), cursor = null))
+        assertNull(DocumentRewrite.build(mapOf(Rank.at(0) to StoryStep(type = StoryTypes.TITLE.type, text = "T")), cursor = null))
     }
 }

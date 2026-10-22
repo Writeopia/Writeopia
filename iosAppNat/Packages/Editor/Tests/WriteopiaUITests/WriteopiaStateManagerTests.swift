@@ -10,10 +10,10 @@ private func document(_ steps: [StoryStep]) -> WrDocument {
 }
 
 private let sample = document([
-    StoryStep(id: "t", type: .title, text: "Doc", position: 0),
-    StoryStep(id: "a", type: .text, text: "Hello", position: 1),
-    StoryStep(id: "b", type: .checkItem, text: "Task", checked: false, position: 2),
-    StoryStep(id: "c", type: .divider, position: 3),
+    StoryStep(id: "t", type: .title, text: "Doc", position: Rank.at(0)),
+    StoryStep(id: "a", type: .text, text: "Hello", position: Rank.at(1)),
+    StoryStep(id: "b", type: .checkItem, text: "Task", checked: false, position: Rank.at(2)),
+    StoryStep(id: "c", type: .divider, position: Rank.at(3)),
 ])
 
 @Suite struct StepsModifierTests {
@@ -30,18 +30,18 @@ private let sample = document([
             StoryType.lastSpace.number,
         ])
         // A space points to the step before it: that's where a drop lands.
-        #expect(manager.toDraw[1].position == 0)
-        #expect(manager.toDraw.last?.position == 3)
+        #expect(manager.toDraw[1].position == Rank.at(0))
+        #expect(manager.toDraw.last?.position == Rank.at(3))
     }
 
     @Test func hoveredSpaceBecomesOnDragSpace() {
         let manager = WriteopiaStateManager()
         manager.loadDocument(sample)
 
-        manager.onDragHover(1)
+        manager.onDragHover(Rank.at(1))
 
         let dragSpaces = manager.toDraw.filter { $0.storyStep.type.number == StoryType.onDragSpace.number }
-        #expect(dragSpaces.map(\.position) == [1])
+        #expect(dragSpaces.map(\.position) == [Rank.at(1)])
         // Same identity as the plain space, so SwiftUI keeps the view.
         #expect(dragSpaces.first?.id == "space-b")
     }
@@ -49,8 +49,8 @@ private let sample = document([
     @Test func unsupportedStepsAreKeptButNotDrawn() {
         let manager = WriteopiaStateManager()
         manager.loadDocument(document([
-            StoryStep(id: "t", type: .title, text: "Doc", position: 0),
-            StoryStep(id: "sheet", type: StoryType(name: "spreadsheet", number: 101), position: 1),
+            StoryStep(id: "t", type: .title, text: "Doc", position: Rank.at(0)),
+            StoryStep(id: "sheet", type: StoryType(name: "spreadsheet", number: 101), position: Rank.at(1)),
         ]))
 
         #expect(!manager.toDraw.contains { $0.id == "sheet" })
@@ -61,14 +61,14 @@ private let sample = document([
         let box = [TagInfo(tag: BlockTag.box.rawValue)]
         let manager = WriteopiaStateManager()
         manager.loadDocument(document([
-            StoryStep(id: "t", type: .title, text: "Doc", position: 0),
-            StoryStep(id: "c1", type: .codeBlock, text: "let a = 1", position: 1),
-            StoryStep(id: "c2", type: .codeBlock, text: "let b = 2", position: 2),
-            StoryStep(id: "c3", type: .codeBlock, text: "let c = 3", position: 3),
-            StoryStep(id: "p", type: .text, text: "Plain", position: 4),
-            StoryStep(id: "b1", type: .text, text: "Boxed", tags: box, position: 5),
-            StoryStep(id: "b2", type: .text, text: "Boxed too", tags: box, position: 6),
-            StoryStep(id: "c4", type: .codeBlock, text: "alone", position: 7),
+            StoryStep(id: "t", type: .title, text: "Doc", position: Rank.at(0)),
+            StoryStep(id: "c1", type: .codeBlock, text: "let a = 1", position: Rank.at(1)),
+            StoryStep(id: "c2", type: .codeBlock, text: "let b = 2", position: Rank.at(2)),
+            StoryStep(id: "c3", type: .codeBlock, text: "let c = 3", position: Rank.at(3)),
+            StoryStep(id: "p", type: .text, text: "Plain", position: Rank.at(4)),
+            StoryStep(id: "b1", type: .text, text: "Boxed", tags: box, position: Rank.at(5)),
+            StoryStep(id: "b2", type: .text, text: "Boxed too", tags: box, position: Rank.at(6)),
+            StoryStep(id: "c4", type: .codeBlock, text: "alone", position: Rank.at(7)),
         ]))
 
         func draw(_ id: String) -> DrawStory? { manager.toDraw.first { $0.id == id } }
@@ -93,9 +93,9 @@ private let sample = document([
     @Test func aBoxNextToACardIsASeparateBlock() {
         let manager = WriteopiaStateManager()
         manager.loadDocument(document([
-            StoryStep(id: "t", type: .title, text: "Doc", position: 0),
-            StoryStep(id: "b", type: .text, text: "Box", tags: [TagInfo(tag: BlockTag.box.rawValue)], position: 1),
-            StoryStep(id: "c", type: .text, text: "Card", tags: [TagInfo(tag: BlockTag.card.rawValue)], position: 2),
+            StoryStep(id: "t", type: .title, text: "Doc", position: Rank.at(0)),
+            StoryStep(id: "b", type: .text, text: "Box", tags: [TagInfo(tag: BlockTag.box.rawValue)], position: Rank.at(1)),
+            StoryStep(id: "c", type: .text, text: "Card", tags: [TagInfo(tag: BlockTag.card.rawValue)], position: Rank.at(2)),
         ]))
 
         func draw(_ id: String) -> DrawStory? { manager.toDraw.first { $0.id == id } }
@@ -110,13 +110,13 @@ private let sample = document([
     @Test func typingUpdatesTheStepAndKeepsSpans() {
         let manager = WriteopiaStateManager()
         manager.loadDocument(document([
-            StoryStep(id: "t", type: .title, text: "Doc", position: 0),
-            StoryStep(id: "a", type: .text, text: "Hello world", spans: [SpanInfo(start: 6, end: 11, span: "BOLD")], position: 1),
+            StoryStep(id: "t", type: .title, text: "Doc", position: Rank.at(0)),
+            StoryStep(id: "a", type: .text, text: "Hello world", spans: [SpanInfo(start: 6, end: 11, span: "BOLD")], position: Rank.at(1)),
         ]))
 
         manager.handleTextInput("Hi, Hello world", cursor: 4, stepId: "a")
 
-        let step = manager.currentStory.stories[1]
+        let step = manager.currentStory.stories[Rank.at(1)]
         #expect(step?.text == "Hi, Hello world")
         #expect(step?.spans == [SpanInfo(start: 10, end: 15, span: "BOLD")])
         #expect(manager.focusRequest == nil)
@@ -130,18 +130,20 @@ private let sample = document([
 
         #expect(manager.currentStory.sortedStories.map { $0.text ?? "-" } == ["Doc", "Hel", "lo", "Task", "-"])
         let request = try #require(manager.focusRequest)
-        // No whole number between "a" at 1 and "Task" at 2: the lines after were spread out and
-        // the new line went one gap after "a"
-        #expect(request.stepId == manager.currentStory.stories[1 + positionGap]?.id)
+        // The new line went between "a" and "Task", which kept their positions
+        let newLine = manager.currentStory.sortedStories[2]
+        #expect(request.stepId == newLine.id)
+        #expect(Rank.at(1) < newLine.position && newLine.position < Rank.at(2))
+        #expect(manager.position(of: "b") == Rank.at(2))
         #expect(request.cursor == 0)
     }
 
     @Test func backspaceAtStartMergesWithPreviousLine() throws {
         let manager = WriteopiaStateManager()
         manager.loadDocument(document([
-            StoryStep(id: "t", type: .title, text: "Doc", position: 0),
-            StoryStep(id: "a", type: .text, text: "One", position: 1),
-            StoryStep(id: "b", type: .text, text: "Two", position: 2),
+            StoryStep(id: "t", type: .title, text: "Doc", position: Rank.at(0)),
+            StoryStep(id: "a", type: .text, text: "One", position: Rank.at(1)),
+            StoryStep(id: "b", type: .text, text: "Two", position: Rank.at(2)),
         ]))
 
         manager.onErase(stepId: "b")
@@ -158,21 +160,21 @@ private let sample = document([
 
         manager.onCheckedChange(stepId: "b", checked: true)
 
-        #expect(manager.currentStory.stories[2]?.checked == true)
+        #expect(manager.currentStory.stories[Rank.at(2)]?.checked == true)
     }
 
     @Test func dropMovesStepAndClearsDrag() {
         let manager = WriteopiaStateManager()
         manager.loadDocument(sample)
-        let payload = manager.dragPayload(for: manager.currentStory.stories[3]!)
-        manager.onDragHover(0)
+        let payload = manager.dragPayload(for: manager.currentStory.stories[Rank.at(3)]!)
+        manager.onDragHover(Rank.at(0))
 
-        #expect(manager.moveRequest(payload: payload, after: 0))
+        #expect(manager.moveRequest(payload: payload, after: Rank.at(0)))
 
         #expect(manager.currentStory.sortedStories.map(\.id) == ["t", "c", "a", "b"])
         #expect(manager.dragPosition == nil)
         #expect(manager.currentStory.focus == nil)
-        #expect(!manager.moveRequest(payload: "text dragged from another app", after: 0))
+        #expect(!manager.moveRequest(payload: "text dragged from another app", after: Rank.at(0)))
     }
 
     @Test func tapAtTheEndAddsAParagraph() {
@@ -194,7 +196,7 @@ private let sample = document([
         manager.handleTextInput("Changed", cursor: 7, stepId: "a")
         manager.onErase(stepId: "a")
 
-        #expect(manager.currentStory.stories[1]?.text == "Hello")
+        #expect(manager.currentStory.stories[Rank.at(1)]?.text == "Hello")
     }
 }
 
@@ -207,11 +209,11 @@ private let sample = document([
         #expect(!manager.isSpanActive(.bold))
 
         manager.toggleSpan(.bold)
-        #expect(manager.currentStory.stories[1]?.spans == [SpanInfo(start: 1, end: 4, span: "BOLD")])
+        #expect(manager.currentStory.stories[Rank.at(1)]?.spans == [SpanInfo(start: 1, end: 4, span: "BOLD")])
         #expect(manager.isSpanActive(.bold))
 
         manager.toggleSpan(.bold)
-        #expect(manager.currentStory.stories[1]?.spans.isEmpty == true)
+        #expect(manager.currentStory.stories[Rank.at(1)]?.spans.isEmpty == true)
     }
 
     @Test func boldWithoutSelectionDoesNothing() {
@@ -221,7 +223,7 @@ private let sample = document([
         manager.onSelectionChange(stepId: "a", start: 2, end: 2)
         manager.toggleSpan(.bold)
 
-        #expect(manager.currentStory.stories[1]?.spans.isEmpty == true)
+        #expect(manager.currentStory.stories[Rank.at(1)]?.spans.isEmpty == true)
     }
 
     @Test func selectionIsClearedWhenTheStepLosesFocus() {
@@ -240,10 +242,10 @@ private let sample = document([
     private func manager() -> WriteopiaStateManager {
         let manager = WriteopiaStateManager()
         manager.loadDocument(document([
-            StoryStep(id: "t", type: .title, text: "Doc", position: 0),
-            StoryStep(id: "a", type: .text, text: "One", position: 1),
-            StoryStep(id: "b", type: .text, text: "Two", spans: [SpanInfo(start: 0, end: 3, span: "BOLD")], position: 2),
-            StoryStep(id: "c", type: .divider, position: 3),
+            StoryStep(id: "t", type: .title, text: "Doc", position: Rank.at(0)),
+            StoryStep(id: "a", type: .text, text: "One", position: Rank.at(1)),
+            StoryStep(id: "b", type: .text, text: "Two", spans: [SpanInfo(start: 0, end: 3, span: "BOLD")], position: Rank.at(2)),
+            StoryStep(id: "c", type: .divider, position: Rank.at(3)),
         ]))
         return manager
     }
@@ -255,9 +257,9 @@ private let sample = document([
         manager.toggleLineSelection(stepId: "b")
         manager.toggleLineSelection(stepId: "t")
 
-        #expect(manager.selectedPositions == [1, 2])
+        #expect(manager.selectedPositions == [Rank.at(1), Rank.at(2)])
         manager.toggleLineSelection(stepId: "a")
-        #expect(manager.selectedPositions == [2])
+        #expect(manager.selectedPositions == [Rank.at(2)])
     }
 
     @Test func spansApplyToAllSelectedLines() {
@@ -269,24 +271,26 @@ private let sample = document([
         // "Two" is already bold but "One" isn't, so bold is added to both.
         #expect(!manager.isSpanActive(.bold))
         manager.toggleSpan(.bold)
-        #expect(manager.currentStory.stories[1]?.spans == [SpanInfo(start: 0, end: 3, span: "BOLD")])
-        #expect(manager.currentStory.stories[2]?.spans == [SpanInfo(start: 0, end: 3, span: "BOLD")])
+        #expect(manager.currentStory.stories[Rank.at(1)]?.spans == [SpanInfo(start: 0, end: 3, span: "BOLD")])
+        #expect(manager.currentStory.stories[Rank.at(2)]?.spans == [SpanInfo(start: 0, end: 3, span: "BOLD")])
         #expect(manager.isSpanActive(.bold))
 
         manager.toggleSpan(.bold)
-        #expect(manager.currentStory.stories[1]?.spans.isEmpty == true)
-        #expect(manager.currentStory.stories[2]?.spans.isEmpty == true)
+        #expect(manager.currentStory.stories[Rank.at(1)]?.spans.isEmpty == true)
+        #expect(manager.currentStory.stories[Rank.at(2)]?.spans.isEmpty == true)
     }
 
     @Test func selectionFollowsTheStepsWhenTheyMove() {
         let manager = manager()
         manager.onSelected(stepId: "b", isSelected: true)
 
-        manager.moveRequest(payload: manager.dragPayload(for: manager.currentStory.stories[2]!), after: 0)
+        manager.moveRequest(payload: manager.dragPayload(for: manager.currentStory.stories[Rank.at(2)]!), after: Rank.at(0))
 
-        // No whole number between the title at 0 and "a" at 1: "a" was spread out and "b" went
-        // one gap after the title
-        #expect(manager.selectedPositions == [positionGap])
+        // "b" went between the title and "a", which kept its position
+        let moved = manager.position(of: "b")
+        #expect(manager.selectedPositions == moved.map { [$0] })
+        #expect(moved.map { Rank.at(0) < $0 && $0 < Rank.at(1) } == true)
+        #expect(manager.position(of: "a") == Rank.at(1))
         manager.clearLineSelection()
         #expect(!manager.hasSelectedLines)
     }
@@ -296,9 +300,9 @@ private let sample = document([
     private func manager() -> WriteopiaStateManager {
         let manager = WriteopiaStateManager()
         manager.loadDocument(document([
-            StoryStep(id: "t", type: .title, text: "Doc", position: 0),
-            StoryStep(id: "a", type: .text, text: "One", position: 1),
-            StoryStep(id: "b", type: .text, text: "Two", position: 2),
+            StoryStep(id: "t", type: .title, text: "Doc", position: Rank.at(0)),
+            StoryStep(id: "a", type: .text, text: "One", position: Rank.at(1)),
+            StoryStep(id: "b", type: .text, text: "Two", position: Rank.at(2)),
         ]))
         return manager
     }
@@ -308,8 +312,8 @@ private let sample = document([
         manager.onFocusChange(stepId: "b", hasFocus: true)
 
         manager.toggleType(.checkItem)
-        #expect(manager.currentStory.stories[2]?.type.number == StoryType.checkItem.number)
-        #expect(manager.currentStory.stories[1]?.type.number == StoryType.text.number)
+        #expect(manager.currentStory.stories[Rank.at(2)]?.type.number == StoryType.checkItem.number)
+        #expect(manager.currentStory.stories[Rank.at(1)]?.type.number == StoryType.text.number)
         #expect(manager.blocksAre(.checkItem))
 
         manager.toggleHeading(.h1)
@@ -322,8 +326,8 @@ private let sample = document([
         manager.onSelected(stepId: "a", isSelected: true)
 
         manager.toggleType(.unorderedListItem)
-        #expect(manager.currentStory.stories[1]?.type.number == StoryType.unorderedListItem.number)
-        #expect(manager.currentStory.stories[2]?.type.number == StoryType.text.number)
+        #expect(manager.currentStory.stories[Rank.at(1)]?.type.number == StoryType.unorderedListItem.number)
+        #expect(manager.currentStory.stories[Rank.at(2)]?.type.number == StoryType.text.number)
     }
 
     @Test func nothingHappensOnTheTitleOrWithoutFocus() {
@@ -342,9 +346,9 @@ private let sample = document([
     private func manager() -> WriteopiaStateManager {
         let manager = WriteopiaStateManager()
         manager.loadDocument(document([
-            StoryStep(id: "t", type: .title, text: "Doc", position: 0),
-            StoryStep(id: "a", type: .text, text: "Text", position: 1),
-            StoryStep(id: "e", type: .text, text: "", position: 2),
+            StoryStep(id: "t", type: .title, text: "Doc", position: Rank.at(0)),
+            StoryStep(id: "a", type: .text, text: "Text", position: Rank.at(1)),
+            StoryStep(id: "e", type: .text, text: "", position: Rank.at(2)),
         ]))
         return manager
     }
@@ -365,7 +369,7 @@ private let sample = document([
         manager.addImage(path: "/tmp/a.jpg")
 
         #expect(manager.currentStory.sortedStories.map(\.type.number) == [11, 0, 2])
-        #expect(manager.currentStory.stories[2]?.path == "/tmp/a.jpg")
+        #expect(manager.currentStory.stories[Rank.at(2)]?.path == "/tmp/a.jpg")
     }
 
     @Test func imageGoesAfterALineWithText() {
@@ -375,9 +379,9 @@ private let sample = document([
         manager.addImage(path: "/tmp/a.jpg")
 
         #expect(manager.currentStory.sortedStories.map(\.id)[1] == "a")
-        // No whole number between "a" at 1 and the step at 2: the latter was spread out and the
-        // image went one gap after "a"
-        #expect(manager.currentStory.stories[1 + positionGap]?.type.number == StoryType.image.number)
+        // The image went between "a" and the step after it, which kept its position
+        #expect(manager.currentStory.sortedStories[2].type.number == StoryType.image.number)
+        #expect(manager.position(of: "e") == Rank.at(2))
     }
 
     @Test func withoutFocusTheImageGoesAtTheEnd() {
@@ -416,8 +420,8 @@ private let sample = document([
     private func manager() -> WriteopiaStateManager {
         let manager = WriteopiaStateManager()
         manager.loadDocument(document([
-            StoryStep(id: "t", type: .title, text: "Doc", position: 0),
-            StoryStep(id: "a", type: .text, text: "", position: 1),
+            StoryStep(id: "t", type: .title, text: "Doc", position: Rank.at(0)),
+            StoryStep(id: "a", type: .text, text: "", position: Rank.at(1)),
         ]))
         return manager
     }
@@ -500,8 +504,8 @@ private let sample = document([
     @Test func headerColorIsStoredOnTheTitleAndKeepsTheCursor() {
         let manager = WriteopiaStateManager()
         manager.loadDocument(document([
-            StoryStep(id: "t", type: .title, text: "Doc", position: 0),
-            StoryStep(id: "a", type: .text, text: "Line", position: 1),
+            StoryStep(id: "t", type: .title, text: "Doc", position: Rank.at(0)),
+            StoryStep(id: "a", type: .text, text: "Line", position: Rank.at(1)),
         ]))
         manager.onFocusChange(stepId: "a", hasFocus: true)
         #expect(manager.headerColor == nil)
@@ -510,7 +514,7 @@ private let sample = document([
         #expect(manager.headerColor == -65281) // magenta, as the Compose app stores it
         #expect(manager.step(withId: "t")?.decoration?.backgroundColor == -65281)
         #expect(manager.focusRequest == nil) // nothing moved the cursor
-        #expect(manager.currentStory.focus == 1)
+        #expect(manager.currentStory.focus == Rank.at(1))
 
         manager.setHeaderColor(nil)
         #expect(manager.step(withId: "t")?.decoration == nil)
@@ -590,11 +594,11 @@ private let sample = document([
     private func manager() -> WriteopiaStateManager {
         let manager = WriteopiaStateManager()
         manager.loadDocument(document([
-            StoryStep(id: "t", type: .title, text: "Doc", position: 0),
-            StoryStep(id: "a", type: .text, text: "First line", position: 1),
-            StoryStep(id: "d", type: .divider, position: 2),
-            StoryStep(id: "b", type: .checkItem, text: "Second", position: 3),
-            StoryStep(id: "c", type: .text, text: "Third line here", position: 4),
+            StoryStep(id: "t", type: .title, text: "Doc", position: Rank.at(0)),
+            StoryStep(id: "a", type: .text, text: "First line", position: Rank.at(1)),
+            StoryStep(id: "d", type: .divider, position: Rank.at(2)),
+            StoryStep(id: "b", type: .checkItem, text: "Second", position: Rank.at(3)),
+            StoryStep(id: "c", type: .text, text: "Third line here", position: Rank.at(4)),
         ]))
         return manager
     }
@@ -648,10 +652,10 @@ private let sample = document([
     private func setUp() -> (WriteopiaStateManager, ReorderCoordinator) {
         let manager = WriteopiaStateManager()
         manager.loadDocument(document([
-            StoryStep(id: "t", type: .title, text: "Doc", position: 0),
-            StoryStep(id: "a", type: .text, text: "A", position: 1),
-            StoryStep(id: "b", type: .text, text: "B", position: 2),
-            StoryStep(id: "c", type: .text, text: "C", position: 3),
+            StoryStep(id: "t", type: .title, text: "Doc", position: Rank.at(0)),
+            StoryStep(id: "a", type: .text, text: "A", position: Rank.at(1)),
+            StoryStep(id: "b", type: .text, text: "B", position: Rank.at(2)),
+            StoryStep(id: "c", type: .text, text: "C", position: Rank.at(3)),
         ]))
         let reorder = ReorderCoordinator()
         reorder.manager = manager
@@ -669,28 +673,28 @@ private let sample = document([
         let (manager, reorder) = setUp()
         defer { withExtendedLifetime(manager) {} }
         // Over the lower half of "b": after b.
-        #expect(reorder.dropPosition(for: drag("a", y: 110)) == 2)
+        #expect(reorder.dropPosition(for: drag("a", y: 110)) == Rank.at(2))
     }
 
     @Test func upperHalfDropsAboveTheStep() {
         let (manager, reorder) = setUp()
         defer { withExtendedLifetime(manager) {} }
         // Over the upper half of "c": after b, so above c.
-        #expect(reorder.dropPosition(for: drag("a", y: 125)) == 2)
+        #expect(reorder.dropPosition(for: drag("a", y: 125)) == Rank.at(2))
         // Over the upper half of "b" while dragging "c": after a.
-        #expect(reorder.dropPosition(for: drag("c", y: 85)) == 1)
+        #expect(reorder.dropPosition(for: drag("c", y: 85)) == Rank.at(1))
     }
 
     @Test func nothingGoesAboveTheTitle() {
         let (manager, reorder) = setUp()
         defer { withExtendedLifetime(manager) {} }
-        #expect(reorder.dropPosition(for: drag("c", y: 5)) == 0)
+        #expect(reorder.dropPosition(for: drag("c", y: 5)) == Rank.at(0))
     }
 
     @Test func belowEverythingDropsAtTheEnd() {
         let (manager, reorder) = setUp()
         defer { withExtendedLifetime(manager) {} }
-        #expect(reorder.dropPosition(for: drag("a", y: 500)) == 3)
+        #expect(reorder.dropPosition(for: drag("a", y: 500)) == Rank.at(3))
     }
 
     @Test func dropsThatWouldNotMoveShowNoFeedback() {
@@ -702,14 +706,14 @@ private let sample = document([
         #expect(reorder.dropPosition(for: drag("b", y: 110)) == nil)
         #expect(reorder.dropPosition(for: drag("b", y: 125)) == nil)
         // Over the upper half of "a" it really moves above "a".
-        #expect(reorder.dropPosition(for: drag("b", y: 50)) == 0)
+        #expect(reorder.dropPosition(for: drag("b", y: 50)) == Rank.at(0))
     }
 
     @Test func releasingMovesTheStepAndClearsTheFeedback() {
         let (manager, reorder) = setUp()
 
         reorder.dragChanged(stepId: "a", location: CGPoint(x: 100, y: 150))
-        #expect(manager.dragPosition == 3)
+        #expect(manager.dragPosition == Rank.at(3))
         #expect(manager.toDraw.contains { $0.storyStep.type.number == StoryType.onDragSpace.number })
 
         reorder.dragEnded()

@@ -1,5 +1,7 @@
 package io.writeopia.sdk.model.story
 
+import io.writeopia.sdk.utils.iterables.Rank
+
 /**
  * Class the descriptions the position of the text cursor.
  *
@@ -10,7 +12,7 @@ package io.writeopia.sdk.model.story
 data class Selection(
     val start: Int,
     val end: Int,
-    val position: Long,
+    val position: String,
     val fromEnd: Boolean = false
 ) {
     fun key() = if (start == end) hashCode() else 0
@@ -18,14 +20,14 @@ data class Selection(
     fun sortedPositions(): Pair<Int, Int> = if (start < end) start to end else end to start
 
     companion object {
-        fun start(): Selection = Selection(0, 0, 0L)
+        fun start(): Selection = Selection(0, 0, Rank.FIRST)
 
-        fun end(position: Long): Selection = Selection(Int.MAX_VALUE, Int.MAX_VALUE, position)
+        fun end(position: String): Selection = Selection(Int.MAX_VALUE, Int.MAX_VALUE, position)
 
-        fun fromPosition(cursorPosition: Int, stepPosition: Long) =
+        fun fromPosition(cursorPosition: Int, stepPosition: String) =
             Selection(cursorPosition, cursorPosition, stepPosition)
 
-        fun fromLastLine(cursorPosition: Int, stepPosition: Long) =
+        fun fromLastLine(cursorPosition: Int, stepPosition: String) =
             Selection(cursorPosition, cursorPosition, stepPosition, fromEnd = true)
     }
 }

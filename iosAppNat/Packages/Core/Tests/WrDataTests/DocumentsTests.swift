@@ -182,7 +182,7 @@ final class RecordingTransport: HTTPTransport {
             id: "d",
             title: "T",
             workspaceId: "w",
-            content: [StoryStep(type: .title, text: "T", position: 0)],
+            content: [StoryStep(type: .title, text: "T", position: Rank.at(0))],
             parentId: "root"
         )
 
@@ -208,20 +208,61 @@ final class RecordingTransport: HTTPTransport {
     @Test func aPictureTakesThePlaceOfTheColorOfTheHeader() {
         let url = "https://writeopia.io/header-images/w/a.png"
         let withBoth = document(title: StoryStep(
-            id: "t", type: .title, text: "Doc", url: url, position: 0,
+            id: "t", type: .title, text: "Doc", url: url, position: Rank.at(0),
             decoration: Decoration(backgroundColor: -7829368)
         ))
         #expect(withBoth.headerImageURL == URL(string: url))
         #expect(withBoth.headerColor == nil)
 
         let colorOnly = document(title: StoryStep(
-            id: "t", type: .title, text: "Doc", position: 0,
+            id: "t", type: .title, text: "Doc", position: Rank.at(0),
             decoration: Decoration(backgroundColor: -7829368)
         ))
         #expect(colorOnly.headerImageURL == nil)
         #expect(colorOnly.headerColor == -7829368)
 
-        let emptyUrl = document(title: StoryStep(id: "t", type: .title, text: "Doc", url: "", position: 0))
+        let emptyUrl = document(title: StoryStep(id: "t", type: .title, text: "Doc", url: "", position: Rank.at(0)))
         #expect(emptyUrl.headerImageURL == nil)
+    }
+}
+
+@Suite struct PositionMigrationTests {
+    let directory = FileManager.default.temporaryDirectory
+        .appending(path: "wr positions \(UUID().uuidString)", directoryHint: .isDirectory)
+
+    /// Before ranks the column was numeric: whole numbers 10000 apart, or indexes and fractions
+    /// before that. Opening the space once turns them into the ranks of 0, 1, 2..., in order.
+    @Test func numericPositionsBecomeRanksInTheirOrder() async throws {
+        let documentId: String
+        do {
+            let repository = LocalDocumentsRepository(directory: directory, seedsWelcome: false)
+            documentId = try await repository.createDocument(title: "Plan", parentId: Folder.rootId).id
+        }
+
+        let db = try SQLiteDatabase(url: directory.appending(path: "writeopia.sqlite"), journalMode: .delete)
+        try db.execute(
+            """
+            DROP TABLE story_step;
+            CREATE TABLE story_step (
+                id TEXT NOT NULL, document_id TEXT NOT NULL, position INTEGER NOT NULL,
+                last_updated_at INTEGER, content TEXT NOT NULL, PRIMARY KEY (document_id, id)
+            );
+            DELETE FROM meta WHERE key = 'positions_rank';
+            """
+        )
+        let rows: [(String, Int64, String)] = [("c", 20000, "Third"), ("t", 0, "Plan"), ("b", 15000, "Second"), ("a", 10000, "First")]
+        for (id, position, text) in rows {
+            let type = id == "t" ? #"{"name":"title","number":11}"# : #"{"name":"message","number":0}"#
+            try db.run(
+                "INSERT INTO story_step (id, document_id, position, last_updated_at, content) VALUES (?, ?, ?, 1, ?)",
+                [.text(id), .text(documentId), .integer(position), .text(#"{"id":"\#(id)","type":\#(type),"text":"\#(text)","position":\#(position)}"#)]
+            )
+        }
+
+        let repository = LocalDocumentsRepository(directory: directory, seedsWelcome: false)
+        let document = try await repository.document(id: documentId)
+
+        #expect(document.content.map(\.text) == ["Plan", "First", "Second", "Third"])
+        #expect(document.content.map(\.position) == (0..<4).map(Rank.at))
     }
 }

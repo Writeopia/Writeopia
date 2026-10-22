@@ -17,7 +17,7 @@ expect fun TextEditorScreen(
     onDocumentLinkClick: (String) -> Unit,
     onNewDrawingClick: () -> Unit = {},
     onNewImageClick: () -> Unit = {},
-    onDrawingClick: (StoryStep, Long) -> Unit = { _, _ -> },
+    onDrawingClick: (StoryStep, String) -> Unit = { _, _ -> },
     nestedScrollConnection: NestedScrollConnection? = null,
     isToolbarVisible: Boolean = true,
     isWideLayout: Boolean = false,

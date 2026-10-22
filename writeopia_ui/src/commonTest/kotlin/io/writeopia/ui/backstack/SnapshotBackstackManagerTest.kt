@@ -1,5 +1,6 @@
 package io.writeopia.ui.backstack
 
+import io.writeopia.sdk.utils.iterables.Rank
 import io.writeopia.sdk.model.story.StoryState
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
@@ -16,7 +17,7 @@ class SnapshotBackstackManagerTest {
 
     @Test
     fun `when adding the first action - the manager should notify it is possible to revert`() {
-        backstackManager.addTextState(state, 2L)
+        backstackManager.addTextState(state, Rank.at(2))
 
         assertEquals(true, backstackManager.canUndo.value)
         assertEquals(false, backstackManager.canRedo.value)
@@ -25,7 +26,7 @@ class SnapshotBackstackManagerTest {
     @Test
     fun `when adding and popping the stack - the manager should notify correctly`() {
         repeat(3) { i ->
-            val state = StoryState(stories = mapOf(i.toLong() to StoryStep(type = StoryTypes.TEXT.type)))
+            val state = StoryState(stories = mapOf(Rank.at(i) to StoryStep(type = StoryTypes.TEXT.type)))
 
             backstackManager.addState(state)
         }
@@ -52,7 +53,7 @@ class SnapshotBackstackManagerTest {
     @Test
     fun `when adding a new story - it should no longer be possible to mover forward`() {
         repeat(3) { i ->
-            val state = StoryState(stories = mapOf(i.toLong() to StoryStep(type = StoryTypes.TEXT.type)))
+            val state = StoryState(stories = mapOf(Rank.at(i) to StoryStep(type = StoryTypes.TEXT.type)))
 
             backstackManager.addState(state)
         }
@@ -67,7 +68,7 @@ class SnapshotBackstackManagerTest {
 
         backstackManager.addState(
             StoryState(
-                stories = mapOf(0L to StoryStep(type = StoryTypes.TEXT.type))
+                stories = mapOf(Rank.at(0) to StoryStep(type = StoryTypes.TEXT.type))
             )
         )
 
@@ -77,15 +78,15 @@ class SnapshotBackstackManagerTest {
 
     @Test
     fun `it should be possible to revert a check`() {
-        val state = StoryState(stories = mapOf(0L to StoryStep(type = StoryTypes.TEXT.type)))
+        val state = StoryState(stories = mapOf(Rank.at(0) to StoryStep(type = StoryTypes.TEXT.type)))
         backstackManager.addState(state)
 
         val checkState =
-            StoryState(stories = mapOf(0L to StoryStep(type = StoryTypes.CHECK_ITEM.type)))
+            StoryState(stories = mapOf(Rank.at(0) to StoryStep(type = StoryTypes.CHECK_ITEM.type)))
         backstackManager.addState(checkState)
 
         val listItemState =
-            StoryState(stories = mapOf(0L to StoryStep(type = StoryTypes.UNORDERED_LIST_ITEM.type)))
+            StoryState(stories = mapOf(Rank.at(0) to StoryStep(type = StoryTypes.UNORDERED_LIST_ITEM.type)))
         backstackManager.addState(listItemState)
 
         assertEquals(listItemState, backstackManager.previousState(state))
@@ -95,15 +96,15 @@ class SnapshotBackstackManagerTest {
 
     @Test
     fun `it should be possible to revert and redo a check`() {
-        val state = StoryState(stories = mapOf(0L to StoryStep(type = StoryTypes.TEXT.type)))
+        val state = StoryState(stories = mapOf(Rank.at(0) to StoryStep(type = StoryTypes.TEXT.type)))
         backstackManager.addState(state)
 
         val checkState =
-            StoryState(stories = mapOf(0L to StoryStep(type = StoryTypes.CHECK_ITEM.type)))
+            StoryState(stories = mapOf(Rank.at(0) to StoryStep(type = StoryTypes.CHECK_ITEM.type)))
         backstackManager.addState(checkState)
 
         val listItemState =
-            StoryState(stories = mapOf(0L to StoryStep(type = StoryTypes.UNORDERED_LIST_ITEM.type)))
+            StoryState(stories = mapOf(Rank.at(0) to StoryStep(type = StoryTypes.UNORDERED_LIST_ITEM.type)))
         backstackManager.addState(listItemState)
 
         assertEquals(listItemState, backstackManager.previousState(StoryState(stories = emptyMap())))

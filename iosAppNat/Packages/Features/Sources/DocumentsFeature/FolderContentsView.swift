@@ -182,7 +182,7 @@ final class FolderContentsViewModel {
 
             await perform {
                 var document = try await self.repository.createDocument(title: "", parentId: self.folderId)
-                document.content.append(StoryStep(type: .image, path: file.path(percentEncoded: false), position: 1))
+                document.content.append(StoryStep(type: .image, path: file.path(percentEncoded: false), position: Rank.at(1)))
                 try await self.repository.save(document)
             }
         }

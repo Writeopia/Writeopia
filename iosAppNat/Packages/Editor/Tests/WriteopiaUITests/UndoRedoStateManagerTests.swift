@@ -6,9 +6,9 @@ import WrModels
 private func loadedManager() -> WriteopiaStateManager {
     let manager = WriteopiaStateManager()
     manager.loadDocument(WrDocument(id: "d", title: "Doc", workspaceId: "w", content: [
-        StoryStep(id: "t", type: .title, text: "Doc", position: 0),
-        StoryStep(id: "a", type: .text, text: "Hello", position: 1),
-        StoryStep(id: "b", type: .checkItem, text: "Task", checked: false, position: 2),
+        StoryStep(id: "t", type: .title, text: "Doc", position: Rank.at(0)),
+        StoryStep(id: "a", type: .text, text: "Hello", position: Rank.at(1)),
+        StoryStep(id: "b", type: .checkItem, text: "Task", checked: false, position: Rank.at(2)),
     ]))
     return manager
 }
@@ -130,7 +130,7 @@ private func loadedManager() -> WriteopiaStateManager {
 
         let other = WriteopiaStateManager()
         other.loadDocument(WrDocument(id: "e", title: "Other", workspaceId: "w", content: [
-            StoryStep(id: "t2", type: .title, text: "Other", position: 0),
+            StoryStep(id: "t2", type: .title, text: "Other", position: Rank.at(0)),
         ]))
         #expect(!other.canUndo)
 
@@ -141,7 +141,7 @@ private func loadedManager() -> WriteopiaStateManager {
     @Test func undoAfterARejectedAiAnswerGoesBackToTheEditBefore() {
         let manager = loadedManager()
         manager.onCheckedChange(stepId: "b", checked: true)
-        let loadingId = manager.loadingAtPosition(2)
+        let loadingId = manager.loadingAtPosition(Rank.at(2))
         manager.showAiAnswer("An answer", stepId: loadingId)
         manager.removeStep(stepId: loadingId)
         #expect(manager.documentContent.count == 3)
@@ -154,7 +154,7 @@ private func loadedManager() -> WriteopiaStateManager {
 
     @Test func undoAfterAnAcceptedAiAnswerRemovesIt() {
         let manager = loadedManager()
-        let loadingId = manager.loadingAtPosition(2)
+        let loadingId = manager.loadingAtPosition(Rank.at(2))
         manager.showAiAnswer("Line one\nLine two", stepId: loadingId)
         manager.aiAnswerFinished(stepId: loadingId)
         manager.acceptAiAnswer(stepId: loadingId)

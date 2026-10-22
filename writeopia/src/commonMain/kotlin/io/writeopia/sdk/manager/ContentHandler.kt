@@ -50,9 +50,9 @@ class ContentHandler(
 ) {
 
     fun changeStoryStepState(
-        currentStory: Map<Long, StoryStep>,
+        currentStory: Map<String, StoryStep>,
         newState: StoryStep,
-        position: Long
+        position: String
     ): StoryState? = if (currentStory[position] != null) {
         val newMap = currentStory.toSortedMutableMap()
         newMap[position] = newState
@@ -64,7 +64,7 @@ class ContentHandler(
     /**
      * Removes tags from a StoryStep at a certain position
      */
-    fun removeTags(currentStory: Map<Long, StoryStep>, position: Long): StoryState {
+    fun removeTags(currentStory: Map<String, StoryStep>, position: String): StoryState {
         val newMap = currentStory.toSortedMutableMap()
         val storyStep = newMap[position]
 
@@ -83,9 +83,9 @@ class ContentHandler(
     }
 
     fun changeStoryType(
-        currentStory: Map<Long, StoryStep>,
+        currentStory: Map<String, StoryStep>,
         typeInfo: TypeInfo,
-        position: Long,
+        position: String,
         commandInfo: CommandInfo?
     ): StoryState {
         val newMap = changeType(currentStory, typeInfo, position, commandInfo)
@@ -99,8 +99,8 @@ class ContentHandler(
     }
 
     fun bulkChangeStoryType(
-        currentStory: Map<Long, StoryStep>,
-        change: Iterable<Pair<Long, TypeInfo>>
+        currentStory: Map<String, StoryStep>,
+        change: Iterable<Pair<String, TypeInfo>>
     ): StoryState {
         val positions = change.map { it.first }.toSet()
         val newMap = change.fold(currentStory) { acc, (position, typeInfo) ->
@@ -127,11 +127,11 @@ class ContentHandler(
     }
 
     private fun changeType(
-        currentStory: Map<Long, StoryStep>,
+        currentStory: Map<String, StoryStep>,
         typeInfo: TypeInfo,
-        position: Long,
+        position: String,
         commandInfo: CommandInfo?
-    ): Map<Long, StoryStep> {
+    ): Map<String, StoryStep> {
         val newMap = currentStory.toSortedMutableMap()
         val storyStep = newMap[position]
         val commandTrigger = commandInfo?.commandTrigger
@@ -184,81 +184,73 @@ class ContentHandler(
         }
 
     /**
-     * Adds [newStoryUnit] at [position], or right before the step already there. The steps
-     * after are spread out first when there is no room for it (see [Insertion.moved]). The
-     * links of the steps touched are updated.
+     * Adds [newStoryUnit] at [position], or right before the step already there. The links
+     * of the steps touched are updated.
      */
     fun addNewContent(
-        currentStory: Map<Long, StoryStep>,
+        currentStory: Map<String, StoryStep>,
         newStoryUnit: StoryStep,
-        position: Long
+        position: String
     ): Insertion<StoryStep> = currentStory.insertBefore(newStoryUnit, position).relinked()
 
     /**
-     * Adds [newStoryUnit] right after the step at [position]. The steps after are spread out
-     * first when there is no room for it (see [Insertion.moved]). The links of the steps
+     * Adds [newStoryUnit] right after the step at [position]. The links of the steps
      * touched are updated.
      */
     fun addNewContentAfter(
-        currentStory: Map<Long, StoryStep>,
+        currentStory: Map<String, StoryStep>,
         newStoryUnit: StoryStep,
-        position: Long
+        position: String
     ): Insertion<StoryStep> = currentStory.insertAfter(newStoryUnit, position).relinked()
 
     /**
      * Adds [newStoryUnits], in order, at [position] or right before the step already there.
-     * The steps after are spread out first when there is no room (see [Insertion.moved]). The
-     * links of the steps touched are updated.
+     * The links of the steps touched are updated.
      */
     fun addNewContents(
-        currentStory: Map<Long, StoryStep>,
+        currentStory: Map<String, StoryStep>,
         newStoryUnits: List<StoryStep>,
-        position: Long
+        position: String
     ): Insertion<StoryStep> = currentStory.insertBefore(newStoryUnits, position).relinked()
 
     /**
-     * Adds [newStoryUnits], in order, right after the step at [position]. The steps after are
-     * spread out first when there is no room (see [Insertion.moved]). The links of the steps
+     * Adds [newStoryUnits], in order, right after the step at [position]. The links of the steps
      * touched are updated.
      */
     fun addNewContentsAfter(
-        currentStory: Map<Long, StoryStep>,
+        currentStory: Map<String, StoryStep>,
         newStoryUnits: List<StoryStep>,
-        position: Long
+        position: String
     ): Insertion<StoryStep> = currentStory.insertAfter(newStoryUnits, position).relinked()
 
     /** The links of the steps added and moved, and of their neighbours, updated. */
     private fun Insertion<StoryStep>.relinked(): Insertion<StoryStep> {
-        (keys + moved).forEach { key -> NextPositionCalculator.relinkAround(map, key) }
+        keys.forEach { key -> NextPositionCalculator.relinkAround(map, key) }
         return this
     }
 
-    /** The steps at [keys], as an edition saves them. */
-    private fun Insertion<StoryStep>.movedSteps(): List<Pair<Long, StoryStep>> =
-        moved.map { key -> key to map.getValue(key) }
-
     /** Removes the step at [position]. No other step moves. The links of the neighbours are updated. */
     fun removeContent(
-        currentStory: Map<Long, StoryStep>,
-        position: Long
-    ): Map<Long, StoryStep> =
+        currentStory: Map<String, StoryStep>,
+        position: String
+    ): Map<String, StoryStep> =
         NextPositionCalculator.relinkAround(currentStory.removeElementInPosition(position), position)
 
     /** Removes the steps matching [predicate]. No other step moves. The links are updated. */
     fun removeBy(
-        currentStory: Map<Long, StoryStep>,
+        currentStory: Map<String, StoryStep>,
         predicate: (StoryStep) -> Boolean
-    ): Map<Long, StoryStep> = NextPositionCalculator.calculate(currentStory.removeBy(predicate))
+    ): Map<String, StoryStep> = NextPositionCalculator.calculate(currentStory.removeBy(predicate))
 
     /**
      * Adds a link to a new document inside a document
      */
     fun addPage(
-        currentStory: Map<Long, StoryStep>,
-        position: Long,
+        currentStory: Map<String, StoryStep>,
+        position: String,
         documentId: String,
         text: String
-    ): Map<Long, StoryStep> {
+    ): Map<String, StoryStep> {
         val mutable = currentStory.toSortedMutableMap()
         mutable[position] =
             StoryStep(
@@ -280,8 +272,8 @@ class ContentHandler(
      * @return the new state, or null when there is no step at [position].
      */
     fun createLinkCard(
-        currentStory: Map<Long, StoryStep>,
-        position: Long,
+        currentStory: Map<String, StoryStep>,
+        position: String,
         url: String
     ): StoryState? {
         val step = currentStory[position] ?: return null
@@ -325,25 +317,23 @@ class ContentHandler(
 
     /**
      * Adds the steps of [newStory], each at its position or right before the step already
-     * there. The steps after are spread out when there is no room (see [Insertion.moved]).
-     * The links of the steps touched are updated.
+     * there. The links of the steps touched are updated.
      */
     fun addNewContentBulk(
-        currentStory: Map<Long, StoryStep>,
-        newStory: Map<Long, StoryStep>,
+        currentStory: Map<String, StoryStep>,
+        newStory: Map<String, StoryStep>,
     ): Insertion<StoryStep> = currentStory.insertAll(newStory).relinked()
 
     /**
      * Splits the step at [Action.LineBreak.position] at the line breaks of its text. The first
-     * line keeps the position, the others go right after it, before the next step: the steps
-     * after are spread out first when there is no room for them (and saved with the lines).
+     * line keeps the position, the others go right after it, before the next step.
      *
-     * @return the position of the last line, as an Int, and the new state.
+     * @return the position of the last line and the new state.
      */
     fun onLineBreak(
-        currentStory: Map<Long, StoryStep>,
+        currentStory: Map<String, StoryStep>,
         lineBreakInfo: Action.LineBreak
-    ): Pair<Int, StoryState> {
+    ): Pair<String, StoryState> {
         val storyStep = lineBreakInfo.storyStep
         val position = lineBreakInfo.position
         val carryOverTags = storyStep.tags.filterTo(mutableSetOf()) { it.tag.mustCarryOver() }
@@ -366,7 +356,7 @@ class ContentHandler(
         val newLines = split?.drop(1) ?: emptyList()
         if (newLines.isEmpty()) {
             val stories = currentStory.toSortedMutableMap().apply { this[position] = updatedOriginalStep }
-            return position.toInt() to StoryState(
+            return position to StoryState(
                 stories = stories,
                 lastEdit = LastEdit.LineEdition(position, stories.getValue(position)),
                 focus = position
@@ -391,13 +381,13 @@ class ContentHandler(
 
         val original = position to stories.getValue(position)
         val added = insertion.keys.map { key -> key to stories.getValue(key) }
-        val lastEdit = if (added.size == 1 && insertion.moved.isEmpty()) {
+        val lastEdit = if (added.size == 1) {
             LastEdit.LineBreakEdition(originalStep = original, newStep = added.single())
         } else {
-            LastEdit.BulkEdition(listOf(original) + added + insertion.movedSteps())
+            LastEdit.BulkEdition(listOf(original) + added)
         }
 
-        return lastPosition.toInt() to StoryState(
+        return lastPosition to StoryState(
             stories = stories,
             lastEdit = lastEdit,
             focus = lastPosition
@@ -438,7 +428,7 @@ class ContentHandler(
      */
     fun deleteStory(
         deleteInfo: Action.DeleteStory,
-        history: Map<Long, StoryStep>,
+        history: Map<String, StoryStep>,
         documentId: String
     ): StoryState? {
         val step = deleteInfo.storyStep
@@ -466,7 +456,7 @@ class ContentHandler(
                 }
             }
 
-            val previousFocus: Long? =
+            val previousFocus: String? =
                 focusHandler.findPreviousFocus(deleteInfo.position, mutableSteps)
 
             val normalized = stepsNormalizer(mutableSteps.toEditState())
@@ -498,7 +488,7 @@ class ContentHandler(
         }
     }
 
-    fun eraseStory(deleteInfo: Action.EraseStory, history: Map<Long, StoryStep>): StoryState {
+    fun eraseStory(deleteInfo: Action.EraseStory, history: Map<String, StoryStep>): StoryState {
         val mutableSteps = history.toSortedMutableMap()
         val deletedStep = deleteInfo.storyStep
 
@@ -515,7 +505,7 @@ class ContentHandler(
             }
         }
 
-        val previousFocus: Long? =
+        val previousFocus: String? =
             focusHandler.findPreviousFocus(deleteInfo.position, mutableSteps)
 
         var updatedPrevious: StoryStep? = null
@@ -560,10 +550,10 @@ class ContentHandler(
      * the deleted stories.
      */
     fun bulkDeletion(
-        positions: Iterable<Long>,
-        stories: Map<Long, StoryStep>
-    ): Pair<Map<Long, StoryStep>, Map<Long, StoryStep>> {
-        val deleted = mutableMapOf<Long, StoryStep>()
+        positions: Iterable<String>,
+        stories: Map<String, StoryStep>
+    ): Pair<Map<String, StoryStep>, Map<String, StoryStep>> {
+        val deleted = mutableMapOf<String, StoryStep>()
         val newState = stories.toSortedMutableMap()
 
         positions.forEach { position ->
@@ -578,17 +568,17 @@ class ContentHandler(
     }
 
     fun previousTextStory(
-        storyMap: Map<Long, StoryStep>,
-        position: Long
-    ): Pair<StoryStep, Long>? {
+        storyMap: Map<String, StoryStep>,
+        position: String
+    ): Pair<StoryStep, String>? {
         val prevPosition = focusHandler.findPreviousFocus(position, storyMap) ?: return null
         val prevStory = storyMap[prevPosition] ?: return null
         return prevStory.copy(localId = GenerateId.generate()) to prevPosition
     }
 
     fun collapseItem(
-        storyMap: Map<Long, StoryStep>,
-        position: Long
+        storyMap: Map<String, StoryStep>,
+        position: String
     ): StoryState {
         val mutable = storyMap.toSortedMutableMap()
         storyMap[position]?.let { step ->
@@ -618,8 +608,8 @@ class ContentHandler(
      * This method expands a section of the document like a subtitle.
      */
     fun expandItem(
-        storyMap: Map<Long, StoryStep>,
-        position: Long
+        storyMap: Map<String, StoryStep>,
+        position: String
     ): StoryState {
         val mutable = storyMap.toSortedMutableMap()
         storyMap[position]?.let { step ->
@@ -646,8 +636,8 @@ class ContentHandler(
     }
 
     fun createSpreadsheet(
-        currentStory: Map<Long, StoryStep>,
-        position: Long,
+        currentStory: Map<String, StoryStep>,
+        position: String,
         columnCount: Int,
         rowCount: Int = 3,
         insertMode: Boolean = false
@@ -660,12 +650,12 @@ class ContentHandler(
     ).relinked()
 
     fun updateSpreadsheetCell(
-        currentStory: Map<Long, StoryStep>,
+        currentStory: Map<String, StoryStep>,
         spreadsheetId: String,
         rowIndex: Int,
         cellIndex: Int,
         newText: String
-    ): Map<Long, StoryStep>? = spreadsheetHandler.updateSpreadsheetCell(
+    ): Map<String, StoryStep>? = spreadsheetHandler.updateSpreadsheetCell(
         currentStory,
         spreadsheetId,
         rowIndex,
@@ -674,21 +664,21 @@ class ContentHandler(
     )
 
     fun addSpreadsheetRow(
-        currentStory: Map<Long, StoryStep>,
+        currentStory: Map<String, StoryStep>,
         spreadsheetId: String
-    ): Map<Long, StoryStep>? = spreadsheetHandler.addSpreadsheetRow(currentStory, spreadsheetId)
+    ): Map<String, StoryStep>? = spreadsheetHandler.addSpreadsheetRow(currentStory, spreadsheetId)
 
     fun addSpreadsheetColumn(
-        currentStory: Map<Long, StoryStep>,
+        currentStory: Map<String, StoryStep>,
         spreadsheetId: String
-    ): Map<Long, StoryStep>? = spreadsheetHandler.addSpreadsheetColumn(currentStory, spreadsheetId)
+    ): Map<String, StoryStep>? = spreadsheetHandler.addSpreadsheetColumn(currentStory, spreadsheetId)
 
     fun updateSpreadsheetColumnWidth(
-        currentStory: Map<Long, StoryStep>,
+        currentStory: Map<String, StoryStep>,
         spreadsheetId: String,
         columnIndex: Int,
         newWidth: Int
-    ): Map<Long, StoryStep>? = spreadsheetHandler.updateSpreadsheetColumnWidth(
+    ): Map<String, StoryStep>? = spreadsheetHandler.updateSpreadsheetColumnWidth(
         currentStory,
         spreadsheetId,
         columnIndex,
@@ -696,51 +686,51 @@ class ContentHandler(
     )
 
     fun deleteSpreadsheetRow(
-        currentStory: Map<Long, StoryStep>,
+        currentStory: Map<String, StoryStep>,
         spreadsheetId: String,
         rowIndex: Int
-    ): Map<Long, StoryStep>? = spreadsheetHandler.deleteSpreadsheetRow(
+    ): Map<String, StoryStep>? = spreadsheetHandler.deleteSpreadsheetRow(
         currentStory,
         spreadsheetId,
         rowIndex
     )
 
     fun deleteSpreadsheetColumn(
-        currentStory: Map<Long, StoryStep>,
+        currentStory: Map<String, StoryStep>,
         spreadsheetId: String,
         columnIndex: Int
-    ): Map<Long, StoryStep>? = spreadsheetHandler.deleteSpreadsheetColumn(
+    ): Map<String, StoryStep>? = spreadsheetHandler.deleteSpreadsheetColumn(
         currentStory,
         spreadsheetId,
         columnIndex
     )
 
     fun addSpreadsheetRowAt(
-        currentStory: Map<Long, StoryStep>,
+        currentStory: Map<String, StoryStep>,
         spreadsheetId: String,
         rowIndex: Int
-    ): Map<Long, StoryStep>? = spreadsheetHandler.addSpreadsheetRowAt(
+    ): Map<String, StoryStep>? = spreadsheetHandler.addSpreadsheetRowAt(
         currentStory,
         spreadsheetId,
         rowIndex
     )
 
     fun addSpreadsheetColumnAt(
-        currentStory: Map<Long, StoryStep>,
+        currentStory: Map<String, StoryStep>,
         spreadsheetId: String,
         columnIndex: Int
-    ): Map<Long, StoryStep>? = spreadsheetHandler.addSpreadsheetColumnAt(
+    ): Map<String, StoryStep>? = spreadsheetHandler.addSpreadsheetColumnAt(
         currentStory,
         spreadsheetId,
         columnIndex
     )
 
     fun moveSpreadsheetRow(
-        currentStory: Map<Long, StoryStep>,
+        currentStory: Map<String, StoryStep>,
         spreadsheetId: String,
         fromIndex: Int,
         toIndex: Int
-    ): Map<Long, StoryStep>? = spreadsheetHandler.moveSpreadsheetRow(
+    ): Map<String, StoryStep>? = spreadsheetHandler.moveSpreadsheetRow(
         currentStory,
         spreadsheetId,
         fromIndex,
@@ -748,11 +738,11 @@ class ContentHandler(
     )
 
     fun moveSpreadsheetColumn(
-        currentStory: Map<Long, StoryStep>,
+        currentStory: Map<String, StoryStep>,
         spreadsheetId: String,
         fromIndex: Int,
         toIndex: Int
-    ): Map<Long, StoryStep>? = spreadsheetHandler.moveSpreadsheetColumn(
+    ): Map<String, StoryStep>? = spreadsheetHandler.moveSpreadsheetColumn(
         currentStory,
         spreadsheetId,
         fromIndex,

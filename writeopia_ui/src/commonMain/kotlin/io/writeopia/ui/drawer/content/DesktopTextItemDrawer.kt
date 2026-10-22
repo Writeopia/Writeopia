@@ -41,10 +41,10 @@ class DesktopTextItemDrawer(
     private val modifier: Modifier,
     private val customBackgroundColor: Color,
     private val clickable: Boolean,
-    private val onSelected: (Boolean, Long) -> Unit,
+    private val onSelected: (Boolean, String) -> Unit,
     private val dragIconWidth: Dp,
     private val config: DrawConfig,
-    private val onDragHover: (Long) -> Unit,
+    private val onDragHover: (String) -> Unit,
     private val onDragStart: () -> Unit,
     private val onDragStop: () -> Unit,
     private val moveRequest: (Action.Move) -> Unit,
@@ -52,7 +52,7 @@ class DesktopTextItemDrawer(
     private val endContent: @Composable ((StoryStep, DrawInfo, Boolean) -> Unit)? = null,
     private val isDesktop: Boolean,
     private val enabled: Boolean,
-    private val receiveExternalFile: (List<ExternalFile>, Long) -> Unit,
+    private val receiveExternalFile: (List<ExternalFile>, String) -> Unit,
     private val messageDrawer: @Composable RowScope.() -> SimpleTextDrawer,
     private val tagDecoration: TagDecoration = DefaultTagDecoration,
     private val paddingValues: PaddingValues = PaddingValues(0.dp),
@@ -179,7 +179,7 @@ class DesktopTextItemDrawer(
         }
     }
 
-    private fun handleDrag(position: Long, data: DropInfo?) {
+    private fun handleDrag(position: String, data: DropInfo?) {
         onDragHover(position)
 
         if (data != null) {

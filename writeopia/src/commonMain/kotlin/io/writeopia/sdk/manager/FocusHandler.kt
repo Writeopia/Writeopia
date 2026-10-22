@@ -19,7 +19,7 @@ class FocusHandler(
     }
 ) {
 
-    fun findNextFocus(position: Long, stories: Map<Long, StoryStep>): Long? {
+    fun findNextFocus(position: String, stories: Map<String, StoryStep>): String? {
         var key = stories.nextKey(position)
         while (key != null) {
             if (stories[key]?.let { story -> isMessageFn(story.type.number) } == true) return key
@@ -28,7 +28,7 @@ class FocusHandler(
         return null
     }
 
-    fun findPreviousFocus(position: Long, stories: Map<Long, StoryStep>): Long? {
+    fun findPreviousFocus(position: String, stories: Map<String, StoryStep>): String? {
         var key = stories.previousKey(position)
         while (key != null) {
             if (stories[key]?.let { story -> isMessageFn(story.type.number) } == true) return key

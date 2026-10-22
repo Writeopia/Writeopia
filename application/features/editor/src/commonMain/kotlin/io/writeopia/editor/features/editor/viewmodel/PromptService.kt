@@ -38,7 +38,7 @@ object PromptService {
         prompt: String?,
         writeopiaManager: WriteopiaStateManager,
         streamFn: (String) -> Flow<ResultData<String>>,
-        promptPosition: Long? = null
+        promptPosition: String? = null
     ) {
         val position = promptPosition ?: writeopiaManager.getNextPosition()
 
@@ -53,7 +53,7 @@ object PromptService {
         noAiAvailableAt(position, writeopiaManager)
     }
 
-    fun noAiAvailableAt(position: Long, writeopiaManager: WriteopiaStateManager) {
+    fun noAiAvailableAt(position: String, writeopiaManager: WriteopiaStateManager) {
         writeopiaManager.changeStoryState(
             Action.StoryStateChange(
                 storyStep = StoryStep(type = StoryTypes.AI_ANSWER.type, text = NO_AI_MESSAGE),
@@ -65,7 +65,7 @@ object PromptService {
     private fun getTextAndPosition(
         targetMode: AiTargetMode,
         writeopiaManager: WriteopiaStateManager
-    ): Pair<String?, Long> {
+    ): Pair<String?, String> {
         val text = when (targetMode) {
             AiTargetMode.DOCUMENT -> writeopiaManager.getDocumentText()
             AiTargetMode.SELECTED_LINES -> writeopiaManager.getCurrentSelectionText()
@@ -76,7 +76,7 @@ object PromptService {
     }
 
     /** Where an answer about the text [targetMode] points to goes: right after that text. */
-    internal fun answerPosition(targetMode: AiTargetMode, writeopiaManager: WriteopiaStateManager): Long {
+    internal fun answerPosition(targetMode: AiTargetMode, writeopiaManager: WriteopiaStateManager): String {
         val lastPos = writeopiaManager.lastPosition()
         val afterDocument = writeopiaManager.positionAfter(lastPos)
 
@@ -94,14 +94,14 @@ object PromptService {
     internal suspend fun streamIntoDocument(
         answer: Flow<ResultData<String>>,
         writeopiaManager: WriteopiaStateManager,
-        position: Long
+        position: String
     ) {
         answer.handleStream(writeopiaManager, position)
     }
 
     private suspend fun Flow<ResultData<String>>.handleStream(
         writeopiaManager: WriteopiaStateManager,
-        position: Long
+        position: String
     ) {
         // One step for the whole answer, rewritten at each chunk and ephemeral while the answer
         // comes: nothing is saved nor synced until the stream ends, then the final text once.

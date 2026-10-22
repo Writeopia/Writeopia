@@ -1,3 +1,3 @@
 package io.writeopia.sdk.model.draganddrop
 
-data class DropInfo(val info: Any, val positionFrom: Long)
+data class DropInfo(val info: Any, val positionFrom: String)
