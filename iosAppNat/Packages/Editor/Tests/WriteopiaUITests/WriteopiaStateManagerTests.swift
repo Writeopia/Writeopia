@@ -673,28 +673,28 @@ private let sample = document([
         let (manager, reorder) = setUp()
         defer { withExtendedLifetime(manager) {} }
         // Over the lower half of "b": after b.
-        #expect(reorder.dropPosition(for: drag("a", y: 110)) == 2)
+        #expect(reorder.dropPosition(for: drag("a", y: 110)) == Rank.at(2))
     }
 
     @Test func upperHalfDropsAboveTheStep() {
         let (manager, reorder) = setUp()
         defer { withExtendedLifetime(manager) {} }
         // Over the upper half of "c": after b, so above c.
-        #expect(reorder.dropPosition(for: drag("a", y: 125)) == 2)
+        #expect(reorder.dropPosition(for: drag("a", y: 125)) == Rank.at(2))
         // Over the upper half of "b" while dragging "c": after a.
-        #expect(reorder.dropPosition(for: drag("c", y: 85)) == 1)
+        #expect(reorder.dropPosition(for: drag("c", y: 85)) == Rank.at(1))
     }
 
     @Test func nothingGoesAboveTheTitle() {
         let (manager, reorder) = setUp()
         defer { withExtendedLifetime(manager) {} }
-        #expect(reorder.dropPosition(for: drag("c", y: 5)) == 0)
+        #expect(reorder.dropPosition(for: drag("c", y: 5)) == Rank.at(0))
     }
 
     @Test func belowEverythingDropsAtTheEnd() {
         let (manager, reorder) = setUp()
         defer { withExtendedLifetime(manager) {} }
-        #expect(reorder.dropPosition(for: drag("a", y: 500)) == 3)
+        #expect(reorder.dropPosition(for: drag("a", y: 500)) == Rank.at(3))
     }
 
     @Test func dropsThatWouldNotMoveShowNoFeedback() {
@@ -706,14 +706,14 @@ private let sample = document([
         #expect(reorder.dropPosition(for: drag("b", y: 110)) == nil)
         #expect(reorder.dropPosition(for: drag("b", y: 125)) == nil)
         // Over the upper half of "a" it really moves above "a".
-        #expect(reorder.dropPosition(for: drag("b", y: 50)) == 0)
+        #expect(reorder.dropPosition(for: drag("b", y: 50)) == Rank.at(0))
     }
 
     @Test func releasingMovesTheStepAndClearsTheFeedback() {
         let (manager, reorder) = setUp()
 
         reorder.dragChanged(stepId: "a", location: CGPoint(x: 100, y: 150))
-        #expect(manager.dragPosition == 3)
+        #expect(manager.dragPosition == Rank.at(3))
         #expect(manager.toDraw.contains { $0.storyStep.type.number == StoryType.onDragSpace.number })
 
         reorder.dragEnded()
