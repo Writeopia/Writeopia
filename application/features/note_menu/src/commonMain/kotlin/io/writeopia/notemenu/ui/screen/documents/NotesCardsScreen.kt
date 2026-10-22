@@ -76,6 +76,7 @@ import io.writeopia.ui.components.SwipeBox
 import io.writeopia.ui.components.multiselection.SelectableByDrag
 import io.writeopia.ui.draganddrop.target.DragCardTarget
 import io.writeopia.ui.draganddrop.target.DropTarget
+import io.writeopia.ui.draganddrop.target.draggedData
 import io.writeopia.ui.drawer.StoryStepDrawer
 import io.writeopia.ui.drawer.preview.AiAnswerPreviewDrawer
 import io.writeopia.ui.drawer.preview.CheckItemPreviewDrawer
@@ -571,9 +572,13 @@ private fun FolderItem(
                 }
             }
 
+            // A card held over the folder, other than the folder itself, is about to be moved into it.
+            val hoveringItem = draggedData()?.info as? MenuItemUi
+            val isDropTarget = inBound && hoveringItem != null && hoveringItem.id != folderUi.id
+
             val bgColor =
                 when {
-                    inBound && menuItemUI?.id != folderUi.id -> WriteopiaTheme.colorScheme.highlight
+                    isDropTarget -> WriteopiaTheme.colorScheme.highlight
                     folderUi.selected -> WriteopiaTheme.colorScheme.selectedBg
                     else -> WriteopiaTheme.colorScheme.cardBg
                 }
@@ -603,6 +608,7 @@ private fun FolderItem(
                     dataToDrop = DropInfo(folderUi, Rank.at(position)),
                     iconTintOnHover = MaterialTheme.colorScheme.onBackground,
                     onIconClick = onDragIconClick,
+                    dragOnLongPress = true,
                 ) {
                     Column(
                         modifier = Modifier
@@ -623,8 +629,11 @@ private fun FolderItem(
                                 .clickable { showIconsOptions = !showIconsOptions }
                                 .size(56.dp)
                                 .padding(6.dp),
-                            imageVector = folderUi.icon?.label?.let(WrIcons::fromName)
-                                ?: folder,
+                            imageVector = if (isDropTarget) {
+                                WrIcons.moveToFolder
+                            } else {
+                                folderUi.icon?.label?.let(WrIcons::fromName) ?: folder
+                            },
                             contentDescription = "Folder",
                             tint = tint
                         )
@@ -761,7 +770,8 @@ private fun DocumentItem(
                     position = Rank.at(position),
                     dataToDrop = DropInfo(documentUi, Rank.at(position)),
                     iconTintOnHover = MaterialTheme.colorScheme.onBackground,
-                    onIconClick = onDragIconClick
+                    onIconClick = onDragIconClick,
+                    dragOnLongPress = true
                 ) {
                     Column(
                         modifier = Modifier.background(

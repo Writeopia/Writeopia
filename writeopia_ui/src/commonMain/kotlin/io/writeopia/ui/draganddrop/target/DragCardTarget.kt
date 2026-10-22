@@ -21,5 +21,7 @@ expect fun DragCardTarget(
     onIconClick: () -> Unit = {},
     onDragStart: () -> Unit = {},
     onDragStop: () -> Unit = {},
+    // On touch screens, a long press anywhere on the card starts the drag, not only the icon.
+    dragOnLongPress: Boolean = false,
     content: @Composable BoxScope.() -> Unit
 )
