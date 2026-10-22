@@ -25,6 +25,7 @@ import writeopia.application.core.resources.generated.resources.document_tag_add
 import writeopia.application.core.resources.generated.resources.document_tag_add_existing
 import writeopia.application.core.resources.generated.resources.document_tag_add_new
 import writeopia.application.core.resources.generated.resources.document_tag_add_no_match
+import writeopia.application.core.resources.generated.resources.document_tag_add_empty
 import writeopia.application.core.resources.generated.resources.document_tag_add_search
 import writeopia.application.core.resources.generated.resources.document_tag_ai_failed
 import writeopia.application.core.resources.generated.resources.document_tag_cancel
@@ -1369,6 +1370,9 @@ object WrStrings {
 
     @Composable
     fun documentTagAddNoMatch() = stringResource(Res.string.document_tag_add_no_match)
+
+    @Composable
+    fun documentTagAddEmpty() = stringResource(Res.string.document_tag_add_empty)
 
     @Composable
     fun documentTagAddNew() = stringResource(Res.string.document_tag_add_new)

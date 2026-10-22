@@ -70,7 +70,7 @@ import io.writeopia.editor.features.editor.ui.folders.FolderSelectionDialog
 import io.writeopia.editor.features.editor.ui.mobile.MobileAiSheet
 import io.writeopia.editor.features.editor.ui.publish.PremiumOnlyDialog
 import io.writeopia.editor.features.editor.ui.publish.PublishDialog
-import io.writeopia.editor.features.editor.ui.tags.AddDocumentTagDialog
+import io.writeopia.editor.features.editor.ui.tags.AddDocumentTagSheet
 import io.writeopia.editor.features.editor.ui.tags.DocumentTagsDialog
 import io.writeopia.editor.features.editor.viewmodel.AiTargetMode
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
@@ -448,7 +448,7 @@ internal fun NoteEditorScreen(
                 val documentTagIds by noteEditorViewModel.writeopiaManager.documentTagIds.collectAsState()
                 val canSuggestWithAi by noteEditorViewModel.canSuggestTagWithAi.collectAsState()
                 val aiDraft by noteEditorViewModel.aiTagDraft.collectAsState()
-                AddDocumentTagDialog(
+                AddDocumentTagSheet(
                     workspaceTags = workspaceTags,
                     documentTagIds = documentTagIds,
                     canSuggestWithAi = canSuggestWithAi,
