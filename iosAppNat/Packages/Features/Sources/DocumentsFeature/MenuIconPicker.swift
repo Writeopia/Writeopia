@@ -125,9 +125,8 @@ struct DocumentIconButton: View {
         .help("Change icon")
         .accessibilityLabel("Change icon")
         .accessibilityIdentifier("documentIcon.button")
-        .popover(isPresented: $showsPicker, arrowEdge: .trailing) {
+        .trailingPopover(isPresented: $showsPicker) {
             MenuIconPicker(initial: icon, onPick: onPick)
-                .presentationCompactAdaptation(.popover)
         }
     }
 }
@@ -152,9 +151,36 @@ struct FolderIconButton: View {
         .help("Change icon")
         .accessibilityLabel("Change icon")
         .accessibilityIdentifier("folderIcon.button")
-        .popover(isPresented: $showsPicker, arrowEdge: .trailing) {
+        .trailingPopover(isPresented: $showsPicker) {
             MenuIconPicker(initial: icon, removeTitle: "Default icon", removeIdentifier: "folderIcon.remove", onPick: onPick)
-                .presentationCompactAdaptation(.popover)
         }
+    }
+}
+
+private extension View {
+    /// A popover opening to the right of the view. The icons sit near the left edge of the
+    /// screen, where a popover opening to the left is crushed. On iOS the arrow edge is the
+    /// side of the popover holding the arrow, so `.leading` puts the popover on the right; iOS
+    /// ignores it before iOS 18 and picks the side itself. macOS reads it as the side of the view.
+    @ViewBuilder
+    func trailingPopover<Content: View>(
+        isPresented: Binding<Bool>,
+        @ViewBuilder content: @escaping () -> Content
+    ) -> some View {
+        #if os(macOS)
+        popover(isPresented: isPresented, arrowEdge: .trailing) {
+            content()
+        }
+        #else
+        if #available(iOS 18, *) {
+            popover(isPresented: isPresented, attachmentAnchor: .rect(.bounds), arrowEdge: Edge?.some(.leading)) {
+                content().presentationCompactAdaptation(.popover)
+            }
+        } else {
+            popover(isPresented: isPresented, attachmentAnchor: .point(.trailing)) {
+                content().presentationCompactAdaptation(.popover)
+            }
+        }
+        #endif
     }
 }

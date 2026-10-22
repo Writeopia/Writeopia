@@ -35,4 +35,21 @@ final class LandscapeUITests: XCTestCase {
         XCTAssertEqual(app.state, .runningForeground)
         XCTAssertTrue(app.buttons["editor.side.page"].waitForExistence(timeout: 5))
     }
+
+    func testIconPickerOfTheSideMenuOpensToTheRight() {
+        XCUIDevice.shared.orientation = .landscapeLeft
+        let app = launch()
+
+        let icon = app.buttons.matching(identifier: "documentIcon.button").firstMatch
+        XCTAssertTrue(icon.waitForExistence(timeout: 15), "the side menu never showed its documents")
+        icon.tap()
+
+        let picker = app.popovers.firstMatch
+        XCTAssertTrue(picker.waitForExistence(timeout: 5), "the icon picker never opened")
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.lifetime = .keepAlways
+        add(shot)
+        print("ICON FRAME \(icon.frame) POPOVER FRAME \(picker.frame)")
+        XCTAssertGreaterThanOrEqual(picker.frame.minX, icon.frame.midX, "the icon picker opened to the left")
+    }
 }
