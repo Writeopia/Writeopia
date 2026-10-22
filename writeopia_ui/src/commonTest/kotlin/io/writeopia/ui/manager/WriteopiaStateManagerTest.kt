@@ -142,6 +142,48 @@ class WriteopiaStateManagerTest {
     }
 
     @Test
+    fun theFocusMovingToTheNewLineShouldKeepTheLineBreakEdition() {
+        val input = MapStoryData.singleCheckItem()
+        val checkItem = input[Rank.at(0)]
+
+        val now = Clock.System.now()
+
+        val storyManager =
+            WriteopiaStateManager.create(
+                writeopiaManager = WriteopiaManager(),
+                dispatcher = UnconfinedTestDispatcher(),
+                userRepository = userRepository,
+            ).apply {
+                loadDocument(
+                    Document(
+                        content = input,
+                        workspaceId = "",
+                        createdAt = now,
+                        lastUpdatedAt = now,
+                        parentId = "root",
+                        lastSyncedAt = null,
+                    )
+                )
+            }
+
+        storyManager.onLineBreak(
+            Action.LineBreak(storyStep = checkItem!!, position = Rank.at(0))
+        )
+
+        val lineBreak = storyManager.currentStory.value.lastEdit
+        assertTrue(lineBreak is LastEdit.LineBreakEdition)
+
+        // The new line takes the focus right after the break, before the trackers read the state.
+        val newPosition = lineBreak.newStep.first
+        storyManager.onFocusChange(newPosition, true)
+
+        val state = storyManager.currentStory.value
+        assertEquals(lineBreak, state.lastEdit)
+        assertEquals(newPosition, state.focus)
+        assertEquals(newPosition, state.selection.position)
+    }
+
+    @Test
     fun whenNewTitleChangesItShouldChangeTheDocumentTitleChangesToo() = runTest {
         val input = MapStoryData.singleCheckItem()
 
@@ -987,6 +1029,43 @@ class WriteopiaStateManagerTest {
         selected.forEach { position ->
             assertTrue(state.stories[position]!!.tags.any { it.tag == Tag.H1 })
         }
+    }
+
+    @Test
+    fun aLineTitledAgainAfterABulkTitleChangeShouldChange() = runTest {
+        val now = Clock.System.now()
+
+        val storyManager =
+            WriteopiaStateManager.create(
+                writeopiaManager = WriteopiaManager(),
+                dispatcher = UnconfinedTestDispatcher(testScheduler),
+                userRepository = userRepository,
+            )
+        storyManager.loadDocument(
+            Document(
+                content = messagesRepo.history(),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+            )
+        )
+        val hasTitle = { storyManager.currentStory.value.stories[Rank.at(0)]!!.tags.any { it.tag == Tag.H1 } }
+
+        storyManager.onFocusChange(Rank.at(0), true)
+        storyManager.addTitle(Tag.H1)
+        assertTrue(hasTitle())
+
+        // The selection holds the titled line: the bulk change takes its title away.
+        storyManager.onSectionSelected(Rank.at(0))
+        storyManager.addTitle(Tag.H1)
+        assertFalse(hasTitle())
+        assertEquals(Rank.at(0), storyManager.currentStory.value.focus)
+
+        storyManager.clearSelection()
+        storyManager.addTitle(Tag.H1)
+        assertTrue(hasTitle())
     }
 
     @Test

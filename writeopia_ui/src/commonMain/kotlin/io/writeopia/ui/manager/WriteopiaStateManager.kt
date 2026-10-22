@@ -910,12 +910,12 @@ class WriteopiaStateManager(
         if (!hasFocus) return
         val story = currentStory.value
 
-        // Don't preserve lastEdit on focus change - it would cause the save to be
-        // cancelled and re-triggered, potentially interrupting in-progress saves
-        // Also update selection position so the manager knows which line is active
+        // The edit stays: the trackers read only the latest state, so replacing the edit with
+        // Nothing would lose it when they are still saving the one before (a line break moves
+        // the focus right after it). Saving it again is harmless. The selection follows the
+        // focus so the manager knows which line is active.
         _currentStory.value = story.copy(
             focus = position,
-            lastEdit = LastEdit.Nothing,
             selection = story.selection.copy(position = position)
         )
     }
@@ -2189,7 +2189,11 @@ class WriteopiaStateManager(
             if (change.isEmpty()) return
 
             trackState()
-            _currentStory.value = writeopiaManager.bulkChangeStoryState(_currentStory.value, change)
+            val current = _currentStory.value
+            _currentStory.value = writeopiaManager.bulkChangeStoryState(current, change)
+                .copy(focus = current.focus, selection = current.selection)
+            // The lines changed outside changeStoryState: the same single change must apply again.
+            lastStateChange = null
         } else {
             val position = currentPosition() ?: return
             val currentStory = getStory(position)
