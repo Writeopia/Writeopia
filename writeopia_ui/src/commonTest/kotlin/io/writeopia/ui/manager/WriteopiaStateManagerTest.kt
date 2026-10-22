@@ -950,6 +950,46 @@ class WriteopiaStateManagerTest {
     }
 
     @Test
+    fun addingATitleToASelectionShouldEditAllLinesInOneBulkEdition() = runTest {
+        val now = Clock.System.now()
+
+        val storyManager =
+            WriteopiaStateManager.create(
+                writeopiaManager = WriteopiaManager(),
+                dispatcher = UnconfinedTestDispatcher(testScheduler),
+                userRepository = userRepository,
+            )
+        storyManager.loadDocument(
+            Document(
+                content = messagesRepo.history(),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+            )
+        )
+
+        // No titles in the document: the section goes from the first line to the last one.
+        storyManager.onSectionSelected(Rank.at(0))
+        val selected = storyManager.onEditPositions.value
+        assertTrue(selected.size > 1)
+
+        storyManager.addTitle(Tag.H1)
+
+        val state = storyManager.currentStory.value
+        val lastEdit = state.lastEdit
+        assertTrue(lastEdit is LastEdit.BulkEdition)
+        assertEquals(selected, lastEdit.steps.map { (position, _) -> position }.toSet())
+        lastEdit.steps.forEach { (_, step) ->
+            assertTrue(step.tags.any { it.tag == Tag.H1 })
+        }
+        selected.forEach { position ->
+            assertTrue(state.stories[position]!!.tags.any { it.tag == Tag.H1 })
+        }
+    }
+
+    @Test
     @Ignore // Async nature of selection should be considered in the test
     fun itShouldBePossibleToSelectMessages() = runTest {
         val now = Clock.System.now()

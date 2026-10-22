@@ -2177,21 +2177,30 @@ class WriteopiaStateManager(
     }
 
     fun addTitle(tag: Tag) {
+        if (!isEditable) return
+
         if (isOnSelection) {
-            getSelectedStoriesWithPosition().forEach { (pos, storyStep) ->
-                addTitleToStory(storyStep, tag, pos)
+            // One bulk edition, so the tracker saves every selected line. Emitting one line
+            // edition per step loses lines: the state flow keeps only the latest one while a
+            // save is running.
+            val change = getSelectedStoriesWithPosition().map { (position, storyStep) ->
+                Action.StoryStateChange(titledStory(storyStep, tag), position)
             }
+            if (change.isEmpty()) return
+
+            trackState()
+            _currentStory.value = writeopiaManager.bulkChangeStoryState(_currentStory.value, change)
         } else {
             val position = currentPosition() ?: return
             val currentStory = getStory(position)
 
             currentStory?.let { storyStep ->
-                addTitleToStory(storyStep, tag, position)
+                changeStoryState(Action.StoryStateChange(titledStory(storyStep, tag), position))
             }
         }
     }
 
-    private fun addTitleToStory(storyStep: StoryStep, tag: Tag, position: String) {
+    private fun titledStory(storyStep: StoryStep, tag: Tag): StoryStep {
         val shouldRemove = storyStep.tags.any { it.tag == tag }
 
         val newTags = storyStep.tags
@@ -2202,8 +2211,7 @@ class WriteopiaStateManager(
                 }
             }
 
-        val newStory = storyStep.copy(tags = newTags)
-        changeStoryState(Action.StoryStateChange(newStory, position))
+        return storyStep.copy(tags = newTags)
     }
 
     private suspend fun getUserId(): String =
