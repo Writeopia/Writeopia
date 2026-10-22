@@ -31,7 +31,7 @@ import WrModels
         let document = WrDocument(id: "d", title: "T", workspaceId: "w", parentId: "root", tagIds: ["t1"])
         try store.store(document)
 
-        try store.saveEdit(document: document, changedSteps: [StoryStep(id: "s", type: .text, text: "hi", position: 0)], deletedStepIds: [])
+        try store.saveEdit(document: document, changedSteps: [StoryStep(id: "s", type: .text, text: "hi", position: Rank.at(0))], deletedStepIds: [])
 
         #expect(try store.storedDocument(id: "d")?.tagIds == ["t1"])
     }

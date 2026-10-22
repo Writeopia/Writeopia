@@ -9,14 +9,14 @@ import WrModels
 /// The free command of the AI dialog: new content is added as an answer, an edit replaces the
 /// selected lines or rewrites the document.
 @Suite struct AiCommandTests {
-    private let image = StoryStep(id: "i", type: .image, url: "pic.png", position: 2)
+    private let image = StoryStep(id: "i", type: .image, url: "pic.png", position: Rank.at(2))
 
     private var document: WrDocument {
         WrDocument(id: "d", title: "Plan", workspaceId: "w", content: [
-            StoryStep(id: "t", type: .title, text: "Plan", position: 0),
-            StoryStep(id: "a", type: .text, text: "First idea", position: 1),
+            StoryStep(id: "t", type: .title, text: "Plan", position: Rank.at(0)),
+            StoryStep(id: "a", type: .text, text: "First idea", position: Rank.at(1)),
             image,
-            StoryStep(id: "b", type: .text, text: "Second idea", position: 3),
+            StoryStep(id: "b", type: .text, text: "Second idea", position: Rank.at(3)),
         ])
     }
 
@@ -36,7 +36,7 @@ import WrModels
         viewModel.writeopiaManager.currentStory.sortedStories.map { $0.text ?? "" }
     }
 
-    @Test func newContentIsAddedAsAnAnswerAfterTheCursor() async {
+    @Test func newContentIsAddedAsAnAnswerAtTheEnd() async {
         let ai = FakeAi()
         ai.intent = .add
         ai.answers = ["Third", "Third idea"]
@@ -52,8 +52,9 @@ import WrModels
         #expect(request?.selectedText == "")
         #expect(request?.documentTitle == "Plan")
         #expect(request?.documentText == "Plan\nFirst idea\nSecond idea")
-        #expect(texts(viewModel) == ["Plan", "First idea", "Third idea", "", "Second idea"])
-        let answer = viewModel.writeopiaManager.currentStory.sortedStories[2]
+        // The command is typed in its own field: the answer goes at the end, not at the cursor
+        #expect(texts(viewModel) == ["Plan", "First idea", "", "Second idea", "Third idea"])
+        let answer = viewModel.writeopiaManager.currentStory.sortedStories[4]
         #expect(answer.type.number == StoryType.aiAnswer.number)
     }
 
@@ -152,23 +153,23 @@ import WrModels
 }
 
 @Suite struct DocumentRewriteTests {
-    private let image = StoryStep(id: "i", type: .image, url: "pic.png", position: 30)
-    private let link = StoryStep(id: "k", type: .documentLink, text: "Other", position: 70)
+    private let image = StoryStep(id: "i", type: .image, url: "pic.png", position: Rank.at(30))
+    private let link = StoryStep(id: "k", type: .documentLink, text: "Other", position: Rank.at(70))
 
     private var content: [StoryStep] {
         [
-            StoryStep(id: "t", type: .title, text: "Title", position: 0),
-            StoryStep(id: "h", type: .text, text: "Intro", tags: [TagInfo(tag: "H2")], position: 10),
-            StoryStep(id: "p", type: .text, text: "A paragraph.", position: 20),
+            StoryStep(id: "t", type: .title, text: "Title", position: Rank.at(0)),
+            StoryStep(id: "h", type: .text, text: "Intro", tags: [TagInfo(tag: "H2")], position: Rank.at(10)),
+            StoryStep(id: "p", type: .text, text: "A paragraph.", position: Rank.at(20)),
             image,
-            StoryStep(id: "c", type: .checkItem, text: "Done", checked: true, position: 40),
-            StoryStep(id: "l", type: .unorderedListItem, text: "Item", position: 50),
-            StoryStep(id: "c1", type: .codeBlock, text: "fun a() {}", position: 60),
-            StoryStep(id: "c2", type: .codeBlock, text: "fun b() {}", position: 65),
+            StoryStep(id: "c", type: .checkItem, text: "Done", checked: true, position: Rank.at(40)),
+            StoryStep(id: "l", type: .unorderedListItem, text: "Item", position: Rank.at(50)),
+            StoryStep(id: "c1", type: .codeBlock, text: "fun a() {}", position: Rank.at(60)),
+            StoryStep(id: "c2", type: .codeBlock, text: "fun b() {}", position: Rank.at(65)),
             link,
-            StoryStep(id: "d", type: .divider, position: 80),
-            StoryStep(id: "s", type: .loading, position: 90),
-            StoryStep(id: "z", type: .text, text: "Last line.", position: 100),
+            StoryStep(id: "d", type: .divider, position: Rank.at(80)),
+            StoryStep(id: "s", type: .loading, position: Rank.at(90)),
+            StoryStep(id: "z", type: .text, text: "Last line.", position: Rank.at(100)),
         ]
     }
 
@@ -241,9 +242,9 @@ import WrModels
     }
 
     @Test func aLongDocumentIsCutToTheParagraphsAroundTheCursor() throws {
-        var long = [StoryStep(id: "t", type: .title, text: "Title", position: 0)]
+        var long = [StoryStep(id: "t", type: .title, text: "Title", position: Rank.at(0))]
         for index in 1...100 {
-            long.append(StoryStep(id: "p\(index)", type: .text, text: "p\(index)", position: Int(index)))
+            long.append(StoryStep(id: "p\(index)", type: .text, text: "p\(index)", position: Rank.at(index)))
         }
 
         let rewrite = try #require(DocumentRewrite.build(long, cursorStepId: "p50", limit: 40))
@@ -254,6 +255,6 @@ import WrModels
     }
 
     @Test func anEmptyDocumentHasNothingToRewrite() {
-        #expect(DocumentRewrite.build([StoryStep(id: "t", type: .title, text: "T", position: 0)], cursorStepId: nil) == nil)
+        #expect(DocumentRewrite.build([StoryStep(id: "t", type: .title, text: "T", position: Rank.at(0))], cursorStepId: nil) == nil)
     }
 }

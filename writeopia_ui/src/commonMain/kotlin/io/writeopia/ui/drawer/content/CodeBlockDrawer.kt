@@ -55,14 +55,14 @@ private const val CODE_BLOCK_LINE_NUMBER_KEY = "codeBlockLineNumber"
 class CodeBlockDrawer(
     private val dragIconWidth: Dp = 16.dp,
     private val config: DrawConfig,
-    private val onSelected: (Boolean, Long) -> Unit = { _, _ -> },
-    private val onDragHover: (Long) -> Unit,
+    private val onSelected: (Boolean, String) -> Unit = { _, _ -> },
+    private val onDragHover: (String) -> Unit,
     private val onDragStart: () -> Unit = {},
     private val onDragStop: () -> Unit = {},
     private val moveRequest: (Action.Move) -> Unit = {},
     private val enabled: Boolean,
     private val isDesktop: Boolean,
-    private val receiveExternalFile: (List<ExternalFile>, Long) -> Unit,
+    private val receiveExternalFile: (List<ExternalFile>, String) -> Unit,
     private val messageDrawer: @Composable RowScope.() -> SimpleTextDrawer,
 ) : StoryStepDrawer {
 
@@ -197,7 +197,7 @@ class CodeBlockDrawer(
         }
     }
 
-    private fun handleDrag(position: Long, data: DropInfo?) {
+    private fun handleDrag(position: String, data: DropInfo?) {
         onDragHover(position)
 
         if (data != null) {

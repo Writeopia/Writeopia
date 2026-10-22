@@ -1,5 +1,6 @@
 package io.writeopia.ui.modifiers
 
+import io.writeopia.sdk.utils.iterables.Rank
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
@@ -12,7 +13,7 @@ object StepsModifier {
     const val CODE_BLOCK_LINE_NUMBER_KEY = "codeBlockLineNumber"
     const val IS_INSIDE_CODE_BLOCK_KEY = "isInsideCodeBlock"
 
-    fun modify(stories: List<DrawStory>, dragPosition: Long): List<DrawStory> {
+    fun modify(stories: List<DrawStory>, dragPosition: String): List<DrawStory> {
         val space = { StoryStep(type = StoryTypes.SPACE.type, localId = GenerateId.generate()) }
         val onDragSpace = StoryStep(type = StoryTypes.ON_DRAG_SPACE.type, localId = "onDragSpace")
         val lastSpace = StoryStep(type = StoryTypes.LAST_SPACE.type)
@@ -51,7 +52,7 @@ object StepsModifier {
             // A drop on the space goes right after the previous story, whatever its position
             val spaceDraw = DrawStory(
                 storyStep = spaceStory.copy(tags = newTags),
-                position = previousPosition ?: (index - 1),
+                position = previousPosition ?: Rank.before(index),
                 extraInfo = spaceExtraInfo
             )
 
@@ -67,7 +68,7 @@ object StepsModifier {
         }
 
         // A drop on the last space goes right after the last story
-        val fullStory = parsed + DrawStory(storyStep = lastSpaceStory, position = lastStoryPosition ?: 0L)
+        val fullStory = parsed + DrawStory(storyStep = lastSpaceStory, position = lastStoryPosition ?: Rank.FIRST)
 
         val fixedPositions = addPositionToTags(fullStory)
         val fixedCodeBlockPositions = addPositionToCodeBlocks(fixedPositions)

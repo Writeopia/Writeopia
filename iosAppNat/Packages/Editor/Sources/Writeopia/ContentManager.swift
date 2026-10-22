@@ -4,9 +4,9 @@ import WrModels
 /// Adds, removes, splits and merges steps. Mirrors `ContentHandler` of the Kotlin SDK.
 ///
 /// Positions are sort keys (see `Positions.swift`): a structural change never renumbers the
-/// document, a new step goes to a whole number between its neighbours, and only when none is
-/// left are the few steps after it spread out. Each change returns where the focus and cursor
-/// should go; the `.whole` edit saves every step whose position changed.
+/// document, a new step goes to a rank between its neighbours, which always exists. Each change
+/// returns where the focus and cursor should go; the `.whole` edit saves every step whose
+/// position changed.
 public struct ContentManager {
     private let focusHandler: FocusHandler
     private let lineBreakType: (StoryType) -> StoryType
@@ -32,7 +32,7 @@ public struct ContentManager {
 
     // MARK: - Line edition
 
-    public func changeStoryState(_ change: Action.StoryStateChange, in stories: [Int: StoryStep]) -> StoryState? {
+    public func changeStoryState(_ change: Action.StoryStateChange, in stories: [String: StoryStep]) -> StoryState? {
         guard stories[change.position] != nil else { return nil }
 
         var newStories = stories
@@ -48,9 +48,9 @@ public struct ContentManager {
     }
 
     public func changeStoryType(
-        at position: Int,
+        at position: String,
         to type: StoryType,
-        in stories: [Int: StoryStep],
+        in stories: [String: StoryStep],
         cursor: Int = 0
     ) -> StoryState? {
         guard var step = stories[position] else { return nil }
@@ -77,7 +77,7 @@ public struct ContentManager {
     /// Splits the step at every line break of its text. The first line keeps the position of
     /// the step, the others go between it and the next step. The focus goes to the line that
     /// holds the cursor.
-    public func onLineBreak(_ lineBreak: Action.LineBreak, in stories: [Int: StoryStep]) -> StoryState {
+    public func onLineBreak(_ lineBreak: Action.LineBreak, in stories: [String: StoryStep]) -> StoryState {
         guard stories[lineBreak.position] != nil else { return StoryState(stories: stories) }
 
         let step = lineBreak.storyStep
@@ -100,7 +100,7 @@ public struct ContentManager {
                 checked: newType.number == StoryType.checkItem.number ? false : nil,
                 tags: carriedTags,
                 spans: line.spans,
-                position: 0
+                position: Rank.first
             )
         }
 
@@ -142,7 +142,7 @@ public struct ContentManager {
     /// - A heading, box or card becomes a plain paragraph first.
     /// - When the previous step isn't text (divider, link...), that step is removed.
     /// - Otherwise the text joins the previous text step, keeping its spans.
-    public func onErase(_ erase: Action.EraseStory, in stories: [Int: StoryStep]) -> StoryState? {
+    public func onErase(_ erase: Action.EraseStory, in stories: [String: StoryStep]) -> StoryState? {
         let step = erase.storyStep
 
         if step.isListLike {
@@ -197,7 +197,7 @@ public struct ContentManager {
         )
     }
 
-    public func onDelete(_ delete: Action.DeleteStory, in stories: [Int: StoryStep]) -> StoryState {
+    public func onDelete(_ delete: Action.DeleteStory, in stories: [String: StoryStep]) -> StoryState {
         var newStories = stories
         newStories.removeValue(forKey: delete.position)
         let focus = focusHandler.findPreviousFocus(before: delete.position, in: newStories)
@@ -211,9 +211,9 @@ public struct ContentManager {
         )
     }
 
-    /// Moves a step to right after another one: half way to the step that follows the target,
-    /// so nothing else moves. The title always stays first.
-    public func move(_ move: Action.Move, in stories: [Int: StoryStep]) -> StoryState? {
+    /// Moves a step to right after another one: between the target and the step that follows
+    /// it, so nothing else moves. The title always stays first.
+    public func move(_ move: Action.Move, in stories: [String: StoryStep]) -> StoryState? {
         guard move.positionFrom != move.positionTo,
               let step = stories[move.positionFrom],
               !step.isTitle,
@@ -228,9 +228,9 @@ public struct ContentManager {
     }
 
     /// Adds `step` right after `position`, or at the end when `position` is nil.
-    public func add(_ step: StoryStep, after position: Int?, in stories: [Int: StoryStep]) -> StoryState {
+    public func add(_ step: StoryStep, after position: String?, in stories: [String: StoryStep]) -> StoryState {
         var newStories = stories
-        let key: Int
+        let key: String
         if let position {
             key = newStories.insert(step, after: position).key
         } else {
@@ -245,7 +245,7 @@ public struct ContentManager {
     }
 
     /// Adds `step` right before the step at `position`, or at `position` when it is free.
-    public func add(_ step: StoryStep, before position: Int, in stories: [Int: StoryStep]) -> StoryState {
+    public func add(_ step: StoryStep, before position: String, in stories: [String: StoryStep]) -> StoryState {
         var newStories = stories
         let key = newStories.insert(step, before: position).key
         return StoryState(
@@ -262,7 +262,7 @@ public struct ContentManager {
     /// the Kotlin SDK. A card can not be typed in, so the cursor goes to the text line below
     /// it, which is added when there is none. The description of the page stays empty: the app
     /// asks the backend for it.
-    public func createLinkCard(url: String, at position: Int, in stories: [Int: StoryStep]) -> StoryState {
+    public func createLinkCard(url: String, at position: String, in stories: [String: StoryStep]) -> StoryState {
         guard var card = stories[position] else { return StoryState(stories: stories) }
 
         card.type = .linkCard
@@ -275,11 +275,11 @@ public struct ContentManager {
         newStories[position] = card
 
         let next = newStories.nextKey(after: position)
-        let below: Int
+        let below: String
         if let next, newStories[next]?.type.number == StoryType.text.number {
             below = next
         } else {
-            below = newStories.insert(StoryStep(type: .text, text: "", position: 0), after: position).key
+            below = newStories.insert(StoryStep(type: .text, text: "", position: Rank.first), after: position).key
         }
 
         return StoryState(
@@ -290,11 +290,11 @@ public struct ContentManager {
         )
     }
 
-    /// Positions one gap apart, from 0, for the steps of a new document, stored in each step
-    /// as well. Only for documents that don't exist yet: the steps of an existing document keep
+    /// Positions one integer apart, from `Rank.first`, for the steps of a new document, stored in
+    /// each step as well. Only for documents that don't exist yet: the steps of an existing document keep
     /// their positions, see `WriteopiaManager.loadDocument`.
-    public func positioned(_ steps: [StoryStep]) -> [Int: StoryStep] {
-        var result: [Int: StoryStep] = [:]
+    public func positioned(_ steps: [StoryStep]) -> [String: StoryStep] {
+        var result: [String: StoryStep] = [:]
         result.append(steps)
         return result
     }

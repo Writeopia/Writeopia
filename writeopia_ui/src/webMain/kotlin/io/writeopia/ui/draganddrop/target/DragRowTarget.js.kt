@@ -46,7 +46,7 @@ actual fun DragRowTarget(
     dataToDrop: DropInfo,
     onClick: () -> Unit,
     showIcon: Boolean,
-    position: Long,
+    position: String,
     emptySpaceClick: () -> Unit,
     dragIconWidth: Dp,
     iconTintOnHover: Color,

@@ -46,7 +46,7 @@ object DocumentToMarkdown : DocumentWriter {
     }
 
     fun parse(
-        document: Map<Long, StoryStep>,
+        document: Map<String, StoryStep>,
         parseStep: (StoryStep) -> Pair<ContentAdd, String?> = ::parseStep,
         prettyPrint: Boolean = false,
     ): String =
@@ -61,7 +61,7 @@ object DocumentToMarkdown : DocumentWriter {
         }
 
     private fun writeToWriter(
-        content: Map<Long, StoryStep>,
+        content: Map<String, StoryStep>,
         kmpFileWriter: KmpFileWriter,
         parseStep: (StoryStep) -> Pair<ContentAdd, String?> = ::parseStep,
         prettyPrint: Boolean = false
@@ -70,7 +70,7 @@ object DocumentToMarkdown : DocumentWriter {
     }
 
     private fun writeTo(
-        content: Map<Long, StoryStep>,
+        content: Map<String, StoryStep>,
         parseStep: (StoryStep) -> Pair<ContentAdd, String?> = ::parseStep,
         prettyPrint: Boolean = false,
         writeFn: (String?) -> Unit

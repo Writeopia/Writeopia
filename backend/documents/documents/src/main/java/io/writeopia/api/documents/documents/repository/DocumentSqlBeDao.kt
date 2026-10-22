@@ -2,6 +2,7 @@
 
 package io.writeopia.api.documents.documents.repository
 
+import io.writeopia.sdk.utils.iterables.Rank
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.DocumentTag
 import io.writeopia.sdk.models.document.Folder
@@ -201,7 +202,7 @@ class DocumentSqlBeDao(
         )
     }
 
-    private fun insertStoryStep(storyStep: io.writeopia.sdk.models.story.StoryStep, position: Long, documentId: String) {
+    private fun insertStoryStep(storyStep: io.writeopia.sdk.models.story.StoryStep, position: String, documentId: String) {
         storyStep.run {
             storyStepQueries?.insert(
                 id = id,
@@ -226,7 +227,7 @@ class DocumentSqlBeDao(
             // Recursively save nested steps with parent_id set to this step's id
             steps.forEachIndexed { index, childStep ->
                 val childWithParent = childStep.copy(parentId = id)
-                insertStoryStep(childWithParent, index.toLong(), documentId)
+                insertStoryStep(childWithParent, Rank.at(index), documentId)
             }
         }
     }
@@ -1160,7 +1161,7 @@ class DocumentSqlBeDao(
     /**
      * Inserts or updates a StoryStep with a specific timestamp.
      */
-    fun upsertStoryStep(storyStep: StoryStep, position: Long, documentId: String, lastUpdatedAt: Long) {
+    fun upsertStoryStep(storyStep: StoryStep, position: String, documentId: String, lastUpdatedAt: Long) {
         storyStep.run {
             storyStepQueries?.insert(
                 id = id,
@@ -1187,7 +1188,7 @@ class DocumentSqlBeDao(
     /**
      * Gets story steps for a document that were updated after the given timestamp.
      */
-    fun getStoryStepsAfterTime(documentId: String, afterTime: Long): List<Pair<Long, StoryStep>> {
+    fun getStoryStepsAfterTime(documentId: String, afterTime: Long): List<Pair<String, StoryStep>> {
         return storyStepQueries?.selectByDocumentIdAfterTime(documentId, afterTime)
             ?.executeAsList()
             ?.map { entity ->
@@ -1227,7 +1228,7 @@ class DocumentSqlBeDao(
     /**
      * Gets a single StoryStep by ID.
      */
-    fun getStoryStepById(storyStepId: String): Pair<Long, StoryStep>? {
+    fun getStoryStepById(storyStepId: String): Pair<String, StoryStep>? {
         return storyStepQueries?.selectById(storyStepId)
             ?.executeAsOneOrNull()
             ?.let { entity ->

@@ -109,7 +109,7 @@ class DocumentSyncService(
         // The time of the send. Every step edited after it is newer than the stamp below.
         val sentAt = Clock.System.now().toEpochMilliseconds()
 
-        val sentSteps = mutableMapOf<String, List<Pair<Long, StoryStep>>>()
+        val sentSteps = mutableMapOf<String, List<Pair<String, StoryStep>>>()
         val toSend = documents.filter { document ->
             sendSteps(document, sentAt)?.also { steps -> sentSteps[document.id] = steps } != null
         }
@@ -139,7 +139,7 @@ class DocumentSyncService(
      * @return the steps sent (none when the document was already in sync); null when the
      * backend could not be reached.
      */
-    private suspend fun sendSteps(document: Document, requestTimestamp: Long): List<Pair<Long, StoryStep>>? {
+    private suspend fun sendSteps(document: Document, requestTimestamp: Long): List<Pair<String, StoryStep>>? {
         val lastSyncTimestamp = document.lastSyncedAt?.toEpochMilliseconds() ?: 0L
         val outdatedSteps = getOutdatedStorySteps(document, lastSyncTimestamp)
         if (outdatedSteps.isEmpty()) return outdatedSteps
@@ -302,7 +302,7 @@ class DocumentSyncService(
     private fun getOutdatedStorySteps(
         document: Document,
         lastSyncTimestamp: Long
-    ): List<Pair<Long, StoryStep>> =
+    ): List<Pair<String, StoryStep>> =
         document.content.entries
             .filter { (_, storyStep) ->
                 val stepLastUpdated = storyStep.lastUpdatedAt ?: 0L
@@ -341,7 +341,7 @@ class DocumentSyncService(
      * so they are no longer newer than it. A step edited since keeps its newer time. Only the
      * metadata of what is stored now is written, never the snapshot sent.
      */
-    private suspend fun stampSent(document: Document, sent: List<Pair<Long, StoryStep>>, sentAt: Instant) {
+    private suspend fun stampSent(document: Document, sent: List<Pair<String, StoryStep>>, sentAt: Instant) {
         val current = documentRepository.loadDocumentById(document.id, document.workspaceId) ?: return
         // Never earlier than a stamp already there.
         val syncedAt = current.lastSyncedAt?.let { maxOf(it, sentAt) } ?: sentAt
@@ -357,7 +357,7 @@ class DocumentSyncService(
     /** The document's metadata alone: its steps travel through the step sync. */
     private fun Document.withoutContent(): Document = copy(content = emptyMap())
 
-    private fun Map<Long, StoryStep>.withoutSteps(ids: Set<String>): Map<Long, StoryStep> =
+    private fun Map<String, StoryStep>.withoutSteps(ids: Set<String>): Map<String, StoryStep> =
         if (ids.isEmpty()) this else filterNot { (_, step) -> step.id in ids }
 
     companion object {

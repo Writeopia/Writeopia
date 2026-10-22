@@ -7,7 +7,7 @@ import WrModels
 @Suite struct DocumentIconEditorTests {
     private func document(icon: IconInfo?) -> WrDocument {
         WrDocument(id: "d", title: "Plan", workspaceId: "w", content: [
-            StoryStep(id: "t", type: .title, text: "Plan", position: 0),
+            StoryStep(id: "t", type: .title, text: "Plan", position: Rank.at(0)),
         ], icon: icon)
     }
 

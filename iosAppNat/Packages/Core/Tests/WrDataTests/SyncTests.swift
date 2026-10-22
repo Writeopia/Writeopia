@@ -6,7 +6,7 @@ import WrNetwork
 import WrStorage
 
 private func step(_ id: String, _ text: String, at position: Int, updated: Int64?) -> StoryStep {
-    StoryStep(id: id, type: .text, text: text, position: position, lastUpdatedAt: updated)
+    StoryStep(id: id, type: .text, text: text, position: Rank.at(position), lastUpdatedAt: updated)
 }
 
 @Suite struct DocumentMergerTests {
@@ -497,9 +497,9 @@ final class FakeBackend: HTTPTransport {
     @Test func editsWriteOnlyTheChangedSteps() async throws {
         let store = LocalDocumentsRepository(directory: directory, workspaceId: "w", seedsWelcome: false)
         var document = WrDocument(id: "d", title: "Doc", workspaceId: "w", content: [
-            StoryStep(id: "a", type: .text, text: "one", position: 0),
-            StoryStep(id: "b", type: .text, text: "two", position: 1),
-            StoryStep(id: "c", type: .text, text: "three", position: 2),
+            StoryStep(id: "a", type: .text, text: "one", position: Rank.at(0)),
+            StoryStep(id: "b", type: .text, text: "two", position: Rank.at(1)),
+            StoryStep(id: "c", type: .text, text: "three", position: Rank.at(2)),
         ], parentId: Folder.rootId)
         try store.store(document)
 
@@ -516,8 +516,8 @@ final class FakeBackend: HTTPTransport {
     @Test func aStepDeletedInTheEditorLeavesATombstoneAndNoSyncBringsItBack() throws {
         let store = LocalDocumentsRepository(directory: directory, workspaceId: "w", seedsWelcome: false)
         let document = WrDocument(id: "d", title: "Doc", workspaceId: "w", content: [
-            StoryStep(id: "a", type: .text, text: "one", position: 0),
-            StoryStep(id: "b", type: .text, text: "two", position: 1),
+            StoryStep(id: "a", type: .text, text: "one", position: Rank.at(0)),
+            StoryStep(id: "b", type: .text, text: "two", position: Rank.at(1)),
         ], parentId: Folder.rootId)
         try store.store(document)
 
@@ -540,7 +540,7 @@ final class FakeBackend: HTTPTransport {
     @Test func theEditorMayBringADeletedStepBack() throws {
         let store = LocalDocumentsRepository(directory: directory, workspaceId: "w", seedsWelcome: false)
         let document = WrDocument(id: "d", title: "Doc", workspaceId: "w", content: [
-            StoryStep(id: "a", type: .text, text: "one", position: 0),
+            StoryStep(id: "a", type: .text, text: "one", position: Rank.at(0)),
         ], parentId: Folder.rootId)
         try store.store(document)
         try store.saveEdit(document: document, changedSteps: [], deletedStepIds: ["a"])
@@ -555,8 +555,8 @@ final class FakeBackend: HTTPTransport {
     @Test func stepsDeletedElsewhereGoWithoutATombstone() throws {
         let store = LocalDocumentsRepository(directory: directory, workspaceId: "w", seedsWelcome: false)
         try store.store(WrDocument(id: "d", title: "Doc", workspaceId: "w", content: [
-            StoryStep(id: "a", type: .text, text: "one", position: 0),
-            StoryStep(id: "b", type: .text, text: "two", position: 1),
+            StoryStep(id: "a", type: .text, text: "one", position: Rank.at(0)),
+            StoryStep(id: "b", type: .text, text: "two", position: Rank.at(1)),
         ], parentId: Folder.rootId))
 
         try store.deleteSteps(ids: ["b"])
@@ -574,7 +574,7 @@ final class FakeBackend: HTTPTransport {
             checked: true,
             tags: [TagInfo(tag: "H2")],
             spans: [SpanInfo(start: 0, end: 4, span: "LINK", extra: "https://x.io")],
-            position: 35,
+            position: Rank.at(35),
             documentLink: DocumentLink(id: "other", title: "Other"),
             lastUpdatedAt: 42
         )
@@ -586,7 +586,7 @@ final class FakeBackend: HTTPTransport {
     @Test func oldJsonFilesAreImportedOnce() async throws {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let old = WrDocument(id: "old", title: "From a file", workspaceId: "local", content: [
-            StoryStep(id: "t", type: .title, text: "From a file", position: 0),
+            StoryStep(id: "t", type: .title, text: "From a file", position: Rank.at(0)),
         ], parentId: Folder.rootId)
         try JSONEncoder().encode(old).write(to: directory.appending(path: "From a file_old.wrdoc.json"))
         let folder = Folder(id: "f", parentId: Folder.rootId, title: "Old folder", workspaceId: "local")
@@ -729,7 +729,7 @@ final class FakeBackend: HTTPTransport {
     @Test func duplicateCopiesDocumentsAndFoldersWithNewIds() async throws {
         let store = makeStore()
         let document = WrDocument(id: "d", title: "Notes", workspaceId: "w", content: [
-            StoryStep(id: "s", type: .text, text: "Hello", position: 0),
+            StoryStep(id: "s", type: .text, text: "Hello", position: Rank.at(0)),
         ], parentId: "root")
         try store.store(document)
         try store.store(Folder(id: "f", parentId: "root", title: "Projects", workspaceId: "w"))

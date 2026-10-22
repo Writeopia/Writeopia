@@ -6,7 +6,7 @@ import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.story.StoryStep
-import io.writeopia.sdk.utils.iterables.POSITION_GAP
+import io.writeopia.sdk.utils.iterables.Rank
 import kotlin.time.ExperimentalTime
 
 /**
@@ -59,7 +59,7 @@ class DocumentMerger {
     }
 
     private fun mergeCommentConversations(
-        mergedContent: Map<Long, StoryStep>,
+        mergedContent: Map<String, StoryStep>,
         primary: Map<String, List<Comment>>,
         fallback: Map<String, List<Comment>>,
     ): Map<String, List<Comment>> {
@@ -105,15 +105,15 @@ class DocumentMerger {
     }
 
     private fun mergeContent(
-        localContent: Map<Long, StoryStep>,
-        backendContent: Map<Long, StoryStep>
-    ): Map<Long, StoryStep> {
+        localContent: Map<String, StoryStep>,
+        backendContent: Map<String, StoryStep>
+    ): Map<String, StoryStep> {
         // Build maps from StoryStep ID to (position, StoryStep) for lookup
         val localById = localContent.entries.associate { (pos, step) -> step.id to (pos to step) }
         val backendById = backendContent.entries.associate { (pos, step) -> step.id to (pos to step) }
 
         val allStepIds = localById.keys + backendById.keys
-        val mergedSteps = mutableListOf<Pair<Long, StoryStep>>()
+        val mergedSteps = mutableListOf<Pair<String, StoryStep>>()
 
         for (stepId in allStepIds) {
             val localEntry = localById[stepId]
@@ -147,17 +147,17 @@ class DocumentMerger {
      * one there) can't share a key: the later one goes half way to the next position, so no
      * step is lost and the order holds.
      */
-    private fun List<Pair<Long, StoryStep>>.withDistinctPositions(): Map<Long, StoryStep> {
-        val result = linkedMapOf<Long, StoryStep>()
-        var lastKey: Long? = null
+    private fun List<Pair<String, StoryStep>>.withDistinctPositions(): Map<String, StoryStep> {
+        val result = linkedMapOf<String, StoryStep>()
+        var lastKey: String? = null
 
         forEachIndexed { index, (position, step) ->
             val key = if (lastKey == null || position > lastKey) {
                 position
             } else {
                 val nextDistinct = subList(index + 1, size).firstOrNull { (next, _) -> next > position }?.first
-                // A whole number, like every position; the next steps are nudged in turn when it is taken
-                if (nextDistinct == null) lastKey + POSITION_GAP else maxOf((lastKey + nextDistinct) / 2, lastKey + 1)
+                // A rank between the last one and the next distinct position: there always is one
+                Rank.between(lastKey, nextDistinct)
             }
             result[key] = step
             lastKey = key

@@ -60,9 +60,9 @@ final class OneDocumentRepository: DocumentsRepository {
 }
 
 private let document = WrDocument(id: "d", title: "Plan", workspaceId: "w", content: [
-    StoryStep(id: "t", type: .title, text: "Plan", position: 0),
-    StoryStep(id: "a", type: .text, text: "First idea", position: 1),
-    StoryStep(id: "b", type: .text, text: "Second idea", position: 2),
+    StoryStep(id: "t", type: .title, text: "Plan", position: Rank.at(0)),
+    StoryStep(id: "a", type: .text, text: "First idea", position: Rank.at(1)),
+    StoryStep(id: "b", type: .text, text: "Second idea", position: Rank.at(2)),
 ])
 
 private func loadedViewModel(_ ai: FakeAi?) async -> NoteEditorViewModel {
@@ -525,9 +525,9 @@ final class SyncingRepository: DocumentsRepository, DocumentSyncing, StepStore {
 
 @Suite struct PersistenceTests {
     private let synced = WrDocument(id: "d", title: "Plan", workspaceId: "w", content: [
-        StoryStep(id: "t", type: .title, text: "Plan", position: 0, lastUpdatedAt: 10),
-        StoryStep(id: "a", type: .text, text: "First idea", position: 1, lastUpdatedAt: 10),
-        StoryStep(id: "b", type: .text, text: "Second idea", position: 2, lastUpdatedAt: 10),
+        StoryStep(id: "t", type: .title, text: "Plan", position: Rank.at(0), lastUpdatedAt: 10),
+        StoryStep(id: "a", type: .text, text: "First idea", position: Rank.at(1), lastUpdatedAt: 10),
+        StoryStep(id: "b", type: .text, text: "Second idea", position: Rank.at(2), lastUpdatedAt: 10),
     ], lastUpdatedAt: 10, lastSyncedAt: 50)
 
     private func viewModel(_ repository: SyncingRepository) async -> NoteEditorViewModel {
@@ -620,7 +620,7 @@ final class SyncingRepository: DocumentsRepository, DocumentSyncing, StepStore {
 
     @Test func backendMergeIsShownOnlyBeforeTyping() async throws {
         var remote = synced
-        remote.content.append(StoryStep(id: "c", type: .text, text: "From another device", position: 3, lastUpdatedAt: 99))
+        remote.content.append(StoryStep(id: "c", type: .text, text: "From another device", position: Rank.at(3), lastUpdatedAt: 99))
 
         let untouched = SyncingRepository(synced)
         untouched.merged = remote
@@ -651,7 +651,7 @@ final class SyncingRepository: DocumentsRepository, DocumentSyncing, StepStore {
 @Suite struct DeleteFromEditorTests {
     @Test func deletingStopsSavingAndSending() async throws {
         let repository = SyncingRepository(WrDocument(id: "d", title: "Plan", workspaceId: "w", content: [
-            StoryStep(id: "t", type: .title, text: "Plan", position: 0),
+            StoryStep(id: "t", type: .title, text: "Plan", position: Rank.at(0)),
         ]))
         let viewModel = NoteEditorViewModel(documentId: "d", repository: repository)
         await viewModel.loadDocument()

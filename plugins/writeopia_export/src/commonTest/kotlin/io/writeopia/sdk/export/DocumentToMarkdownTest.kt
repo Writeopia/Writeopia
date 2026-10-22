@@ -1,5 +1,6 @@
 package io.writeopia.sdk.export
 
+import io.writeopia.sdk.utils.iterables.Rank
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
@@ -12,13 +13,13 @@ class DocumentToMarkdownTest {
     @Test
     fun testMarkDown() {
         val content = mapOf(
-            0L to StoryStep(
+            Rank.at(0) to StoryStep(
                 type = StoryTypes.TEXT.type,
                 text = "Title!!",
                 tags = setOf(TagInfo(Tag.H1))
             ),
-            1L to StoryStep(type = StoryTypes.TEXT.type, text = "some text"),
-            2L to StoryStep(
+            Rank.at(1) to StoryStep(type = StoryTypes.TEXT.type, text = "some text"),
+            Rank.at(2) to StoryStep(
                 type = StoryTypes.TEXT.type,
                 text = "Subtitle!!",
                 tags = setOf(TagInfo(Tag.H2))
@@ -42,22 +43,22 @@ class DocumentToMarkdownTest {
     @Test
     fun testMarkdownPrettyPrintFalse() {
         val content = mapOf(
-            0L to StoryStep(
+            Rank.at(0) to StoryStep(
                 type = StoryTypes.TEXT.type,
                 text = "Title!!",
                 tags = setOf(TagInfo(Tag.H1))
             ),
-            1L to StoryStep(type = StoryTypes.TEXT.type, text = "some text"),
-            2L to StoryStep(
+            Rank.at(1) to StoryStep(type = StoryTypes.TEXT.type, text = "some text"),
+            Rank.at(2) to StoryStep(
                 type = StoryTypes.TEXT.type,
                 text = "Subtitle!!",
                 tags = setOf(TagInfo(Tag.H2))
             ),
-            3L to StoryStep(
+            Rank.at(3) to StoryStep(
                 type = StoryTypes.CHECK_ITEM.type,
                 text = "Check this"
             ),
-            4L to StoryStep(
+            Rank.at(4) to StoryStep(
                 type = StoryTypes.UNORDERED_LIST_ITEM.type,
                 text = "This is a list item"
             )
@@ -78,10 +79,10 @@ class DocumentToMarkdownTest {
     @Test
     fun `link cards become links, with labels and addresses that can not break them`() {
         val content = mapOf(
-            0L to StoryStep(type = StoryTypes.LINK_CARD.type, url = "https://writeopia.io", text = "A text editor."),
-            1L to StoryStep(type = StoryTypes.LINK_CARD.type, url = "https://writeopia.io"),
-            2L to StoryStep(type = StoryTypes.LINK_CARD.type, url = "https://writeopia.io", text = "Editor [beta] done"),
-            3L to StoryStep(type = StoryTypes.LINK_CARD.type, url = "https://w.io/a b(c)", text = "Odd address")
+            Rank.at(0) to StoryStep(type = StoryTypes.LINK_CARD.type, url = "https://writeopia.io", text = "A text editor."),
+            Rank.at(1) to StoryStep(type = StoryTypes.LINK_CARD.type, url = "https://writeopia.io"),
+            Rank.at(2) to StoryStep(type = StoryTypes.LINK_CARD.type, url = "https://writeopia.io", text = "Editor [beta] done"),
+            Rank.at(3) to StoryStep(type = StoryTypes.LINK_CARD.type, url = "https://w.io/a b(c)", text = "Odd address")
         )
 
         val expected = buildString {

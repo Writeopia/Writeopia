@@ -26,9 +26,9 @@ public struct Slide: Codable, Equatable, Sendable {
     /// The slide as a document the editor can load: the title as a `title` step at position 0,
     /// the content after it.
     public func asDocument(id: String, now: Int64 = Date.nowMillis) -> WrDocument {
-        var content = [StoryStep(id: "\(id)-title", type: .title, text: title, position: 0, lastUpdatedAt: now)]
+        var content = [StoryStep(id: "\(id)-title", type: .title, text: title, position: Rank.first, lastUpdatedAt: now)]
         for (offset, var step) in steps.enumerated() {
-            step.position = offset + 1
+            step.position = Rank.at(offset + 1)
             content.append(step)
         }
         return WrDocument(id: id, title: title, workspaceId: "", content: content, createdAt: now, lastUpdatedAt: now)

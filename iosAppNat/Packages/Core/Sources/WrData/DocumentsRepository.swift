@@ -160,7 +160,7 @@ extension DocumentsRepository {
             id: UUID().uuidString,
             title: title,
             workspaceId: workspaceId,
-            content: [StoryStep(type: .title, text: title, position: 0)],
+            content: [StoryStep(type: .title, text: title, position: Rank.first)],
             parentId: parentId
         )
     }

@@ -649,11 +649,12 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
             )
             try db.run("DELETE FROM presentation_step WHERE presentation_id = ?", [.text(presentation.id)])
             for (index, slide) in presentation.slides.enumerated() {
-                for step in slide.asDocument(id: "\(presentation.id)-\(index)", now: presentation.createdAt).content {
+                let steps = slide.asDocument(id: "\(presentation.id)-\(index)", now: presentation.createdAt).content
+                for (stepIndex, step) in steps.enumerated() {
                     let json = String(decoding: try encoder.encode(step), as: UTF8.self)
                     try db.run(
                         "INSERT OR REPLACE INTO presentation_step (id, presentation_id, slide_index, position, content) VALUES (?, ?, ?, ?, ?)",
-                        [.text(step.id), .text(presentation.id), .integer(Int64(index)), .real(Double(step.position)), .text(json)]
+                        [.text(step.id), .text(presentation.id), .integer(Int64(index)), .real(Double(stepIndex)), .text(json)]
                     )
                 }
             }
@@ -688,7 +689,7 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
             guard let index = row.integer(0), let json = row.text(1),
                   var step = try? decoder.decode(StoryStep.self, from: Data(json.utf8))
             else { return nil }
-            step.position = row.real(2).map { Int($0.rounded(.down)) } ?? step.position
+            step.position = row.real(2).map { Rank.at(Int($0.rounded(.down))) } ?? step.position
             return (index, step)
         }
 
@@ -714,38 +715,39 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
 
     // MARK: - Schema
 
-    /// Story step positions became whole numbers, 10000 apart (`positionGap`), kept in an INTEGER
-    /// column; before, the column was REAL and held indexes (0, 1, 2...) or fractions (1.5). Once,
-    /// the steps of every document are renumbered in their order (children among their siblings:
-    /// they are nested in the JSON, so only the top-level rows are here) and the table is rebuilt,
-    /// since SQLite can't change the type of a column.
+    /// Story step positions became ranks (`Rank`): ten zero-padded digits plus an optional base-36
+    /// fraction, kept in a TEXT column; before, the column held numbers: indexes (0, 1, 2...),
+    /// fractions (1.5) or whole numbers 10000 apart. Once, the steps of every document are
+    /// renumbered in their order to the ranks of 0, 1, 2... (children are nested in the JSON, so
+    /// only the top-level rows are here) and the table is rebuilt, since SQLite can't change the
+    /// type of a column. The JSON of a row may still carry the old number; the column wins.
     private func migratePositionsIfNeeded() throws {
-        guard try meta("positions_integer") == nil else { return }
+        guard try meta("positions_rank") == nil else { return }
 
         try db.transaction {
             try db.execute(
                 """
-                CREATE TABLE story_step_positions (
+                CREATE TABLE story_step_ranks (
                     id TEXT NOT NULL,
                     document_id TEXT NOT NULL,
-                    position INTEGER NOT NULL,
+                    position TEXT NOT NULL,
                     last_updated_at INTEGER,
                     content TEXT NOT NULL,
                     PRIMARY KEY (document_id, id)
                 );
-                INSERT INTO story_step_positions (id, document_id, position, last_updated_at, content)
+                INSERT INTO story_step_ranks (id, document_id, position, last_updated_at, content)
                 SELECT s.id, s.document_id,
-                    (SELECT COUNT(*) FROM story_step o
+                    printf('%010d', 1000000 + (SELECT COUNT(*) FROM story_step o
                      WHERE o.document_id = s.document_id
-                       AND (o.position < s.position OR (o.position = s.position AND o.id < s.id))) * \(positionGap),
+                       AND (o.position < s.position OR (o.position = s.position AND o.id < s.id)))),
                     s.last_updated_at, s.content
                 FROM story_step s;
                 DROP TABLE story_step;
-                ALTER TABLE story_step_positions RENAME TO story_step;
+                ALTER TABLE story_step_ranks RENAME TO story_step;
                 CREATE INDEX IF NOT EXISTS story_step_document ON story_step(document_id);
                 """
             )
-            try setMeta("positions_integer", "1")
+            try setMeta("positions_rank", "1")
         }
     }
 
@@ -772,7 +774,7 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
             CREATE TABLE IF NOT EXISTS story_step (
                 id TEXT NOT NULL,
                 document_id TEXT NOT NULL,
-                position INTEGER NOT NULL,
+                position TEXT NOT NULL,
                 last_updated_at INTEGER,
                 content TEXT NOT NULL,
                 PRIMARY KEY (document_id, id)
@@ -1007,7 +1009,7 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
             guard let json = row.text(0), var step = try? decoder.decode(StoryStep.self, from: Data(json.utf8)) else {
                 return nil
             }
-            step.position = row.integer(1).map(Int.init) ?? step.position
+            step.position = row.text(1) ?? step.position
             step.lastUpdatedAt = row.integer(2) ?? step.lastUpdatedAt
             return step
         }
@@ -1043,7 +1045,7 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
         let json = String(decoding: try encoder.encode(step), as: UTF8.self)
         try db.run(
             "INSERT OR REPLACE INTO story_step (id, document_id, position, last_updated_at, content) VALUES (?, ?, ?, ?, ?)",
-            [.text(step.id), .text(documentId), .integer(Int64(step.position)), .integer(step.lastUpdatedAt), .text(json)]
+            [.text(step.id), .text(documentId), .text(step.position), .integer(step.lastUpdatedAt), .text(json)]
         )
     }
 
@@ -1163,19 +1165,19 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
             title: String(localized: "Welcome to Writeopia"),
             workspaceId: workspaceId,
             content: [
-                StoryStep(type: .title, text: String(localized: "Welcome to Writeopia"), position: 0),
+                StoryStep(type: .title, text: String(localized: "Welcome to Writeopia"), position: Rank.first),
                 StoryStep(
                     type: .message,
                     text: String(localized: "This is your private space. Everything you write here stays on this device."),
-                    position: 1
+                    position: Rank.at(1)
                 ),
-                StoryStep(type: .message, text: String(localized: "Getting started"), tags: [TagInfo(tag: "H2")], position: 2),
-                StoryStep(type: .checkItem, text: String(localized: "Create a folder to organise your notes"), checked: false, position: 3),
-                StoryStep(type: .checkItem, text: String(localized: "Create your first document"), checked: false, position: 4),
+                StoryStep(type: .message, text: String(localized: "Getting started"), tags: [TagInfo(tag: "H2")], position: Rank.at(2)),
+                StoryStep(type: .checkItem, text: String(localized: "Create a folder to organise your notes"), checked: false, position: Rank.at(3)),
+                StoryStep(type: .checkItem, text: String(localized: "Create your first document"), checked: false, position: Rank.at(4)),
                 StoryStep(
                     type: .unorderedListItem,
                     text: String(localized: "Sign in from Settings > Account to sync your notes"),
-                    position: 5
+                    position: Rank.at(5)
                 ),
             ],
             parentId: Folder.rootId

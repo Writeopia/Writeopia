@@ -4,7 +4,7 @@ import io.writeopia.sdk.models.story.StoryStep
 
 interface InDocumentSearchRepository {
 
-    fun searchInDocument(query: String, documentId: String): Set<Int>
+    fun searchInDocument(query: String, documentId: String): Set<String>
 
-    suspend fun insertForFts(storyStep: StoryStep, documentId: String, position: Long)
+    suspend fun insertForFts(storyStep: StoryStep, documentId: String, position: String)
 }

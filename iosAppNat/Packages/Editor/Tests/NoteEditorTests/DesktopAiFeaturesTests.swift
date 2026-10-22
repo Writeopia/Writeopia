@@ -9,10 +9,10 @@ import WrModels
 /// AI features of the desktop app: accepting answers, writing sections and list suggestions.
 @Suite struct DesktopAiFeaturesTests {
     private let document = WrDocument(id: "d", title: "Trip", workspaceId: "w", content: [
-        StoryStep(id: "t", type: .title, text: "Trip", position: 0),
-        StoryStep(id: "h", type: .text, text: "Packing", tags: [TagInfo(tag: "H2")], position: 1),
-        StoryStep(id: "l", type: .text, text: "Passport", position: 2),
-        StoryStep(id: "e", type: .text, text: "End", position: 3),
+        StoryStep(id: "t", type: .title, text: "Trip", position: Rank.at(0)),
+        StoryStep(id: "h", type: .text, text: "Packing", tags: [TagInfo(tag: "H2")], position: Rank.at(1)),
+        StoryStep(id: "l", type: .text, text: "Passport", position: Rank.at(2)),
+        StoryStep(id: "e", type: .text, text: "End", position: Rank.at(3)),
     ])
 
     private func viewModel(_ ai: FakeAi?) async -> NoteEditorViewModel {

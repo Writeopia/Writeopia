@@ -1,5 +1,6 @@
 package io.writeopia.editor.features.editor.viewmodel
 
+import io.writeopia.sdk.utils.iterables.Rank
 import io.writeopia.sdk.manager.WriteopiaManager
 import io.writeopia.sdk.model.story.LastEdit
 import io.writeopia.sdk.models.document.Document
@@ -30,8 +31,8 @@ class PromptServiceTest {
             loadDocument(
                 Document(
                     content = mapOf(
-                        0L to StoryStep(type = StoryTypes.TITLE.type, text = "Groceries"),
-                        1L to StoryStep(type = StoryTypes.TEXT.type, text = "We need milk."),
+                        Rank.at(0) to StoryStep(type = StoryTypes.TITLE.type, text = "Groceries"),
+                        Rank.at(1) to StoryStep(type = StoryTypes.TEXT.type, text = "We need milk."),
                     ),
                     workspaceId = "",
                     createdAt = now,
@@ -59,12 +60,12 @@ class PromptServiceTest {
             prompt = "Summarize",
             writeopiaManager = manager,
             streamFn = { flowOf(ResultData.Complete("Sho"), ResultData.Complete("Short version.")) },
-            promptPosition = 2L,
+            promptPosition = Rank.at(2),
         )
         watching.cancel()
 
         // Two chunks went to the same step, so only one is ever saved and synced.
-        val answer = manager.currentStory.value.stories[2L]!!
+        val answer = manager.currentStory.value.stories[Rank.at(2)]!!
         assertEquals(StoryTypes.AI_ANSWER.type, answer.type)
         assertEquals("Short version.", answer.text)
         assertEquals(setOf(answer.id), edits.map { step -> step.id }.toSet())
@@ -78,12 +79,12 @@ class PromptServiceTest {
     fun `a free command with nothing selected answers at the end of the document`() = runTest {
         val manager = manager()
         // The cursor is on the title, as it is when the command field took the focus.
-        manager.onFocusChange(0L, hasFocus = true)
+        manager.onFocusChange(Rank.at(0), hasFocus = true)
 
         val target = AiCommandService.answerTarget(manager)
 
         assertEquals(AiTargetMode.DOCUMENT, target)
-        assertEquals(manager.positionAfter(1L), PromptService.answerPosition(target, manager))
+        assertEquals(manager.positionAfter(Rank.at(1)), PromptService.answerPosition(target, manager))
     }
 
     @Test
@@ -94,9 +95,9 @@ class PromptServiceTest {
             prompt = "Summarize",
             writeopiaManager = manager,
             streamFn = { flowOf(ResultData.Loading(), ResultData.Complete("")) },
-            promptPosition = 2L,
+            promptPosition = Rank.at(2),
         )
 
-        assertEquals(setOf(0L, 1L), manager.currentStory.value.stories.keys)
+        assertEquals(setOf(Rank.at(0), Rank.at(1)), manager.currentStory.value.stories.keys)
     }
 }

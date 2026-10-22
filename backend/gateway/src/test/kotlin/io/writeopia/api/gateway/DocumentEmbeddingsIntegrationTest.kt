@@ -2,6 +2,7 @@
 
 package io.writeopia.api.gateway
 
+import io.writeopia.sdk.utils.iterables.Rank
 import io.ktor.client.call.body
 import io.ktor.client.request.delete
 import io.ktor.client.request.post
@@ -64,7 +65,7 @@ class DocumentEmbeddingsIntegrationTest {
         }
     }
 
-    private fun step(id: String, text: String, type: StoryTypes = StoryTypes.TEXT, position: Long) =
+    private fun step(id: String, text: String, type: StoryTypes = StoryTypes.TEXT, position: String) =
         StoryStep(id = id, type = type.type, text = text).toApi(position)
 
     private fun document(id: String, workspace: String, parentId: String, title: String, steps: List<StoryStepApi>) =
@@ -91,9 +92,9 @@ class DocumentEmbeddingsIntegrationTest {
 
         // 1. A saved document gets its embedding.
         val pastaSteps = listOf(
-            step("$workspace-t1", "Pasta", StoryTypes.TITLE, 0L),
-            step("$workspace-s1", "Boil a lot of water in a large pan and salt it generously.", position = 1L),
-            step("$workspace-s2", "Cook the pasta until al dente, then drain and serve at once.", position = 2L),
+            step("$workspace-t1", "Pasta", StoryTypes.TITLE, Rank.at(0)),
+            step("$workspace-s1", "Boil a lot of water in a large pan and salt it generously.", position = Rank.at(1)),
+            step("$workspace-s2", "Cook the pasta until al dente, then drain and serve at once.", position = Rank.at(2)),
         )
         val pasta = document("$workspace-pasta", workspace, "root", "Pasta", pastaSteps)
         assertEquals(
@@ -130,7 +131,7 @@ class DocumentEmbeddingsIntegrationTest {
         // Pretend the first embedding is old, so the cooldown is not what holds the next one back.
         fun StoredDocumentEmbedding.at(millis: Long) = copy(embeddedAt = millis, checkedAt = millis)
         store.upsertDocument(firstEmbedding.at(now - 10 * 60_000))
-        syncSteps(sync(step("$workspace-s1", "Boil a lot of water in a large pot and salt it generously.", position = 1L)))
+        syncSteps(sync(step("$workspace-s1", "Boil a lot of water in a large pot and salt it generously.", position = Rank.at(1))))
         assertEquals(1, embedder.calls.size)
         // The comparison is recorded, so the next syncs are not even loaded until the cooldown passes again.
         val checked = assertNotNull(store.documentMeta(pasta.id))
@@ -139,9 +140,9 @@ class DocumentEmbeddingsIntegrationTest {
 
         // 3. A big change is embedded again once the cooldown passed, not before.
         val rewrite = sync(
-            step("$workspace-s1", "Whisk the eggs with the grated cheese and plenty of black pepper.", position = 1L),
-            step("$workspace-s2", "Toss the hot pasta in the eggs away from the heat so they do not scramble.", position = 2L),
-            step("$workspace-s3", "Add a splash of the cooking water to loosen the sauce before serving.", position = 3L),
+            step("$workspace-s1", "Whisk the eggs with the grated cheese and plenty of black pepper.", position = Rank.at(1)),
+            step("$workspace-s2", "Toss the hot pasta in the eggs away from the heat so they do not scramble.", position = Rank.at(2)),
+            step("$workspace-s3", "Add a splash of the cooking water to loosen the sauce before serving.", position = Rank.at(3)),
         )
         store.upsertDocument(store.document(pasta.id)!!.at(now))
         syncSteps(rewrite)
@@ -178,8 +179,8 @@ class DocumentEmbeddingsIntegrationTest {
         val risotto = document(
             "$workspace-risotto", workspace, cooking.id, "Risotto",
             listOf(
-                step("$workspace-t2", "Risotto", StoryTypes.TITLE, 0L),
-                step("$workspace-r1", "Toast the rice in butter, then add the stock one ladle at a time.", position = 1L),
+                step("$workspace-t2", "Risotto", StoryTypes.TITLE, Rank.at(0)),
+                step("$workspace-r1", "Toast the rice in butter, then add the stock one ladle at a time.", position = Rank.at(1)),
             )
         )
         client.post("/api/docs/workspace/document") {

@@ -128,7 +128,7 @@ struct StoryStepDrawer: View {
 /// of around the content.
 struct DraggableStep<Content: View>: View {
     let step: StoryStep
-    let position: Int
+    let position: String
     let manager: WriteopiaStateManager
     var block: BlockInfo? = nil
     var alignment: VerticalAlignment = .center
@@ -695,7 +695,7 @@ struct AiAnswerDrawer: View {
 /// of the section. Shown while the heading has the cursor.
 struct SectionWandButton: View {
     let step: StoryStep
-    let position: Int
+    let position: String
     let manager: WriteopiaStateManager
 
     private var isShown: Bool {

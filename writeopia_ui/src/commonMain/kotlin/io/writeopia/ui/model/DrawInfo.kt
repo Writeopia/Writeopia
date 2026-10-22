@@ -1,5 +1,6 @@
 package io.writeopia.ui.model
 
+import io.writeopia.sdk.utils.iterables.Rank
 import io.writeopia.sdk.model.story.Selection
 
 /**
@@ -15,10 +16,10 @@ import io.writeopia.sdk.model.story.Selection
  */
 data class DrawInfo(
     val editable: Boolean = true,
-    val focus: Long? = null,
-    val position: Long = 0L,
-    val previousPosition: Long? = null,
-    val nextPosition: Long? = null,
+    val focus: String? = null,
+    val position: String = Rank.FIRST,
+    val previousPosition: String? = null,
+    val nextPosition: String? = null,
     val selectMode: Boolean = false,
     val selection: Selection? = null,
     val extraData: Map<String, Any> = emptyMap()

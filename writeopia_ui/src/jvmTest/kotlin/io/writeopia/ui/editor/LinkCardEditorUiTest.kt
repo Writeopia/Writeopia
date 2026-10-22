@@ -2,6 +2,7 @@
 
 package io.writeopia.ui.editor
 
+import io.writeopia.sdk.utils.iterables.Rank
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -34,8 +35,8 @@ class LinkCardEditorUiTest {
         manager.loadDocument(
             Document(
                 content = mapOf(
-                    0L to StoryStep(type = StoryTypes.TITLE.type, text = "Title"),
-                    1L to StoryStep(type = StoryTypes.TEXT.type, text = "")
+                    Rank.at(0) to StoryStep(type = StoryTypes.TITLE.type, text = "Title"),
+                    Rank.at(1) to StoryStep(type = StoryTypes.TEXT.type, text = "")
                 ),
                 workspaceId = "",
                 createdAt = now,
@@ -75,14 +76,14 @@ class LinkCardEditorUiTest {
             }
         }
 
-        onNodeWithTag("MessageDrawer_1").assertIsDisplayed()
+        onNodeWithTag("MessageDrawer_${Rank.at(1)}").assertIsDisplayed()
 
         // A paste delivers the whole address in one input.
-        onNodeWithTag("MessageDrawer_1").performTextInput("https://writeopia.io")
+        onNodeWithTag("MessageDrawer_${Rank.at(1)}").performTextInput("https://writeopia.io")
         waitForIdle()
 
-        onNodeWithTag("LinkCard_1").assertIsDisplayed()
+        onNodeWithTag("LinkCard_${Rank.at(1)}").assertIsDisplayed()
         onNodeWithText("https://writeopia.io").assertIsDisplayed()
-        onNodeWithTag("LinkCardCopy_1").assertIsDisplayed()
+        onNodeWithTag("LinkCardCopy_${Rank.at(1)}").assertIsDisplayed()
     }
 }

@@ -49,19 +49,19 @@ data class StoryStep(
      * document map is its position, and the one saved. Positions are whole numbers, spaced
      * out by a gap, so steps can be added between two others without moving the rest.
      */
-    val dbPosition: Long? = null,
+    val dbPosition: String? = null,
     /**
      * The position of the next StoryStep in the document. This is used to efficiently calculate
      * intermediate positions when inserting new content. It starts as null and is populated
      * when the document is loaded or created.
      */
-    val nextPosition: Long? = null,
+    val nextPosition: String? = null,
     /**
      * The position of the previous StoryStep in the document. This is used to efficiently calculate
      * intermediate positions when inserting new content. It starts as null and is populated
      * when the document is loaded or created.
      */
-    val previousPosition: Long? = null,
+    val previousPosition: String? = null,
     /**
      * The timestamp when this StoryStep was last updated. Used for conflict resolution during
      * backend sync. This is in epoch milliseconds.

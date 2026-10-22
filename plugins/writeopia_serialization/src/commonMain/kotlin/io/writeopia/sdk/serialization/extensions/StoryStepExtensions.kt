@@ -16,7 +16,7 @@ import io.writeopia.sdk.serialization.data.StoryTypeApi
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
-fun StoryStep.toApi(position: Long): StoryStepApi =
+fun StoryStep.toApi(position: String): StoryStepApi =
     StoryStepApi(
         id = this.id,
         type = this.type.toApi(),

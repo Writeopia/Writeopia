@@ -7,12 +7,12 @@ class InDocumentSearchSqlRepository(
     private val storyStepFtsSqlDelightDao: StoryStepFtsSqlDelightDao
 ) : InDocumentSearchRepository {
 
-    override fun searchInDocument(query: String, documentId: String): Set<Int> = storyStepFtsSqlDelightDao.searchInDocument(
+    override fun searchInDocument(query: String, documentId: String): Set<String> = storyStepFtsSqlDelightDao.searchInDocument(
         query,
         documentId
     )
 
-    override suspend fun insertForFts(storyStep: StoryStep, documentId: String, position: Long) {
+    override suspend fun insertForFts(storyStep: StoryStep, documentId: String, position: String) {
         storyStepFtsSqlDelightDao.insertForFts(storyStep, documentId, position)
     }
 }

@@ -2,6 +2,7 @@
 
 package io.writeopia.editor.features.editor.viewmodel
 
+import io.writeopia.sdk.utils.iterables.Rank
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -380,7 +381,7 @@ class NoteEditorKmpViewModel(
 
 //    val selectionOfText = writeopiaManager.
 
-    private val findsOfSearch: Flow<Set<Int>> =
+    private val findsOfSearch: Flow<Set<String>> =
         combine(writeopiaManager.documentInfo, searchText) { info, query ->
             info.id to query
         }.map { (documentId, query) ->
@@ -618,11 +619,13 @@ class NoteEditorKmpViewModel(
             _totalSearchResultsState.value = finds.size
 
             if (activeFindPosition != null) {
-                writeopiaManager.scrollToPosition(activeFindPosition)
+                val index = mutableStories.indexOfFirst { it.position == activeFindPosition }
+                if (index != -1) writeopiaManager.scrollToPosition(index)
             }
 
             finds.forEach { position ->
-                val realPosition = minOf(position * 2, mutableStories.lastIndex)
+                val realPosition = mutableStories.indexOfFirst { it.position == position }
+                if (realPosition == -1) return@forEach
                 val toDraw = mutableStories[realPosition]
                 val story = toDraw.storyStep
 
@@ -780,7 +783,7 @@ class NoteEditorKmpViewModel(
     override fun onHeaderImageSelection(url: String?) {
         if (!isEditable.value) return
 
-        writeopiaManager.currentStory.value.stories[0L]?.let { storyStep ->
+        writeopiaManager.currentStory.value.stories[Rank.at(0)]?.let { storyStep ->
             val action = Action.StoryStateChange(
                 storyStep = storyStep.copy(
                     url = url,
@@ -788,7 +791,7 @@ class NoteEditorKmpViewModel(
                         backgroundColor = if (url != null) null else storyStep.decoration.backgroundColor
                     )
                 ),
-                position = 0L,
+                position = Rank.at(0),
                 preserveFocus = true
             )
             writeopiaManager.changeStoryState(action)
@@ -1002,7 +1005,7 @@ class NoteEditorKmpViewModel(
      * Only cards that still have no description here are touched: anything else the user may
      * be editing is left alone.
      */
-    private suspend fun applyServerLinkCards(documentId: String, steps: List<Pair<Long, StoryStep>>) {
+    private suspend fun applyServerLinkCards(documentId: String, steps: List<Pair<String, StoryStep>>) {
         val stories = writeopiaManager.currentStory.value.stories
 
         steps.forEach { (_, serverStep) ->
@@ -1033,7 +1036,7 @@ class NoteEditorKmpViewModel(
     override fun onHeaderColorSelection(color: Int?) {
         if (!isEditable.value) return
 
-        writeopiaManager.currentStory.value.stories[0L]?.let { storyStep ->
+        writeopiaManager.currentStory.value.stories[Rank.at(0)]?.let { storyStep ->
             // A color, or none, takes the place of the picture of the header.
             val action = Action.StoryStateChange(
                 storyStep = storyStep.copy(
@@ -1042,7 +1045,7 @@ class NoteEditorKmpViewModel(
                         backgroundColor = color
                     )
                 ),
-                position = 0L,
+                position = Rank.at(0),
                 preserveFocus = true
             )
             writeopiaManager.changeStoryState(action)
@@ -1192,7 +1195,7 @@ class NoteEditorKmpViewModel(
         }
     }
 
-    override fun addImage(imagePath: String, position: Long?) {
+    override fun addImage(imagePath: String, position: String?) {
         viewModelScope.launch(Dispatchers.Default) {
             val path = workspaceConfigRepository
                 .loadWorkspacePath(authRepository.getUser().id)
@@ -1269,7 +1272,7 @@ class NoteEditorKmpViewModel(
         documentAi(targetMode, AiCommand.TAGS)
     }
 
-    override fun aiSection(position: Long) {
+    override fun aiSection(position: String) {
         val sectionText = writeopiaManager.getStory(position)?.text ?: return
 
         val docId = documentId.value
@@ -1397,7 +1400,7 @@ class NoteEditorKmpViewModel(
         }
     }
 
-    override fun receiveExternalFile(files: List<ExternalFile>, position: Long) {
+    override fun receiveExternalFile(files: List<ExternalFile>, position: String) {
         viewModelScope.launch(Dispatchers.Default) {
             val newFiles = workspaceConfigRepository
                 .loadWorkspacePath(authRepository.getUser().id)

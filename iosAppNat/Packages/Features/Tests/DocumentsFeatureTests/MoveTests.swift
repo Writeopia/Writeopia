@@ -28,7 +28,7 @@ final class FakeDocumentsRepository: DocumentsRepository {
             id: UUID().uuidString,
             title: title,
             workspaceId: "w",
-            content: [StoryStep(type: .title, text: title, position: 0)],
+            content: [StoryStep(type: .title, text: title, position: Rank.at(0))],
             parentId: parentId
         )
     }
@@ -163,8 +163,8 @@ final class FakeSummaryAi: AiStreaming {
 @Suite struct DocumentsSelectionTests {
     let ideas = Folder(id: "f1", parentId: Folder.rootId, title: "Ideas", workspaceId: "w", favorite: true)
     let draft = WrDocument(id: "d1", title: "Draft", workspaceId: "w", content: [
-        StoryStep(type: .title, text: "Draft", position: 0),
-        StoryStep(type: .text, text: "Body", position: 1),
+        StoryStep(type: .title, text: "Draft", position: Rank.at(0)),
+        StoryStep(type: .text, text: "Body", position: Rank.at(1)),
     ], isFavorite: true, parentId: Folder.rootId)
     let plan = WrDocument(id: "d2", title: "Plan", workspaceId: "w", parentId: Folder.rootId)
 

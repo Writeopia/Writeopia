@@ -180,4 +180,14 @@ import WrModels
         ])
         #expect(ComposeDatabase.spans("0:4:LINK:https://a.com:8080/p") == [SpanInfo(start: 0, end: 4, span: "LINK", extra: "https://a.com:8080/p")])
     }
+
+    @Test func readsBothRanksAndOldNumbersAsRanks() {
+        // Since its migration 21 the Compose app keeps ranks; before, numbers
+        #expect(ComposeDatabase.rank("0001000003") == "0001000003")
+        #expect(ComposeDatabase.rank("0001000000i") == "0001000000i")
+        #expect(ComposeDatabase.rank("2") == Rank.at(2))
+        #expect(ComposeDatabase.rank("1.5") == Rank.at(1))
+        #expect(ComposeDatabase.rank("20000.0") == Rank.at(20000))
+        #expect(ComposeDatabase.rank(nil) == Rank.first)
+    }
 }

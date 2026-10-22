@@ -2,6 +2,7 @@
 
 package io.writeopia.editor.features.presentation.repository
 
+import io.writeopia.sdk.utils.iterables.Rank
 import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import io.writeopia.core.presentations.PresentationsStore
@@ -99,14 +100,14 @@ class PresentationSqlStore(
         step: StoryStep,
         presentationId: String,
         slideIndex: Int,
-        position: Long
+        index: Long
     ) {
         stepQueries.insert(
             id = step.id,
             presentation_id = presentationId,
             slide_index = slideIndex.toLong(),
-            position = position.toDouble(),
-            content = json.encodeToString(StoryStepApi.serializer(), step.toApi(position))
+            position = index.toDouble(),
+            content = json.encodeToString(StoryStepApi.serializer(), step.toApi(Rank.at(index)))
         )
     }
 

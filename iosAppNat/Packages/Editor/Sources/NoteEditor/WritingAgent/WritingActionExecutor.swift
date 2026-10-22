@@ -164,7 +164,7 @@ public final class WritingActionExecutor {
         let code = MarkdownCode.parse(answer)
         guard !code.isEmpty else { throw WritingAgentError.emptyAnswer }
 
-        let lines = code.components(separatedBy: "\n").map { StoryStep(type: .codeBlock, text: $0, position: 0) }
+        let lines = code.components(separatedBy: "\n").map { StoryStep(type: .codeBlock, text: $0, position: Rank.first) }
         Self.logger.info("inserting \(lines.count) code block lines below \(stepId ?? "-", privacy: .public)")
         manager.addSteps(lines, afterStepId: stepId)
     }
@@ -177,7 +177,7 @@ public final class WritingActionExecutor {
         guard !items.isEmpty else { throw WritingAgentError.emptyAnswer }
 
         let steps = items.map { item in
-            StoryStep(type: type, text: item, checked: type.number == StoryType.checkItem.number ? false : nil, position: 0)
+            StoryStep(type: type, text: item, checked: type.number == StoryType.checkItem.number ? false : nil, position: Rank.first)
         }
         Self.logger.info("inserting \(steps.count) \(type.name, privacy: .public) items below \(stepId ?? "-", privacy: .public)")
         manager.addSteps(steps, afterStepId: stepId)
@@ -205,7 +205,7 @@ public final class WritingActionExecutor {
                 documentText: String(manager.documentText.prefix(Self.imageContextLimit))
             )
             Self.logger.info("inserting the image below \(stepId ?? "-", privacy: .public)")
-            manager.replaceStep(StoryStep(id: loadingId, type: .image, url: url, position: 0))
+            manager.replaceStep(StoryStep(id: loadingId, type: .image, url: url, position: Rank.first))
         } catch {
             manager.removeStep(stepId: loadingId)
             throw error
@@ -215,7 +215,7 @@ public final class WritingActionExecutor {
     private func heading(stepId: String?) async throws {
         guard let stepId else { return }
         let title = try await Self.oneLine(ai(), instructions: Self.headingPrompt, text: paragraph(stepId))
-        manager.addStep(StoryStep(type: .text, text: title, tags: [TagInfo(tag: BlockTag.h2.rawValue)], position: 0), beforeStepId: stepId)
+        manager.addStep(StoryStep(type: .text, text: title, tags: [TagInfo(tag: BlockTag.h2.rawValue)], position: Rank.first), beforeStepId: stepId)
     }
 
     private func documentTitle() async throws {
@@ -227,7 +227,7 @@ public final class WritingActionExecutor {
     /// A card under the title, starting with "TLDR: ", like a hand-written one.
     private func tldr() async throws {
         let ai = try ai()
-        let loading = StoryStep(type: .loading, position: 0)
+        let loading = StoryStep(type: .loading, position: Rank.first)
         manager.addStepAfterTitle(loading)
         let prompt = "\(Self.tldrPrompt)\n```\n\(manager.documentText)\n```"
         do {
@@ -239,7 +239,7 @@ public final class WritingActionExecutor {
                     type: .text,
                     text: Self.tldrPrefix + partial.trimmingCharacters(in: .whitespacesAndNewlines),
                     tags: [TagInfo(tag: BlockTag.card.rawValue)],
-                    position: 0
+                    position: Rank.first
                 ))
             }
             if !received { throw WritingAgentError.emptyAnswer }

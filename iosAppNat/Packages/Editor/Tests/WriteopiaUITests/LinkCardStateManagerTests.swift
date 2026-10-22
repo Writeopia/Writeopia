@@ -4,9 +4,9 @@ import Writeopia
 import WrModels
 
 private func manager(lines: [String?]) -> WriteopiaStateManager {
-    var steps = [StoryStep(id: "t", type: .title, text: "Title", position: 0)]
+    var steps = [StoryStep(id: "t", type: .title, text: "Title", position: Rank.at(0))]
     for (index, text) in lines.enumerated() {
-        steps.append(StoryStep(id: "l\(index)", type: .text, text: text, position: Int(index + 1)))
+        steps.append(StoryStep(id: "l\(index)", type: .text, text: text, position: Rank.at(index + 1)))
     }
     let manager = WriteopiaStateManager()
     manager.loadDocument(WrDocument(id: "d", title: "Title", workspaceId: "w", content: steps))

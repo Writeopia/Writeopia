@@ -222,7 +222,7 @@ public final class SyncAPI {
 
     public struct StepChange: Encodable, Equatable {
         public let storyStep: StoryStep
-        public let position: Int
+        public let position: String
     }
 
     public struct StepSyncResponse: Decodable {
@@ -256,7 +256,7 @@ public final class SyncAPI {
     ) async throws -> StoryStep {
         struct Body: Encodable {
             let storyStep: StoryStep
-            let position: Int
+            let position: String
             let requestTimestamp: Int64
         }
         let response: LinkCardDescriptionResponse = try await client.send(

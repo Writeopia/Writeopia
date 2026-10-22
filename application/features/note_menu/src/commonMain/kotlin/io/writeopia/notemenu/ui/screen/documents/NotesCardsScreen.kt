@@ -1,5 +1,6 @@
 package io.writeopia.notemenu.ui.screen.documents
 
+import io.writeopia.sdk.utils.iterables.Rank
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
@@ -598,8 +599,8 @@ private fun FolderItem(
             ) {
                 DragCardTarget(
                     modifier = Modifier.clip(MaterialTheme.shapes.large),
-                    position = position.toLong(),
-                    dataToDrop = DropInfo(folderUi, position.toLong()),
+                    position = Rank.at(position),
+                    dataToDrop = DropInfo(folderUi, Rank.at(position)),
                     iconTintOnHover = MaterialTheme.colorScheme.onBackground,
                     onIconClick = onDragIconClick,
                 ) {
@@ -757,8 +758,8 @@ private fun DocumentItem(
                 activeColor = backgroundColor
             ) {
                 DragCardTarget(
-                    position = position.toLong(),
-                    dataToDrop = DropInfo(documentUi, position.toLong()),
+                    position = Rank.at(position),
+                    dataToDrop = DropInfo(documentUi, Rank.at(position)),
                     iconTintOnHover = MaterialTheme.colorScheme.onBackground,
                     onIconClick = onDragIconClick
                 ) {
@@ -785,7 +786,7 @@ private fun DocumentItem(
                                 step = storyStep,
                                 drawInfo = DrawInfo(
                                     editable = false,
-                                    position = i.toLong(),
+                                    position = Rank.at(i),
                                     selectMode = documentUi.selected,
                                     extraData = extraData
                                 ),

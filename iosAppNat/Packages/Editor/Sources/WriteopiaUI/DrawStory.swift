@@ -60,7 +60,7 @@ public struct DrawStory: Identifiable, Equatable {
     public let storyStep: StoryStep
     /// Position of the step. For spaces, the position of the step drawn before them, which is
     /// where a dropped step goes after.
-    public let position: Int
+    public let position: String
     /// The block the step is part of, when it's a code block, box or card step.
     public var block: BlockInfo?
     /// For a space: the block of the steps on both of its sides, when they're in the same one.
@@ -70,7 +70,7 @@ public struct DrawStory: Identifiable, Equatable {
     public init(
         id: String,
         storyStep: StoryStep,
-        position: Int,
+        position: String,
         block: BlockInfo? = nil,
         insideBlock: BlockKind? = nil
     ) {
@@ -89,9 +89,9 @@ public struct DrawStory: Identifiable, Equatable {
 /// as inside the block.
 public enum StepsModifier {
     /// `extraTypes` are the step types the app draws itself (see `CustomStepDrawers`).
-    public static func modify(_ state: StoryState, dragPosition: Int?, extraTypes: Set<Int> = []) -> [DrawStory] {
+    public static func modify(_ state: StoryState, dragPosition: String?, extraTypes: Set<Int> = []) -> [DrawStory] {
         var result: [DrawStory] = []
-        var previousPosition: Int?
+        var previousPosition: String?
 
         for position in state.sortedPositions {
             guard let step = state.stories[position] else { continue }
@@ -113,7 +113,7 @@ public enum StepsModifier {
         return markBlocks(result)
     }
 
-    private static func space(id: String, after position: Int, dragPosition: Int?, type: StoryType) -> DrawStory {
+    private static func space(id: String, after position: String, dragPosition: String?, type: StoryType) -> DrawStory {
         let isTarget = dragPosition == position
         return DrawStory(
             id: id,

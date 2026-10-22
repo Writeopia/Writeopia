@@ -22,8 +22,8 @@ class SpreadsheetHandler {
      * @return The updated story map with the new spreadsheet
      */
     fun createSpreadsheet(
-        currentStory: Map<Long, StoryStep>,
-        position: Long,
+        currentStory: Map<String, StoryStep>,
+        position: String,
         columnCount: Int,
         rowCount: Int = 3,
         insertMode: Boolean = false
@@ -53,7 +53,7 @@ class SpreadsheetHandler {
         } else {
             val mutable = currentStory.toSortedMutableMap()
             mutable[position] = spreadsheet
-            Insertion(mutable, listOf(position), emptyList())
+            Insertion(mutable, listOf(position))
         }
     }
 
@@ -68,12 +68,12 @@ class SpreadsheetHandler {
      * @return The updated story map, or null if the spreadsheet wasn't found
      */
     fun updateSpreadsheetCell(
-        currentStory: Map<Long, StoryStep>,
+        currentStory: Map<String, StoryStep>,
         spreadsheetId: String,
         rowIndex: Int,
         cellIndex: Int,
         newText: String
-    ): Map<Long, StoryStep>? {
+    ): Map<String, StoryStep>? {
         val spreadsheetEntry = currentStory.entries.find { it.value.id == spreadsheetId }
             ?: return null
         val position = spreadsheetEntry.key
@@ -108,9 +108,9 @@ class SpreadsheetHandler {
      * @return The updated story map, or null if the spreadsheet wasn't found
      */
     fun addSpreadsheetRow(
-        currentStory: Map<Long, StoryStep>,
+        currentStory: Map<String, StoryStep>,
         spreadsheetId: String
-    ): Map<Long, StoryStep>? {
+    ): Map<String, StoryStep>? {
         val spreadsheetEntry = currentStory.entries.find { it.value.id == spreadsheetId }
             ?: return null
         val position = spreadsheetEntry.key
@@ -152,9 +152,9 @@ class SpreadsheetHandler {
      * @return The updated story map, or null if the spreadsheet wasn't found
      */
     fun addSpreadsheetColumn(
-        currentStory: Map<Long, StoryStep>,
+        currentStory: Map<String, StoryStep>,
         spreadsheetId: String
-    ): Map<Long, StoryStep>? {
+    ): Map<String, StoryStep>? {
         val spreadsheetEntry = currentStory.entries.find { it.value.id == spreadsheetId }
             ?: return null
         val position = spreadsheetEntry.key
@@ -191,11 +191,11 @@ class SpreadsheetHandler {
      * @return The updated story map, or null if the spreadsheet wasn't found
      */
     fun updateSpreadsheetColumnWidth(
-        currentStory: Map<Long, StoryStep>,
+        currentStory: Map<String, StoryStep>,
         spreadsheetId: String,
         columnIndex: Int,
         newWidth: Int
-    ): Map<Long, StoryStep>? {
+    ): Map<String, StoryStep>? {
         val spreadsheetEntry = currentStory.entries.find { it.value.id == spreadsheetId }
             ?: return null
         val position = spreadsheetEntry.key
@@ -223,10 +223,10 @@ class SpreadsheetHandler {
     }
 
     fun deleteSpreadsheetRow(
-        currentStory: Map<Long, StoryStep>,
+        currentStory: Map<String, StoryStep>,
         spreadsheetId: String,
         rowIndex: Int
-    ): Map<Long, StoryStep>? {
+    ): Map<String, StoryStep>? {
         val mutable = currentStory.toSortedMutableMap()
         val (position, spreadsheet) = mutable.entries.find { it.value.id == spreadsheetId }
             ?: return null
@@ -241,10 +241,10 @@ class SpreadsheetHandler {
     }
 
     fun deleteSpreadsheetColumn(
-        currentStory: Map<Long, StoryStep>,
+        currentStory: Map<String, StoryStep>,
         spreadsheetId: String,
         columnIndex: Int
-    ): Map<Long, StoryStep>? {
+    ): Map<String, StoryStep>? {
         val mutable = currentStory.toSortedMutableMap()
         val (position, spreadsheet) = mutable.entries.find { it.value.id == spreadsheetId }
             ?: return null
@@ -267,10 +267,10 @@ class SpreadsheetHandler {
     }
 
     fun addSpreadsheetRowAt(
-        currentStory: Map<Long, StoryStep>,
+        currentStory: Map<String, StoryStep>,
         spreadsheetId: String,
         rowIndex: Int
-    ): Map<Long, StoryStep>? {
+    ): Map<String, StoryStep>? {
         val mutable = currentStory.toSortedMutableMap()
         val (position, spreadsheet) = mutable.entries.find { it.value.id == spreadsheetId }
             ?: return null
@@ -292,10 +292,10 @@ class SpreadsheetHandler {
     }
 
     fun addSpreadsheetColumnAt(
-        currentStory: Map<Long, StoryStep>,
+        currentStory: Map<String, StoryStep>,
         spreadsheetId: String,
         columnIndex: Int
-    ): Map<Long, StoryStep>? {
+    ): Map<String, StoryStep>? {
         val mutable = currentStory.toSortedMutableMap()
         val (position, spreadsheet) = mutable.entries.find { it.value.id == spreadsheetId }
             ?: return null
@@ -319,11 +319,11 @@ class SpreadsheetHandler {
     }
 
     fun moveSpreadsheetRow(
-        currentStory: Map<Long, StoryStep>,
+        currentStory: Map<String, StoryStep>,
         spreadsheetId: String,
         fromIndex: Int,
         toIndex: Int
-    ): Map<Long, StoryStep>? {
+    ): Map<String, StoryStep>? {
         val mutable = currentStory.toSortedMutableMap()
         val (position, spreadsheet) = mutable.entries.find { it.value.id == spreadsheetId }
             ?: return null
@@ -342,11 +342,11 @@ class SpreadsheetHandler {
     }
 
     fun moveSpreadsheetColumn(
-        currentStory: Map<Long, StoryStep>,
+        currentStory: Map<String, StoryStep>,
         spreadsheetId: String,
         fromIndex: Int,
         toIndex: Int
-    ): Map<Long, StoryStep>? {
+    ): Map<String, StoryStep>? {
         val mutable = currentStory.toSortedMutableMap()
         val (position, spreadsheet) = mutable.entries.find { it.value.id == spreadsheetId }
             ?: return null

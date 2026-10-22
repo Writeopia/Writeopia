@@ -12,7 +12,7 @@ final class SnapshotBackstackManager {
 
     private let textEditLimit: Int
     private let limit: Int
-    private var lastEditPosition: Int?
+    private var lastEditPosition: String?
     private var textEditCount = 0
 
     private var backStates: [StoryState] = []
@@ -36,7 +36,7 @@ final class SnapshotBackstackManager {
 
     /// Like `addState`, for text typed at `position`: the first edit in a line is remembered,
     /// then one in every `textEditLimit` edits of the same line, like the Kotlin SDK.
-    func addTextState(_ state: StoryState, position: Int) {
+    func addTextState(_ state: StoryState, position: String) {
         if position == lastEditPosition, textEditCount < textEditLimit {
             textEditCount += 1
             return

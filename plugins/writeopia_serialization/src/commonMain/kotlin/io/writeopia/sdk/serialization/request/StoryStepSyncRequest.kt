@@ -32,5 +32,5 @@ data class StoryStepSyncRequest(
 @Serializable
 data class StoryStepChangeApi(
     val storyStep: StoryStepApi,
-    val position: Long
+    val position: String
 )

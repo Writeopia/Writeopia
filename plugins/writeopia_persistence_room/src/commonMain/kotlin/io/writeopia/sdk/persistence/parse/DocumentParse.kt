@@ -10,7 +10,7 @@ import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
 fun DocumentEntity.toModel(
-    content: Map<Long, StoryStep> = emptyMap(),
+    content: Map<String, StoryStep> = emptyMap(),
     commentConversations: Map<String, List<Comment>> = emptyMap(),
     tagIds: Set<String> = emptySet(),
 ) = Document(

@@ -125,7 +125,7 @@ class DocumentSyncManager(
         documentEditionFlow: Flow<Pair<StoryState, DocumentInfo>>,
         workspaceIdFlow: Flow<String>,
         syncApi: suspend (StoryStepSyncRequest) -> StoryStepSyncResponse,
-        onServerUpdate: suspend (List<Pair<Long, StoryStep>>, List<String>) -> Unit = { _, _ -> }
+        onServerUpdate: suspend (List<Pair<String, StoryStep>>, List<String>) -> Unit = { _, _ -> }
     ) {
         // Cancel any existing backend sync for this document
         activeBackendSyncJobs[documentId]?.cancel()

@@ -377,7 +377,7 @@ public final class NoteEditorViewModel {
         if let stepId {
             writeopiaManager.updateText(drawing.toJson(), stepId: stepId)
         } else if !drawing.isEmpty {
-            writeopiaManager.addAtTheEnd(StoryStep(type: .drawing, text: drawing.toJson(), position: 0))
+            writeopiaManager.addAtTheEnd(StoryStep(type: .drawing, text: drawing.toJson(), position: Rank.first))
         }
     }
 
@@ -567,7 +567,7 @@ public final class NoteEditorViewModel {
     /// meanwhile; they come back as they were if the AI fails.
     private func replaceSelectedLines(_ lines: [StoryStep], request: AiCommandRequest, ai: AiStreaming) async {
         let manager = writeopiaManager
-        let skeleton = StoryStep(type: .skeleton, text: request.selectedText, position: 0)
+        let skeleton = StoryStep(type: .skeleton, text: request.selectedText, position: Rank.first)
         guard manager.beginAiRewrite(of: Set(lines.map(\.id)), with: [skeleton]) else { return }
 
         var replaceRequest = request
@@ -594,7 +594,7 @@ public final class NoteEditorViewModel {
         rewriteRequest.selectedText = ""
         rewriteRequest.documentText = rewrite.markdown
 
-        let skeleton = StoryStep(type: .skeleton, text: rewrite.originalText, position: 0)
+        let skeleton = StoryStep(type: .skeleton, text: rewrite.originalText, position: Rank.first)
         let first = [skeleton] + rewrite.keptBlocksInOrder
         guard manager.beginAiRewrite(of: Set(rewrite.stepIds), with: first) else { return }
         var regionIds = Set(first.map(\.id))
@@ -638,7 +638,7 @@ public final class NoteEditorViewModel {
     public func runAi(_ command: AiCommand, mode: AiTargetMode) {
         guard let aiClient else { return }
 
-        let input: (text: String, position: Int?)?
+        let input: (text: String, position: String?)?
         switch mode {
         case .document:
             input = (writeopiaManager.documentText, writeopiaManager.lastPosition)
@@ -723,7 +723,7 @@ public final class NoteEditorViewModel {
 
     /// Streams the answer of `prompt` into a new AI answer after `position`. A loading step
     /// shows until the first part of the answer arrives.
-    private func streamAnswer(_ command: AiCommand, prompt: String, after position: Int?) {
+    private func streamAnswer(_ command: AiCommand, prompt: String, after position: String?) {
         guard let aiClient, !isAiRunning else { return }
 
         let answerId = writeopiaManager.loadingAtPosition(position)

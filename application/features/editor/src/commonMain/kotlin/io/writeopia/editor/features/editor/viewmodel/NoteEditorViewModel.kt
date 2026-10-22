@@ -203,7 +203,7 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
     fun changeFontFamily(font: Font)
 
     /** Adds the image at [position], or at the cursor without one. */
-    fun addImage(imagePath: String, position: Long? = null)
+    fun addImage(imagePath: String, position: String? = null)
 
     fun exportMarkdown(path: String)
 
@@ -225,7 +225,7 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 
     fun aiTags(targetMode: AiTargetMode)
 
-    fun aiSection(position: Long)
+    fun aiSection(position: String)
 
     /**
      * Runs a free [command] typed by the user about the document and the lines selected right
@@ -244,7 +244,7 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 
     fun toggleFavorite()
 
-    fun receiveExternalFile(files: List<ExternalFile>, position: Long)
+    fun receiveExternalFile(files: List<ExternalFile>, position: String)
 
     fun setTheme(isDarkTheme: Boolean)
 

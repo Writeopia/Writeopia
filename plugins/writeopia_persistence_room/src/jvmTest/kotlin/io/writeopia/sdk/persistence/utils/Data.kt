@@ -1,11 +1,12 @@
 package io.writeopia.sdk.persistence.utils
 
+import io.writeopia.sdk.utils.iterables.Rank
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 
 fun imageGroup() =
     mapOf(
-        0L to StoryStep(
+        Rank.at(0) to StoryStep(
             localId = "1",
             type = StoryTypes.GROUP_IMAGE.type,
             steps = listOf(

@@ -47,7 +47,7 @@ data class SlashCommand(
     val description: String,
     val icon: ImageVector,
     val commandText: String,
-    val action: (position: Long) -> String?
+    val action: (position: String) -> String?
 )
 
 val defaultSlashCommands = listOf(
@@ -75,8 +75,8 @@ val defaultSlashCommands = listOf(
  * @param onTagToggle Callback to toggle a tag (position, tagInfo, commandInfo)
  */
 fun createTypeCommands(
-    onTypeChange: (Long, TypeInfo, CommandInfo) -> Unit,
-    onTagToggle: (Long, TagInfo, CommandInfo) -> Unit
+    onTypeChange: (String, TypeInfo, CommandInfo) -> Unit,
+    onTagToggle: (String, TagInfo, CommandInfo) -> Unit
 ): List<SlashCommand> = listOf(
     SlashCommand(
         name = "Checkbox",
