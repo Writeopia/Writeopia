@@ -910,12 +910,12 @@ class WriteopiaStateManager(
         if (!hasFocus) return
         val story = currentStory.value
 
-        // Don't preserve lastEdit on focus change - it would cause the save to be
-        // cancelled and re-triggered, potentially interrupting in-progress saves
-        // Also update selection position so the manager knows which line is active
+        // The edit stays: the trackers read only the latest state, so replacing the edit with
+        // Nothing would lose it when they are still saving the one before (a line break moves
+        // the focus right after it). Saving it again is harmless. The selection follows the
+        // focus so the manager knows which line is active.
         _currentStory.value = story.copy(
             focus = position,
-            lastEdit = LastEdit.Nothing,
             selection = story.selection.copy(position = position)
         )
     }
@@ -2177,21 +2177,34 @@ class WriteopiaStateManager(
     }
 
     fun addTitle(tag: Tag) {
+        if (!isEditable) return
+
         if (isOnSelection) {
-            getSelectedStoriesWithPosition().forEach { (pos, storyStep) ->
-                addTitleToStory(storyStep, tag, pos)
+            // One bulk edition, so the tracker saves every selected line. Emitting one line
+            // edition per step loses lines: the state flow keeps only the latest one while a
+            // save is running.
+            val change = getSelectedStoriesWithPosition().map { (position, storyStep) ->
+                Action.StoryStateChange(titledStory(storyStep, tag), position)
             }
+            if (change.isEmpty()) return
+
+            trackState()
+            val current = _currentStory.value
+            _currentStory.value = writeopiaManager.bulkChangeStoryState(current, change)
+                .copy(focus = current.focus, selection = current.selection)
+            // The lines changed outside changeStoryState: the same single change must apply again.
+            lastStateChange = null
         } else {
             val position = currentPosition() ?: return
             val currentStory = getStory(position)
 
             currentStory?.let { storyStep ->
-                addTitleToStory(storyStep, tag, position)
+                changeStoryState(Action.StoryStateChange(titledStory(storyStep, tag), position))
             }
         }
     }
 
-    private fun addTitleToStory(storyStep: StoryStep, tag: Tag, position: String) {
+    private fun titledStory(storyStep: StoryStep, tag: Tag): StoryStep {
         val shouldRemove = storyStep.tags.any { it.tag == tag }
 
         val newTags = storyStep.tags
@@ -2202,8 +2215,7 @@ class WriteopiaStateManager(
                 }
             }
 
-        val newStory = storyStep.copy(tags = newTags)
-        changeStoryState(Action.StoryStateChange(newStory, position))
+        return storyStep.copy(tags = newTags)
     }
 
     private suspend fun getUserId(): String =
