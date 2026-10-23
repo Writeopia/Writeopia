@@ -316,20 +316,20 @@ internal fun NoteEditorScreen(
                     onAddTagClick = noteEditorViewModel::showAddTagDialog,
                     onRemoveTagClick = noteEditorViewModel::removeTagFromDocument,
                 )
-
-                if (showDeleteConfirmation) {
-                    DeleteConfirmationDialog(
-                        onConfirmation = {
-                            noteEditorViewModel.deleteDocument()
-                            showDeleteConfirmation = false
-                            onDocumentDelete()
-                        },
-                        onCancel = { showDeleteConfirmation = false }
-                    )
-                }
             }
 
             // Opened by the side menu on wide layouts and by the global actions menu on phones.
+            if (showDeleteConfirmation) {
+                DeleteConfirmationDialog(
+                    onConfirmation = {
+                        noteEditorViewModel.deleteDocument()
+                        showDeleteConfirmation = false
+                        onDocumentDelete()
+                    },
+                    onCancel = { showDeleteConfirmation = false }
+                )
+            }
+
             if (showFolderSelection) {
                 MoveSelectionSheet(
                     loadFolders = noteEditorViewModel::workspaceFolders,
@@ -400,6 +400,7 @@ internal fun NoteEditorScreen(
                     isFavoriteState = noteEditorViewModel.notFavorite,
                     toggleFavorite = noteEditorViewModel::toggleFavorite,
                     onMoveToClick = { showFolderSelection = true },
+                    onDeleteClick = { showDeleteConfirmation = true },
                     onShareJson = { noteEditorViewModel.shareDocumentInJson() },
                     onShareMd = { noteEditorViewModel.shareDocumentInMarkdown() },
                     changeFontFamily = noteEditorViewModel::changeFontFamily,

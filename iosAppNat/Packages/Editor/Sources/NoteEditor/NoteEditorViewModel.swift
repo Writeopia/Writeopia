@@ -411,6 +411,40 @@ public final class NoteEditorViewModel {
         documentChanged()
     }
 
+    /// Whether the document is a favorite, like "Favorite" in the Compose menu.
+    public private(set) var isFavorite = false
+    /// Why the last favorite or move of the menu failed.
+    public var menuActionError: String?
+
+    /// Favorites the document, or removes it from the favorites. The state changes once saved.
+    public func toggleFavorite() async {
+        let favorite = !isFavorite
+        do {
+            try await repository.setFavorite(ids: [documentId], favorite: favorite)
+            isFavorite = favorite
+            loadedDocument?.isFavorite = favorite
+        } catch {
+            menuActionError = error.userMessage
+        }
+    }
+
+    /// The folder the document is in, where "Move to" starts.
+    public var folderId: String { loadedDocument?.parentId ?? Folder.rootId }
+
+    /// The folders "Move to" browses.
+    var folderRepository: DocumentsRepository { repository }
+
+    /// Moves the document into `folderId`, like "Move to" in the Compose menu.
+    public func move(to folderId: String) async {
+        guard folderId != self.folderId else { return }
+        do {
+            try await repository.moveDocument(id: documentId, toFolder: folderId)
+            documentMoved(to: folderId)
+        } catch {
+            menuActionError = error.userMessage
+        }
+    }
+
     public var fontFamily: EditorFont { writeopiaManager.fontFamily }
 
     /// Changes the font of the editor. It's remembered for every document.
@@ -804,6 +838,7 @@ public final class NoteEditorViewModel {
     private func show(_ document: WrDocument) {
         loadedDocument = document
         tagIds = document.tagIds
+        isFavorite = document.isFavorite
         writeopiaManager.documentIcon = document.icon
         writeopiaManager.loadDocument(document)
         changeCountAtLoad = writeopiaManager.changeCount

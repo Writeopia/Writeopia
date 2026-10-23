@@ -111,3 +111,24 @@ public struct DocumentIconImage: View {
             .accessibilityLabel("Document icon")
     }
 }
+
+/// The icon of a folder: the one chosen in the edition menu, or the default folder.
+public struct FolderIconImage: View {
+    let icon: IconInfo?
+    var isDropTarget = false
+
+    public init(icon: IconInfo?, isDropTarget: Bool = false) {
+        self.icon = icon
+        self.isDropTarget = isDropTarget
+    }
+
+    public var body: some View {
+        Image(systemName: symbol)
+            .foregroundStyle(MenuIcons.color(for: icon?.tint) ?? WrColors.accent)
+    }
+
+    private var symbol: String {
+        if isDropTarget { return "folder.fill.badge.plus" }
+        return MenuIcons.symbol(for: icon?.label) ?? "folder.fill"
+    }
+}

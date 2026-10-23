@@ -31,6 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.writeopia.commonui.buttons.verticalPaddingCommonButton
+import io.writeopia.editor.features.editor.ui.desktop.edit.menu.DeleteButton
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.FavoriteButton
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.FontOptions
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.LockButton
@@ -53,6 +54,7 @@ internal fun NoteGlobalActionsMenu(
     isFavoriteState: StateFlow<Boolean>,
     toggleFavorite: () -> Unit,
     onMoveToClick: () -> Unit,
+    onDeleteClick: () -> Unit,
     onShareJson: () -> Unit = {},
     onShareMd: () -> Unit = {},
     changeFontFamily: (Font) -> Unit,
@@ -96,7 +98,7 @@ internal fun NoteGlobalActionsMenu(
 
                 Spacer(modifier = Modifier.width(4.dp))
 
-                Spacer(modifier = Modifier.weight(1F))
+                DeleteButton(onDeleteClick, modifier = Modifier.weight(1F))
             }
 
             Spacer(modifier = Modifier.height(16.dp))

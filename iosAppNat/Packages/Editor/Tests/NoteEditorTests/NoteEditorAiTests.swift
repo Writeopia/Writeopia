@@ -43,6 +43,11 @@ final class FakeAi: AiStreaming {
 
 final class OneDocumentRepository: DocumentsRepository {
     let document: WrDocument
+    /// The moves and favorites asked for, in order.
+    private(set) var moves: [String] = []
+    private(set) var favorites: [Bool] = []
+    /// Makes the moves and favorites fail.
+    var failsActions = false
     init(_ document: WrDocument) { self.document = document }
 
     func folderContents(folderId: String) async throws -> FolderContents { FolderContents() }
@@ -50,12 +55,18 @@ final class OneDocumentRepository: DocumentsRepository {
     func search(query: String) async throws -> [WrDocument] { [] }
     func createFolder(title: String, parentId: String) async throws -> Folder { throw APIError.notFound }
     func createDocument(title: String, parentId: String) async throws -> WrDocument { throw APIError.notFound }
-    func moveDocument(id: String, toFolder folderId: String) async throws {}
+    func moveDocument(id: String, toFolder folderId: String) async throws {
+        if failsActions { throw APIError.notFound }
+        moves.append(folderId)
+    }
     func moveFolder(id: String, toFolder folderId: String) async throws {}
     func save(_ document: WrDocument) async throws {}
     func deleteDocument(id: String) async throws {}
     func duplicate(ids: [String]) async throws {}
-    func setFavorite(ids: [String], favorite: Bool) async throws {}
+    func setFavorite(ids: [String], favorite: Bool) async throws {
+        if failsActions { throw APIError.notFound }
+        favorites.append(favorite)
+    }
     func deleteItems(ids: [String]) async throws {}
 }
 

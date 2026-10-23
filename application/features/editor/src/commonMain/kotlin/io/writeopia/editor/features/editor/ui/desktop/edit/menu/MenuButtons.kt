@@ -45,3 +45,14 @@ fun FavoriteButton(isFavorite: StateFlow<Boolean>, clickListener: () -> Unit, mo
         isEnabledState = isFavorite
     )
 }
+
+@Composable
+fun DeleteButton(clickListener: () -> Unit, modifier: Modifier = Modifier) {
+    CommonButton(
+        modifier = modifier,
+        icon = WrIcons.delete,
+        iconDescription = WrStrings.delete(),
+        text = WrStrings.delete(),
+        clickListener = clickListener
+    )
+}
