@@ -98,5 +98,13 @@ kotlin {
                 runtimeOnly(libs.kotlinx.coroutines.swing)
             }
         }
+
+        val jvmTest by getting {
+            dependencies {
+                implementation(libs.kotlin.test)
+                implementation(libs.kotlinx.coroutines.test)
+                implementation(libs.mockk)
+            }
+        }
     }
 }

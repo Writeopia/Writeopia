@@ -25,10 +25,10 @@ import io.writeopia.commonui.buttons.sideMenuDefaultWidth
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.commonui.extensions.toUiCard
 import io.writeopia.core.folders.api.DocumentsApi
-import io.writeopia.core.folders.repository.MenuItemsRepository
 import io.writeopia.core.folders.repository.folder.NotesUseCase
 import io.writeopia.core.folders.sync.ContentLoadActivity
-import io.writeopia.core.folders.sync.FolderSync
+import io.writeopia.global.shell.menu.LocalSideMenuSource
+import io.writeopia.global.shell.menu.SideMenuSource
 import io.writeopia.core.folders.sync.SyncActivity
 import io.writeopia.model.ColorThemeOption
 import io.writeopia.model.LocalAiWizardState
@@ -50,7 +50,6 @@ import io.writeopia.sdk.import.json.WriteopiaJsonParser
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.id.GenerateId
-import io.writeopia.sdk.models.user.Tier
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.utils.map
@@ -92,11 +91,14 @@ class GlobalShellKmpViewModel(
     private val workspaceHandler: WorkspaceHandler,
     private val keyboardEventFlow: Flow<KeyboardEvent>?,
     private val writeopiaJsonParser: WriteopiaJsonParser = WriteopiaJsonParser(),
-    private val useBackendOnly: Boolean = false,
-    private val menuItemsRepository: MenuItemsRepository? = null,
     private val genAiApi: GenAiApi? = null,
-    /** Brings an expanded folder in sync with the backend; null when there is no backend. */
-    private val folderSync: FolderSync? = null,
+    /** Where the folders and documents of the side menu come from. */
+    private val sideMenuSource: SideMenuSource = LocalSideMenuSource(
+        notesUseCase = notesUseCase,
+        authRepository = authRepository,
+        notesNavigationUseCase = notesNavigationUseCase,
+        folderSync = null,
+    ),
     /** Picks the AI that answers, local or cloud, following the choice of the user. */
     private val aiClients: AiClients = AiClients(
         localAiRepository = localAiRepository,
@@ -264,23 +266,9 @@ class GlobalShellKmpViewModel(
         }.stateIn(viewModelScope, SharingStarted.Lazily, sideMenuDefaultWidth())
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     override val menuItemsPerFolderId: StateFlow<Map<String, List<MenuItem>>> by lazy {
-        if (useBackendOnly && menuItemsRepository != null) {
-            // For web/backend-only mode, use the shared repository
-            menuItemsRepository.menuItemsPerFolderId
-        } else {
-            // For desktop/local mode, use local storage
-            combine(
-                authRepository.listenForUser(),
-                authRepository.listenForWorkspace(),
-                notesNavigationUseCase.navigationState
-            ) { user, workspace, notesNavigation ->
-                Triple(user, notesNavigation, workspace)
-            }.flatMapLatest { (user, notesNavigation, workspace) ->
-                notesUseCase.listenForMenuItemsPerFolderId(notesNavigation, user.id, workspace.id)
-            }.stateIn(viewModelScope, SharingStarted.Lazily, emptyMap())
-        }
+        sideMenuSource.menuItemsPerFolderId()
+            .stateIn(viewModelScope, SharingStarted.Lazily, emptyMap())
     }
 
     override val sideMenuItems: StateFlow<List<MenuItemUi>> by lazy {
@@ -389,14 +377,8 @@ class GlobalShellKmpViewModel(
             }
         }
 
-        // For backend-only mode, load menu items from the backend
-        if (useBackendOnly) {
-            viewModelScope.launch(Dispatchers.Default) {
-                // Listen for navigation changes and reload from backend
-                notesNavigationUseCase.navigationState.collect { navigation ->
-                    loadMenuItemsFromBackend(navigation.id)
-                }
-            }
+        viewModelScope.launch(Dispatchers.Default) {
+            sideMenuSource.followNavigation()
         }
 
         workspaceHandler.loadAvailableWorkspaces()
@@ -411,24 +393,6 @@ class GlobalShellKmpViewModel(
 
         writeopiaJsonParser.readAllDocuments(path)
             .collect(notesUseCase::saveDocumentDb)
-    }
-
-    private suspend fun loadMenuItemsFromBackend(folderId: String) {
-        if (menuItemsRepository == null) return
-
-        val workspace = authRepository.getWorkspace() ?: return
-
-        // Use the shared repository to load folder contents
-        menuItemsRepository.loadFolderContents(folderId, workspace.id)
-    }
-
-    fun refreshFromBackend() {
-        if (useBackendOnly && menuItemsRepository != null) {
-            viewModelScope.launch(Dispatchers.Default) {
-                val navigation = notesNavigationUseCase.navigationState.value
-                loadMenuItemsFromBackend(navigation.id)
-            }
-        }
     }
 
     override fun init() {
@@ -466,45 +430,19 @@ class GlobalShellKmpViewModel(
         }
     }
 
-    /**
-     * Expands or collapses a folder of the side menu. Expanding shows what is on the device
-     * right away, then fetches the children from the backend: a folder received inside its
-     * parent has its contents on the backend only until it is opened somewhere.
-     */
+    /** Expands or collapses a folder of the side menu, loading its children on expanding. */
     override fun expandFolder(id: String) {
         val expanded = expandedFolders.value
         if (expanded.contains(id)) {
             viewModelScope.launch(Dispatchers.Default) {
                 expandedFolders.value = expanded - id
+                sideMenuSource.collapseFolder(id)
             }
         } else {
             viewModelScope.launch {
-                val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
-
-                notesUseCase.listenForMenuItemsByParentId(
-                    id,
-                    getUserId(),
-                    workspace.id
-                )
-
                 expandedFolders.value = expanded + id
 
-                syncExpandedFolder(id, workspace)
-            }
-        }
-    }
-
-    /** Fetches the children of an expanded folder, like opening the folder does. */
-    private suspend fun syncExpandedFolder(folderId: String, workspace: Workspace) {
-        val sync = folderSync ?: return
-        if (workspace.id == Workspace.disconnectedWorkspace().id) return
-        if (!authRepository.isLoggedIn() || authRepository.getUser().tier != Tier.PREMIUM) return
-
-        withContext(Dispatchers.Default) {
-            ContentLoadActivity.track {
-                // The side menu may expand several folders in a row: no sync is skipped for
-                // coming right after another.
-                sync.syncFolder(folderId = folderId, workspaceId = workspace.id, force = true)
+                sideMenuSource.expandFolder(id)
             }
         }
     }

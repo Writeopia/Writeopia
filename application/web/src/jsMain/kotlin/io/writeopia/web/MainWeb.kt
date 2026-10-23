@@ -223,7 +223,6 @@ fun CreateAppInMemory() {
                             },
                             notesMenuInjection = NotesMenuWebInjection.singleton(),
                             sideMenuInjector = SideMenuKmpInjector(
-                                useBackendOnly = true,
                                 menuItemsRepository = NotesMenuWebInjection.singleton().provideMenuItemsRepository()
                             ),
                         )
