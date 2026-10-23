@@ -1,4 +1,4 @@
-package io.writeopia.notemenu.ui.screen.menu
+package io.writeopia.commonui.folders
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -54,7 +54,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import io.writeopia.common.utils.icons.WrIcons
-import io.writeopia.notemenu.viewmodel.MoveFolderTree
 import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
@@ -63,7 +62,7 @@ import kotlinx.coroutines.CancellationException
 /** The folder picker in a bottom sheet, for touch screens. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun MoveSelectionSheet(
+fun MoveSelectionSheet(
     loadFolders: suspend () -> List<Folder>,
     excludedIds: Set<String>,
     currentParentId: String,
@@ -88,7 +87,7 @@ internal fun MoveSelectionSheet(
 
 /** The folder picker in a dialog, for the desktop. */
 @Composable
-internal fun MoveSelectionDialog(
+fun MoveSelectionDialog(
     loadFolders: suspend () -> List<Folder>,
     excludedIds: Set<String>,
     currentParentId: String,

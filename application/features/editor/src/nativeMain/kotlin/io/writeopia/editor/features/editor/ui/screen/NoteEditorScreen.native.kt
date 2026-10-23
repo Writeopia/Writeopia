@@ -49,13 +49,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.dialogs.confirmation.DeleteConfirmationDialog
+import io.writeopia.commonui.folders.MoveSelectionSheet
 import io.writeopia.editor.configuration.ui.HeaderEdition
 import io.writeopia.editor.configuration.ui.NoteGlobalActionsMenu
 import io.writeopia.editor.features.editor.ui.TextEditor
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.SideEditorOptions
 import io.writeopia.editor.features.editor.ui.tags.AddDocumentTagDialog
 import io.writeopia.editor.features.editor.ui.tags.DocumentTagsDialog
-import io.writeopia.editor.features.editor.ui.folders.FolderSelectionDialog
 import io.writeopia.editor.features.editor.ui.mobile.MobileAiSheet
 import io.writeopia.editor.features.editor.viewmodel.AiTargetMode
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
@@ -228,7 +228,6 @@ internal fun NoteEditorScreen(
                     onImagePickRequest = launchImagePicker,
                     exportMarkdown = noteEditorViewModel::exportMarkdown,
                     exportJson = noteEditorViewModel::exportJson,
-                    moveToRoot = noteEditorViewModel::moveToRootFolder,
                     moveToClick = { showFolderSelection = true },
                     aiCommand = noteEditorViewModel::aiCommand,
                     addPage = noteEditorViewModel::addPage,
@@ -259,18 +258,20 @@ internal fun NoteEditorScreen(
                         onCancel = { showDeleteConfirmation = false }
                     )
                 }
+            }
 
-                if (showFolderSelection) {
-                    FolderSelectionDialog(
-                        noteEditorViewModel.listenForFolders,
-                        selectedFolder = { folderId ->
-                            showFolderSelection = false
-                            noteEditorViewModel.moveToFolder(folderId)
-                        },
-                        expandFolder = noteEditorViewModel::expandFolder,
-                        onDismissRequest = { showFolderSelection = false }
-                    )
-                }
+            // Opened by the side menu on wide layouts and by the global actions menu on phones.
+            if (showFolderSelection) {
+                MoveSelectionSheet(
+                    loadFolders = noteEditorViewModel::workspaceFolders,
+                    excludedIds = emptySet(),
+                    currentParentId = noteEditorViewModel.documentFolderId(),
+                    onMove = { folderId ->
+                        showFolderSelection = false
+                        noteEditorViewModel.moveToFolder(folderId)
+                    },
+                    onDismissRequest = { showFolderSelection = false }
+                )
             }
 
             // Both menus open these dialogs: the side menu on wide layouts and the global
@@ -336,6 +337,9 @@ internal fun NoteEditorScreen(
                 NoteGlobalActionsMenu(
                     isEditableState = noteEditorViewModel.isEditable,
                     setEditable = noteEditorViewModel::toggleEditable,
+                    isFavoriteState = noteEditorViewModel.notFavorite,
+                    toggleFavorite = noteEditorViewModel::toggleFavorite,
+                    onMoveToClick = { showFolderSelection = true },
                     onShareJson = { noteEditorViewModel.shareDocumentInJson() },
                     onShareMd = { noteEditorViewModel.shareDocumentInMarkdown() },
                     changeFontFamily = noteEditorViewModel::changeFontFamily,

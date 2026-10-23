@@ -109,7 +109,6 @@ fun SideEditorOptions(
     onImagePickRequest: (() -> Unit)? = null,
     exportJson: (String) -> Unit,
     exportMarkdown: (String) -> Unit,
-    moveToRoot: () -> Unit,
     moveToClick: () -> Unit,
     aiCommand: (String) -> Unit,
     aiSummary: (AiTargetMode) -> Unit,
@@ -172,7 +171,6 @@ fun SideEditorOptions(
                                 setEditable,
                                 fontStyleSelected(),
                                 moveToClick,
-                                moveToRoot,
                                 deleteDocument,
                                 toggleFavorite,
                                 documentTagsState = documentTagsState,
@@ -395,7 +393,6 @@ private fun PageOptions(
     setEditable: () -> Unit,
     selectedState: StateFlow<Font>,
     moveButtonClick: () -> Unit,
-    moveToRoot: () -> Unit,
     deleteDocument: () -> Unit,
     toggleFavorite: () -> Unit,
     modifier: Modifier = Modifier,
@@ -448,9 +445,6 @@ private fun PageOptions(
         Spacer(modifier = Modifier.height(4.dp))
 
         MoveToButton(moveButtonClick, modifier = Modifier.fillMaxWidth())
-        Spacer(modifier = Modifier.height(4.dp))
-
-        MoveToHomeButton(moveToRoot, modifier = Modifier.fillMaxWidth())
         Spacer(modifier = Modifier.height(4.dp))
 
         TextButton(

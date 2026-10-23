@@ -35,17 +35,6 @@ fun MoveToButton(clickListener: () -> Unit, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun MoveToHomeButton(clickListener: () -> Unit, modifier: Modifier = Modifier) {
-    CommonButton(
-        modifier = modifier,
-        icon = WrIcons.move,
-        iconDescription = WrStrings.moveToHome(),
-        text = WrStrings.moveToHome(),
-        clickListener = clickListener
-    )
-}
-
-@Composable
 fun FavoriteButton(isFavorite: StateFlow<Boolean>, clickListener: () -> Unit, modifier: Modifier = Modifier) {
     CommonButton(
         modifier = modifier,

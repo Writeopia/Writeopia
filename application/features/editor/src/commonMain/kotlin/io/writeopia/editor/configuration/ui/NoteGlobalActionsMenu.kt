@@ -31,8 +31,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.writeopia.commonui.buttons.verticalPaddingCommonButton
+import io.writeopia.editor.features.editor.ui.desktop.edit.menu.FavoriteButton
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.FontOptions
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.LockButton
+import io.writeopia.editor.features.editor.ui.desktop.edit.menu.MoveToButton
 import io.writeopia.editor.features.editor.ui.tags.DocumentTagChipsRow
 import io.writeopia.model.Font
 import io.writeopia.resources.WrStrings
@@ -48,6 +50,9 @@ const val GLOBAL_MENU_TAGS_TAG = "GlobalMenuTags"
 internal fun NoteGlobalActionsMenu(
     isEditableState: StateFlow<Boolean>,
     setEditable: () -> Unit,
+    isFavoriteState: StateFlow<Boolean>,
+    toggleFavorite: () -> Unit,
+    onMoveToClick: () -> Unit,
     onShareJson: () -> Unit = {},
     onShareMd: () -> Unit = {},
     changeFontFamily: (Font) -> Unit,
@@ -81,6 +86,14 @@ internal fun NoteGlobalActionsMenu(
 //            selectedColor = WriteopiaTheme.colorScheme.highlight,
 //            defaultColor = MaterialTheme.colorScheme.background
             )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            FavoriteButton(isFavoriteState, toggleFavorite)
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            MoveToButton(onMoveToClick)
 
             Spacer(modifier = Modifier.height(16.dp))
 

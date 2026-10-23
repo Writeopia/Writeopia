@@ -46,9 +46,9 @@ import io.writeopia.ai.task.ui.AiTaskIndicator
 import io.writeopia.common.utils.file.fileChooserLoad
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.dialogs.confirmation.DeleteConfirmationDialog
+import io.writeopia.commonui.folders.MoveSelectionDialog
 import io.writeopia.editor.features.editor.ui.ai.AiCommandBar
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.SideEditorOptions
-import io.writeopia.editor.features.editor.ui.folders.FolderSelectionDialog
 import io.writeopia.editor.features.editor.ui.publish.PremiumOnlyDialog
 import io.writeopia.editor.features.editor.ui.publish.PublishDialog
 import io.writeopia.editor.features.editor.ui.tags.AddDocumentTagDialog
@@ -242,7 +242,6 @@ fun DesktopNoteEditorScreen(
             addImage = noteEditorViewModel::addImage,
             exportMarkdown = noteEditorViewModel::exportMarkdown,
             exportJson = noteEditorViewModel::exportJson,
-            moveToRoot = noteEditorViewModel::moveToRootFolder,
             moveToClick = {
                 showFolderSelection = true
             },
@@ -322,16 +321,15 @@ fun DesktopNoteEditorScreen(
         }
 
         if (showFolderSelection) {
-            FolderSelectionDialog(
-                noteEditorViewModel.listenForFolders,
-                selectedFolder = { folderId ->
+            MoveSelectionDialog(
+                loadFolders = noteEditorViewModel::workspaceFolders,
+                excludedIds = emptySet(),
+                currentParentId = noteEditorViewModel.documentFolderId(),
+                onMove = { folderId ->
                     showFolderSelection = false
                     noteEditorViewModel.moveToFolder(folderId)
                 },
-                expandFolder = noteEditorViewModel::expandFolder,
-                onDismissRequest = {
-                    showFolderSelection = false
-                }
+                onDismissRequest = { showFolderSelection = false }
             )
         }
 

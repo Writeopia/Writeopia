@@ -1,5 +1,7 @@
 package io.writeopia.notemenu.viewmodel
 
+import io.writeopia.commonui.folders.FolderSearchResult
+import io.writeopia.commonui.folders.MoveFolderTree
 import io.writeopia.sdk.models.document.Folder
 import kotlin.test.Test
 import kotlin.test.assertEquals

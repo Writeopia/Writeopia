@@ -15,7 +15,6 @@ import io.writeopia.ai.task.AiTaskManager
 import io.writeopia.ai.task.AiTaskType
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.genai.repository.GenAiRepository
-import io.writeopia.common.utils.collections.toNodeTree
 import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.sync.ContentLoadActivity
 import io.writeopia.core.presentations.PresentationsStore
@@ -28,8 +27,6 @@ import io.writeopia.common.utils.file.SaveImage
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.common.utils.toList
 import io.writeopia.core.folders.repository.folder.DocumentLoadUseCase
-import io.writeopia.commonui.dtos.MenuItemUi
-import io.writeopia.commonui.extensions.toFolderUi
 import io.writeopia.core.folders.repository.InDocumentSearchRepository
 import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.core.folders.repository.tag.DocumentTagRepository
@@ -50,6 +47,7 @@ import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.DocumentTag
+import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.span.Span
@@ -445,7 +443,8 @@ class NoteEditorKmpViewModel(
     private val _shouldGoToNextScreen = MutableStateFlow(false)
     override val shouldGoToNextScreen = _shouldGoToNextScreen.asStateFlow()
 
-    private val expandedFolders = MutableStateFlow(setOf<String>())
+    // The document's folder once moved from the editor: the loaded document still has the old one.
+    private var movedToFolderId: String? = null
 
     override val isEditState: StateFlow<EditState> by lazy {
         writeopiaManager.onEditPositions.map { set ->
@@ -685,35 +684,6 @@ class NoteEditorKmpViewModel(
 
     private val _documentToShareInfo = MutableStateFlow<ShareDocument?>(null)
     override val documentToShareInfo: StateFlow<ShareDocument?> = _documentToShareInfo.asStateFlow()
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    override val listenForFolders: StateFlow<List<MenuItemUi.FolderUi>> =
-        authRepository.listenForWorkspace()
-            .flatMapLatest { workspace ->
-                combine(
-                    expandedFolders,
-                    folderRepository.listenForFoldersByParentId(
-                        "root",
-                        workspace.id
-                    ),
-                ) { expanded, map ->
-                    val folderUiMap = map.mapValues { (_, item) ->
-                        item.map {
-                            it.toFolderUi(expanded = expanded.contains(it.id))
-                        }
-                    }
-
-                    folderUiMap
-                        .toNodeTree(
-                            MenuItemUi.FolderUi.root(),
-                            filterPredicate = { menuItemUi ->
-                                menuItemUi.expanded
-                            }
-                        )
-                        .toList()
-                        .filter { it.id != "root" }
-                }
-            }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     override fun changeSideMenu(tab: SideMenuTab) {
         _sideMenuTabState.value = tab
@@ -1222,33 +1192,17 @@ class NoteEditorKmpViewModel(
         }
     }
 
-    override fun expandFolder(folderId: String) {
-        val expanded = expandedFolders.value
-        if (expanded.contains(folderId)) {
-            viewModelScope.launch(Dispatchers.Default) {
-                expandedFolders.value = expanded - folderId
-            }
-        } else {
-            viewModelScope.launch {
-                val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
-                folderRepository.listenForFoldersByParentId(
-                    folderId,
-                    workspace.id
-                )
-                expandedFolders.value = expanded + folderId
-            }
-        }
+    override suspend fun workspaceFolders(): List<Folder> {
+        val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
+        return folderRepository.getFoldersForWorkspace(workspace.id)
     }
+
+    override fun documentFolderId(): String = movedToFolderId ?: writeopiaManager.getDocument().parentId
 
     override fun moveToFolder(folderId: String) {
+        movedToFolderId = folderId
         viewModelScope.launch(Dispatchers.Default) {
             documentRepository.moveToFolder(documentId = documentId.value, parentId = folderId)
-        }
-    }
-
-    override fun moveToRootFolder() {
-        viewModelScope.launch(Dispatchers.Default) {
-            documentRepository.moveToFolder(documentId = documentId.value, parentId = "root")
         }
     }
 

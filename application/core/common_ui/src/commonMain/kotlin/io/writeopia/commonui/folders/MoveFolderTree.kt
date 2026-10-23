@@ -1,4 +1,4 @@
-package io.writeopia.notemenu.viewmodel
+package io.writeopia.commonui.folders
 
 import io.writeopia.sdk.models.document.Folder
 
