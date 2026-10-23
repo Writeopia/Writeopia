@@ -5,6 +5,7 @@ package io.writeopia.auth.workspace
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.LocalAiRepository
+import io.writeopia.analytics.Analytics
 import io.writeopia.api.LocalAiApi
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.auth.core.data.WorkspaceApi
@@ -125,6 +126,7 @@ class ChooseWorkspaceViewModel(
             _createWorkspaceState.value = result
 
             if (result is ResultData.Complete) {
+                Analytics.capture("workspace_created")
                 loadWorkspaces()
             }
         }

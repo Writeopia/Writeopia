@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import io.writeopia.LocalAiRepository
 import io.writeopia.ai.AiClients
 import io.writeopia.ai.task.AiTaskManager
+import io.writeopia.analytics.Analytics
 import io.writeopia.ai.task.AiTaskType
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.common.utils.DISCONNECTED_USER_ID
@@ -783,6 +784,7 @@ internal class ChooseNoteKmpViewModel(
             }
             val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
             val folder = notesUseCase.createFolder(name, workspace.id, parentId, icon)
+            Analytics.capture("folder_created", mapOf("folder_id" to folder.id))
             syncFolder(folder)
             hideCreateFolderDialog()
         }
