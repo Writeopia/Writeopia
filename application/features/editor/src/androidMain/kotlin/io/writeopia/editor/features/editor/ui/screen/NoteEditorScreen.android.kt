@@ -185,6 +185,7 @@ internal fun NoteEditorScreen(
                     titleState = noteEditorViewModel.currentTitle,
                     editableState = noteEditorViewModel.isEditable,
                     publishedState = noteEditorViewModel.isDocumentPublished,
+                    notFavoriteState = noteEditorViewModel.notFavorite,
                     navigationClick = {
                         noteEditorViewModel.handleBackAction(navigateBack = navigateBack)
                     },
@@ -503,6 +504,7 @@ private fun TopBar(
     titleState: StateFlow<String>,
     editableState: StateFlow<Boolean>,
     publishedState: StateFlow<Boolean>,
+    notFavoriteState: StateFlow<Boolean>,
     modifier: Modifier = Modifier,
     navigationClick: () -> Unit = {},
     shareDocument: () -> Unit
@@ -510,6 +512,8 @@ private fun TopBar(
     val title by titleState.collectAsState()
     val isEditable by editableState.collectAsState()
     val isPublished by publishedState.collectAsState()
+    val notFavorite by notFavoriteState.collectAsState()
+    val isFavorite = !notFavorite
 
     TopAppBar(
         modifier = modifier.height(110.dp),
@@ -530,7 +534,7 @@ private fun TopBar(
                     style = MaterialTheme.typography.titleSmall.copy(textAlign = TextAlign.Center)
                 )
 
-                if (!isEditable || isPublished) {
+                if (!isEditable || isFavorite || isPublished) {
                     Spacer(modifier.width(4.dp))
                 }
 
@@ -543,8 +547,20 @@ private fun TopBar(
                     )
                 }
 
-                if (isPublished) {
+                if (isFavorite) {
                     if (!isEditable) {
+                        Spacer(modifier.width(4.dp))
+                    }
+                    Icon(
+                        imageVector = WrIcons.favorites,
+                        contentDescription = "Favorite",
+                        tint = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
+
+                if (isPublished) {
+                    if (!isEditable || isFavorite) {
                         Spacer(modifier.width(4.dp))
                     }
                     Icon(

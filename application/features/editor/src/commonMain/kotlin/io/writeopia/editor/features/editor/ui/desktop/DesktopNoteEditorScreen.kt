@@ -294,8 +294,10 @@ fun DesktopNoteEditorScreen(
         }
 
         val isPublished by noteEditorViewModel.isDocumentPublished.collectAsState()
+        val notFavorite by noteEditorViewModel.notFavorite.collectAsState()
+        val isFavorite = !notFavorite
 
-        if (!isEditable || isPublished) {
+        if (!isEditable || isFavorite || isPublished) {
             Row(
                 modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -304,6 +306,14 @@ fun DesktopNoteEditorScreen(
                     Icon(
                         imageVector = WrIcons.lock,
                         contentDescription = "Locked",
+                        tint = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+                if (isFavorite) {
+                    Icon(
+                        imageVector = WrIcons.favorites,
+                        contentDescription = "Favorite",
                         tint = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.size(16.dp)
                     )

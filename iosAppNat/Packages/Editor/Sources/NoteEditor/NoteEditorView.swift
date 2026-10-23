@@ -483,6 +483,7 @@ public struct NoteEditorView: View {
                     TitleView(
                         title: viewModel.hasLoaded ? viewModel.title : fallbackTitle,
                         isLocked: viewModel.isLocked,
+                        isFavorite: viewModel.isFavorite,
                         isPublished: viewModel.isPublished
                     )
                 }
@@ -716,10 +717,11 @@ private struct DrawingTarget: Identifiable {
     let drawing: DrawingData?
 }
 
-/// Title of the navigation bar, with the lock and published marks of the Compose top bar.
+/// Title of the navigation bar, with the lock, favorite and published marks of the Compose top bar.
 private struct TitleView: View {
     let title: String
     let isLocked: Bool
+    let isFavorite: Bool
     let isPublished: Bool
 
     var body: some View {
@@ -732,6 +734,12 @@ private struct TitleView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .accessibilityLabel("Locked")
+            }
+            if isFavorite {
+                Image(systemName: "heart.fill")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel("Favorite")
             }
             if isPublished {
                 Image(systemName: "globe")

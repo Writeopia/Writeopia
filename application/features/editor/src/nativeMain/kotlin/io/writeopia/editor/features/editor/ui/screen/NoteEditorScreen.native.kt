@@ -127,6 +127,7 @@ internal fun NoteEditorScreen(
                 TopBar(
                     titleState = noteEditorViewModel.currentTitle,
                     editableState = noteEditorViewModel.isEditable,
+                    notFavoriteState = noteEditorViewModel.notFavorite,
                     navigationClick = {
                         noteEditorViewModel.handleBackAction(navigateBack = navigateBack)
                     },
@@ -386,12 +387,14 @@ internal fun NoteEditorScreen(
 private fun TopBar(
     titleState: StateFlow<String>,
     editableState: StateFlow<Boolean>,
+    notFavoriteState: StateFlow<Boolean>,
     modifier: Modifier = Modifier,
     navigationClick: () -> Unit = {},
     shareDocument: () -> Unit
 ) {
     val title by titleState.collectAsState()
     val isEditable by editableState.collectAsState()
+    val notFavorite by notFavoriteState.collectAsState()
 
     TopAppBar(
         modifier = modifier.height(44.dp),
@@ -415,6 +418,14 @@ private fun TopBar(
                     Icon(
                         imageVector = WrIcons.lock,
                         contentDescription = "Lock",
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+
+                if (!notFavorite) {
+                    Icon(
+                        imageVector = WrIcons.favorites,
+                        contentDescription = "Favorite",
                         tint = MaterialTheme.colorScheme.onBackground
                     )
                 }
