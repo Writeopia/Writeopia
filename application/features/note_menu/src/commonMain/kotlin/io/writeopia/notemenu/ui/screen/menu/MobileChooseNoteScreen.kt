@@ -600,6 +600,7 @@ private fun Content(
                 } else {
                     WrStrings.folderScreenEmpty()
                 },
+                showCreateNoteWhenEmpty = currentTag == null,
                 isDarkTheme = isDarkTheme,
                 documents = chooseNoteViewModel.documentsState.collectAsState().value,
                 showAddMenuState = chooseNoteViewModel.showAddMenuState,

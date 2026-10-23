@@ -248,6 +248,7 @@ private fun PickTagTab(
             modifier = Modifier.fillMaxWidth().testTag("$ADD_DOCUMENT_TAG_DIALOG_TAG.search"),
             singleLine = true,
             placeholder = { Text(WrStrings.documentTagAddSearch()) },
+            shape = MaterialTheme.shapes.large,
         )
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -320,6 +321,7 @@ private fun NewTagTab(
         singleLine = true,
         enabled = !isAsking,
         label = { Text(WrStrings.documentTagName()) },
+        shape = MaterialTheme.shapes.large,
     )
     Spacer(modifier = Modifier.height(8.dp))
     OutlinedTextField(
@@ -330,6 +332,7 @@ private fun NewTagTab(
         maxLines = 4,
         enabled = !isAsking,
         label = { Text(WrStrings.documentTagDescription()) },
+        shape = MaterialTheme.shapes.large,
     )
 
     if (aiDraft is AiTagDraft.Failed) {

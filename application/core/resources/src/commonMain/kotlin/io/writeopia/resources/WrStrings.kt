@@ -41,6 +41,7 @@ import writeopia.application.core.resources.generated.resources.document_tags_no
 import writeopia.application.core.resources.generated.resources.document_tags_more
 import writeopia.application.core.resources.generated.resources.graph_grouping_folders
 import writeopia.application.core.resources.generated.resources.tag_screen_empty
+import writeopia.application.core.resources.generated.resources.folder_screen_create_note
 import writeopia.application.core.resources.generated.resources.folder_screen_empty
 import writeopia.application.core.resources.generated.resources.documents_graph
 import writeopia.application.core.resources.generated.resources.untitled
@@ -1355,6 +1356,9 @@ object WrStrings {
 
     @Composable
     fun folderScreenEmpty() = stringResource(Res.string.folder_screen_empty)
+
+    @Composable
+    fun folderScreenCreateNote() = stringResource(Res.string.folder_screen_create_note)
 
     @Composable
     fun documentsGraph() = stringResource(Res.string.documents_graph)

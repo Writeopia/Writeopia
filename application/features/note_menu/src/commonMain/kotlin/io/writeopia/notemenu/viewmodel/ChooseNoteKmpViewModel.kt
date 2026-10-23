@@ -56,6 +56,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
@@ -120,7 +121,9 @@ internal class ChooseNoteKmpViewModel(
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    override val menuItemsPerFolderId: StateFlow<Map<String, List<MenuItem>>> by lazy {
+    // Null until the first listing arrives, so an empty folder is not told apart from one still
+    // loading by an empty map.
+    private val loadedMenuItemsPerFolderId: StateFlow<Map<String, List<MenuItem>>?> by lazy {
         authRepository.listenForUser()
             .flatMapLatest { user ->
                 notesUseCase.listenForMenuItemsPerFolderId(
@@ -128,12 +131,20 @@ internal class ChooseNoteKmpViewModel(
                     user.id,
                     getWorkspaceId()
                 )
-            }.stateIn(viewModelScope, SharingStarted.Lazily, emptyMap())
+            }.stateIn(viewModelScope, SharingStarted.Lazily, null)
+    }
+
+    override val menuItemsPerFolderId: StateFlow<Map<String, List<MenuItem>>> by lazy {
+        loadedMenuItemsPerFolderId
+            .map { menuItems -> menuItems ?: emptyMap() }
+            .stateIn(viewModelScope, SharingStarted.Lazily, emptyMap())
     }
 
     override val menuItemsState: StateFlow<ResultData<List<MenuItem>>> by lazy {
         combine(
-            menuItemsPerFolderId,
+            // Stays loading until the items are read, so the empty folder message does not show
+            // while the screen opens.
+            loadedMenuItemsPerFolderId.filterNotNull(),
             authRepository.listenForWorkspace()
         ) { menuItems, workspace ->
             val pageItems = when (notesNavigation) {
