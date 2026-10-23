@@ -51,6 +51,7 @@ actual fun DragCardTarget(
     onIconClick: () -> Unit,
     onDragStart: () -> Unit,
     onDragStop: () -> Unit,
+    dragOnLongPress: Boolean,
     content: @Composable BoxScope.() -> Unit
 ) {
     var currentPosition by remember { mutableStateOf(Offset.Zero) }

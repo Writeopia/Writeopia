@@ -269,4 +269,5 @@
   <string name="ai_command_hint">Diga à IA o que fazer com o texto</string>
   <string name="ai_command_run">Executar</string>
   <string name="quick_actions_cursor_hint">As ações rápidas funcionam no documento ou nas linhas selecionadas.</string>
+  <string name="folder_screen_create_note">Criar uma nota</string>
 </resources>

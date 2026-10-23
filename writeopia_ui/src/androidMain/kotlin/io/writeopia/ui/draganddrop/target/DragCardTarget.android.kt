@@ -19,6 +19,7 @@ actual fun DragCardTarget(
     onIconClick: () -> Unit,
     onDragStart: () -> Unit,
     onDragStop: () -> Unit,
+    dragOnLongPress: Boolean,
     content: @Composable BoxScope.() -> Unit
 ) {
     DragCardTargetMobile(
@@ -29,6 +30,7 @@ actual fun DragCardTarget(
         dragIconWidth,
         iconTintColor,
         iconTintOnHover,
+        dragOnLongPress,
         content
     )
 }

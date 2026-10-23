@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -27,8 +28,9 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -76,6 +78,7 @@ import io.writeopia.ui.components.SwipeBox
 import io.writeopia.ui.components.multiselection.SelectableByDrag
 import io.writeopia.ui.draganddrop.target.DragCardTarget
 import io.writeopia.ui.draganddrop.target.DropTarget
+import io.writeopia.ui.draganddrop.target.draggedData
 import io.writeopia.ui.drawer.StoryStepDrawer
 import io.writeopia.ui.drawer.preview.AiAnswerPreviewDrawer
 import io.writeopia.ui.drawer.preview.CheckItemPreviewDrawer
@@ -120,6 +123,8 @@ fun NotesCardsScreen(
     showTapToStart: Boolean = true,
     /** Shown instead of the tap to start button when the screen is empty and it is hidden. */
     emptyMessage: String = "",
+    /** Shows a button to create a note below [emptyMessage]. */
+    showCreateNoteWhenEmpty: Boolean = false,
 ) {
     when (documents) {
         is ResultData.Complete -> {
@@ -128,12 +133,9 @@ fun NotesCardsScreen(
                     val isEmpty = documents.data.documentUiList.isEmpty()
 
                     if (isEmpty && !showTapToStart) {
-                        Text(
-                            text = emptyMessage,
-                            modifier = Modifier.fillMaxWidth().padding(24.dp),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
+                        EmptyMessage(
+                            message = emptyMessage,
+                            newNote = newNote.takeIf { showCreateNoteWhenEmpty }
                         )
                     } else if (isEmpty) {
                         TapToStartButton(isEmpty, newNote)
@@ -223,10 +225,9 @@ fun NotesCardsScreen(
             }
         }
 
+        // Nothing is shown while the items load, as the screen is often still in its transition.
         is ResultData.Loading, is ResultData.Idle, is ResultData.InProgress -> {
-            Box(modifier = modifier.fillMaxSize()) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            }
+            Box(modifier = modifier.fillMaxSize())
         }
     }
 
@@ -571,9 +572,13 @@ private fun FolderItem(
                 }
             }
 
+            // A card held over the folder, other than the folder itself, is about to be moved into it.
+            val hoveringItem = draggedData()?.info as? MenuItemUi
+            val isDropTarget = inBound && hoveringItem != null && hoveringItem.id != folderUi.id
+
             val bgColor =
                 when {
-                    inBound && menuItemUI?.id != folderUi.id -> WriteopiaTheme.colorScheme.highlight
+                    isDropTarget -> WriteopiaTheme.colorScheme.highlight
                     folderUi.selected -> WriteopiaTheme.colorScheme.selectedBg
                     else -> WriteopiaTheme.colorScheme.cardBg
                 }
@@ -603,6 +608,7 @@ private fun FolderItem(
                     dataToDrop = DropInfo(folderUi, Rank.at(position)),
                     iconTintOnHover = MaterialTheme.colorScheme.onBackground,
                     onIconClick = onDragIconClick,
+                    dragOnLongPress = true,
                 ) {
                     Column(
                         modifier = Modifier
@@ -623,8 +629,11 @@ private fun FolderItem(
                                 .clickable { showIconsOptions = !showIconsOptions }
                                 .size(56.dp)
                                 .padding(6.dp),
-                            imageVector = folderUi.icon?.label?.let(WrIcons::fromName)
-                                ?: folder,
+                            imageVector = if (isDropTarget) {
+                                WrIcons.moveToFolder
+                            } else {
+                                folderUi.icon?.label?.let(WrIcons::fromName) ?: folder
+                            },
                             contentDescription = "Folder",
                             tint = tint
                         )
@@ -761,7 +770,8 @@ private fun DocumentItem(
                     position = Rank.at(position),
                     dataToDrop = DropInfo(documentUi, Rank.at(position)),
                     iconTintOnHover = MaterialTheme.colorScheme.onBackground,
-                    onIconClick = onDragIconClick
+                    onIconClick = onDragIconClick,
+                    dragOnLongPress = true
                 ) {
                     Column(
                         modifier = Modifier.background(
@@ -816,6 +826,46 @@ private fun DocumentItem(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmptyMessage(message: String, newNote: (() -> Unit)?) {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = message,
+            modifier = Modifier.fillMaxWidth(),
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
+
+        if (newNote != null) {
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Filled with the accent color, so it stands out from the screen background.
+            Button(
+                modifier = Modifier.heightIn(min = 44.dp),
+                shape = RoundedCornerShape(10.dp),
+                onClick = newNote
+            ) {
+                Icon(
+                    modifier = Modifier.size(18.dp),
+                    imageVector = WrIcons.add,
+                    contentDescription = null
+                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Text(
+                    text = WrStrings.folderScreenCreateNote(),
+                    style = MaterialTheme.typography.titleMedium
+                )
             }
         }
     }
