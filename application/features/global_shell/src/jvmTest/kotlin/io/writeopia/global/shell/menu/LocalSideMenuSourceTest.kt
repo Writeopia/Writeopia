@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Clock
@@ -32,10 +33,12 @@ class LocalSideMenuSourceTest {
     private val workspace = Workspace.disconnectedWorkspace()
     private val user = WriteopiaUser.disconnectedUser()
 
+    private val notesNavigationUseCase = NotesNavigationUseCase.singleton()
+
     private val source = LocalSideMenuSource(
         notesUseCase = notesUseCase,
         authRepository = authRepository,
-        notesNavigationUseCase = NotesNavigationUseCase.singleton(),
+        notesNavigationUseCase = notesNavigationUseCase,
         folderSync = null,
     )
 
@@ -53,6 +56,21 @@ class LocalSideMenuSourceTest {
                 workspace.id
             )
         } returns flowOf(mapOf("a" to listOf(folder("b", "a"))))
+    }
+
+    @AfterTest
+    fun resetNavigation() {
+        notesNavigationUseCase.setNoteNavigation(NotesNavigation.Root)
+    }
+
+    @Test
+    fun `navigating to a folder keeps the root, which the menu is built from`() = runTest {
+        notesNavigationUseCase.setNoteNavigation(NotesNavigation.Folder("a"))
+
+        val items = source.menuItemsPerFolderId().first()
+
+        assertEquals(listOf("a"), items[Folder.ROOT_PATH]?.map { it.id })
+        assertEquals(listOf("b"), items["a"]?.map { it.id })
     }
 
     @Test

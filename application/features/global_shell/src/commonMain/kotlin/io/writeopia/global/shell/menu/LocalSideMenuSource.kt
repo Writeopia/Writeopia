@@ -32,7 +32,11 @@ class LocalSideMenuSource(
 
     private val expandedFolderIds = MutableStateFlow(emptySet<String>())
 
-    /** The folder navigated to, plus the children of every folder expanded in the side menu. */
+    /**
+     * The root, the folder navigated to, plus the children of every folder expanded in the side
+     * menu. The menu is built from the root, so it is always listened to: Room lists only the
+     * parent asked for, unlike SQLDelight, which keeps every parent listened to so far.
+     */
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun menuItemsPerFolderId(): Flow<Map<String, List<MenuItem>>> =
         combine(
@@ -43,11 +47,24 @@ class LocalSideMenuSource(
             Triple(user, notesNavigation, workspace)
         }.flatMapLatest { (user, notesNavigation, workspace) ->
             combine(
+                listenForRoot(notesNavigation, user.id, workspace.id),
                 notesUseCase.listenForMenuItemsPerFolderId(notesNavigation, user.id, workspace.id),
                 expandedFolderIds.flatMapLatest { ids ->
                     listenForExpandedFolders(ids, user.id, workspace.id)
                 }
-            ) { navigated, expanded -> expanded + navigated }
+            ) { root, navigated, expanded -> root + expanded + navigated }
+        }
+
+    /** The root listing, unless the navigation already brings it (root and favorites). */
+    private suspend fun listenForRoot(
+        notesNavigation: NotesNavigation,
+        userId: String,
+        workspaceId: String
+    ): Flow<Map<String, List<MenuItem>>> =
+        when (notesNavigation) {
+            NotesNavigation.Root, NotesNavigation.Favorites -> flowOf(emptyMap())
+            is NotesNavigation.Folder, is NotesNavigation.Tag ->
+                notesUseCase.listenForMenuItemsPerFolderId(NotesNavigation.Root, userId, workspaceId)
         }
 
     private suspend fun listenForExpandedFolders(
