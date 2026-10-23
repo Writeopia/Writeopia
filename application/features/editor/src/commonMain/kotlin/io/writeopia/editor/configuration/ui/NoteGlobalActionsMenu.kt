@@ -80,20 +80,24 @@ internal fun NoteGlobalActionsMenu(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            LockButton(
-                isEditableState,
-                setEditable,
-//            selectedColor = WriteopiaTheme.colorScheme.highlight,
-//            defaultColor = MaterialTheme.colorScheme.background
-            )
+            // Two per row, like the other buttons of the menu
+            Row {
+                LockButton(isEditableState, setEditable, modifier = Modifier.weight(1F))
+
+                Spacer(modifier = Modifier.width(4.dp))
+
+                FavoriteButton(isFavoriteState, toggleFavorite, modifier = Modifier.weight(1F))
+            }
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            FavoriteButton(isFavoriteState, toggleFavorite)
+            Row {
+                MoveToButton(onMoveToClick, modifier = Modifier.weight(1F))
 
-            Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.width(4.dp))
 
-            MoveToButton(onMoveToClick)
+                Spacer(modifier = Modifier.weight(1F))
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
