@@ -1,13 +1,13 @@
 package io.writeopia.editor.features.editor.viewmodel
 
 import io.writeopia.editor.features.presentation.viewmodel.PresentationsController
-import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.editor.model.EditState
 import io.writeopia.model.Font
 import io.writeopia.sdk.model.story.Selection
 import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.document.DocumentTag
+import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.story.Tag
@@ -53,8 +53,6 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
     val documentToShareInfo: StateFlow<ShareDocument?>
 
     val fontFamily: StateFlow<Font>
-
-    val listenForFolders: StateFlow<List<MenuItemUi.FolderUi>>
 
     val loadingState: StateFlow<Boolean>
 
@@ -209,11 +207,13 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 
     fun exportJson(path: String)
 
-    fun expandFolder(folderId: String)
+    /** Every folder of the workspace, for the "move to" picker. */
+    suspend fun workspaceFolders(): List<Folder>
+
+    /** The folder the document is in. */
+    fun documentFolderId(): String
 
     fun moveToFolder(folderId: String)
-
-    fun moveToRootFolder()
 
     fun askAiWithMode(targetMode: AiTargetMode)
 
@@ -240,7 +240,8 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 
     fun cutSelection()
 
-    fun deleteDocument()
+    /** Deletes the document; [onDeleted] runs once it is gone, so the editor can close. */
+    fun deleteDocument(onDeleted: () -> Unit = {})
 
     fun toggleFavorite()
 

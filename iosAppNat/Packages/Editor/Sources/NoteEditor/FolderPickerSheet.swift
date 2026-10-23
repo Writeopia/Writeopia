@@ -4,8 +4,9 @@ import WrDesign
 import WrModels
 
 /// Picks the folder to move items to, browsing the tree from the root. The moved folders and
-/// what's inside them can't be picked, nor the folder the items already are in.
-struct FolderPickerSheet: View {
+/// what's inside them can't be picked, nor the folder the items already are in. Used by the
+/// documents list and by the "Move to" of the editor.
+public struct FolderPickerSheet: View {
     /// Folders being moved: not offered, nor their contents.
     let excludedFolderIds: Set<String>
     /// Where the items are now: offered, but disabled.
@@ -15,7 +16,7 @@ struct FolderPickerSheet: View {
     let onPick: (_ folderId: String) -> Void
     @Environment(\.dismiss) private var dismiss
 
-    init(excludedFolderIds: Set<String>, currentParentId: String, rootTitle: String, repository: DocumentsRepository, onPick: @escaping (_ folderId: String) -> Void) {
+    public init(excludedFolderIds: Set<String>, currentParentId: String, rootTitle: String, repository: DocumentsRepository, onPick: @escaping (_ folderId: String) -> Void) {
         self.excludedFolderIds = excludedFolderIds
         self.currentParentId = currentParentId
         self.rootTitle = rootTitle
@@ -24,11 +25,11 @@ struct FolderPickerSheet: View {
     }
 
     /// Moving one folder, from its options sheet.
-    init(movingFolder: Folder, rootTitle: String, repository: DocumentsRepository, onPick: @escaping (_ folderId: String) -> Void) {
+    public init(movingFolder: Folder, rootTitle: String, repository: DocumentsRepository, onPick: @escaping (_ folderId: String) -> Void) {
         self.init(excludedFolderIds: [movingFolder.id], currentParentId: movingFolder.parentId, rootTitle: rootTitle, repository: repository, onPick: onPick)
     }
 
-    var body: some View {
+    public var body: some View {
         NavigationStack {
             FolderPickerLevel(
                 folderId: Folder.rootId,
@@ -173,7 +174,7 @@ private struct FolderPickerRow: View {
     let folder: Folder
     let isCurrentParent: Bool
 
-    private var tint: Color { FolderIcons.color(for: folder.icon?.tint) ?? WrColors.accent }
+    private var tint: Color { MenuIcons.color(for: folder.icon?.tint) ?? WrColors.accent }
 
     var body: some View {
         HStack(spacing: 12) {

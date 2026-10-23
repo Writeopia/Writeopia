@@ -8,14 +8,17 @@ import AppKit
 import WrData
 import WrDesign
 
-/// Menu of the top right button, like `NoteGlobalActionsMenu` of the Compose app: lock the
-/// document, pick the font, export it and publish it to the web.
+/// Menu of the top right button, like `NoteGlobalActionsMenu` of the Compose app: lock,
+/// favorite or move the document, pick the font, export it and publish it to the web.
 struct NoteMenuSheet: View {
     @Bindable var viewModel: NoteEditorViewModel
     let onPublishClick: () -> Void
     let onDelete: () -> Void
     var onPresentationsClick: () -> Void = {}
+    /// The name of the root folder in "Move to".
+    var rootTitle: String = String(localized: "Documents")
     @State private var confirmsDelete = false
+    @State private var showsMove = false
     @State private var showsTags = false
     @State private var exportedFile: ExportedFile?
     @State private var exportError: String?
@@ -44,6 +47,18 @@ struct NoteMenuSheet: View {
                     }
                     .tint(WrColors.accent)
                     .accessibilityIdentifier("menu.lock")
+
+                    Toggle(isOn: Binding(get: { viewModel.isFavorite }, set: { _ in Task { await viewModel.toggleFavorite() } })) {
+                        Label("Favorite", systemImage: viewModel.isFavorite ? "star.fill" : "star")
+                    }
+                    .tint(WrColors.accent)
+                    .disabled(viewModel.isSavingFavorite)
+                    .accessibilityIdentifier("menu.favorite")
+
+                    WrSheetRow("Move to…", systemImage: "arrow.forward.folder") {
+                        showsMove = true
+                    }
+                    .accessibilityIdentifier("menu.move")
                 }
 
                 Section("Font") {
@@ -108,6 +123,17 @@ struct NoteMenuSheet: View {
                 DocumentTagsSheet(viewModel: viewModel)
                     .wrSheetSize(width: 440, height: 520)
             }
+            .sheet(isPresented: $showsMove) {
+                FolderPickerSheet(
+                    excludedFolderIds: [],
+                    currentParentId: viewModel.folderId,
+                    rootTitle: rootTitle,
+                    repository: viewModel.folderRepository
+                ) { folderId in
+                    Task { await viewModel.move(to: folderId) }
+                }
+                .wrSheetSize(width: 440, height: 520)
+            }
             .toolbarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -126,6 +152,14 @@ struct NoteMenuSheet: View {
                 exportedFile = nil
             }
             #endif
+            .alert(
+                "Something went wrong",
+                isPresented: Binding(get: { viewModel.menuActionError != nil }, set: { if !$0 { viewModel.menuActionError = nil } })
+            ) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(viewModel.menuActionError ?? "")
+            }
             .alert(
                 "Could not export",
                 isPresented: Binding(get: { exportError != nil }, set: { if !$0 { exportError = nil } })

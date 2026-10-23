@@ -23,6 +23,8 @@ struct EditorSideOptions: View {
     let onDelete: () -> Void
     /// Opens the presentations of the document (with the cloud AI, or Ollama on the Mac).
     var onPresentationClick: () -> Void = {}
+    /// The name of the root folder in "Move to".
+    var rootTitle: String = String(localized: "Documents")
     /// The open panel; the editor closes it on a click outside.
     @Binding var tab: SideTab?
     private static let panelWidth: CGFloat = 280
@@ -115,7 +117,7 @@ struct EditorSideOptions: View {
             VStack(alignment: .leading, spacing: 16) {
                 switch tab {
                 case .page:
-                    SidePagePanel(viewModel: viewModel, onDelete: onDelete)
+                    SidePagePanel(viewModel: viewModel, rootTitle: rootTitle, onDelete: onDelete)
                 case .text:
                     SideTextPanel(
                         viewModel: viewModel,
@@ -200,11 +202,13 @@ private struct SideAiPanel: View {
     }
 }
 
-/// Lock, font and delete, like `PageOptions` of the desktop app.
+/// Lock, favorite, move, font and delete, like `PageOptions` of the desktop app.
 private struct SidePagePanel: View {
     @Bindable var viewModel: NoteEditorViewModel
+    let rootTitle: String
     let onDelete: () -> Void
     @State private var confirmsDelete = false
+    @State private var showsMove = false
     @State private var showsTags = false
 
     var body: some View {
@@ -228,6 +232,31 @@ private struct SidePagePanel: View {
             }
             .tint(WrColors.accent)
             .accessibilityIdentifier("side.lock")
+
+            Toggle(isOn: Binding(get: { viewModel.isFavorite }, set: { _ in Task { await viewModel.toggleFavorite() } })) {
+                Label("Favorite", systemImage: viewModel.isFavorite ? "star.fill" : "star")
+            }
+            .tint(WrColors.accent)
+            .disabled(viewModel.isSavingFavorite)
+            .accessibilityIdentifier("side.favorite")
+
+            Button {
+                showsMove = true
+            } label: {
+                Label("Move to…", systemImage: "arrow.forward.folder")
+            }
+            .accessibilityIdentifier("side.move")
+            .sheet(isPresented: $showsMove) {
+                FolderPickerSheet(
+                    excludedFolderIds: [],
+                    currentParentId: viewModel.folderId,
+                    rootTitle: rootTitle,
+                    repository: viewModel.folderRepository
+                ) { folderId in
+                    Task { await viewModel.move(to: folderId) }
+                }
+                .wrSheetSize(width: 440, height: 520)
+            }
         }
 
         PanelSection("Font") {

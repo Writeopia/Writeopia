@@ -35,17 +35,6 @@ fun MoveToButton(clickListener: () -> Unit, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun MoveToHomeButton(clickListener: () -> Unit, modifier: Modifier = Modifier) {
-    CommonButton(
-        modifier = modifier,
-        icon = WrIcons.move,
-        iconDescription = WrStrings.moveToHome(),
-        text = WrStrings.moveToHome(),
-        clickListener = clickListener
-    )
-}
-
-@Composable
 fun FavoriteButton(isFavorite: StateFlow<Boolean>, clickListener: () -> Unit, modifier: Modifier = Modifier) {
     CommonButton(
         modifier = modifier,
@@ -54,5 +43,16 @@ fun FavoriteButton(isFavorite: StateFlow<Boolean>, clickListener: () -> Unit, mo
         text = WrStrings.favorite(),
         clickListener = clickListener,
         isEnabledState = isFavorite
+    )
+}
+
+@Composable
+fun DeleteButton(clickListener: () -> Unit, modifier: Modifier = Modifier) {
+    CommonButton(
+        modifier = modifier,
+        icon = WrIcons.delete,
+        iconDescription = WrStrings.delete(),
+        text = WrStrings.delete(),
+        clickListener = clickListener
     )
 }

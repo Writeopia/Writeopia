@@ -63,6 +63,8 @@ public struct NoteEditorView: View {
     @State private var linkSelection: StepSelection?
     @State private var linkURL = ""
     private let fallbackTitle: String
+    /// The name of the root folder in "Move to", like the documents list shows it.
+    private let rootTitle: String
     private let openDocumentLink: (DocumentLink) -> Void
 
     public init(
@@ -78,6 +80,7 @@ public struct NoteEditorView: View {
         imageGenerator: AiImageGenerating? = nil,
         headerImages: HeaderImagesAPI? = nil,
         loadActivity: ContentLoadActivity? = nil,
+        rootTitle: String = String(localized: "Documents"),
         openDocumentLink: @escaping (DocumentLink) -> Void = { _ in }
     ) {
         _viewModel = State(initialValue: NoteEditorViewModel(
@@ -94,6 +97,7 @@ public struct NoteEditorView: View {
             loadActivity: loadActivity
         ))
         fallbackTitle = title
+        self.rootTitle = rootTitle
         self.openDocumentLink = openDocumentLink
     }
 
@@ -401,6 +405,7 @@ public struct NoteEditorView: View {
                 onPublishClick: publishClick,
                 onDelete: deleteDocument,
                 onPresentationClick: { showPresentations = true },
+                rootTitle: rootTitle,
                 tab: $sideTab
             )
             .padding(.trailing, 10)
@@ -478,6 +483,7 @@ public struct NoteEditorView: View {
                     TitleView(
                         title: viewModel.hasLoaded ? viewModel.title : fallbackTitle,
                         isLocked: viewModel.isLocked,
+                        isFavorite: viewModel.isFavorite,
                         isPublished: viewModel.isPublished
                     )
                 }
@@ -507,7 +513,8 @@ public struct NoteEditorView: View {
                     viewModel: viewModel,
                     onPublishClick: publishClick,
                     onDelete: deleteDocument,
-                    onPresentationsClick: { showPresentations = true }
+                    onPresentationsClick: { showPresentations = true },
+                    rootTitle: rootTitle
                 )
                     .wrSheetSize(width: 440, height: 560)
             }
@@ -569,6 +576,18 @@ public struct NoteEditorView: View {
     /// The alerts of the errors, and the one that asks for the link of the selected text.
     private func alerts(_ content: some View) -> some View {
         content
+            // The menu sheet shows this error itself while it's open.
+            .alert(
+                "Something went wrong",
+                isPresented: Binding(
+                    get: { viewModel.menuActionError != nil && !showMenu },
+                    set: { if !$0 { viewModel.menuActionError = nil } }
+                )
+            ) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(viewModel.menuActionError ?? "")
+            }
             .alert(
                 "Could not delete the document",
                 isPresented: Binding(get: { viewModel.deleteError != nil }, set: { if !$0 { viewModel.deleteError = nil } })
@@ -698,10 +717,11 @@ private struct DrawingTarget: Identifiable {
     let drawing: DrawingData?
 }
 
-/// Title of the navigation bar, with the lock and published marks of the Compose top bar.
+/// Title of the navigation bar, with the lock, favorite and published marks of the Compose top bar.
 private struct TitleView: View {
     let title: String
     let isLocked: Bool
+    let isFavorite: Bool
     let isPublished: Bool
 
     var body: some View {
@@ -714,6 +734,12 @@ private struct TitleView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .accessibilityLabel("Locked")
+            }
+            if isFavorite {
+                Image(systemName: "heart.fill")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel("Favorite")
             }
             if isPublished {
                 Image(systemName: "globe")
