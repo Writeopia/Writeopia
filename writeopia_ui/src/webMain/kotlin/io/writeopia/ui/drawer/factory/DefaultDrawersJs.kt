@@ -48,7 +48,7 @@ object DefaultDrawersJs : DrawersFactory {
     ): Map<Int, StoryStepDrawer> =
         CommonDrawers.create(
             manager,
-            30.dp,
+            marginAtBottom = 300.dp,
             aiExplanation,
             editable,
             onHeaderClick,
