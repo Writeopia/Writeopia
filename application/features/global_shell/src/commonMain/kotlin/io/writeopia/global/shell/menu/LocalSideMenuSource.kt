@@ -1,6 +1,7 @@
 package io.writeopia.global.shell.menu
 
 import io.writeopia.auth.core.manager.AuthRepository
+import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.core.folders.repository.folder.NotesUseCase
 import io.writeopia.core.folders.sync.ContentLoadActivity
 import io.writeopia.core.folders.sync.FolderSync
@@ -11,8 +12,10 @@ import io.writeopia.sdk.models.workspace.Workspace
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.withContext
 
 /**
@@ -27,6 +30,9 @@ class LocalSideMenuSource(
     private val folderSync: FolderSync?,
 ) : SideMenuSource {
 
+    private val expandedFolderIds = MutableStateFlow(emptySet<String>())
+
+    /** The folder navigated to, plus the children of every folder expanded in the side menu. */
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun menuItemsPerFolderId(): Flow<Map<String, List<MenuItem>>> =
         combine(
@@ -36,8 +42,31 @@ class LocalSideMenuSource(
         ) { user, workspace, notesNavigation ->
             Triple(user, notesNavigation, workspace)
         }.flatMapLatest { (user, notesNavigation, workspace) ->
-            notesUseCase.listenForMenuItemsPerFolderId(notesNavigation, user.id, workspace.id)
+            combine(
+                notesUseCase.listenForMenuItemsPerFolderId(notesNavigation, user.id, workspace.id),
+                expandedFolderIds.flatMapLatest { ids ->
+                    listenForExpandedFolders(ids, user.id, workspace.id)
+                }
+            ) { navigated, expanded -> expanded + navigated }
         }
+
+    private suspend fun listenForExpandedFolders(
+        folderIds: Set<String>,
+        userId: String,
+        workspaceId: String
+    ): Flow<Map<String, List<MenuItem>>> {
+        if (folderIds.isEmpty()) return flowOf(emptyMap())
+
+        val flows = folderIds.map { folderId ->
+            notesUseCase.listenForMenuItemsPerFolderId(
+                NotesNavigation.Folder(folderId),
+                userId,
+                workspaceId
+            )
+        }
+
+        return combine(flows) { maps -> maps.fold(emptyMap()) { acc, map -> acc + map } }
+    }
 
     /** The listing of the database follows the navigation by itself. */
     override suspend fun followNavigation() {}
@@ -48,14 +77,9 @@ class LocalSideMenuSource(
      * opened somewhere.
      */
     override suspend fun expandFolder(folderId: String) {
+        expandedFolderIds.value += folderId
+
         val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
-
-        notesUseCase.listenForMenuItemsByParentId(
-            folderId,
-            authRepository.getUser().id,
-            workspace.id
-        )
-
         syncExpandedFolder(folderId, workspace)
     }
 

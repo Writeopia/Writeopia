@@ -1,6 +1,7 @@
 package io.writeopia.global.shell.menu
 
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.mockk
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.common.utils.NotesNavigation
@@ -34,7 +35,7 @@ class BackendSideMenuSourceTest {
 
     private val documentsApi: DocumentsApi = mockk()
     private val authRepository: AuthRepository = mockk()
-    private val workspace = Workspace.disconnectedWorkspace()
+    private val workspace = Workspace.disconnectedWorkspace().copy(id = "workspace", userId = "user")
     private val navigationUseCase = NotesNavigationUseCase.singleton()
 
     private val source = BackendSideMenuSource(
@@ -77,6 +78,16 @@ class BackendSideMenuSourceTest {
         response.complete(ResultData.Complete(FolderContentResponse()))
         expanding.await()
         assertFalse(ContentLoadActivity.isLoading.value)
+    }
+
+    @Test
+    fun `the offline workspace asks nothing to the backend`() = runTest {
+        coEvery { authRepository.getWorkspace() } returns Workspace.disconnectedWorkspace()
+
+        source.expandFolder("a")
+
+        coVerify(exactly = 0) { documentsApi.getFolderContentsPreview(any(), any(), any()) }
+        assertTrue(source.menuItemsPerFolderId().first().isEmpty())
     }
 
     @Test

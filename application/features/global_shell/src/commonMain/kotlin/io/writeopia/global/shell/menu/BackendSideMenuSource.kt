@@ -5,6 +5,7 @@ import io.writeopia.core.folders.repository.MenuItemsRepository
 import io.writeopia.core.folders.sync.ContentLoadActivity
 import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
 import io.writeopia.sdk.models.document.MenuItem
+import io.writeopia.sdk.models.workspace.Workspace
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -32,6 +33,8 @@ class BackendSideMenuSource(
 
     private suspend fun loadFolder(folderId: String) {
         val workspace = authRepository.getWorkspace() ?: return
+        // The offline workspace has nothing on the backend.
+        if (workspace.id == Workspace.disconnectedWorkspace().id) return
 
         menuItemsRepository.loadFolderContents(folderId, workspace.id)
     }
