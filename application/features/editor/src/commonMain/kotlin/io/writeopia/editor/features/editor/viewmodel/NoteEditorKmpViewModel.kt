@@ -108,6 +108,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import kotlin.concurrent.Volatile
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
@@ -444,6 +445,7 @@ class NoteEditorKmpViewModel(
     override val shouldGoToNextScreen = _shouldGoToNextScreen.asStateFlow()
 
     // The document's folder once moved from the editor: the loaded document still has the old one.
+    @Volatile
     private var movedToFolderId: String? = null
 
     override val isEditState: StateFlow<EditState> by lazy {
@@ -1200,9 +1202,10 @@ class NoteEditorKmpViewModel(
     override fun documentFolderId(): String = movedToFolderId ?: writeopiaManager.getDocument().parentId
 
     override fun moveToFolder(folderId: String) {
-        movedToFolderId = folderId
         viewModelScope.launch(Dispatchers.Default) {
             documentRepository.moveToFolder(documentId = documentId.value, parentId = folderId)
+            // Only once saved: a failed move leaves the folder the document is still in.
+            movedToFolderId = folderId
         }
     }
 
