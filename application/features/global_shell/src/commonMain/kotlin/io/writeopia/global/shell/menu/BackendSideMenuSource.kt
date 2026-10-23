@@ -31,6 +31,9 @@ class BackendSideMenuSource(
         ContentLoadActivity.track { loadFolder(folderId) }
     }
 
+    /** Nothing is listened to: the children fetched stay in memory, and expanding fetches again. */
+    override fun collapseFolder(folderId: String) {}
+
     private suspend fun loadFolder(folderId: String) {
         val workspace = authRepository.getWorkspace() ?: return
         // The offline workspace has nothing on the backend.

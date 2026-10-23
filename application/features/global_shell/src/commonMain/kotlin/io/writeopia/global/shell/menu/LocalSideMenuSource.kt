@@ -83,6 +83,11 @@ class LocalSideMenuSource(
         syncExpandedFolder(folderId, workspace)
     }
 
+    /** The database is no longer listened to for the folder. */
+    override fun collapseFolder(folderId: String) {
+        expandedFolderIds.value -= folderId
+    }
+
     /** Fetches the children of an expanded folder, like opening the folder does. */
     private suspend fun syncExpandedFolder(folderId: String, workspace: Workspace) {
         val sync = folderSync ?: return

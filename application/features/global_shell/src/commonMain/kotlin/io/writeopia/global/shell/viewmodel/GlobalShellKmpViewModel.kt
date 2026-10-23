@@ -436,6 +436,7 @@ class GlobalShellKmpViewModel(
         if (expanded.contains(id)) {
             viewModelScope.launch(Dispatchers.Default) {
                 expandedFolders.value = expanded - id
+                sideMenuSource.collapseFolder(id)
             }
         } else {
             viewModelScope.launch {

@@ -20,4 +20,7 @@ interface SideMenuSource {
 
     /** Loads the children of a folder expanded in the side menu. */
     suspend fun expandFolder(folderId: String)
+
+    /** Stops loading the children of a folder collapsed in the side menu. */
+    fun collapseFolder(folderId: String)
 }

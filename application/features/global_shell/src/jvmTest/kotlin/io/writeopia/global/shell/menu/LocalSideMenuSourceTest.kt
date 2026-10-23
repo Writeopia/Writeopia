@@ -1,6 +1,7 @@
 package io.writeopia.global.shell.menu
 
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.writeopia.auth.core.manager.AuthRepository
@@ -62,6 +63,23 @@ class LocalSideMenuSourceTest {
 
         assertEquals(listOf("a"), items[Folder.ROOT_PATH]?.map { it.id })
         assertEquals(listOf("b"), items["a"]?.map { it.id })
+    }
+
+    @Test
+    fun `a collapsed folder is no longer listened to`() = runTest {
+        source.expandFolder("a")
+        source.collapseFolder("a")
+
+        val items = source.menuItemsPerFolderId().first()
+
+        assertEquals(setOf(Folder.ROOT_PATH), items.keys)
+        coVerify(exactly = 0) {
+            notesUseCase.listenForMenuItemsPerFolderId(
+                match { navigation -> navigation is NotesNavigation.Folder },
+                any(),
+                any()
+            )
+        }
     }
 
     private fun folder(id: String, parentId: String): Folder {
