@@ -284,9 +284,8 @@ fun DesktopNoteEditorScreen(
         if (showDeleteConfirmation) {
             DeleteConfirmationDialog(
                 onConfirmation = {
-                    noteEditorViewModel.deleteDocument()
                     showDeleteConfirmation = false
-                    onDocumentDelete()
+                    noteEditorViewModel.deleteDocument(onDeleted = onDocumentDelete)
                 },
                 onCancel = {
                     showDeleteConfirmation = false

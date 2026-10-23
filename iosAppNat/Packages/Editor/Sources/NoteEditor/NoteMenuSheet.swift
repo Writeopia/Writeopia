@@ -52,6 +52,7 @@ struct NoteMenuSheet: View {
                         Label("Favorite", systemImage: viewModel.isFavorite ? "star.fill" : "star")
                     }
                     .tint(WrColors.accent)
+                    .disabled(viewModel.isSavingFavorite)
                     .accessibilityIdentifier("menu.favorite")
 
                     WrSheetRow("Move to…", systemImage: "arrow.forward.folder") {

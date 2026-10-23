@@ -1350,10 +1350,23 @@ class NoteEditorKmpViewModel(
         deleteSelection()
     }
 
-    override fun deleteDocument() {
+    override fun deleteDocument(onDeleted: () -> Unit) {
         viewModelScope.launch(Dispatchers.Default) {
             val document = writeopiaManager.getDocument()
-            documentRepository.deleteDocument(document, document.workspaceId)
+            // The editor stays open until the document is gone: leaving it clears this
+            // ViewModel, which would cancel the deletion.
+            try {
+                documentRepository.deleteDocument(document, document.workspaceId)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                println("error deleting document: ${e.message}")
+                return@launch
+            }
+
+            withContext(Dispatchers.Main) {
+                onDeleted()
+            }
         }
     }
 

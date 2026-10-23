@@ -43,6 +43,21 @@ import WrNetwork
         #expect(repository.favorites == [true, false])
     }
 
+    @Test func aSecondTapWhileTheFavoriteIsSavingIsIgnored() async {
+        let repository = OneDocumentRepository(document())
+        repository.favoriteDelay = .milliseconds(100)
+        let viewModel = await loaded(repository)
+
+        async let first: Void = viewModel.toggleFavorite()
+        while !viewModel.isSavingFavorite { await Task.yield() }
+        await viewModel.toggleFavorite()
+        await first
+
+        #expect(repository.favorites == [true])
+        #expect(viewModel.isFavorite)
+        #expect(!viewModel.isSavingFavorite)
+    }
+
     @Test func aFavoriteThatFailsKeepsTheStateAndSaysSo() async {
         let repository = OneDocumentRepository(document())
         let viewModel = await loaded(repository)
@@ -87,3 +102,4 @@ import WrNetwork
         #expect(viewModel.menuActionError != nil)
     }
 }
+

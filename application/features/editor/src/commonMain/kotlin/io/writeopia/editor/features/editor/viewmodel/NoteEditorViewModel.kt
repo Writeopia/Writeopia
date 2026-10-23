@@ -240,7 +240,8 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 
     fun cutSelection()
 
-    fun deleteDocument()
+    /** Deletes the document; [onDeleted] runs once it is gone, so the editor can close. */
+    fun deleteDocument(onDeleted: () -> Unit = {})
 
     fun toggleFavorite()
 

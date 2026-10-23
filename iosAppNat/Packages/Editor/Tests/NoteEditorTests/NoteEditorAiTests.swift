@@ -48,6 +48,8 @@ final class OneDocumentRepository: DocumentsRepository {
     private(set) var favorites: [Bool] = []
     /// Makes the moves and favorites fail.
     var failsActions = false
+    /// How long a favorite takes to save.
+    var favoriteDelay: Duration?
     init(_ document: WrDocument) { self.document = document }
 
     func folderContents(folderId: String) async throws -> FolderContents { FolderContents() }
@@ -64,6 +66,7 @@ final class OneDocumentRepository: DocumentsRepository {
     func deleteDocument(id: String) async throws {}
     func duplicate(ids: [String]) async throws {}
     func setFavorite(ids: [String], favorite: Bool) async throws {
+        if let favoriteDelay { try await Task.sleep(for: favoriteDelay) }
         if failsActions { throw APIError.notFound }
         favorites.append(favorite)
     }

@@ -237,6 +237,7 @@ private struct SidePagePanel: View {
                 Label("Favorite", systemImage: viewModel.isFavorite ? "star.fill" : "star")
             }
             .tint(WrColors.accent)
+            .disabled(viewModel.isSavingFavorite)
             .accessibilityIdentifier("side.favorite")
 
             Button {

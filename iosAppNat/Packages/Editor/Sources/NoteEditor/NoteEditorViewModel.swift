@@ -416,8 +416,16 @@ public final class NoteEditorViewModel {
     /// Why the last favorite or move of the menu failed.
     public var menuActionError: String?
 
+    /// True while a favorite is being saved: the toggle waits for it, so two quick taps can't
+    /// both start from the same state.
+    public private(set) var isSavingFavorite = false
+
     /// Favorites the document, or removes it from the favorites. The state changes once saved.
     public func toggleFavorite() async {
+        guard !isSavingFavorite else { return }
+        isSavingFavorite = true
+        defer { isSavingFavorite = false }
+
         let favorite = !isFavorite
         do {
             try await repository.setFavorite(ids: [documentId], favorite: favorite)
