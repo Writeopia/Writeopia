@@ -104,7 +104,8 @@ internal fun WriteopiaDbBackend.getUsersInWorkspace(workspaceId: String): List<W
                 id = workspaceToUser.user_entity_id,
                 email = workspaceToUser.user_email,
                 name = workspaceToUser.user_name,
-                role = workspaceToUser.role
+                role = workspaceToUser.role,
+                username = workspaceToUser.user_username,
             )
         }
 
@@ -121,7 +122,8 @@ internal fun WriteopiaDbBackend.getUsersInWorkspacePaginated(
                 id = workspaceToUser.user_entity_id,
                 email = workspaceToUser.user_email,
                 name = workspaceToUser.user_name,
-                role = workspaceToUser.role
+                role = workspaceToUser.role,
+                username = workspaceToUser.user_username,
             )
         }
 
@@ -142,7 +144,8 @@ internal fun WriteopiaDbBackend.getUserInWorkspace(
                 id = workspaceToUser.user_entity_id,
                 email = workspaceToUser.user_email,
                 name = workspaceToUser.user_name,
-                role = workspaceToUser.role
+                role = workspaceToUser.role,
+                username = workspaceToUser.user_username,
             )
         }
 

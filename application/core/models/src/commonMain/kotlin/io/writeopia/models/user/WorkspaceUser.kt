@@ -5,6 +5,7 @@ data class WorkspaceUser(
     val email: String,
     val name: String,
     val role: String,
+    val username: String,
 )
 
 data class PaginatedWorkspaceUsers(

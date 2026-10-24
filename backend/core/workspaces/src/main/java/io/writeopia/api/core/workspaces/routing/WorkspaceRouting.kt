@@ -19,6 +19,7 @@ import io.writeopia.api.core.workspaces.repository.getUserRoleInWorkspace
 import io.writeopia.api.core.workspaces.repository.listWorkspaces
 import io.writeopia.api.core.workspaces.service.WorkspaceService
 import io.writeopia.api.core.workspaces.utils.runIfAdmin
+import io.writeopia.api.core.workspaces.utils.runIfMember
 import io.writeopia.app.dto.PaginatedUserSearchResponse
 import io.writeopia.app.dto.PaginatedWorkspaceUsersResponse
 import io.writeopia.app.dto.SearchUserApi
@@ -135,7 +136,7 @@ fun Routing.workspaceRoute(
         val username = call.pathParameters["username"]
             ?: throw IllegalArgumentException("Username is required")
 
-        runIfAdmin(userId, workspaceId, writeopiaDb, debugMode) {
+        runIfMember(userId, workspaceId, writeopiaDb, debugMode) {
             val user = WorkspaceService.getUserInWorkspace(
                 workspaceId = workspaceId,
                 username = username,
@@ -157,8 +158,9 @@ fun Routing.workspaceRoute(
         }
         val workspaceId = call.pathParameters["workspaceId"]
             ?: throw IllegalArgumentException("Workspace id is required")
-
-        runIfAdmin(currentUserId, workspaceId, writeopiaDb, debugMode) {
+            
+        // Change the permission to member in the case where a member wants to mention a user in the text editor
+        runIfMember(currentUserId, workspaceId, writeopiaDb, debugMode) {
             val workspaces = WorkspaceService
                 .getUsersInWorkspace(workspaceId, writeopiaDb)
                 .map { workspaceUser -> workspaceUser.toApi() }
@@ -182,7 +184,7 @@ fun Routing.workspaceRoute(
         val pageSize = (call.request.queryParameters["pageSize"]?.toIntOrNull() ?: DEFAULT_PAGE_SIZE)
             .coerceIn(1, MAX_PAGE_SIZE)
 
-        runIfAdmin(currentUserId, workspaceId, writeopiaDb, debugMode) {
+        runIfMember(currentUserId, workspaceId, writeopiaDb, debugMode) {
             val paginatedUsers = WorkspaceService
                 .getUsersInWorkspacePaginated(workspaceId, page, pageSize, writeopiaDb)
 
