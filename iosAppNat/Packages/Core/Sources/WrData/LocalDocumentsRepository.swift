@@ -486,6 +486,16 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
         try setMeta("step_deletions_synced_at", String(millis))
     }
 
+    /// Where the next request for what changed in the whole workspace starts from (epoch
+    /// milliseconds, this device's clock before the last request); nil before the first time.
+    public func workspaceContentsSyncedAt() throws -> Int64? {
+        try meta("workspace_contents_synced_at").flatMap(Int64.init)
+    }
+
+    public func setWorkspaceContentsSyncedAt(_ millis: Int64) throws {
+        try setMeta("workspace_contents_synced_at", String(millis))
+    }
+
     // MARK: - Direct access, used by the sync
 
     /// The document with `id`, including soft deleted ones.

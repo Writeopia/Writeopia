@@ -79,6 +79,9 @@
   <string name="sort_by_creation">Sort by creation date</string>
   <string name="sort_by_update">Sort by last update</string>
   <string name="lock_document">Lock document</string>
+  <string name="document_icon">Icon</string>
+  <string name="document_icon_title">Document icon</string>
+  <string name="document_icon_remove">Remove icon</string>
   <string name="move_to">Move to...</string>
   <string name="move_to_home">Move home</string>
   <string name="move">Move</string>

@@ -137,6 +137,21 @@ public final class SyncAPI {
         )
     }
 
+    /// Documents and folders of the whole workspace synced after `lastSync` (epoch ms), with
+    /// the tag catalogue.
+    public func workspaceDiff(lastSync: Int64) async throws -> FolderContents {
+        struct Body: Encodable {
+            let workspaceId: String
+            let lastSync: Int64
+            let orderBy = "last_updated_at"
+        }
+        return try await client.send(
+            .post,
+            "api/docs/workspace/diff",
+            body: Body(workspaceId: workspaceId, lastSync: lastSync)
+        )
+    }
+
     /// The ids of the documents the user marked as favorites in the workspace. Favorites are
     /// per user and kept apart from the documents on the backend, so a document favorited
     /// elsewhere doesn't come back changed in the folder diff.
@@ -530,6 +545,9 @@ public final class DocumentStepSync {
 public protocol DocumentSyncing: AnyObject {
     /// Brings the folder in sync with the backend, like `FolderSync` of the Compose app.
     func syncFolder(_ folderId: String) async throws
+    /// Brings what changed in the whole workspace, for the pages that gather documents from
+    /// every folder (favorites, tags).
+    func syncWorkspaceChanges() async throws
     /// Merges the backend copy into the local one and returns the result when it changed, like
     /// `DocumentLoadUseCase.fetchAndMergeFromBackend`.
     func fetchAndMerge(documentId: String) async throws -> WrDocument?
@@ -920,6 +938,65 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
 
         lastFolderSync[folderId] = Date()
     }
+
+    /// The favorites and tag pages: their documents come from every folder, so what changed in
+    /// the whole workspace since the last time is received, like `WorkspaceSync` of the Compose
+    /// app, and everything changed here is sent. Unlike a folder, the diff only has what was
+    /// added or changed: what was deleted elsewhere goes when its folder is opened.
+    public func syncWorkspaceChanges() async throws {
+        if let last = lastFolderSync[Self.workspaceSyncKey], Date().timeIntervalSince(last) < 2 { return }
+
+        // This device's time before the request: whatever changes while it runs comes again.
+        let startedAt = Date.nowMillis
+        let remoteContents = try await api.workspaceDiff(lastSync: try local.workspaceContentsSyncedAt() ?? 0)
+
+        let deletedHere = try await stepSync.sendDeletedSteps()
+        try await stepSync.syncDocuments(try local.storedOutdatedDocuments())
+
+        let foldersToSend = try FolderConflictHandler.handle(
+            local: try local.storedOutdatedFolders(),
+            remote: remoteContents.folders,
+            store: local
+        )
+        try await api.sendFolders(foldersToSend)
+        for folder in foldersToSend {
+            try markSynced(folder)
+        }
+
+        let tagsToSend = try TagConflictHandler.handle(
+            local: try local.storedOutdatedTags(),
+            remote: remoteContents.tags,
+            store: local
+        )
+        try await api.sendTags(tagsToSend)
+        for tag in tagsToSend {
+            try markSynced(tag)
+        }
+
+        let received = try await stepSync.receiveDeletedSteps(since: try local.stepDeletionsSyncedAt() ?? 0)
+        for document in remoteContents.documents {
+            try stepSync.mergeReceived(document, excluding: received.stepIds.union(deletedHere))
+        }
+        try local.setStepDeletionsSyncedAt(received.serverTimestamp)
+
+        let favoriteIds: [String]?
+        do {
+            favoriteIds = try await api.favoriteDocumentIds()
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            favoriteIds = nil
+        }
+        if let favoriteIds {
+            try local.applyFavorites(Set(favoriteIds))
+        }
+
+        try local.setWorkspaceContentsSyncedAt(startedAt)
+        lastFolderSync[Self.workspaceSyncKey] = Date()
+    }
+
+    /// The key of `syncWorkspaceChanges` among the last syncs of the folders.
+    private static let workspaceSyncKey = "wr.workspace"
 
     /// Opens the document: the backend copy is merged into the local one step by step and the
     /// result returned when something changed. The deletions pending here go first, so the

@@ -9,7 +9,8 @@ import WrData
 import WrDesign
 
 /// Menu of the top right button, like `NoteGlobalActionsMenu` of the Compose app: lock,
-/// favorite or move the document, pick the font, export it and publish it to the web.
+/// favorite or move the document, give it an icon, pick the font, export it and publish it to
+/// the web.
 struct NoteMenuSheet: View {
     @Bindable var viewModel: NoteEditorViewModel
     let onPublishClick: () -> Void
@@ -20,6 +21,7 @@ struct NoteMenuSheet: View {
     @State private var confirmsDelete = false
     @State private var showsMove = false
     @State private var showsTags = false
+    @State private var showsIcons = false
     @State private var exportedFile: ExportedFile?
     @State private var exportError: String?
     @Environment(\.dismiss) private var dismiss
@@ -59,6 +61,15 @@ struct NoteMenuSheet: View {
                         showsMove = true
                     }
                     .accessibilityIdentifier("menu.move")
+
+                    WrSheetRow("Icon", systemImage: "face.smiling") {
+                        showsIcons = true
+                    } trailing: {
+                        if viewModel.documentIcon != nil {
+                            DocumentIconImage(icon: viewModel.documentIcon, defaultColor: .secondary)
+                        }
+                    }
+                    .accessibilityIdentifier("menu.icon")
                 }
 
                 Section("Font") {
@@ -122,6 +133,9 @@ struct NoteMenuSheet: View {
             .sheet(isPresented: $showsTags) {
                 DocumentTagsSheet(viewModel: viewModel)
                     .wrSheetSize(width: 440, height: 520)
+            }
+            .sheet(isPresented: $showsIcons) {
+                DocumentIconSheet(viewModel: viewModel)
             }
             .sheet(isPresented: $showsMove) {
                 FolderPickerSheet(
@@ -334,5 +348,29 @@ extension ExportFormat {
         case .json: "curlybraces"
         case .markdown: "text.document"
         }
+    }
+}
+
+/// The icons for the title on phones, like the icon sheet of the Compose app. A choice shows
+/// on the title right away, so another one can be tried before closing it.
+private struct DocumentIconSheet: View {
+    let viewModel: NoteEditorViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            MenuIconPicker(initial: viewModel.documentIcon, width: nil) { icon in
+                Task { await viewModel.changeIcon(icon) }
+            }
+            .frame(maxHeight: .infinity, alignment: .top)
+            .navigationTitle("Document icon")
+            .toolbarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
     }
 }

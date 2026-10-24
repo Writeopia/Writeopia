@@ -1782,6 +1782,17 @@
         }
       }
     },
+    "Document icon" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ícone do documento"
+          }
+        }
+      }
+    },
     "Documents" : {
       "localizations" : {
         "pt" : {
@@ -2910,6 +2921,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Nenhuma pasta aqui"
+          }
+        }
+      }
+    },
+    "No icon" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sem ícone"
           }
         }
       }

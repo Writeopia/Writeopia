@@ -25,6 +25,10 @@ private final class FakeSyncedRepository: DocumentsRepository, DocumentSyncing {
         syncCount += 1
         try await Task.sleep(for: .milliseconds(50))
     }
+    private(set) var workspaceSyncCount = 0
+    func syncWorkspaceChanges() async throws {
+        workspaceSyncCount += 1
+    }
     func fetchAndMerge(documentId: String) async throws -> WrDocument? { nil }
     func pushSteps(document: WrDocument, changes: [StoryStep], deletions: [String], lastSyncTimestamp: Int64) async throws -> Int64 { 0 }
 }
@@ -51,6 +55,16 @@ private final class FakeSyncedRepository: DocumentsRepository, DocumentSyncing {
         await viewModel.load()
 
         #expect(repository.syncCount == 2)
+    }
+
+    @Test func favoritesSyncTheWholeWorkspace() async {
+        let repository = FakeSyncedRepository()
+        let viewModel = FolderContentsViewModel(folderId: FolderContentsViewModel.favoritesId, repository: repository)
+
+        await viewModel.load()
+
+        #expect(repository.workspaceSyncCount == 1)
+        #expect(repository.syncCount == 0)
     }
 
     @Test func privateSpaceHidesTheSyncState() {

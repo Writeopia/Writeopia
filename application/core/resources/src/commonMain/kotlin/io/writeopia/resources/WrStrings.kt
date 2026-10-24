@@ -176,6 +176,9 @@ import writeopia.application.core.resources.generated.resources.light_theme
 import writeopia.application.core.resources.generated.resources.links
 import writeopia.application.core.resources.generated.resources.local_folder
 import writeopia.application.core.resources.generated.resources.lock_document
+import writeopia.application.core.resources.generated.resources.document_icon
+import writeopia.application.core.resources.generated.resources.document_icon_title
+import writeopia.application.core.resources.generated.resources.document_icon_remove
 import writeopia.application.core.resources.generated.resources.logout
 import writeopia.application.core.resources.generated.resources.signing_out
 import writeopia.application.core.resources.generated.resources.manage_teams
@@ -483,6 +486,15 @@ object WrStrings {
 
     @Composable
     fun lockDocument() = stringResource(Res.string.lock_document)
+
+    @Composable
+    fun documentIcon() = stringResource(Res.string.document_icon)
+
+    @Composable
+    fun documentIconTitle() = stringResource(Res.string.document_icon_title)
+
+    @Composable
+    fun documentIconRemove() = stringResource(Res.string.document_icon_remove)
 
     @Composable
     fun moveTo() = stringResource(Res.string.move_to)

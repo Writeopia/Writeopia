@@ -36,4 +36,29 @@ import WrModels
         viewModel.documentIconChanged(id: "d", icon: nil)
         #expect(viewModel.writeopiaManager.documentIcon == nil)
     }
+
+    @Test func anIconChosenInTheEditorMenuIsSavedAndShown() async {
+        let repository = OneDocumentRepository(document(icon: nil))
+        let viewModel = NoteEditorViewModel(documentId: "d", repository: repository)
+        await viewModel.loadDocument()
+
+        await viewModel.changeIcon(IconInfo(label: "zap", tint: -65536))
+        #expect(viewModel.documentIcon == IconInfo(label: "zap", tint: -65536))
+
+        await viewModel.changeIcon(nil)
+        #expect(viewModel.documentIcon == nil)
+        #expect(repository.icons == [IconInfo(label: "zap", tint: -65536), nil])
+    }
+
+    @Test func anIconThatFailsToSaveGoesBackAndSaysSo() async {
+        let repository = OneDocumentRepository(document(icon: IconInfo(label: "home", tint: nil)))
+        let viewModel = NoteEditorViewModel(documentId: "d", repository: repository)
+        await viewModel.loadDocument()
+        repository.failsActions = true
+
+        await viewModel.changeIcon(IconInfo(label: "zap", tint: nil))
+
+        #expect(viewModel.documentIcon == IconInfo(label: "home", tint: nil))
+        #expect(viewModel.menuActionError != nil)
+    }
 }

@@ -231,3 +231,10 @@ val MIGRATION_36_37 = object : Migration(36, 37) {
         connection.execSQL("ALTER TABLE STORY_UNIT_ENTITY_RANKS RENAME TO STORY_UNIT_ENTITY_TABLE")
     }
 }
+
+/** The color of the icon of a document; the icon itself was a column already, never filled. */
+val MIGRATION_37_38 = object : Migration(37, 38) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL("ALTER TABLE DOCUMENT_ENTITY_TABLE ADD COLUMN icon_tint INTEGER")
+    }
+}
