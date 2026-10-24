@@ -220,6 +220,9 @@ class FolderStateController private constructor(
                     } else {
                         emptyList()
                     }
+                } else if (isInsideAny(parentId, _selectedNotes.value - parentId)) {
+                    // A selected folder would go inside itself.
+                    emptyList()
                 } else {
                     // Loaded before the move, so their parent is the folder they were in.
                     val moved = notesUseCase.moveItemsById(
@@ -245,7 +248,8 @@ class FolderStateController private constructor(
     }
 
     override fun undoMove(move: FolderMove) {
-        _lastMoveState.compareAndSet(move, null)
+        // Only the current move is undone, and only once.
+        if (!_lastMoveState.compareAndSet(move, null)) return
 
         coroutineScope.launch(Dispatchers.Default) {
             val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
@@ -266,6 +270,18 @@ class FolderStateController private constructor(
 
     override fun dismissMove(move: FolderMove) {
         _lastMoveState.compareAndSet(move, null)
+    }
+
+    /** Whether [folderId] is one of [ids] or inside one of them, following its parents. */
+    private suspend fun isInsideAny(folderId: String, ids: Set<String>): Boolean {
+        val visited = mutableSetOf<String>()
+        var current: String? = folderId
+
+        while (current != null && current != Folder.ROOT_PATH && visited.add(current)) {
+            if (current in ids) return true
+            current = notesUseCase.getFolderById(current)?.parentId
+        }
+        return false
     }
 
     /** Moves the item; false when a folder would be moved into itself. */

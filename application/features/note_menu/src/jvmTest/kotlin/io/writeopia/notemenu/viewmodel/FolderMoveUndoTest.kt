@@ -9,6 +9,7 @@ import io.writeopia.core.folders.repository.folder.NotesUseCase
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.workspace.Workspace
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -82,6 +83,32 @@ class FolderMoveUndoTest {
 
         coVerify(timeout = 2_000) { notesUseCase.moveItemsById(listOf("a"), workspaceId, "first") }
         coVerify(timeout = 2_000) { notesUseCase.moveItemsById(listOf("b"), workspaceId, "second") }
+    }
+
+    @Test
+    fun `a move is undone only once`() = runTest {
+        controller.moveToFolder(document("doc", parentId = "previous"), "target")
+        val move = awaitMove()
+
+        controller.undoMove(move)
+        controller.undoMove(move)
+
+        coVerify(timeout = 2_000, exactly = 1) {
+            notesUseCase.moveItemsById(listOf("doc"), workspaceId, "previous")
+        }
+    }
+
+    @Test
+    fun `a selected folder is not dropped inside itself`() = runTest {
+        coEvery { notesUseCase.getFolderById("child") } returns folder("child", "Child", parentId = "a")
+        controller.onDocumentSelected("a", true)
+
+        controller.moveToFolder(MenuItemUi.FolderUi(documentId = "a", title = "A"), "child")
+
+        coVerify(timeout = 2_000) { notesUseCase.getFolderById("child") }
+        withContext(Dispatchers.Default) { delay(200) }
+        coVerify(exactly = 0) { notesUseCase.moveItemsById(any(), any(), any()) }
+        assertNull(controller.lastMoveState.value)
     }
 
     @Test
