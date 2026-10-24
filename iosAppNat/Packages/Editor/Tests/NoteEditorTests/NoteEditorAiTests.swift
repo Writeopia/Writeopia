@@ -534,6 +534,7 @@ final class SyncingRepository: DocumentsRepository, DocumentSyncing, StepStore {
     }
 
     func syncFolder(_ folderId: String) async throws {}
+    func syncWorkspaceChanges() async throws {}
     func fetchAndMerge(documentId: String) async throws -> WrDocument? { merged }
     func pushSteps(document: WrDocument, changes: [StoryStep], deletions: [String], lastSyncTimestamp: Int64) async throws -> Int64 {
         if let pushError { throw pushError }
