@@ -71,7 +71,11 @@ fun NavGraphBuilder.documentsGraphNavigation(
             // The canvas draws in pixels: the layout size in dp would centre the graph in the top
             // left quarter of a high-density screen.
             val density = LocalDensity.current
-            viewModel.initSize(with(density) { maxWidth.toPx() }, with(density) { maxHeight.toPx() })
+            viewModel.initSize(
+                with(density) { maxWidth.toPx() },
+                with(density) { maxHeight.toPx() },
+                density.density
+            )
             val state by viewModel.graphSelectedState.collectAsState()
 
             val viewState = rememberGraphViewState()

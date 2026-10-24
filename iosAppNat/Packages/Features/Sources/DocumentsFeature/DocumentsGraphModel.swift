@@ -99,8 +99,13 @@ public final class GraphNode: Identifiable {
 }
 
 /// The force layout of the Kotlin `DocumentsGraphViewModel`: links pull to a fixed distance,
-/// nodes push each other away, everything drifts to the centre, and the motion is damped.
+/// nodes push each other away, everything drifts to the centre, the motion is damped, and nodes
+/// closer than `collisionDistance` are pushed apart so their names stay readable.
 public final class GraphSimulation {
+    static let linkDistance: CGFloat = 100
+    static let chargeStrength: CGFloat = 12000
+    static let collisionDistance: CGFloat = 64
+
     public private(set) var nodes: [GraphNode] = []
     public private(set) var links: [(source: GraphNode, target: GraphNode)] = []
     public var size: CGSize
@@ -134,10 +139,11 @@ public final class GraphSimulation {
         applyChargeForce()
         applyCenteringForce()
         updatePositions(dt)
+        applyCollision()
     }
 
     private func applyLinkForce() {
-        let linkDistance: CGFloat = 40
+        let linkDistance = Self.linkDistance
         let strength: CGFloat = 0.15
         for link in links {
             let dx = link.target.x - link.source.x
@@ -154,7 +160,7 @@ public final class GraphSimulation {
     }
 
     private func applyChargeForce() {
-        let chargeStrength: CGFloat = nodes.count < 10 ? 100 : 2000
+        let chargeStrength = Self.chargeStrength
         for i in nodes.indices {
             for j in (i + 1)..<max(i + 1, nodes.count) {
                 let a = nodes[i]
@@ -175,7 +181,7 @@ public final class GraphSimulation {
     }
 
     private func applyCenteringForce() {
-        let strength: CGFloat = 0.003
+        let strength: CGFloat = 0.002
         let centerX = size.width / 2
         let centerY = size.height / 2
         for node in nodes {
@@ -191,6 +197,32 @@ public final class GraphSimulation {
             node.vy *= damping
             node.x += node.vx * dt
             node.y += node.vy * dt
+        }
+    }
+
+    /// Moves the positions, after the velocities, like a d3 collide.
+    private func applyCollision() {
+        let minDistance = Self.collisionDistance
+        for i in nodes.indices {
+            for j in (i + 1)..<max(i + 1, nodes.count) {
+                let a = nodes[i]
+                let b = nodes[j]
+                let dx = b.x - a.x
+                let dy = b.y - a.y
+                let distance = max(sqrt(dx * dx + dy * dy), 0.01)
+                guard distance < minDistance else { continue }
+                let push = (minDistance - distance) / 4
+                let px = push * dx / distance
+                let py = push * dy / distance
+                if !a.isDragged {
+                    a.x -= px
+                    a.y -= py
+                }
+                if !b.isDragged {
+                    b.x += px
+                    b.y += py
+                }
+            }
         }
     }
 }
