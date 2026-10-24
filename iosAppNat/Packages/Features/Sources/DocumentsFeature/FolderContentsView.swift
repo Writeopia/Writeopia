@@ -352,6 +352,20 @@ final class FolderContentsViewModel {
         return created
     }
 
+    /// An item dropped into a folder, kept while the move can be undone, like the snackbar of the
+    /// Compose app.
+    struct DroppedMove: Identifiable, Equatable {
+        let id = UUID()
+        let item: FolderItem.Payload
+        let itemTitle: String
+        let folderTitle: String
+        /// The folder the item was in before the drop.
+        let previousParentId: String
+    }
+
+    /// The last drop into a folder, while it can still be undone.
+    private(set) var lastDrop: DroppedMove?
+
     /// Moves the dragged item into `folder`. The item leaves the grid right away and the folder
     /// is reloaded afterwards, so its item count reflects the move.
     func move(_ payload: String, into folder: Folder) async -> Bool {
@@ -359,15 +373,28 @@ final class FolderContentsViewModel {
 
         let previousFolders = folders
         let previousDocuments = documents
+        let moved: (title: String, parentId: String?)?
         switch dragged.kind {
-        case .folder: folders.removeAll { $0.id == dragged.id }
-        case .document: documents.removeAll { $0.id == dragged.id }
+        case .folder:
+            moved = folders.first { $0.id == dragged.id }.map { ($0.displayTitle, $0.parentId) }
+            folders.removeAll { $0.id == dragged.id }
+        case .document:
+            moved = documents.first { $0.id == dragged.id }.map { ($0.displayTitle, $0.parentId) }
+            documents.removeAll { $0.id == dragged.id }
         }
 
         do {
             switch dragged.kind {
             case .folder: try await repository.moveFolder(id: dragged.id, toFolder: folder.id)
             case .document: try await repository.moveDocument(id: dragged.id, toFolder: folder.id)
+            }
+            if let moved {
+                lastDrop = DroppedMove(
+                    item: dragged,
+                    itemTitle: moved.title,
+                    folderTitle: folder.displayTitle,
+                    previousParentId: moved.parentId ?? folderId
+                )
             }
             await load()
             return true
@@ -381,6 +408,25 @@ final class FolderContentsViewModel {
             actionError = error.userMessage
         }
         return false
+    }
+
+    /// Puts the item of `drop` back in the folder it was in.
+    func undo(_ drop: DroppedMove) async {
+        dismiss(drop)
+        do {
+            switch drop.item.kind {
+            case .folder: try await repository.moveFolder(id: drop.item.id, toFolder: drop.previousParentId)
+            case .document: try await repository.moveDocument(id: drop.item.id, toFolder: drop.previousParentId)
+            }
+        } catch {
+            actionError = error.userMessage
+        }
+        await load()
+    }
+
+    /// Forgets `drop` once it can no longer be undone. A newer drop is kept.
+    func dismiss(_ drop: DroppedMove) {
+        if lastDrop == drop { lastDrop = nil }
     }
 
     // MARK: - Edition menu of the folder
@@ -764,10 +810,18 @@ struct FolderContentsView: View {
                 .background(.regularMaterial, in: Capsule())
                 .padding(.bottom, 8)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
+            } else if let drop = viewModel.lastDrop {
+                DropUndoBanner(
+                    drop: drop,
+                    onUndo: { Task { await viewModel.undo(drop) } },
+                    onTimeout: { withAnimation(.snappy) { viewModel.dismiss(drop) } }
+                )
+                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
         .animation(.snappy, value: viewModel.hasSelection)
         .animation(.snappy, value: viewModel.isSummarizing)
+        .animation(.snappy, value: viewModel.lastDrop)
         .alert(
             "Could not summarize",
             isPresented: Binding(get: { viewModel.summaryError != nil }, set: { if !$0 { viewModel.summaryError = nil } })

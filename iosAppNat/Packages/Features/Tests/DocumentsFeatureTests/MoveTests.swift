@@ -142,6 +142,36 @@ final class FakeDocumentsRepository: DocumentsRepository {
         #expect(await viewModel.move(FolderItem.folder(work).payload.rawValue, into: ideas) == false)
         #expect(viewModel.folders.map(\.id) == ["f1", "f2"])
         #expect(viewModel.actionError == MoveError.folderIntoItself.userMessage)
+        #expect(viewModel.lastDrop == nil)
+    }
+
+    @Test func dropTellsWhatMovedAndUndoMovesItBack() async throws {
+        let (viewModel, repository) = await makeViewModel()
+
+        #expect(await viewModel.move(FolderItem.document(draft).payload.rawValue, into: ideas))
+        let drop = try #require(viewModel.lastDrop)
+        #expect(drop.itemTitle == "Draft")
+        #expect(drop.folderTitle == "Ideas")
+
+        await viewModel.undo(drop)
+
+        #expect(repository.moves == ["document d1 -> f1", "document d1 -> \(Folder.rootId)"])
+        #expect(viewModel.lastDrop == nil)
+    }
+
+    @Test func dismissingAnOlderDropKeepsTheNewerOne() async throws {
+        let (viewModel, _) = await makeViewModel()
+
+        #expect(await viewModel.move(FolderItem.document(draft).payload.rawValue, into: ideas))
+        let first = try #require(viewModel.lastDrop)
+        #expect(await viewModel.move(FolderItem.folder(work).payload.rawValue, into: ideas))
+        let second = try #require(viewModel.lastDrop)
+
+        viewModel.dismiss(first)
+        #expect(viewModel.lastDrop == second)
+
+        viewModel.dismiss(second)
+        #expect(viewModel.lastDrop == nil)
     }
 }
 
