@@ -148,10 +148,10 @@ class WorkspaceApi(
     ): ResultData<List<WorkspaceUserApi>> = try {
         val response = client.get("$baseUrl/api/workspace/$workspaceId/users")
         if (response.status.isSuccess()) {
-            return  ResultData.Complete(response.body<List<WorkspaceUserApi>>())
+            ResultData.Complete(response.body<List<WorkspaceUserApi>>())
+        } else {
+            ResultData.Error()
         }
-        return  ResultData.Error()
-
     } catch (e: Exception) {
         e.printStackTrace()
         ResultData.Error(e)

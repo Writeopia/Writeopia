@@ -115,13 +115,14 @@ class TextDrawer(
         }
 
         val isSuggestion = step.tags.contains(TagInfo(Tag.FIRST_AI_SUGGESTION))
+        val primaryColor = MaterialTheme.colorScheme.primary
 
         var inputText by remember {
             val text = step.text
 
             mutableStateOf(
                 TextFieldValue(
-                    Spans.createStringWithSpans(text, spans, isDarkTheme),
+                    Spans.createStringWithSpans(text, spans, isDarkTheme, primaryColor),
                     selection = drawInfo.selection?.toTextRange(text ?: "")
                         ?: TextRange.Zero
                 )
@@ -215,7 +216,7 @@ class TextDrawer(
             spans = updatedSpans
 
             val updatedFieldValue = TextFieldValue(
-                annotatedString = Spans.createStringWithSpans(newText, updatedSpans, isDarkTheme),
+                annotatedString = Spans.createStringWithSpans(newText, updatedSpans, isDarkTheme, primaryColor),
                 selection = TextRange(newCursorPos),
             )
             inputText = updatedFieldValue
@@ -475,11 +476,7 @@ class TextDrawer(
 
                         val edit = {
                             val updatedInputText = value.copy(
-                                Spans.createStringWithSpans(
-                                    value.text.replace("\n", ""),
-                                    spans,
-                                    isDarkTheme
-                                )
+                                Spans.createStringWithSpans(value.text.replace("\n", ""), spans, isDarkTheme, primaryColor)
                             )
                             inputText = updatedInputText
                             if (previousInputText == value) {
@@ -550,27 +547,21 @@ class TextDrawer(
                 )
             }
 
-            if (showMentionPopup && filteredMentionUsers.isNotEmpty()) {
-                Popup(
-                    offset = IntOffset(0, 24),
-                    onDismissRequest = {
-                        showMentionPopup = false
-                        mentionStartPosition = -1
-                        mentionFilter = ""
-                        selectedMentionIndex = 0
-                    },
-                    properties = PopupProperties(focusable = false)
-                ) {
-                    MentionPopup(
-                        users = filteredMentionUsers,
-                        selectedIndex = selectedMentionIndex.coerceIn(
-                            0,
-                            filteredMentionUsers.lastIndex
-                        ),
-                        onUserSelected = selectMention
-                    )
-                }
-            }
+            MentionPopup(
+                expanded = showMentionPopup && filteredMentionUsers.isNotEmpty(),
+                users = filteredMentionUsers,
+                selectedIndex = selectedMentionIndex.coerceIn(
+                    0,
+                    filteredMentionUsers.lastIndex.coerceAtLeast(0),
+                ),
+                onUserSelected = selectMention,
+                onDismiss = {
+                    showMentionPopup = false
+                    mentionStartPosition = -1
+                    mentionFilter = ""
+                    selectedMentionIndex = 0
+                },
+            )
         }
     }
 }
@@ -689,58 +680,51 @@ internal fun detectMentionState(
     currentStartPosition: Int,
 ): MentionDetectionResult {
     val isCharacterAdded = sizeDifference > 0
-    val isCharacterDeletedWhilePopupShown = sizeDifference < 0 && isPopupCurrentlyShown
-    val hasNoRelevantTextChange = !isCharacterAdded && !isCharacterDeletedWhilePopupShown
+    val isCharacterDeleted = sizeDifference < 0
+    val hasNoRelevantTextChange = !isCharacterAdded && !isCharacterDeleted
 
     if (hasNoRelevantTextChange) {
         return MentionDetectionResult.Unchanged
     }
 
-    if (isCharacterDeletedWhilePopupShown) {
-        val wasAtSymbolDeleted = cursorPos <= currentStartPosition
-        if (wasAtSymbolDeleted) {
-            return MentionDetectionResult.Dismissed
+    val safeCursorPos = cursorPos.coerceIn(0, text.length)
+    val textBeforeCursor = text.take(safeCursorPos)
+    val lastAtIndex = textBeforeCursor.lastIndexOf('@')
+    val hasAtBeforeCursor = lastAtIndex >= 0
+
+    if (!hasAtBeforeCursor) {
+        return if (isPopupCurrentlyShown) {
+            MentionDetectionResult.Dismissed
+        } else {
+            MentionDetectionResult.Unchanged
         }
-
-        val updatedFilter = text.substring(currentStartPosition + 1, cursorPos)
-        return MentionDetectionResult.Active(
-            startPosition = currentStartPosition,
-            filter = updatedFilter,
-        )
     }
 
-    val addedChar = if (cursorPos > 0) text.getOrNull(cursorPos - 1) else null
-    val isAtSymbolTyped = addedChar == '@'
+    val charBeforeAt = if (lastAtIndex > 0) text.getOrNull(lastAtIndex - 1) else null
+    val isAtStartOrAfterWhitespace =
+        charBeforeAt == null || charBeforeAt == ' ' || charBeforeAt == '\n'
 
-    if (isAtSymbolTyped) {
-        val charBeforeAt = if (cursorPos > 1) text.getOrNull(cursorPos - 2) else null
-        val isAtStartOrAfterWhitespace =
-            charBeforeAt == null || charBeforeAt == ' ' || charBeforeAt == '\n'
-
-        if (!isAtStartOrAfterWhitespace) {
-            return MentionDetectionResult.Unchanged
+    if (!isAtStartOrAfterWhitespace) {
+        return if (isPopupCurrentlyShown) {
+            MentionDetectionResult.Dismissed
+        } else {
+            MentionDetectionResult.Unchanged
         }
-
-        return MentionDetectionResult.Active(
-            startPosition = cursorPos - 1,
-            filter = "",
-        )
     }
 
-    val isPopupActiveWithValidStart = isPopupCurrentlyShown && currentStartPosition >= 0
-    if (!isPopupActiveWithValidStart) {
-        return MentionDetectionResult.Unchanged
-    }
-
-    val filterText = text.substring(currentStartPosition + 1, cursorPos)
+    val filterText = text.substring(lastAtIndex + 1, safeCursorPos)
     val hasWhitespaceInFilter = filterText.contains(' ') || filterText.contains('\n')
 
     if (hasWhitespaceInFilter) {
-        return MentionDetectionResult.Dismissed
+        return if (isPopupCurrentlyShown) {
+            MentionDetectionResult.Dismissed
+        } else {
+            MentionDetectionResult.Unchanged
+        }
     }
 
     return MentionDetectionResult.Active(
-        startPosition = currentStartPosition,
+        startPosition = lastAtIndex,
         filter = filterText,
     )
 }
