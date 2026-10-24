@@ -290,7 +290,6 @@ class NoteEditorKmpViewModel(
                         else -> writeopiaManager.setWorkspaceUsers(emptyList())
                     }
                 }
-
             }
         }
 
