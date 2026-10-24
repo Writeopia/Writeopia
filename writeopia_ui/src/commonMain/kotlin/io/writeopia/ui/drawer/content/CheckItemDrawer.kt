@@ -53,7 +53,8 @@ fun checkItemDrawer(
                     onCheckedChange(
                         Action.StoryStateChange(
                             step.copy(checked = checked),
-                            drawInfo.position
+                            drawInfo.position,
+                            preserveFocus = true
                         )
                     )
                 },
