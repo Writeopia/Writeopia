@@ -37,6 +37,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,6 +52,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import io.writeopia.app.dto.SearchUserApi
 import io.writeopia.common.utils.configuration.LocalPlatform
 import io.writeopia.common.utils.configuration.PlatformType
 import io.writeopia.common.utils.date.formatCompactNumber
@@ -110,6 +112,10 @@ fun SettingsDialog(
     exportWorkspaceState: StateFlow<ResultData<Unit>>,
     onExportWorkspace: (String) -> Unit,
     onResetExportState: () -> Unit,
+    userSearchQuery: StateFlow<String>,
+    userSearchResults: StateFlow<ResultData<List<SearchUserApi>>>,
+    onUserSearchQueryChange: (String) -> Unit,
+    onUserSuggestionSelect: (SearchUserApi) -> Unit,
 ) {
     Dialog(
         onDismissRequest = onDismissRequest,
@@ -181,11 +187,15 @@ fun SettingsDialog(
                 },
                 teamsScreen = {
                     TeamsSection(
-                        workspaces,
-                        workspaceToEdit,
-                        selectWorkspaceToManage,
-                        addUserToTeam,
-                        usersInSelectedWorkspace
+                        workspacesState = workspaces,
+                        selectedWorkspaceState = workspaceToEdit,
+                        selectWorkspace = selectWorkspaceToManage,
+                        addUserToTeam = addUserToTeam,
+                        usersInSelectedWorkspace = usersInSelectedWorkspace,
+                        userSearchQuery = userSearchQuery,
+                        userSearchResults = userSearchResults,
+                        onUserSearchQueryChange = onUserSearchQueryChange,
+                        onUserSuggestionSelect = onUserSuggestionSelect,
                     )
                 }
             )
@@ -668,7 +678,11 @@ private fun TeamsSection(
     selectedWorkspaceState: Flow<Workspace?>,
     selectWorkspace: (String) -> Unit,
     addUserToTeam: (String) -> Unit,
-    usersInSelectedWorkspace: Flow<ResultData<List<String>>>
+    usersInSelectedWorkspace: Flow<ResultData<List<String>>>,
+    userSearchQuery: StateFlow<String>,
+    userSearchResults: StateFlow<ResultData<List<SearchUserApi>>>,
+    onUserSearchQueryChange: (String) -> Unit,
+    onUserSuggestionSelect: (SearchUserApi) -> Unit,
 ) {
     Column {
         val titleStyle = MaterialTheme.typography.titleLarge
@@ -706,7 +720,15 @@ private fun TeamsSection(
                 AnimatedVisibility(selected != null) {
                     if (selected != null) {
                         Column {
-                            AddUserToWorkspace(selected, usersInSelectedWorkspace, addUserToTeam)
+                            AddUserToWorkspace(
+                                selected = selected,
+                                usersInSelectedWorkspace = usersInSelectedWorkspace,
+                                addUserToTeam = addUserToTeam,
+                                userSearchQuery = userSearchQuery,
+                                userSearchResults = userSearchResults,
+                                onUserSearchQueryChange = onUserSearchQueryChange,
+                                onUserSuggestionSelect = onUserSuggestionSelect,
+                            )
                         }
                     }
                 }
@@ -731,95 +753,13 @@ private fun TeamsSection(
 private fun AddUserToWorkspace(
     selected: Workspace,
     usersInSelectedWorkspace: Flow<ResultData<List<String>>>,
-    addUserToTeam: (String) -> Unit
+    addUserToTeam: (String) -> Unit,
+    userSearchQuery: StateFlow<String>,
+    userSearchResults: StateFlow<ResultData<List<SearchUserApi>>>,
+    onUserSearchQueryChange: (String) -> Unit,
+    onUserSuggestionSelect: (SearchUserApi) -> Unit,
 ) {
-    if (selected.role == "ADMIN") {
-        BasicText(
-            text = "${WrStrings.addToTeam()} ${selected.name}",
-            style = MaterialTheme
-                .typography
-                .titleSmall
-                .copy(color = MaterialTheme.colorScheme.onBackground)
-        )
-
-        var userEmail by remember {
-            mutableStateOf("")
-        }
-
-        Spacer(modifier = Modifier.height(6.dp))
-
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(
-                value = userEmail,
-                onValueChange = { userEmail = it },
-                shape = MaterialTheme.shapes.large,
-                singleLine = true,
-                placeholder = {
-                    BasicText(
-                        WrStrings.userEmail(),
-                        style = MaterialTheme
-                            .typography
-                            .titleSmall
-                            .copy(color = WriteopiaTheme.colorScheme.textLighter)
-                    )
-                },
-                textStyle = MaterialTheme
-                    .typography
-                    .titleSmall
-                    .copy(color = MaterialTheme.colorScheme.onBackground)
-            )
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            CommonButton(text = WrStrings.add()) {
-                addUserToTeam(userEmail)
-            }
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        when (val usersResult = usersInSelectedWorkspace.collectAsState(ResultData.Idle()).value) {
-            is ResultData.Complete -> {
-                val users = usersResult.data
-
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    if (users.isNotEmpty()) {
-                        users.forEach { userName ->
-                            BasicText(
-                                text = userName,
-                                style = MaterialTheme
-                                    .typography
-                                    .bodySmall
-                                    .copy(MaterialTheme.colorScheme.onBackground)
-                            )
-                        }
-                    } else {
-                        BasicText(
-                            text = "No users in this team",
-                            style = MaterialTheme
-                                .typography
-                                .bodySmall
-                                .copy(MaterialTheme.colorScheme.onBackground)
-                        )
-                    }
-                }
-            }
-
-            is ResultData.Error -> {
-                BasicText(
-                    text = "Error loading users",
-                    style = MaterialTheme
-                        .typography
-                        .bodySmall
-                        .copy(MaterialTheme.colorScheme.onBackground)
-                )
-            }
-
-            else -> {
-                CircularProgressIndicator()
-            }
-        }
-    } else {
+    if (selected.role != "ADMIN") {
         BasicText(
             text = "Only admins can add users",
             style = MaterialTheme
@@ -827,6 +767,67 @@ private fun AddUserToWorkspace(
                 .bodySmall
                 .copy(MaterialTheme.colorScheme.onBackground)
         )
+        return
+    }
+
+    BasicText(
+        text = "${WrStrings.addToTeam()} ${selected.name}",
+        style = MaterialTheme
+            .typography
+            .titleSmall
+            .copy(color = MaterialTheme.colorScheme.onBackground)
+    )
+
+    val usernameInput by userSearchQuery.collectAsState()
+    val searchResults by userSearchResults.collectAsState()
+
+    Spacer(modifier = Modifier.height(6.dp))
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        UserAutocompleteField(
+            value = usernameInput,
+            suggestions = searchResults,
+            onValueChange = onUserSearchQueryChange,
+            onSuggestionSelect = onUserSuggestionSelect,
+        )
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        CommonButton(text = WrStrings.add()) {
+            addUserToTeam(usernameInput)
+        }
+    }
+
+    Spacer(modifier = Modifier.height(8.dp))
+
+    when (val usersResult = usersInSelectedWorkspace.collectAsState(ResultData.Idle()).value) {
+        is ResultData.Complete -> {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                usersResult.data.forEach { userName ->
+                    BasicText(
+                        text = userName,
+                        style = MaterialTheme
+                            .typography
+                            .bodySmall
+                            .copy(MaterialTheme.colorScheme.onBackground)
+                    )
+                }
+            }
+        }
+
+        is ResultData.Error -> {
+            BasicText(
+                text = "Error loading users",
+                style = MaterialTheme
+                    .typography
+                    .bodySmall
+                    .copy(MaterialTheme.colorScheme.onBackground)
+            )
+        }
+
+        else -> {
+            CircularProgressIndicator()
+        }
     }
 }
 

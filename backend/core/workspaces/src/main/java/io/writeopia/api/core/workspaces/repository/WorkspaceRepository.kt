@@ -104,7 +104,8 @@ internal fun WriteopiaDbBackend.getUsersInWorkspace(workspaceId: String): List<W
                 id = workspaceToUser.user_entity_id,
                 email = workspaceToUser.user_email,
                 name = workspaceToUser.user_name,
-                role = workspaceToUser.role
+                role = workspaceToUser.role,
+                username = workspaceToUser.user_username,
             )
         }
 
@@ -121,7 +122,8 @@ internal fun WriteopiaDbBackend.getUsersInWorkspacePaginated(
                 id = workspaceToUser.user_entity_id,
                 email = workspaceToUser.user_email,
                 name = workspaceToUser.user_name,
-                role = workspaceToUser.role
+                role = workspaceToUser.role,
+                username = workspaceToUser.user_username,
             )
         }
 
@@ -132,17 +134,18 @@ internal fun WriteopiaDbBackend.countUsersInWorkspace(workspaceId: String): Long
 
 internal fun WriteopiaDbBackend.getUserInWorkspace(
     workspaceId: String,
-    userEmail: String
+    username: String
 ): WorkspaceUser? =
     this.workspaceToUserQueries
-        .getUserInWorkspace(workspaceId, userEmail)
+        .getUserInWorkspace(workspaceId, username)
         .executeAsOneOrNull()
         ?.let { workspaceToUser ->
             WorkspaceUser(
                 id = workspaceToUser.user_entity_id,
                 email = workspaceToUser.user_email,
                 name = workspaceToUser.user_name,
-                role = workspaceToUser.role
+                role = workspaceToUser.role,
+                username = workspaceToUser.user_username,
             )
         }
 

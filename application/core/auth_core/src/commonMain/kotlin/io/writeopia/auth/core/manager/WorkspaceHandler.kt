@@ -1,5 +1,6 @@
 package io.writeopia.auth.core.manager
 
+import io.writeopia.app.dto.SearchUserApi
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
 import kotlinx.coroutines.CoroutineScope
@@ -22,6 +23,10 @@ interface WorkspaceHandler {
 
     val usersOfSelectedWorkspace: Flow<ResultData<List<String>>>
 
+    val userSearchQuery: StateFlow<String>
+
+    val userSearchResults: StateFlow<ResultData<List<SearchUserApi>>>
+
     val lastWorkspaceSync: StateFlow<ResultData<String>>
 
     val workspaceLocalPath: StateFlow<String>
@@ -34,7 +39,11 @@ interface WorkspaceHandler {
 
     fun syncWorkspace()
 
-    fun addUserToWorkspace(userEmail: String)
+    fun addUserToWorkspace(username: String)
+
+    fun onUserSearchQueryChange(query: String)
+
+    fun onUserSuggestionSelect(user: SearchUserApi)
 
     fun changeWorkspaceLocalPath(path: String)
 
