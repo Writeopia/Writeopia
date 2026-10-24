@@ -99,6 +99,10 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 const val DOCUMENT_ITEM_TEST_TAG = "DocumentItem_"
 const val ADD_NOTE_TEST_TAG = "addNote"
 
+/** Lets the list scroll past its last item, so it is not stuck at the bottom edge of the screen. */
+private val notesContentPadding =
+    PaddingValues(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 240.dp)
+
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun NotesCardsScreen(
@@ -299,7 +303,7 @@ private fun LazyStaggeredGridNotes(
     moveRequest: (MenuItemUi, String) -> Unit,
     folderClick: (String) -> Unit,
     changeIcon: (String, String, Int, IconChange) -> Unit,
-    contentPadding: PaddingValues = PaddingValues(12.dp),
+    contentPadding: PaddingValues = notesContentPadding,
     onDragIconClick: (String) -> Unit,
     newNote: () -> Unit,
     editFolder: (MenuItemUi.FolderUi) -> Unit,
@@ -382,7 +386,7 @@ private fun LazyGridNotes(
     moveRequest: (MenuItemUi, String) -> Unit,
     selectionListener: (String, Boolean) -> Unit,
     changeIcon: (String, String, Int, IconChange) -> Unit,
-    contentPadding: PaddingValues = PaddingValues(12.dp),
+    contentPadding: PaddingValues = notesContentPadding,
     onDragIconClick: (String) -> Unit,
     newNote: () -> Unit,
     editFolder: (MenuItemUi.FolderUi) -> Unit,
@@ -461,7 +465,7 @@ private fun LazyColumnNotes(
     selectionListener: (String, Boolean) -> Unit,
     moveRequest: (MenuItemUi, String) -> Unit,
     changeIcon: (String, String, Int, IconChange) -> Unit,
-    contentPadding: PaddingValues = PaddingValues(12.dp),
+    contentPadding: PaddingValues = notesContentPadding,
     onDragIconClick: (String) -> Unit,
     newNote: () -> Unit,
     editFolder: (MenuItemUi.FolderUi) -> Unit,
