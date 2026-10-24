@@ -103,6 +103,7 @@ actual fun DragCardTarget(
                         .onGloballyPositioned { layoutCoordinates ->
                             iconPosition = layoutCoordinates.positionInWindow()
                         }
+                        .holdDragGesture { currentState.isDragging }
                         .pointerInput(Unit) {
                             detectDragGestures(onDragStart = { offset ->
                                 onDragStart()
