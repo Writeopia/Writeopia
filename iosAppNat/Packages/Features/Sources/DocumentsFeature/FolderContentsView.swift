@@ -371,16 +371,15 @@ final class FolderContentsViewModel {
     func move(_ payload: String, into folder: Folder) async -> Bool {
         guard let dragged = FolderItem.Payload(payload), dragged.id != folder.id else { return false }
 
+        // Read before the move, for its undo. An item dragged from another window isn't listed
+        // here, so it's read from the repository.
+        let source = await dropSource(of: dragged)
+
         let previousFolders = folders
         let previousDocuments = documents
-        let moved: (title: String, parentId: String?)?
         switch dragged.kind {
-        case .folder:
-            moved = folders.first { $0.id == dragged.id }.map { ($0.displayTitle, $0.parentId) }
-            folders.removeAll { $0.id == dragged.id }
-        case .document:
-            moved = documents.first { $0.id == dragged.id }.map { ($0.displayTitle, $0.parentId) }
-            documents.removeAll { $0.id == dragged.id }
+        case .folder: folders.removeAll { $0.id == dragged.id }
+        case .document: documents.removeAll { $0.id == dragged.id }
         }
 
         do {
@@ -388,12 +387,13 @@ final class FolderContentsViewModel {
             case .folder: try await repository.moveFolder(id: dragged.id, toFolder: folder.id)
             case .document: try await repository.moveDocument(id: dragged.id, toFolder: folder.id)
             }
-            if let moved {
+            if let source {
                 lastDrop = DroppedMove(
                     item: dragged,
-                    itemTitle: moved.title,
+                    itemTitle: source.title,
                     folderTitle: folder.displayTitle,
-                    previousParentId: moved.parentId ?? folderId
+                    // A document without a parent is at the root.
+                    previousParentId: source.parentId ?? Folder.rootId
                 )
             }
             await load()
@@ -410,14 +410,36 @@ final class FolderContentsViewModel {
         return false
     }
 
-    /// Puts the item of `drop` back in the folder it was in.
+    /// The title and folder of a dragged item, from this folder's list or else the repository.
+    private func dropSource(of dragged: FolderItem.Payload) async -> (title: String, parentId: String?)? {
+        switch dragged.kind {
+        case .folder:
+            let found = folders.first { $0.id == dragged.id }
+            let folder: Folder? = if let found { found } else { try? await repository.folder(id: dragged.id) }
+            return folder.map { ($0.displayTitle, $0.parentId) }
+        case .document:
+            let found = documents.first { $0.id == dragged.id }
+            let document: WrDocument? = if let found { found } else { try? await repository.document(id: dragged.id) }
+            return document.map { ($0.displayTitle, $0.parentId) }
+        }
+    }
+
+    /// The drop being undone, so a second tap doesn't move it again.
+    @ObservationIgnored private var undoingDropId: UUID?
+
+    /// Puts the item of `drop` back in the folder it was in. Only the current drop is undone;
+    /// when the move fails, its banner stays so it can be tried again.
     func undo(_ drop: DroppedMove) async {
-        dismiss(drop)
+        guard lastDrop == drop, undoingDropId != drop.id else { return }
+        undoingDropId = drop.id
+        defer { undoingDropId = nil }
+
         do {
             switch drop.item.kind {
             case .folder: try await repository.moveFolder(id: drop.item.id, toFolder: drop.previousParentId)
             case .document: try await repository.moveDocument(id: drop.item.id, toFolder: drop.previousParentId)
             }
+            dismiss(drop)
         } catch {
             actionError = error.userMessage
         }

@@ -159,6 +159,47 @@ final class FakeDocumentsRepository: DocumentsRepository {
         #expect(viewModel.lastDrop == nil)
     }
 
+    @Test func undoingADropFromFavoritesPutsARootDocumentBackAtTheRoot() async throws {
+        let repository = FakeDocumentsRepository()
+        var loose = WrDocument(id: "d9", title: "Loose", workspaceId: "w", isFavorite: true)
+        loose.parentId = nil
+        var favoriteIdeas = ideas
+        favoriteIdeas.favorite = true
+        repository.contents = FolderContents(folders: [favoriteIdeas], documents: [loose])
+        let viewModel = FolderContentsViewModel(folderId: FolderContentsViewModel.favoritesId, repository: repository)
+        await viewModel.load()
+
+        #expect(await viewModel.move(FolderItem.document(loose).payload.rawValue, into: ideas))
+        #expect(viewModel.lastDrop?.previousParentId == Folder.rootId)
+    }
+
+    @Test func aFailedUndoKeepsTheBannerForAnotherTry() async throws {
+        let (viewModel, repository) = await makeViewModel()
+        #expect(await viewModel.move(FolderItem.document(draft).payload.rawValue, into: ideas))
+        let drop = try #require(viewModel.lastDrop)
+
+        repository.moveError = MoveError.folderIntoItself
+        await viewModel.undo(drop)
+        #expect(viewModel.lastDrop == drop)
+        #expect(viewModel.actionError != nil)
+
+        repository.moveError = nil
+        await viewModel.undo(drop)
+        #expect(viewModel.lastDrop == nil)
+        #expect(repository.moves == ["document d1 -> f1", "document d1 -> \(Folder.rootId)"])
+    }
+
+    @Test func aDropFromAnotherWindowCanBeUndone() async throws {
+        let (viewModel, repository) = await makeViewModel()
+        let elsewhere = WrDocument(id: "d5", title: "Elsewhere", workspaceId: "w", parentId: "f9")
+        repository.documentsById = ["d5": elsewhere]
+
+        #expect(await viewModel.move(FolderItem.document(elsewhere).payload.rawValue, into: ideas))
+        let drop = try #require(viewModel.lastDrop)
+        #expect(drop.itemTitle == "Elsewhere")
+        #expect(drop.previousParentId == "f9")
+    }
+
     @Test func dismissingAnOlderDropKeepsTheNewerOne() async throws {
         let (viewModel, _) = await makeViewModel()
 
