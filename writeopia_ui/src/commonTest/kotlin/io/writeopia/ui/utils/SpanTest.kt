@@ -298,4 +298,21 @@ class SpanTest {
 
         assertEquals(setOf(mention), result)
     }
+
+    @Test
+    fun `editing inside or deleting part of a mention removes the mention span`() {
+        val mention = SpanInfo.create(0, 6, Span.MENTION, "alice")
+
+        // Deleting 'e' from "@alice" -> "@alic"
+        val result = Spans.recalculateSpans(
+            spans = setOf(mention),
+            oldText = "@alice ",
+            newText = "@alic ",
+            oldSelectionStart = 6,
+            oldSelectionEnd = 6,
+            newSelectionStart = 5,
+        )
+
+        assertEquals(emptySet(), result)
+    }
 }

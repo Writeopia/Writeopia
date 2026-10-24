@@ -1,6 +1,8 @@
 package io.writeopia.ui.drawer.content
 
 import io.writeopia.sdk.models.user.MentionUser
+import io.writeopia.ui.drawer.content.MentionDetectionResult
+import io.writeopia.ui.drawer.content.detectMentionState
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
