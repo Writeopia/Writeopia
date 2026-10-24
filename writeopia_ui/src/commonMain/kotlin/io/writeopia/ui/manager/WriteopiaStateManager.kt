@@ -31,6 +31,7 @@ import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
 import io.writeopia.sdk.models.story.TagInfo
+import io.writeopia.sdk.models.user.MentionUser
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.normalization.builder.StepsMapNormalizationBuilder
@@ -246,6 +247,14 @@ class WriteopiaStateManager(
     /** The ids of the tags of the open document, from the workspace catalogue. */
     private val _documentTagIds = MutableStateFlow<Set<String>>(emptySet())
     val documentTagIds: StateFlow<Set<String>> = _documentTagIds.asStateFlow()
+
+    /** The users of the workspace available for @mentions in the editor. */
+    private val _workspaceUsers = MutableStateFlow<List<MentionUser>>(emptyList())
+    val workspaceUsers: StateFlow<List<MentionUser>> = _workspaceUsers.asStateFlow()
+
+    fun setWorkspaceUsers(users: List<MentionUser>) {
+        _workspaceUsers.value = users
+    }
 
     private val isEditable: Boolean
         get() = !_documentInfo.value.isLocked

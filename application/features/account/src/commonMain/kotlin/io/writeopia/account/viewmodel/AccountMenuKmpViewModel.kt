@@ -86,8 +86,8 @@ internal class AccountMenuKmpViewModel(
         workspaceHandler.selectWorkspaceToManage(workspaceId)
     }
 
-    override fun addUserToWorkspace(userEmail: String) {
-        workspaceHandler.addUserToWorkspace(userEmail)
+    override fun addUserToWorkspace(username: String) {
+        workspaceHandler.addUserToWorkspace(username)
     }
 
     override fun exportWorkspace(workspaceId: String) {

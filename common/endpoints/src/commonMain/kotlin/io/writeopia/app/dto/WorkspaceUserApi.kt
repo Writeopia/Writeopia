@@ -8,6 +8,7 @@ data class WorkspaceUserApi(
     val email: String,
     val name: String,
     val role: String,
+    val username: String,
 )
 
 @Serializable
