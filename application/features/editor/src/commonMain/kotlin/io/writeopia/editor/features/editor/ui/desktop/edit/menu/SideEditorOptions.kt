@@ -62,6 +62,7 @@ import io.writeopia.common.utils.configuration.PlatformType
 import io.writeopia.common.utils.file.fileChooserLoad
 import io.writeopia.common.utils.file.fileChooserSave
 import io.writeopia.common.utils.icons.WrIcons
+import io.writeopia.editor.configuration.ui.DocumentIconPicker
 import io.writeopia.editor.features.editor.ui.ai.AiOptionsTabs
 import io.writeopia.editor.features.editor.ui.ai.AiQuickActions
 import io.writeopia.editor.features.editor.ui.tags.DocumentTagChipsRow
@@ -70,6 +71,7 @@ import io.writeopia.editor.features.editor.viewmodel.SideMenuTab
 import io.writeopia.model.Font
 import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.models.document.DocumentTag
+import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.story.Tag
 import io.writeopia.theme.WriteopiaTheme
@@ -127,6 +129,9 @@ fun SideEditorOptions(
     onViewTagsClick: () -> Unit = {},
     onAddTagClick: () -> Unit = {},
     onRemoveTagClick: (String) -> Unit = {},
+    documentIconState: StateFlow<MenuItem.Icon?> = MutableStateFlow(null),
+    onDocumentIconSelect: (String, Int) -> Unit = { _, _ -> },
+    onRemoveDocumentIcon: () -> Unit = {},
 ) {
     val menuType by sideMenuTabState.collectAsState()
 
@@ -177,6 +182,9 @@ fun SideEditorOptions(
                                 onViewTagsClick = onViewTagsClick,
                                 onAddTagClick = onAddTagClick,
                                 onRemoveTagClick = onRemoveTagClick,
+                                documentIconState = documentIconState,
+                                onDocumentIconSelect = onDocumentIconSelect,
+                                onRemoveDocumentIcon = onRemoveDocumentIcon,
                             )
                         }
 
@@ -400,8 +408,12 @@ private fun PageOptions(
     onViewTagsClick: () -> Unit = {},
     onAddTagClick: () -> Unit = {},
     onRemoveTagClick: (String) -> Unit = {},
+    documentIconState: StateFlow<MenuItem.Icon?> = MutableStateFlow(null),
+    onDocumentIconSelect: (String, Int) -> Unit = { _, _ -> },
+    onRemoveDocumentIcon: () -> Unit = {},
 ) {
     val currentPlatform = LocalPlatform.current
+    var showIconPicker by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier.border(
@@ -445,6 +457,23 @@ private fun PageOptions(
         Spacer(modifier = Modifier.height(4.dp))
 
         MoveToButton(moveButtonClick, modifier = Modifier.fillMaxWidth())
+        Spacer(modifier = Modifier.height(4.dp))
+
+        DocumentIconButton(
+            isOpen = showIconPicker,
+            clickListener = { showIconPicker = !showIconPicker },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        // Opens in place: the side menu is a popup, a second one on top of it can't take clicks
+        AnimatedVisibility(showIconPicker) {
+            DocumentIconPicker(
+                documentIconState = documentIconState,
+                onIconSelect = onDocumentIconSelect,
+                onRemoveIcon = onRemoveDocumentIcon,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
         Spacer(modifier = Modifier.height(4.dp))
 
         TextButton(

@@ -74,6 +74,9 @@
   <string name="sort_by_creation">Ordenar por data de criação</string>
   <string name="sort_by_update">Ordenar por data de atualização</string>
   <string name="lock_document">Bloquear edição</string>
+  <string name="document_icon">Ícone</string>
+  <string name="document_icon_title">Ícone do documento</string>
+  <string name="document_icon_remove">Remover ícone</string>
   <string name="move_to">Move para...</string>
   <string name="move_to_home">Move home</string>
   <string name="move">Mover</string>

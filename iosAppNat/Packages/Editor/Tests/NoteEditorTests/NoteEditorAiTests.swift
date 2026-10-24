@@ -43,10 +43,11 @@ final class FakeAi: AiStreaming {
 
 final class OneDocumentRepository: DocumentsRepository {
     let document: WrDocument
-    /// The moves and favorites asked for, in order.
+    /// The moves, favorites and icons asked for, in order.
     private(set) var moves: [String] = []
     private(set) var favorites: [Bool] = []
-    /// Makes the moves and favorites fail.
+    private(set) var icons: [IconInfo?] = []
+    /// Makes the moves, favorites and icons fail.
     var failsActions = false
     /// How long a favorite takes to save.
     var favoriteDelay: Duration?
@@ -69,6 +70,10 @@ final class OneDocumentRepository: DocumentsRepository {
         if let favoriteDelay { try await Task.sleep(for: favoriteDelay) }
         if failsActions { throw APIError.notFound }
         favorites.append(favorite)
+    }
+    func updateDocumentIcon(id: String, icon: IconInfo?) async throws {
+        if failsActions { throw APIError.notFound }
+        icons.append(icon)
     }
     func deleteItems(ids: [String]) async throws {}
 }
@@ -529,6 +534,7 @@ final class SyncingRepository: DocumentsRepository, DocumentSyncing, StepStore {
     }
 
     func syncFolder(_ folderId: String) async throws {}
+    func syncWorkspaceChanges() async throws {}
     func fetchAndMerge(documentId: String) async throws -> WrDocument? { merged }
     func pushSteps(document: WrDocument, changes: [StoryStep], deletions: [String], lastSyncTimestamp: Int64) async throws -> Int64 {
         if let pushError { throw pushError }

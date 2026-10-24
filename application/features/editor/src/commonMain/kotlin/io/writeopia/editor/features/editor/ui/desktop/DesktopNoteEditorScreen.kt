@@ -264,6 +264,9 @@ fun DesktopNoteEditorScreen(
             onViewTagsClick = noteEditorViewModel::showTagsDialog,
             onAddTagClick = noteEditorViewModel::showAddTagDialog,
             onRemoveTagClick = noteEditorViewModel::removeTagFromDocument,
+            documentIconState = noteEditorViewModel.documentIcon,
+            onDocumentIconSelect = noteEditorViewModel::changeDocumentIcon,
+            onRemoveDocumentIcon = noteEditorViewModel::removeDocumentIcon,
         )
 
         // The command field comes with the AI options and goes with them.

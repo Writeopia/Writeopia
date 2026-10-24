@@ -202,13 +202,14 @@ private struct SideAiPanel: View {
     }
 }
 
-/// Lock, favorite, move, font and delete, like `PageOptions` of the desktop app.
+/// Lock, favorite, icon, move, font and delete, like `PageOptions` of the desktop app.
 private struct SidePagePanel: View {
     @Bindable var viewModel: NoteEditorViewModel
     let rootTitle: String
     let onDelete: () -> Void
     @State private var confirmsDelete = false
     @State private var showsMove = false
+    @State private var showsIcons = false
     @State private var showsTags = false
 
     var body: some View {
@@ -239,6 +240,22 @@ private struct SidePagePanel: View {
             .tint(WrColors.accent)
             .disabled(viewModel.isSavingFavorite)
             .accessibilityIdentifier("side.favorite")
+
+            Button {
+                showsIcons = true
+            } label: {
+                Label {
+                    Text("Icon")
+                } icon: {
+                    DocumentIconImage(icon: viewModel.documentIcon, defaultColor: .secondary)
+                }
+            }
+            .accessibilityIdentifier("side.icon")
+            .popover(isPresented: $showsIcons) {
+                MenuIconPicker(initial: viewModel.documentIcon) { icon in
+                    Task { await viewModel.changeIcon(icon) }
+                }
+            }
 
             Button {
                 showsMove = true

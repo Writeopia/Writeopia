@@ -279,12 +279,16 @@ final class FolderContentsViewModel {
 
         await loadLocal()
 
-        // Favorites and tags come from what's synced already; a folder syncs itself.
-        guard !isFavorites, !isTag, let syncing = repository as? DocumentSyncing else { return }
+        guard let syncing = repository as? DocumentSyncing else { return }
         isSyncing = true
         defer { isSyncing = false }
         do {
-            try await syncing.syncFolder(folderId)
+            // Favorites and tags gather documents from every folder: the whole workspace syncs.
+            if isFavorites || isTag {
+                try await syncing.syncWorkspaceChanges()
+            } else {
+                try await syncing.syncFolder(folderId)
+            }
             syncError = nil
             await loadLocal()
         } catch is CancellationError {
@@ -511,6 +515,10 @@ public struct DocumentsRootView: View {
             // A different workspace means a different tree: start again from its root.
             .id("\(session.workspace?.id ?? "")-\(session.documentsVersion)")
             .onChange(of: session.workspace?.id) { router.reset() }
+            // An icon picked in the editor shows on the cards and in the side menu too.
+            .onReceive(NotificationCenter.default.publisher(for: .documentIconChanged)) { _ in
+                router.contentsChanged()
+            }
     }
 }
 
@@ -991,6 +999,10 @@ struct FolderContentsView: View {
                 .fontWeight(.semibold)
                 .lineLimit(1)
         }
+        #if os(macOS)
+        // The toolbar of macOS draws a capsule around the item, tight on its content.
+        .padding(.horizontal, 10)
+        #endif
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isHeader)
         .accessibilityIdentifier("documents.folderTitle")

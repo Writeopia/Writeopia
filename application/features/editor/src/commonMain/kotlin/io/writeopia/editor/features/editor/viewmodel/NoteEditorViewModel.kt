@@ -8,6 +8,7 @@ import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.document.DocumentTag
 import io.writeopia.sdk.models.document.Folder
+import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.story.Tag
@@ -57,6 +58,9 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
     val loadingState: StateFlow<Boolean>
 
     val notFavorite: StateFlow<Boolean>
+
+    /** The icon drawn next to the title, null when the document has none. */
+    val documentIcon: StateFlow<MenuItem.Icon?>
 
     val showSearchState: StateFlow<Boolean>
 
@@ -244,6 +248,11 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
     fun deleteDocument(onDeleted: () -> Unit = {})
 
     fun toggleFavorite()
+
+    /** Puts the icon named [label] (from WrIcons), painted in [tint], next to the title. */
+    fun changeDocumentIcon(label: String, tint: Int)
+
+    fun removeDocumentIcon()
 
     fun receiveExternalFile(files: List<ExternalFile>, position: String)
 

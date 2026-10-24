@@ -73,6 +73,9 @@ private func makeStore() -> LocalDocumentsRepository {
 /// Answers the sync endpoints from an in-memory backend.
 final class FakeBackend: HTTPTransport {
     var folderDiff: FolderContents = FolderContents()
+    /// What the workspace diff answers, and the `lastSync` of each time it was asked.
+    var workspaceDiff: FolderContents = FolderContents()
+    private(set) var workspaceDiffSince: [Int64] = []
     var remoteDocument: WrDocument?
     /// The JSON the search answers; the search fails when nil.
     var searchResponse: String?
@@ -134,6 +137,9 @@ final class FakeBackend: HTTPTransport {
             contents.documents.removeAll { deletedIds.contains($0.id) }
             contents.folders.removeAll { deletedFolderIds.contains($0.id) }
             response = try JSONEncoder().encode(contents)
+        case "/api/docs/workspace/diff":
+            workspaceDiffSince.append((body["lastSync"] as? NSNumber)?.int64Value ?? -1)
+            response = try JSONEncoder().encode(workspaceDiff)
         case "/api/docs/workspace/document":
             if documentSendFails {
                 status = 500
@@ -883,3 +889,50 @@ final class FakeBackend: HTTPTransport {
         #expect(!unknown.isPremium)
     }
 }
+
+@Suite struct WorkspaceChangesSyncTests {
+    private func makeRepository(_ backend: FakeBackend) -> SyncedDocumentsRepository {
+        let client = APIClient(transport: backend, tokenStore: InMemoryTokenStore(accessToken: "a"), baseURL: URL(string: "https://x.io")!)
+        return SyncedDocumentsRepository(
+            local: makeStore(),
+            remote: RemoteDocumentsRepository(client: client, workspaceId: "w"),
+            api: SyncAPI(client: client, workspaceId: "w")
+        )
+    }
+
+    @Test func favoritesBringWhatChangedInEveryFolder() async throws {
+        let backend = FakeBackend()
+        backend.workspaceDiff = FolderContents(
+            folders: [Folder(id: "work", parentId: "root", title: "Work", workspaceId: "w")],
+            documents: [WrDocument(id: "plan", title: "Plan", workspaceId: "w", parentId: "work", icon: IconInfo(label: "zap"))]
+        )
+        backend.favoriteIds = ["plan"]
+        let repository = makeRepository(backend)
+        let draft = WrDocument(id: "draft", title: "Written offline", workspaceId: "w", parentId: "root")
+        try repository.local.store(draft)
+
+        try await repository.syncWorkspaceChanges()
+
+        let favorites = try await repository.favorites()
+        #expect(favorites.documents.map(\.id) == ["plan"])
+        #expect(favorites.documents.first?.icon == IconInfo(label: "zap"))
+        #expect(try repository.local.storedFolder(id: "work")?.title == "Work")
+        // What was changed here is sent too.
+        #expect(backend.sentDocuments.map { $0["id"] as? String } == ["draft"])
+        #expect(backend.workspaceDiffSince == [0])
+        #expect(try repository.local.workspaceContentsSyncedAt() != nil)
+        #expect(!backend.requestLog.contains("POST /api/docs/workspace/document/folder/diff"))
+    }
+
+    @Test func theNextTimeOnlyAsksForWhatChangedSince() async throws {
+        let backend = FakeBackend()
+        let repository = makeRepository(backend)
+        try repository.local.setWorkspaceContentsSyncedAt(1_000)
+
+        try await repository.syncWorkspaceChanges()
+
+        #expect(backend.workspaceDiffSince == [1_000])
+        #expect(try #require(try repository.local.workspaceContentsSyncedAt()) > 1_000)
+    }
+}
+

@@ -48,6 +48,7 @@ import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.DocumentTag
 import io.writeopia.sdk.models.document.Folder
+import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.span.Span
@@ -98,6 +99,9 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapConcat
@@ -598,12 +602,42 @@ class NoteEditorKmpViewModel(
         .map { info -> !info.isFavorite }
         .stateIn(viewModelScope, started = SharingStarted.WhileSubscribed(), initialValue = false)
 
+    /**
+     * An icon saved elsewhere (the side menu, a sync) reaches the open editor. The first value
+     * is the one the document was loaded with; only later changes are taken.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun listenForSavedIcon() {
+        viewModelScope.launch(Dispatchers.Default) {
+            documentId
+                .filter { id -> id.isNotEmpty() }
+                .flatMapLatest { id ->
+                    documentRepository.listenForDocumentInfoById(id)
+                        .filterNotNull()
+                        .map { info -> info.icon }
+                        .distinctUntilChanged()
+                        .drop(1)
+                }
+                .collect(writeopiaManager::setDocumentIcon)
+        }
+    }
+
+    override val documentIcon: StateFlow<MenuItem.Icon?> = writeopiaManager
+        .documentInfo
+        .map { info -> info.icon }
+        .distinctUntilChanged()
+        .stateIn(viewModelScope, started = SharingStarted.Eagerly, initialValue = null)
+
+    // Here, after [documentId] and [documentIcon]: an init block runs in the order of the
+    // class, and the listener starts on another thread right away.
+    init {
+        listenForSavedIcon()
+    }
+
     private var aiJob: Job? = null
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override val toDrawWithDecoration: StateFlow<DrawState> by lazy {
-        val infoFlow = documentId.flatMapLatest(documentRepository::listenForDocumentInfoById)
-
         val toDraw = combine(
             writeopiaManager.toDraw,
             findsOfSearch,
@@ -652,14 +686,13 @@ class NoteEditorKmpViewModel(
             drawState.copy(stories = mutableStories, focus = null)
         }
 
-        toDraw.flatMapLatest { drawState ->
-            infoFlow.map { info -> drawState to info }
-        }.map { (drawState, info) ->
-            val imageVector = info?.icon
+        // The icon of the editor's own state: a choice made here shows before it is saved.
+        combine(toDraw, documentIcon) { drawState, icon ->
+            val imageVector = icon
                 ?.label
                 ?.let(WrIcons::fromName)
 
-            val tint = info?.icon?.tint
+            val tint = icon?.tint
 
             val newStories = drawState.stories
                 .map { drawStory ->
@@ -1123,6 +1156,15 @@ class NoteEditorKmpViewModel(
 
     override fun toggleEditable() {
         writeopiaManager.toggleLockDocument()
+    }
+
+    // Saved with the document's metadata, like the lock: the title draws it once it is saved.
+    override fun changeDocumentIcon(label: String, tint: Int) {
+        writeopiaManager.changeDocumentIcon(MenuItem.Icon(label, tint))
+    }
+
+    override fun removeDocumentIcon() {
+        writeopiaManager.changeDocumentIcon(null)
     }
 
     /** The favorite request in flight, so the next one goes after it with the latest state. */

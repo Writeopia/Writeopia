@@ -32,6 +32,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.writeopia.commonui.buttons.verticalPaddingCommonButton
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.DeleteButton
+import io.writeopia.editor.features.editor.ui.desktop.edit.menu.DocumentIconButton
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.FavoriteButton
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.FontOptions
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.LockButton
@@ -66,6 +67,7 @@ internal fun NoteGlobalActionsMenu(
     onViewTagsClick: () -> Unit = {},
     onAddTagClick: () -> Unit = {},
     onRemoveTagClick: (String) -> Unit = {},
+    onIconClick: () -> Unit = {},
 ) {
     Box(
         modifier = Modifier
@@ -99,6 +101,16 @@ internal fun NoteGlobalActionsMenu(
                 Spacer(modifier = Modifier.width(4.dp))
 
                 DeleteButton(onDeleteClick, modifier = Modifier.weight(1F))
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Row {
+                DocumentIconButton(isOpen = false, onIconClick, modifier = Modifier.weight(1F))
+
+                Spacer(modifier = Modifier.width(4.dp))
+
+                Spacer(modifier = Modifier.weight(1F))
             }
 
             Spacer(modifier = Modifier.height(16.dp))

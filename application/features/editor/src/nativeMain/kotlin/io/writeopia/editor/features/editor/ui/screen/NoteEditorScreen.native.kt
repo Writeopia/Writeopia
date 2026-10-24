@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.sp
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.dialogs.confirmation.DeleteConfirmationDialog
 import io.writeopia.commonui.folders.MoveSelectionSheet
+import io.writeopia.editor.configuration.ui.DocumentIconSheet
 import io.writeopia.editor.configuration.ui.HeaderEdition
 import io.writeopia.editor.configuration.ui.NoteGlobalActionsMenu
 import io.writeopia.editor.features.editor.ui.TextEditor
@@ -114,6 +115,7 @@ internal fun NoteEditorScreen(
     var showAiDialog by remember { mutableStateOf(false) }
     var showSelectedLinesAiDialog by remember { mutableStateOf(false) }
     var showFolderSelection by remember { mutableStateOf(false) }
+    var showIconSheet by remember { mutableStateOf(false) }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -247,6 +249,9 @@ internal fun NoteEditorScreen(
                     onViewTagsClick = noteEditorViewModel::showTagsDialog,
                     onAddTagClick = noteEditorViewModel::showAddTagDialog,
                     onRemoveTagClick = noteEditorViewModel::removeTagFromDocument,
+                    documentIconState = noteEditorViewModel.documentIcon,
+                    onDocumentIconSelect = noteEditorViewModel::changeDocumentIcon,
+                    onRemoveDocumentIcon = noteEditorViewModel::removeDocumentIcon,
                 )
             }
 
@@ -258,6 +263,15 @@ internal fun NoteEditorScreen(
                         noteEditorViewModel.deleteDocument(onDeleted = onDocumentDelete)
                     },
                     onCancel = { showDeleteConfirmation = false }
+                )
+            }
+
+            if (showIconSheet) {
+                DocumentIconSheet(
+                    documentIconState = noteEditorViewModel.documentIcon,
+                    onIconSelect = noteEditorViewModel::changeDocumentIcon,
+                    onRemoveIcon = noteEditorViewModel::removeDocumentIcon,
+                    onDismissRequest = { showIconSheet = false }
                 )
             }
 
@@ -351,6 +365,7 @@ internal fun NoteEditorScreen(
                     onViewTagsClick = noteEditorViewModel::showTagsDialog,
                     onAddTagClick = noteEditorViewModel::showAddTagDialog,
                     onRemoveTagClick = noteEditorViewModel::removeTagFromDocument,
+                    onIconClick = { showIconSheet = true },
                 )
             }
 

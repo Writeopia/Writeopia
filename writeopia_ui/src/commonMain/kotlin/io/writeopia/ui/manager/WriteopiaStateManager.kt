@@ -22,6 +22,7 @@ import io.writeopia.sdk.models.command.TypeInfo
 import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.span.Span
@@ -1202,6 +1203,26 @@ class WriteopiaStateManager(
 
         _documentInfo.value = info.copy(isFavorite = !info.isFavorite)
         _currentStory.value = currentStory.value.copy(lastEdit = LastEdit.Metadata)
+    }
+
+    /** The icon drawn next to the title of the document, or none when [icon] is null. */
+    fun changeDocumentIcon(icon: MenuItem.Icon?) {
+        val info = _documentInfo.value
+        if (info.icon == icon) return
+
+        _documentInfo.value = info.copy(icon = icon)
+        _currentStory.value = currentStory.value.copy(lastEdit = LastEdit.Metadata)
+    }
+
+    /**
+     * The icon saved elsewhere (the side menu, another device): shown here without saving it
+     * again, like [setFavorite].
+     */
+    fun setDocumentIcon(icon: MenuItem.Icon?) {
+        val info = _documentInfo.value
+        if (info.icon != icon) {
+            _documentInfo.value = info.copy(icon = icon)
+        }
     }
 
     fun setFavorite(isFavorite: Boolean) {

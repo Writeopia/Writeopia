@@ -436,6 +436,22 @@ public final class NoteEditorViewModel {
         }
     }
 
+    /// The icon next to the title, like "Icon" in the Compose menu.
+    public var documentIcon: IconInfo? { writeopiaManager.documentIcon }
+
+    /// Puts `icon` next to the title, or takes it away when nil. Shown right away; the
+    /// repository tells the sidebar and the lists, which show it too.
+    public func changeIcon(_ icon: IconInfo?) async {
+        let previous = documentIcon
+        documentIconChanged(id: documentId, icon: icon)
+        do {
+            try await repository.updateDocumentIcon(id: documentId, icon: icon)
+        } catch {
+            documentIconChanged(id: documentId, icon: previous)
+            menuActionError = error.userMessage
+        }
+    }
+
     /// The folder the document is in, where "Move to" starts.
     public var folderId: String { loadedDocument?.parentId ?? Folder.rootId }
 

@@ -54,7 +54,7 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<WriteopiaApplicat
         TokenEntity::class,
         WorkspaceEntity::class
     ],
-    version = 37,
+    version = 38,
     exportSchema = false
 )
 @TypeConverters(IdListConverter::class)
@@ -106,7 +106,8 @@ abstract class WriteopiaApplicationDatabase : RoomDatabase() {
                     MIGRATION_33_34,
                     MIGRATION_34_35,
                     MIGRATION_35_36,
-                    MIGRATION_36_37
+                    MIGRATION_36_37,
+                    MIGRATION_37_38
                 )
                 .fallbackToDestructiveMigration(dropAllTables = true)
                 .build()
