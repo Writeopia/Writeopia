@@ -21,7 +21,17 @@ interface FolderController {
 
     fun stopEditingFolder()
 
+    /** Moves a dragged item (or the selection, when there is one) into [parentId]. */
     fun moveToFolder(menuItemUi: MenuItemUi, parentId: String)
+
+    /** The last drag and drop into a folder, while it can still be undone. */
+    val lastMoveState: StateFlow<FolderMove?>
+
+    /** Puts the items of [move] back in the folders they were in. */
+    fun undoMove(move: FolderMove)
+
+    /** Forgets [move] once it can no longer be undone. */
+    fun dismissMove(move: FolderMove)
 
     /** Whether the picker of the folder to move the selected items to is shown. */
     val moveSelectionState: StateFlow<Boolean>

@@ -45,6 +45,9 @@ import writeopia.application.core.resources.generated.resources.folder_screen_cr
 import writeopia.application.core.resources.generated.resources.folder_screen_empty
 import writeopia.application.core.resources.generated.resources.documents_graph
 import writeopia.application.core.resources.generated.resources.untitled
+import writeopia.application.core.resources.generated.resources.undo
+import writeopia.application.core.resources.generated.resources.moved_item_to_folder
+import writeopia.application.core.resources.generated.resources.moved_items_to_folder
 import writeopia.application.core.resources.generated.resources.graph_card_kind_document
 import writeopia.application.core.resources.generated.resources.graph_card_kind_folder
 import writeopia.application.core.resources.generated.resources.graph_card_kind_tag
@@ -538,6 +541,17 @@ object WrStrings {
     @Composable
     fun moveSelectionConfirmation(folderTitle: String) =
         stringResource(Res.string.move_selection_confirmation, folderTitle)
+
+    @Composable
+    fun undo() = stringResource(Res.string.undo)
+
+    @Composable
+    fun movedItemToFolder(itemTitle: String, folderTitle: String) =
+        stringResource(Res.string.moved_item_to_folder, itemTitle, folderTitle)
+
+    @Composable
+    fun movedItemsToFolder(count: Int, folderTitle: String) =
+        stringResource(Res.string.moved_items_to_folder, count, folderTitle)
 
     @Composable
     fun text() = stringResource(Res.string.text)

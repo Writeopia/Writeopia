@@ -19,6 +19,7 @@ import io.writeopia.notemenu.ui.dto.NotesUi
 import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
 import io.writeopia.notemenu.viewmodel.ConfigState
 import io.writeopia.notemenu.viewmodel.FolderController
+import io.writeopia.notemenu.viewmodel.FolderMove
 import io.writeopia.notemenu.viewmodel.SyncState
 import io.writeopia.notemenu.viewmodel.UserState
 import io.writeopia.notemenu.viewmodel.pathTo
@@ -671,6 +672,13 @@ internal class OnlyBackendChooseNoteKmpViewModel(
             }
         }
     }
+
+    // Moves go straight to the backend here and aren't offered to be undone.
+    override val lastMoveState: StateFlow<FolderMove?> = MutableStateFlow(null)
+
+    override fun undoMove(move: FolderMove) {}
+
+    override fun dismissMove(move: FolderMove) {}
 
     override fun changeIcons(menuItemId: String, icon: String, tint: Int, iconChange: IconChange) {
         viewModelScope.launch(Dispatchers.Default) {

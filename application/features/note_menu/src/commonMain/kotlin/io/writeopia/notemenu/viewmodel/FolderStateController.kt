@@ -205,29 +205,67 @@ class FolderStateController private constructor(
         }
     }
 
+    private val _lastMoveState = MutableStateFlow<FolderMove?>(null)
+    override val lastMoveState: StateFlow<FolderMove?> = _lastMoveState.asStateFlow()
+
     override fun moveToFolder(menuItemUi: MenuItemUi, parentId: String) {
         if (menuItemUi.documentId != parentId) {
             coroutineScope.launch(Dispatchers.Default) {
                 val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
-                if (_selectedNotes.value.isEmpty()) {
+                val movedItems = if (_selectedNotes.value.isEmpty()) {
                     if (moveItemToFolder(menuItemUi, parentId)) {
-                        sendMoveToBackend(
-                            menuItemUi.documentId,
-                            isFolder = menuItemUi is MenuItemUi.FolderUi,
-                            parentId,
-                            workspace
-                        )
+                        val isFolder = menuItemUi is MenuItemUi.FolderUi
+                        sendMoveToBackend(menuItemUi.documentId, isFolder, parentId, workspace)
+                        listOf(FolderMove.MovedItem(menuItemUi.documentId, isFolder, menuItemUi.parentId))
+                    } else {
+                        emptyList()
                     }
                 } else {
+                    // Loaded before the move, so their parent is the folder they were in.
                     val moved = notesUseCase.moveItemsById(
-                        ids = selectedNotes.value,
-                        parentId,
-                        workspace.id
+                        ids = _selectedNotes.value,
+                        workspaceId = workspace.id,
+                        parentId = parentId
                     )
+                    _selectedNotes.value = emptySet()
+                    _folderChanges.update { it + 1 }
                     sendMovesToBackend(moved, parentId, workspace)
+                    moved.map { item -> FolderMove.MovedItem(item.id, item is Folder, item.parentId) }
+                }
+
+                if (movedItems.isNotEmpty()) {
+                    _lastMoveState.value = FolderMove(
+                        itemTitle = menuItemUi.title,
+                        folderTitle = notesUseCase.getFolderById(parentId)?.title,
+                        items = movedItems
+                    )
                 }
             }
         }
+    }
+
+    override fun undoMove(move: FolderMove) {
+        _lastMoveState.compareAndSet(move, null)
+
+        coroutineScope.launch(Dispatchers.Default) {
+            val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
+
+            move.items.groupBy { it.previousParentId }.forEach { (previousParentId, items) ->
+                notesUseCase.moveItemsById(
+                    ids = items.map { it.id },
+                    workspaceId = workspace.id,
+                    parentId = previousParentId
+                )
+                items.forEach { item ->
+                    sendMoveToBackend(item.id, item.isFolder, previousParentId, workspace)
+                }
+            }
+            _folderChanges.update { it + 1 }
+        }
+    }
+
+    override fun dismissMove(move: FolderMove) {
+        _lastMoveState.compareAndSet(move, null)
     }
 
     /** Moves the item; false when a folder would be moved into itself. */
@@ -318,6 +356,7 @@ class FolderStateController private constructor(
     private fun clearSessionState() {
         _selectedNotes.value = emptySet()
         editingFolderMutable.value = null
+        _lastMoveState.value = null
         localUserId = null
         coroutineScope.cancel()
     }

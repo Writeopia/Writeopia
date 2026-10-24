@@ -91,7 +91,7 @@
   <string name="move_no_folders_found">No folders found</string>
   <string name="move_error_loading_folders">Error loading folders</string>
   <string name="search_folders">Search folders</string>
-  <string name="move_selection_confirmation">Move the selected items to \"%1$s\"?</string>
+  <string name="move_selection_confirmation">Move the selected items to “%1$s”?</string>
   <string name="text">Text</string>
   <string name="insert">Insert</string>
   <string name="decoration">Decoration</string>
@@ -239,4 +239,6 @@
   <string name="ai_command_hint">Tell the AI what to do with the text</string>
   <string name="ai_command_run">Run</string>
   <string name="quick_actions_cursor_hint">Quick actions work on the document or on selected lines.</string>
+  <string name="moved_item_to_folder">“%1$s” moved to “%2$s”</string>
+  <string name="moved_items_to_folder">%1$d items moved to “%2$s”</string>
 </resources>
