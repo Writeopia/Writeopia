@@ -34,6 +34,7 @@ fun DragTarget(
                 // Todo: Offset.Zero Is wrong!
                 currentPosition = layoutCoordinates.localToWindow(Offset.Zero)
             }
+            .holdDragGesture { currentState.isDragging }
             .pointerInput(Unit) {
                 detectDragGesturesAfterLongPress(onDragStart = { offset ->
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)

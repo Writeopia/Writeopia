@@ -29,6 +29,8 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.TopAppBar
@@ -61,6 +63,7 @@ import io.writeopia.notemenu.ui.screen.configuration.molecules.MobileConfigurati
 import io.writeopia.notemenu.ui.screen.configuration.molecules.NotesSelectionMenu
 import io.writeopia.commonui.dialogs.confirmation.DeleteConfirmationDialog
 import io.writeopia.commonui.folders.MoveSelectionSheet
+import io.writeopia.commonui.snackbar.WriteopiaSnackbar
 import io.writeopia.notemenu.ui.screen.documents.ADD_NOTE_TEST_TAG
 import io.writeopia.notemenu.ui.screen.documents.NotesCardsScreen
 import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
@@ -350,6 +353,25 @@ internal fun MobileChooseNoteScreen(
                         onMove = chooseNoteViewModel::moveSelectionTo,
                         onDismissRequest = chooseNoteViewModel::hideMoveSelection
                     )
+                }
+
+                val snackbarHostState = remember { SnackbarHostState() }
+
+                FolderMoveSnackbarEffect(
+                    snackbarHostState = snackbarHostState,
+                    lastMoveState = chooseNoteViewModel.lastMoveState,
+                    undoMove = chooseNoteViewModel::undoMove,
+                    dismissMove = chooseNoteViewModel::dismissMove
+                )
+
+                // Above the navigation bar, which is drawn over the content.
+                SnackbarHost(
+                    hostState = snackbarHostState,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = adjustedPaddingValues.calculateBottomPadding())
+                ) { data ->
+                    WriteopiaSnackbar(snackbarData = data)
                 }
             }
         }

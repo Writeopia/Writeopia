@@ -1,6 +1,17 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "“%@” moved to “%@”" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%1$@” movido para “%2$@”"
+          }
+        }
+      }
+    },
     "%@ · %lld documents" : {
       "extractionState" : "stale",
       "localizations" : {
