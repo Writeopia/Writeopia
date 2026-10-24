@@ -6,6 +6,7 @@ import io.writeopia.sdk.models.span.SpanInfo
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 
 class SpanInfoTest {
 
@@ -108,5 +109,12 @@ class SpanInfoTest {
         val interception = span1.intersection(span2)
 
         assertEquals(Intersection.INSIDE, interception)
+    }
+
+    @Test
+    fun `mention span should not be expandable`() {
+        val mention = SpanInfo.create(start = 0, end = 6, span = Span.MENTION, extra = "alice")
+
+        assertFalse(mention.expandable())
     }
 }

@@ -13,6 +13,7 @@ import io.writeopia.ai.HeaderImages
 import io.writeopia.ai.UiConfigurationAiProviderStore
 import io.writeopia.ai.task.AiTaskManager
 import io.writeopia.ai.task.AiTaskType
+import io.writeopia.auth.core.data.WorkspaceApi
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.genai.repository.GenAiRepository
 import io.writeopia.core.folders.api.DocumentsApi
@@ -56,6 +57,7 @@ import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
+import io.writeopia.sdk.models.user.MentionUser
 import io.writeopia.sdk.models.user.Tier
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
@@ -153,6 +155,7 @@ class NoteEditorKmpViewModel(
     private val documentTagRepository: DocumentTagRepository? = null,
     /** The header pictures of the cloud; null when it can't answer right now. */
     private val resolveHeaderImages: suspend () -> HeaderImages? = { aiClients.headerImages() },
+    private val workspaceApi: WorkspaceApi? = null,
 ) : NoteEditorViewModel,
     ViewModel(),
     BackstackInform by writeopiaManager,
@@ -260,6 +263,37 @@ class NoteEditorKmpViewModel(
     }
 
     init {
+        viewModelScope.launch(Dispatchers.Default) {
+            writeopiaManager.workspaceIdFlow.collect { workspaceId ->
+                val workspaceUsersNotAvailable = workspaceApi == null ||
+                    workspaceId.isBlank() ||
+                    workspaceId == Workspace.disconnectedWorkspace().id ||
+                    !authRepository.isLoggedIn()
+
+                if (workspaceUsersNotAvailable) {
+                    writeopiaManager.setWorkspaceUsers(emptyList())
+                } else {
+                    when (val result = workspaceApi.getWorkspaceMemberUsers(workspaceId)) {
+                        is ResultData.Complete -> {
+                            val users = result.data
+                                .filter { it.username.isNotBlank() }
+                                .map { user ->
+                                    MentionUser(
+                                        id = user.id,
+                                        name = user.name,
+                                        username = user.username,
+                                    )
+                                }
+                            writeopiaManager.setWorkspaceUsers(users)
+                        }
+
+                        else -> writeopiaManager.setWorkspaceUsers(emptyList())
+                    }
+                }
+
+            }
+        }
+
         viewModelScope.launch(Dispatchers.Default) {
             writeopiaManager.linkCardCreated.collect { creation ->
                 launch { describeLinkCard(creation) }

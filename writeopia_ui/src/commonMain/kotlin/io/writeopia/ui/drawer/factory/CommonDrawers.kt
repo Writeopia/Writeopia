@@ -426,5 +426,6 @@ private fun RowScope.messageDrawer(
         textToolbox = textToolbox,
         slashCommands = slashCommands,
         slashCommandsEnabled = slashCommandsEnabled,
+        mentionUsersState = manager.workspaceUsers,
         spellChecker = spellChecker
     )

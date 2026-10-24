@@ -31,6 +31,18 @@ fun Span.toSpanStyle(isDarkTheme: Boolean): SpanStyle =
             SpanStyle(background = Color(0xFFEF9A9A))
         }
 
+        Span.MENTION -> if (isDarkTheme) {
+            SpanStyle(
+                color = Color(0xFF64B5F6),
+                fontWeight = FontWeight.Medium,
+            )
+        } else {
+            SpanStyle(
+                color = Color(0xFF1976D2),
+                fontWeight = FontWeight.Medium,
+            )
+        }
+
         Span.NONE -> SpanStyle()
         Span.LINK -> SpanStyle()
         Span.COMMENT -> SpanStyle()
@@ -48,5 +60,6 @@ fun Span.toSelectionMetadata(): SelectionMetadata? =
         Span.HIGHLIGHT_RED,
         Span.LINK,
         Span.COMMENT,
+        Span.MENTION,
         Span.NONE -> null
     }
