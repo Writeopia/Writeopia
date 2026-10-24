@@ -695,6 +695,20 @@ class AuthIntegrationTest {
         }
 
         assertEquals(HttpStatusCode.Conflict, addUserToWorkspaceAgain.status)
+
+        // Adding the same user by email should also fail with Conflict and not overwrite role
+        val addUserByEmailAgain = client.post("/api/workspace/user") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                AddUserToWorkspaceRequest(
+                    username = email2,
+                    workspaceId = workspaceOfUser1.id,
+                    role = "user"
+                )
+            )
+        }
+
+        assertEquals(HttpStatusCode.Conflict, addUserByEmailAgain.status)
     }
 
     @Test
