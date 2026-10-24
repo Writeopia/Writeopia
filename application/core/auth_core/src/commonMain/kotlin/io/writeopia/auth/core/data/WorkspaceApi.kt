@@ -143,6 +143,20 @@ class WorkspaceApi(
         }
     }
 
+    suspend fun getWorkspaceMemberUsers(
+        workspaceId: String
+    ): ResultData<List<WorkspaceUserApi>> = try {
+        val response = client.get("$baseUrl/api/workspace/$workspaceId/users")
+        if (response.status.isSuccess()) {
+            return  ResultData.Complete(response.body<List<WorkspaceUserApi>>())
+        }
+        return  ResultData.Error()
+
+    } catch (e: Exception) {
+        e.printStackTrace()
+        ResultData.Error(e)
+    }
+
     suspend fun getUsersOfWorkspacePaginated(
         workspaceId: String,
         page: Int,

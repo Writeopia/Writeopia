@@ -282,4 +282,20 @@ class SpanTest {
 
         assertEquals(setOf(comment), result)
     }
+
+    @Test
+    fun `inserting at the end of a mention should not extend the mention`() {
+        val mention = SpanInfo.create(0, 6, Span.MENTION, "alice")
+
+        val result = Spans.recalculateSpans(
+            spans = setOf(mention),
+            oldText = "@alice ",
+            newText = "@alice X",
+            oldSelectionStart = 6,
+            oldSelectionEnd = 6,
+            newSelectionStart = 7,
+        )
+
+        assertEquals(setOf(mention), result)
+    }
 }
