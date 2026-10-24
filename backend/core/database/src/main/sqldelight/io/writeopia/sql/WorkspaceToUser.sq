@@ -11,6 +11,7 @@ getUsersInWorkspace:
 SELECT
   user_entity.id AS user_entity_id,
   user_entity.name AS user_name,
+  user_entity.username AS user_username,
   user_entity.created_at AS user_created_at,
   user_entity.email AS user_email,
   role
@@ -25,6 +26,7 @@ getUsersInWorkspacePaginated:
 SELECT
   user_entity.id AS user_entity_id,
   user_entity.name AS user_name,
+  user_entity.username AS user_username,
   user_entity.created_at AS user_created_at,
   user_entity.email AS user_email,
   role
@@ -46,6 +48,7 @@ getUserInWorkspace:
 SELECT
   user_entity.id AS user_entity_id,
   user_entity.name AS user_name,
+  user_entity.username AS user_username,
   user_entity.created_at AS user_created_at,
   user_entity.email AS user_email,
   role
