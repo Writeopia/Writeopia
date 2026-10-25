@@ -2,9 +2,13 @@ package io.writeopia.notemenu.ui.screen.documents
 
 import io.writeopia.sdk.utils.iterables.Rank
 import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -47,6 +51,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.font.FontFamily
@@ -580,12 +585,24 @@ private fun FolderItem(
             val hoveringItem = draggedData()?.info as? MenuItemUi
             val isDropTarget = inBound && hoveringItem != null && hoveringItem.id != folderUi.id
 
-            val bgColor =
-                when {
-                    isDropTarget -> WriteopiaTheme.colorScheme.highlight
+            // Like the folder cards of the native apps: an accent border and tint, and the icon
+            // crossfading into the move icon.
+            val accent = MaterialTheme.colorScheme.primary
+            val borderColor by animateColorAsState(
+                targetValue = if (isDropTarget) accent else accent.copy(alpha = 0F),
+                label = "folderDropBorder"
+            )
+
+            val bgColor by animateColorAsState(
+                targetValue = when {
+                    isDropTarget -> accent.copy(alpha = 0.15F)
+                        .compositeOver(WriteopiaTheme.colorScheme.cardBg)
+
                     folderUi.selected -> WriteopiaTheme.colorScheme.selectedBg
                     else -> WriteopiaTheme.colorScheme.cardBg
-                }
+                },
+                label = "folderDropBackground"
+            )
 
             val textColor = WriteopiaTheme.colorScheme.textLight
 
@@ -594,6 +611,7 @@ private fun FolderItem(
                     .fillMaxWidth()
                     .background(WriteopiaTheme.colorScheme.cardPlaceHolderBackground)
                     .clip(MaterialTheme.shapes.large)
+                    .border(width = 2.dp, color = borderColor, shape = MaterialTheme.shapes.large)
                     .clickable {
                         folderClick(folderUi.documentId)
                     },
@@ -626,21 +644,28 @@ private fun FolderItem(
                         val tint = folderUi.icon?.tint?.let(::Color)
                             ?: MaterialTheme.colorScheme.primary
 
-                        Icon(
+                        Crossfade(
+                            targetState = if (isDropTarget) {
+                                WrIcons.moveToFolder
+                            } else {
+                                folderUi.icon?.label?.let(WrIcons::fromName) ?: folder
+                            },
                             modifier = Modifier
                                 .padding(6.dp)
                                 .clip(MaterialTheme.shapes.large)
                                 .clickable { showIconsOptions = !showIconsOptions }
                                 .size(56.dp)
                                 .padding(6.dp),
-                            imageVector = if (isDropTarget) {
-                                WrIcons.moveToFolder
-                            } else {
-                                folderUi.icon?.label?.let(WrIcons::fromName) ?: folder
-                            },
-                            contentDescription = "Folder",
-                            tint = tint
-                        )
+                            animationSpec = tween(200),
+                            label = "folderDropIcon"
+                        ) { icon ->
+                            Icon(
+                                modifier = Modifier.fillMaxSize(),
+                                imageVector = icon,
+                                contentDescription = "Folder",
+                                tint = tint
+                            )
+                        }
 
                         DropdownMenu(
                             expanded = showIconsOptions,
