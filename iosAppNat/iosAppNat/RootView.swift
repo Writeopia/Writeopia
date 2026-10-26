@@ -18,6 +18,8 @@ struct RootView: View {
                 EmailConfirmationView(email: email, session: session)
             case .chooseWorkspace:
                 ChooseWorkspaceView(session: session)
+            case .syncingWorkspace:
+                WorkspaceSyncView(session: session)
             case .offlineSetup(.localAi):
                 LocalAiSetupView()
             case .offlineSetup(.localFolder):

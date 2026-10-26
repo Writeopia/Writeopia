@@ -159,6 +159,20 @@ public final class SyncAPI {
         try await client.get("api/docs/workspace/\(workspaceId)/user/favorites")
     }
 
+    /// The deletions and moves made in the workspace after `lastEventSync` (epoch ms, the
+    /// backend's clock), oldest first, like `EventSync` of the Compose app receives them.
+    public func eventsDiff(lastEventSync: Int64) async throws -> SyncEventsDiff {
+        struct Body: Encodable {
+            let workspaceId: String
+            let lastEventSync: Int64
+        }
+        return try await client.send(
+            .post,
+            "api/docs/workspace/events/diff",
+            body: Body(workspaceId: workspaceId, lastEventSync: lastEventSync)
+        )
+    }
+
     public func sendDocuments(_ documents: [WrDocument]) async throws {
         guard !documents.isEmpty else { return }
         struct Body: Encodable {
@@ -335,6 +349,54 @@ public final class SyncAPI {
 /// 3. `receiveDeletedSteps`: the steps deleted on other devices since the last time.
 /// 4. `mergeReceived`: the steps changed on other devices, merged step by step; a step
 ///    deleted here is never written back.
+/// A deletion or move made on some device, as the backend records it.
+public struct SyncEvent: Decodable, Equatable, Sendable {
+    public enum Kind: String, Decodable, Sendable {
+        case deleteDocument = "DELETE_DOCUMENT"
+        case deleteFolder = "DELETE_FOLDER"
+        case moveDocument = "MOVE_DOCUMENT"
+        case moveFolder = "MOVE_FOLDER"
+    }
+
+    public let id: String
+    public let eventType: String
+    public let entityId: String
+    public let oldParentId: String?
+    public let newParentId: String?
+    public let createdAt: Int64
+
+    public init(id: String, eventType: String, entityId: String, oldParentId: String? = nil, newParentId: String? = nil, createdAt: Int64) {
+        self.id = id
+        self.eventType = eventType
+        self.entityId = entityId
+        self.oldParentId = oldParentId
+        self.newParentId = newParentId
+        self.createdAt = createdAt
+    }
+
+    /// Nil for an event this version doesn't know, which is skipped.
+    public var kind: Kind? { Kind(rawValue: eventType) }
+}
+
+/// The events since the last time, with the backend's time to continue from.
+public struct SyncEventsDiff: Decodable, Equatable, Sendable {
+    public let events: [SyncEvent]
+    public let serverTimestamp: Int64
+
+    public init(events: [SyncEvent], serverTimestamp: Int64) {
+        self.events = events
+        self.serverTimestamp = serverTimestamp
+    }
+}
+
+/// What a screen brings in sync with the backend when it opens: the folder it shows, or the
+/// whole workspace. Sending is the same either way; only what is received differs. Mirrors
+/// `SyncScope` of the Compose app.
+public enum SyncScope: Sendable {
+    case folder
+    case workspace
+}
+
 public final class DocumentStepSync {
     /// Steps per request: keeps the payload small and the request reliable.
     static let stepsPerBatch = 50
@@ -545,8 +607,10 @@ public final class DocumentStepSync {
 public protocol DocumentSyncing: AnyObject {
     /// Brings the folder in sync with the backend, like `FolderSync` of the Compose app.
     func syncFolder(_ folderId: String) async throws
-    /// Brings what changed in the whole workspace, for the pages that gather documents from
-    /// every folder (favorites, tags).
+    /// Brings the whole workspace in sync with the backend, like `WorkspaceSync` of the
+    /// Compose app: what changed anywhere comes, so the pages that gather documents from every
+    /// folder (favorites, tags) are complete, and a document favorited elsewhere shows up even
+    /// when its folder was never opened here.
     func syncWorkspaceChanges() async throws
     /// Merges the backend copy into the local one and returns the result when it changed, like
     /// `DocumentLoadUseCase.fetchAndMergeFromBackend`.
@@ -575,6 +639,8 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
     private let remote: RemoteDocumentsRepository
     private let api: SyncAPI
     private var lastFolderSync: [String: Date] = [:]
+    /// The workspace sync in progress, joined by whoever asks for one meanwhile.
+    private var workspaceSyncTask: Task<Void, Error>?
 
     private let stepSync: DocumentStepSync
 
@@ -939,12 +1005,40 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
         lastFolderSync[folderId] = Date()
     }
 
-    /// The favorites and tag pages: their documents come from every folder, so what changed in
-    /// the whole workspace since the last time is received, like `WorkspaceSync` of the Compose
-    /// app, and everything changed here is sent. Unlike a folder, the diff only has what was
-    /// added or changed: what was deleted elsewhere goes when its folder is opened.
+    /// The whole workspace, like `WorkspaceSync` of the Compose app: what changed anywhere
+    /// since the last time is received, and everything changed here is sent. The diff only
+    /// has what was added or changed; what was deleted or moved elsewhere comes as the
+    /// backend's events, like `EventSync` of the Compose app, so nothing waits for its folder
+    /// to be opened.
+    ///
+    /// One sync runs at a time: asked while one runs (the documents screen opening while the
+    /// login sync still runs), the caller waits for it instead of receiving the workspace
+    /// twice; what changes meanwhile comes with the next one.
     public func syncWorkspaceChanges() async throws {
+        if let running = workspaceSyncTask {
+            try await running.value
+            return
+        }
+        let task = Task { try await performWorkspaceSync() }
+        workspaceSyncTask = task
+        defer { workspaceSyncTask = nil }
+        try await task.value
+    }
+
+    private func performWorkspaceSync() async throws {
         if let last = lastFolderSync[Self.workspaceSyncKey], Date().timeIntervalSince(last) < 2 { return }
+
+        // Deletions that couldn't be sent before go first, wherever they are, so the backend
+        // doesn't send those items back.
+        for document in try local.storedDeletedDocuments() {
+            try? await sendDeletion(document.id)
+        }
+        for folder in try local.storedDeletedFolders() {
+            try? await sendFolderDeletion(folder.id)
+        }
+
+        // Then what was deleted or moved elsewhere, before anything received could put it back.
+        try await receiveEvents()
 
         // This device's time before the request: whatever changes while it runs comes again.
         let startedAt = Date.nowMillis
@@ -997,6 +1091,42 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
 
     /// The key of `syncWorkspaceChanges` among the last syncs of the folders.
     private static let workspaceSyncKey = "wr.workspace"
+
+    /// Applies the deletions and moves made elsewhere since the last time, from the backend's
+    /// own watermark on. Events of this device's own changes come too: deleting what is
+    /// already gone and moving to where it already is change nothing. When the backend can't
+    /// be asked the sync goes on, like the Compose app's, and the next one brings them.
+    private func receiveEvents() async throws {
+        let diff: SyncEventsDiff
+        do {
+            diff = try await api.eventsDiff(lastEventSync: try local.eventsSyncedAt() ?? 0)
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            return
+        }
+
+        for event in diff.events {
+            switch event.kind {
+            case .deleteDocument:
+                try local.hardDeleteDocument(id: event.entityId)
+            case .deleteFolder:
+                try local.deleteFolderTree(id: event.entityId, soft: false)
+            case .moveDocument:
+                if let newParentId = event.newParentId, try local.storedDocument(id: event.entityId) != nil {
+                    try local.applyReceivedMove(documentId: event.entityId, toFolder: newParentId)
+                }
+            case .moveFolder:
+                if let newParentId = event.newParentId, try local.storedFolder(id: event.entityId) != nil {
+                    try local.applyReceivedMove(folderId: event.entityId, toFolder: newParentId)
+                }
+            case nil:
+                continue
+            }
+        }
+        // Workspace-wide, in the backend's clock.
+        try local.setEventsSyncedAt(diff.serverTimestamp)
+    }
 
     /// Opens the document: the backend copy is merged into the local one step by step and the
     /// result returned when something changed. The deletions pending here go first, so the

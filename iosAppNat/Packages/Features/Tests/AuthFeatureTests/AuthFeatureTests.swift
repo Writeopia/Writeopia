@@ -134,9 +134,34 @@ private func makeSession(
         #expect(session.user?.name == "Ana")
         #expect(session.phase == .chooseWorkspace)
 
+        // The workspace is brought to the device before the documents, like the Compose app.
         session.select(workspace: Workspace(id: "w1", userId: "u1", name: "Team", role: "ADMIN"))
-        #expect(session.phase == .ready)
+        #expect(session.phase == .syncingWorkspace)
         #expect(session.isOnline)
+
+        session.workspaceSynced()
+        #expect(session.phase == .ready)
+    }
+
+    @Test func theNextLaunchGoesStraightToTheDocuments() {
+        let defaults = UserDefaults(suiteName: "tests.\(UUID().uuidString)")!
+        let tokens = InMemoryTokenStore(accessToken: "a", refreshToken: "r")
+        let first = AppSession(tokenStore: tokens, preferences: Preferences(defaults: defaults), transport: StubTransport([:]))
+        first.chooseOnlineSpace()
+        first.select(workspace: Workspace(id: "w1", userId: "u1", name: "Team", role: "ADMIN"))
+        #expect(first.phase == .syncingWorkspace)
+
+        let next = AppSession(tokenStore: tokens, preferences: Preferences(defaults: defaults), transport: StubTransport([:]))
+        #expect(next.phase == .ready)
+    }
+
+    @Test func workspaceSyncedOnlyLeavesTheSyncScreen() {
+        let (session, _) = makeSession()
+        session.chooseOnlineSpace()
+        #expect(session.phase == .signedOut)
+
+        session.workspaceSynced()
+        #expect(session.phase == .signedOut)
     }
 
     @Test func invalidCredentialsShowError() async {
@@ -370,6 +395,7 @@ private func makeSession(
         if online {
             session.chooseOnlineSpace()
             session.select(workspace: Workspace(id: "w1", userId: "u1", name: "Team", role: "ADMIN"))
+            session.workspaceSynced()
         } else {
             session.chooseOfflineSpace()
         }

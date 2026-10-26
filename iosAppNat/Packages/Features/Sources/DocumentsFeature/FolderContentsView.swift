@@ -37,6 +37,9 @@ final class FolderContentsViewModel {
     let tag: DocumentTag?
     let settings: FolderDisplaySettings
     let repository: DocumentsRepository
+    /// What opening this folder syncs: the whole workspace, so what changed in any folder (a
+    /// document favorited elsewhere, say) arrives here, or just this folder, like before.
+    let syncScope: SyncScope
     private let aiClient: AiStreaming?
 
     init(
@@ -45,7 +48,8 @@ final class FolderContentsViewModel {
         tag: DocumentTag? = nil,
         repository: DocumentsRepository,
         aiClient: AiStreaming? = nil,
-        settings: FolderDisplaySettings = FolderDisplaySettings(preferences: nil)
+        settings: FolderDisplaySettings = FolderDisplaySettings(preferences: nil),
+        syncScope: SyncScope = .workspace
     ) {
         self.folderId = folderId
         // The folder that was opened, so its menu works before the stored copy is read.
@@ -54,6 +58,7 @@ final class FolderContentsViewModel {
         self.repository = repository
         self.aiClient = aiClient
         self.settings = settings
+        self.syncScope = syncScope
     }
 
     /// The "folder" that lists every favorite of the workspace.
@@ -283,8 +288,9 @@ final class FolderContentsViewModel {
         isSyncing = true
         defer { isSyncing = false }
         do {
-            // Favorites and tags gather documents from every folder: the whole workspace syncs.
-            if isFavorites || isTag {
+            // Favorites and tags gather documents from every folder: the whole workspace syncs
+            // whatever the scope.
+            if isFavorites || isTag || syncScope == .workspace {
                 try await syncing.syncWorkspaceChanges()
             } else {
                 try await syncing.syncFolder(folderId)

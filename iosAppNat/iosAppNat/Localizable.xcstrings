@@ -1224,6 +1224,16 @@
         }
       }
     },
+    "Continue in background" : {
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continuar em segundo plano"
+          }
+        }
+      }
+    },
     "Copy" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4122,6 +4132,16 @@
         }
       }
     },
+    "Syncing your workspace" : {
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizando sua área de trabalho"
+          }
+        }
+      }
+    },
     "System" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -4371,6 +4391,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "O servidor respondeu com um erro (%lld)."
+          }
+        }
+      }
+    },
+    "The sync didn't finish. It will be tried again when you open your documents." : {
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A sincronização não terminou. Ela será tentada novamente quando você abrir seus documentos."
           }
         }
       }
@@ -5333,6 +5363,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sua conta para %@ vem com uma área de trabalho de time para a qual você pode convidar pessoas."
+          }
+        }
+      }
+    },
+    "Your documents are being brought to this device. This may take a moment." : {
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus documentos estão sendo trazidos para este dispositivo. Isso pode levar um momento."
           }
         }
       }
