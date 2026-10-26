@@ -5,6 +5,7 @@ package io.writeopia.auth.register
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.analytics.Analytics
+import io.writeopia.analytics.AnalyticsTracker
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.auth.utils.PasswordStrength
@@ -42,6 +43,7 @@ enum class UsernameAvailability {
 internal class RegisterViewModel(
     private val authRepository: AuthRepository,
     private val authApi: AuthApi,
+    private val analyticsTracker: AnalyticsTracker = Analytics,
 ) : ViewModel() {
 
     private val _name = MutableStateFlow("")
@@ -175,7 +177,7 @@ internal class RegisterViewModel(
                         val user = result.data.writeopiaUser.toModel()
 
                         authRepository.saveUser(user = user, selected = true)
-                        Analytics.capture("user_signed_up")
+                        analyticsTracker.capture("user_signed_up")
 
                         // The email was verified before registering, so the
                         // account is active and can be signed in right away.

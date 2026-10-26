@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.LocalAiRepository
 import io.writeopia.analytics.Analytics
+import io.writeopia.analytics.AnalyticsTracker
 import io.writeopia.api.LocalAiApi
 import io.writeopia.auth.core.data.AccountDeletionPendingException
 import io.writeopia.auth.core.data.AuthApi
@@ -43,6 +44,7 @@ class AuthMenuViewModel(
     private val notesUseCase: NotesUseCase,
     private val localAiRepository: LocalAiRepository,
     private val json: Json = writeopiaJson,
+    private val analyticsTracker: AnalyticsTracker = Analytics,
 ) : ViewModel() {
 
     private val _email = MutableStateFlow("")
@@ -185,7 +187,7 @@ class AuthMenuViewModel(
                                 user = user.copy(tier = Tier.PREMIUM),
                                 selected = true
                             )
-                            Analytics.capture("user_logged_in")
+                            analyticsTracker.capture("user_logged_in")
                             val accessToken = result.data.accessToken
                             val refreshToken = result.data.refreshToken
                             if (accessToken != null) {
@@ -206,7 +208,7 @@ class AuthMenuViewModel(
                     is ResultData.Error -> {
                         delay(300)
                         _accountDeletionPending.value = result.exception is AccountDeletionPendingException
-                        Analytics.capture("login_failed")
+                        analyticsTracker.capture("login_failed")
                         result.map { false }
                     }
 

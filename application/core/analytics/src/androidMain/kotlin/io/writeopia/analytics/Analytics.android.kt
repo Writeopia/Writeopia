@@ -1,11 +1,11 @@
 package io.writeopia.analytics
 
-actual object Analytics {
-    actual fun capture(event: String, properties: Map<String, Any?>) {
+actual object Analytics : AnalyticsTracker {
+    actual override fun capture(event: String, properties: Map<String, Any?>) {
         // No-op: PostHog is only wired up for the web targets so far.
     }
 
-    actual fun identify(distinctId: String, properties: Map<String, Any?>) {
+    actual override fun identify(distinctId: String, properties: Map<String, Any?>) {
         // No-op: PostHog is only wired up for the web targets so far.
     }
 }

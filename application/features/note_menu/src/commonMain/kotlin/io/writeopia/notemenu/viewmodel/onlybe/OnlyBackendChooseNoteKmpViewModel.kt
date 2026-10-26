@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import io.writeopia.ai.task.AiTaskManager
 import io.writeopia.ai.task.AiTaskType
 import io.writeopia.analytics.Analytics
+import io.writeopia.analytics.AnalyticsTracker
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.NotesNavigationType
@@ -61,6 +62,7 @@ internal class OnlyBackendChooseNoteKmpViewModel(
     private val menuItemsRepository: MenuItemsRepository,
     private val notesNavigation: NotesNavigation = NotesNavigation.Root,
     private val previewParser: PreviewParser = PreviewParser(),
+    private val analyticsTracker: AnalyticsTracker = Analytics,
 ) : ChooseNoteViewModel, ViewModel(), FolderController {
 
     // Use the shared repository's state flow
@@ -538,7 +540,7 @@ internal class OnlyBackendChooseNoteKmpViewModel(
             )
 
             if (result is ResultData.Complete) {
-                Analytics.capture("folder_created", mapOf("folder_id" to result.data.id))
+                analyticsTracker.capture("folder_created", mapOf("folder_id" to result.data.id))
                 // Fetch the contents of the newly created folder
                 documentsApi.getFolderContentsPreview(result.data.id, workspace.id)
                 // Refresh the parent folder contents
@@ -559,7 +561,7 @@ internal class OnlyBackendChooseNoteKmpViewModel(
             )
 
             if (result is ResultData.Complete) {
-                Analytics.capture("folder_created", mapOf("folder_id" to result.data.id))
+                analyticsTracker.capture("folder_created", mapOf("folder_id" to result.data.id))
                 documentsApi.getFolderContentsPreview(result.data.id, workspace.id)
                 loadFolderContents()
             }

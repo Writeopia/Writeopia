@@ -5,12 +5,12 @@ import kotlin.js.json
 @Suppress("UnsafeCastFromDynamic")
 private external val posthog: dynamic
 
-actual object Analytics {
-    actual fun capture(event: String, properties: Map<String, Any?>) {
+actual object Analytics : AnalyticsTracker {
+    actual override fun capture(event: String, properties: Map<String, Any?>) {
         posthog.capture(event, properties.toJsProps())
     }
 
-    actual fun identify(distinctId: String, properties: Map<String, Any?>) {
+    actual override fun identify(distinctId: String, properties: Map<String, Any?>) {
         posthog.identify(distinctId, properties.toJsProps())
     }
 }
