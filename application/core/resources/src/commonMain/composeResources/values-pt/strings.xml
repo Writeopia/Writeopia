@@ -161,6 +161,11 @@
   <string name="add">Adicionar</string>
   <string name="user_email">Email de usuário</string>
   <string name="choose_workspace">Escolha a área de trabalho</string>
+  <string name="workspace_sync_title">Sincronizando sua área de trabalho</string>
+  <string name="workspace_sync_message">Seus documentos estão sendo trazidos para este dispositivo. Isso pode levar um momento.</string>
+  <string name="workspace_sync_in_background">Continuar em segundo plano</string>
+  <string name="workspace_sync_failed">A sincronização não terminou. Ela será tentada novamente quando você abrir seus documentos.</string>
+  <string name="workspace_sync_continue">Continuar</string>
   <string name="your_teams">Seus times</string>
   <string name="teams">Times</string>
   <string name="login_failed">Falha no login. Por favor, verifique suas credenciais.</string>

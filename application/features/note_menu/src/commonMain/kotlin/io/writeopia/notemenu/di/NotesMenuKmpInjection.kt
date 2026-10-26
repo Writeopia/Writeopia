@@ -14,6 +14,7 @@ import io.writeopia.core.configuration.repository.ConfigurationRepository
 import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.di.DocumentTagsInjector
 import io.writeopia.core.folders.di.FoldersInjector
+import io.writeopia.core.folders.di.WorkspaceInjection
 import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.core.folders.repository.folder.NotesUseCase
 import io.writeopia.core.folders.sync.DocumentSyncService
@@ -135,6 +136,7 @@ class NotesMenuKmpInjection private constructor(
             workspaceConfigRepository = appConfigurationInjector.provideWorkspaceConfigRepository(),
             folderSync = provideDocumentSync(),
             eventSync = provideEventSync(),
+            workspaceSync = WorkspaceInjection.singleton().provideWorkspaceSync(),
         )
 
     @Composable

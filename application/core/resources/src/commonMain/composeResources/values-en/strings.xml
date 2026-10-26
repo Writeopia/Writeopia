@@ -173,6 +173,11 @@
   <string name="add">Add</string>
   <string name="user_email">User email</string>
   <string name="choose_workspace">Choose your workspace</string>
+  <string name="workspace_sync_title">Syncing your workspace</string>
+  <string name="workspace_sync_message">Your documents are being brought to this device. This may take a moment.</string>
+  <string name="workspace_sync_in_background">Continue in background</string>
+  <string name="workspace_sync_failed">The sync didn\'t finish. It will be tried again when you open your documents.</string>
+  <string name="workspace_sync_continue">Continue</string>
   <string name="your_teams">Your teams</string>
   <string name="teams">Teams</string>
   <string name="drawing">Drawing</string>
