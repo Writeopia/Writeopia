@@ -1015,6 +1015,9 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
     /// login sync still runs), the caller waits for it instead of receiving the workspace
     /// twice; what changes meanwhile comes with the next one.
     public func syncWorkspaceChanges() async throws {
+        // The repository is main-actor isolated (the package's default isolation), and nothing
+        // suspends between this check and the assignment below, so two callers can't both
+        // start a sync.
         if let running = workspaceSyncTask {
             try await running.value
             return

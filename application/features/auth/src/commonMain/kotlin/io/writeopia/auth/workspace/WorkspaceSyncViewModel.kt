@@ -6,6 +6,7 @@ import io.writeopia.core.folders.sync.WorkspaceSync
 import io.writeopia.sdk.models.user.Tier
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -46,18 +47,28 @@ class WorkspaceSyncViewModel(
         if (syncJob?.isActive == true) return
 
         syncJob = syncScope.launch {
-            val workspace = authRepository.getWorkspace()
-
-            if (workspace == null || !syncsWithCloud(workspace)) {
-                _state.value = WorkspaceSyncState.DONE
-                return@launch
+            // The scope outlives the screen and has no handler: whatever fails here, even
+            // before the sync (reading the workspace or the user), must end as FAILED rather
+            // than kill the job and leave the screen syncing forever.
+            _state.value = try {
+                sync()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                println("Error syncing the workspace after login: ${e.message}")
+                WorkspaceSyncState.FAILED
             }
+        }
+    }
 
-            _state.value = WorkspaceSyncState.SYNCING
-            _state.value = when (workspaceSync.syncWorkspace(workspace.id, force = true)) {
-                is ResultData.Error -> WorkspaceSyncState.FAILED
-                else -> WorkspaceSyncState.DONE
-            }
+    private suspend fun sync(): WorkspaceSyncState {
+        val workspace = authRepository.getWorkspace()
+
+        if (workspace == null || !syncsWithCloud(workspace)) return WorkspaceSyncState.DONE
+
+        return when (workspaceSync.syncWorkspace(workspace.id, force = true)) {
+            is ResultData.Error -> WorkspaceSyncState.FAILED
+            else -> WorkspaceSyncState.DONE
         }
     }
 

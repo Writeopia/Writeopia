@@ -60,6 +60,18 @@ class WorkspaceSyncViewModelTest {
     }
 
     @Test
+    fun `a failure before the sync says so too, instead of leaving the screen syncing`() = runTest {
+        val authRepository = mockk<AuthRepository>()
+        coEvery { authRepository.getWorkspace() } throws IllegalStateException("no database")
+        val viewModel = WorkspaceSyncViewModel(authRepository, mockk(), syncScope = this)
+
+        viewModel.startSync()
+        advanceUntilIdle()
+
+        assertEquals(WorkspaceSyncState.FAILED, viewModel.state.value)
+    }
+
+    @Test
     fun `the offline workspace has nothing to sync`() = runTest {
         val authRepository = premiumUser(workspace = Workspace.disconnectedWorkspace())
         val workspaceSync = mockk<WorkspaceSync>()
