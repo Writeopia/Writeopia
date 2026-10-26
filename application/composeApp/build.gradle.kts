@@ -84,6 +84,7 @@ kotlin {
 
         val jvmMain by getting {
             dependencies {
+                implementation(project(":application:core:analytics"))
                 implementation(project(":plugins:writeopia_persistence_core"))
                 implementation(project(":application:core:models"))
                 implementation(project(":application:core:genai"))

@@ -44,7 +44,11 @@ kotlin {
     sourceSets {
         val commonMain by getting
 
-        val jvmMain by getting
+        val jvmMain by getting {
+            dependencies {
+                implementation(libs.posthog.java)
+            }
+        }
 
         val androidMain by getting {
             dependencies {
