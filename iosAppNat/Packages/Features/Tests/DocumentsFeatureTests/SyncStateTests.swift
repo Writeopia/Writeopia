@@ -45,9 +45,29 @@ private final class FakeSyncedRepository: DocumentsRepository, DocumentSyncing {
         #expect(viewModel.showsSyncState)
     }
 
+    @Test func openingAFolderSyncsTheWholeWorkspace() async {
+        let repository = FakeSyncedRepository()
+        let viewModel = FolderContentsViewModel(folderId: "ideas", repository: repository)
+
+        await viewModel.load()
+
+        #expect(repository.workspaceSyncCount == 1)
+        #expect(repository.syncCount == 0)
+    }
+
+    @Test func theFolderScopeSyncsJustTheFolder() async {
+        let repository = FakeSyncedRepository()
+        let viewModel = FolderContentsViewModel(folderId: "ideas", repository: repository, syncScope: .folder)
+
+        await viewModel.load()
+
+        #expect(repository.syncCount == 1)
+        #expect(repository.workspaceSyncCount == 0)
+    }
+
     @Test func concurrentLoadsSyncTheFolderOnce() async {
         let repository = FakeSyncedRepository()
-        let viewModel = FolderContentsViewModel(folderId: Folder.rootId, repository: repository)
+        let viewModel = FolderContentsViewModel(folderId: Folder.rootId, repository: repository, syncScope: .folder)
 
         async let first: Void = viewModel.load()
         async let second: Void = viewModel.load()

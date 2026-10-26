@@ -23,6 +23,8 @@ import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.repository.folder.NotesUseCase
 import io.writeopia.core.folders.sync.EventSync
 import io.writeopia.core.folders.sync.FolderSync
+import io.writeopia.core.folders.sync.SyncScope
+import io.writeopia.core.folders.sync.WorkspaceSync
 import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
 import io.writeopia.notemenu.ui.dto.NotesUi
 import io.writeopia.sdk.export.DocumentToJson
@@ -78,6 +80,9 @@ internal class ChooseNoteKmpViewModel(
     private val workspaceConfigRepository: WorkspaceConfigRepository,
     private val folderSync: FolderSync,
     private val eventSync: EventSync? = null,
+    /** Syncs the whole workspace when the screen opens; null falls back to [folderSync]. */
+    private val workspaceSync: WorkspaceSync? = null,
+    private val syncScope: SyncScope = SyncScope.WORKSPACE,
     private val folderController: FolderStateController = FolderStateController.singleton(
         notesUseCase,
         authRepository,
@@ -735,11 +740,19 @@ internal class ChooseNoteKmpViewModel(
                     // folders, so a folder deleted elsewhere is removed here instead of re-sent.
                     eventSync?.syncEvents(workspace.id)
 
-                    folderSync.syncFolder(
-                        folderId = notesNavigation.id,
-                        workspaceId = workspace.id,
-                        orderBy = orderByState.value.type
-                    )
+                    // The whole workspace, not just this folder: the favorites and the tags
+                    // gather documents from every folder, so what changed elsewhere must come
+                    // wherever it is. The folder sync stays as the other choice.
+                    val workspaceSync = workspaceSync?.takeIf { syncScope == SyncScope.WORKSPACE }
+                    if (workspaceSync != null) {
+                        workspaceSync.syncWorkspace(workspace.id)
+                    } else {
+                        folderSync.syncFolder(
+                            folderId = notesNavigation.id,
+                            workspaceId = workspace.id,
+                            orderBy = orderByState.value.type
+                        )
+                    }
                 } finally {
                     _isSyncingState.value = false
                 }
