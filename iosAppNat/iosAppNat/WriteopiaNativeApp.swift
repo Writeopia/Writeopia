@@ -1,11 +1,16 @@
 import DocumentsFeature
 import SwiftUI
+import WrAnalytics
 import WrDesign
 import WrSession
 
 @main
 struct WriteopiaNativeApp: App {
     @State private var session = WriteopiaNativeApp.makeSession()
+
+    init() {
+        PostHogAnalyticsTracker.shared.setup()
+    }
 
     var body: some Scene {
         #if os(macOS)

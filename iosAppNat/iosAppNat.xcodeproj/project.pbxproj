@@ -13,6 +13,7 @@
 		A10000000000000000001003 /* DocumentsFeature in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000002003 /* DocumentsFeature */; };
 		A10000000000000000001004 /* SearchFeature in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000002004 /* SearchFeature */; };
 		A10000000000000000001005 /* SettingsFeature in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000002005 /* SettingsFeature */; };
+		A10000000000000000001006 /* WrAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000002006 /* WrAnalytics */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -67,6 +68,7 @@
 				A10000000000000000001003 /* DocumentsFeature in Frameworks */,
 				A10000000000000000001004 /* SearchFeature in Frameworks */,
 				A10000000000000000001005 /* SettingsFeature in Frameworks */,
+				A10000000000000000001006 /* WrAnalytics in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -132,6 +134,7 @@
 				A10000000000000000002003 /* DocumentsFeature */,
 				A10000000000000000002004 /* SearchFeature */,
 				A10000000000000000002005 /* SettingsFeature */,
+				A10000000000000000002006 /* WrAnalytics */,
 			);
 			productName = iosAppNat;
 			productReference = 762AEF3B306878D000CD91D1 /* Writeopia.app */;
@@ -577,6 +580,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A1000000000000000000FEA7 /* XCLocalSwiftPackageReference "Packages/Features" */;
 			productName = SettingsFeature;
+		};
+		A10000000000000000002006 /* WrAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1000000000000000000C0DE /* XCLocalSwiftPackageReference "Packages/Core" */;
+			productName = WrAnalytics;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -120,6 +120,7 @@ class AuthMenuViewModel(
     fun useOffline(sideEffect: () -> Unit) {
         viewModelScope.launch {
             authRepository.useOffline()
+            analyticsTracker.setEnabled(false)
 
             val userId = WriteopiaUser.disconnectedUser().id
             val workspace = Workspace.disconnectedWorkspace()
@@ -187,6 +188,7 @@ class AuthMenuViewModel(
                                 user = user.copy(tier = Tier.PREMIUM),
                                 selected = true
                             )
+                            analyticsTracker.setEnabled(true)
                             analyticsTracker.capture("user_logged_in")
                             val accessToken = result.data.accessToken
                             val refreshToken = result.data.refreshToken

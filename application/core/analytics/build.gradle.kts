@@ -46,7 +46,11 @@ kotlin {
 
         val jvmMain by getting
 
-        val androidMain by getting
+        val androidMain by getting {
+            dependencies {
+                implementation(libs.posthog.android)
+            }
+        }
 
         val jsMain by getting
 

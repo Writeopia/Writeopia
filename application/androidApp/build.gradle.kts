@@ -93,6 +93,7 @@ dependencies {
     implementation(project(":writeopia"))
     implementation(project(":writeopia_models"))
 
+    implementation(project(":application:core:analytics"))
     implementation(project(":application:core:persistence_room"))
     implementation(project(":application:core:persistence_bridge"))
     implementation(project(":application:core:utils"))

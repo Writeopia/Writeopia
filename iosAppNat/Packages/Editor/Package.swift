@@ -54,6 +54,7 @@ let package = Package(
                 .product(name: "WrData", package: "Core"),
                 .product(name: "WrNetwork", package: "Core"),
                 .product(name: "WrDesign", package: "Core"),
+                .product(name: "WrAnalytics", package: "Core"),
             ],
             swiftSettings: mainActorByDefault
         ),
@@ -73,6 +74,7 @@ let package = Package(
                 .product(name: "WrModels", package: "Core"),
                 .product(name: "WrData", package: "Core"),
                 .product(name: "WrNetwork", package: "Core"),
+                .product(name: "WrAnalytics", package: "Core"),
             ],
             swiftSettings: mainActorByDefault
         ),

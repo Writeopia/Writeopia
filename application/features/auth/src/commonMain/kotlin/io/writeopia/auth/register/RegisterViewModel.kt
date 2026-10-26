@@ -177,6 +177,7 @@ internal class RegisterViewModel(
                         val user = result.data.writeopiaUser.toModel()
 
                         authRepository.saveUser(user = user, selected = true)
+                        analyticsTracker.setEnabled(true)
                         analyticsTracker.capture("user_signed_up")
 
                         // The email was verified before registering, so the

@@ -1,12 +1,22 @@
 package io.writeopia.analytics
 
 actual object Analytics : AnalyticsTracker {
+    // Off until the app confirms the user is in the open/online space: the private space
+    // promises "no telemetry" in its own UI copy.
+    private var isEnabled = false
+
     actual override fun capture(event: String, properties: Map<String, Any?>) {
+        if (!isEnabled) return
         jsPosthogCapture(event, properties.toJsonObjectString())
     }
 
     actual override fun identify(distinctId: String, properties: Map<String, Any?>) {
+        if (!isEnabled) return
         jsPosthogIdentify(distinctId, properties.toJsonObjectString())
+    }
+
+    actual override fun setEnabled(enabled: Boolean) {
+        isEnabled = enabled
     }
 }
 

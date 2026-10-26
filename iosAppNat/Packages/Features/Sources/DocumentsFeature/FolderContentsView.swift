@@ -3,6 +3,7 @@ import WriteopiaUI
 import Writeopia
 import Observation
 import SwiftUI
+import WrAnalytics
 import WrData
 import WrDesign
 import WrModels
@@ -38,6 +39,7 @@ final class FolderContentsViewModel {
     let settings: FolderDisplaySettings
     let repository: DocumentsRepository
     private let aiClient: AiStreaming?
+    private let analytics: AnalyticsTracker
 
     init(
         folderId: String,
@@ -45,7 +47,8 @@ final class FolderContentsViewModel {
         tag: DocumentTag? = nil,
         repository: DocumentsRepository,
         aiClient: AiStreaming? = nil,
-        settings: FolderDisplaySettings = FolderDisplaySettings(preferences: nil)
+        settings: FolderDisplaySettings = FolderDisplaySettings(preferences: nil),
+        analytics: AnalyticsTracker = Analytics.shared
     ) {
         self.folderId = folderId
         // The folder that was opened, so its menu works before the stored copy is read.
@@ -54,6 +57,7 @@ final class FolderContentsViewModel {
         self.repository = repository
         self.aiClient = aiClient
         self.settings = settings
+        self.analytics = analytics
     }
 
     /// The "folder" that lists every favorite of the workspace.
@@ -331,6 +335,7 @@ final class FolderContentsViewModel {
             actionError = error.userMessage
             return
         }
+        analytics.capture("folder_created")
         // The folder exists now: a failed icon doesn't make it look like the creation failed.
         if let icon {
             var withIcon = created
@@ -348,6 +353,9 @@ final class FolderContentsViewModel {
         var created: WrDocument?
         await perform {
             created = try await self.repository.createDocument(title: "", parentId: self.folderId)
+        }
+        if created != nil {
+            analytics.capture("document_created")
         }
         return created
     }
