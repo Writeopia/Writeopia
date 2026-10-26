@@ -1225,6 +1225,7 @@
       }
     },
     "Continue in background" : {
+      "extractionState" : "stale",
       "localizations" : {
         "pt" : {
           "stringUnit" : {
@@ -4133,6 +4134,7 @@
       }
     },
     "Syncing your workspace" : {
+      "extractionState" : "stale",
       "localizations" : {
         "pt" : {
           "stringUnit" : {
@@ -4396,6 +4398,7 @@
       }
     },
     "The sync didn't finish. It will be tried again when you open your documents." : {
+      "extractionState" : "stale",
       "localizations" : {
         "pt" : {
           "stringUnit" : {
@@ -5368,6 +5371,7 @@
       }
     },
     "Your documents are being brought to this device. This may take a moment." : {
+      "extractionState" : "stale",
       "localizations" : {
         "pt" : {
           "stringUnit" : {
