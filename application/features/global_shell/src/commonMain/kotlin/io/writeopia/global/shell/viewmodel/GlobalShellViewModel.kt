@@ -1,6 +1,7 @@
 package io.writeopia.global.shell.viewmodel
 
 import io.writeopia.account.ui.CloudAiUsageState
+import io.writeopia.app.dto.SearchUserApi
 import io.writeopia.common.utils.download.DownloadState
 import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.controller.LocalAiConfigController
@@ -56,6 +57,10 @@ interface GlobalShellViewModel : FolderController, LocalAiConfigController {
     val workspaceToEdit: Flow<Workspace?>
 
     val usersOfWorkspaceToEdit: Flow<ResultData<List<String>>>
+
+    val userSearchQuery: StateFlow<String>
+
+    val userSearchResults: StateFlow<ResultData<List<SearchUserApi>>>
 
     val exportWorkspaceState: StateFlow<ResultData<Unit>>
 
@@ -122,7 +127,11 @@ interface GlobalShellViewModel : FolderController, LocalAiConfigController {
 
     fun deleteAccount(sideEffect: () -> Unit)
 
-    fun addUserToTeam(userEmail: String)
+    fun addUserToTeam(username: String)
+
+    fun onUserSearchQueryChange(query: String)
+
+    fun onUserSuggestionSelect(user: SearchUserApi)
 
     fun selectWorkspaceToManage(workspaceId: String)
 

@@ -8,7 +8,8 @@ fun WorkspaceUserApi.toModel(): WorkspaceUser {
         id = id,
         email = email,
         name = name,
-        role = role
+        role = role,
+        username = username,
     )
 }
 
@@ -17,6 +18,7 @@ fun WorkspaceUser.toApi(): WorkspaceUserApi {
         id = id,
         email = email,
         name = name,
-        role = role
+        role = role,
+        username = username,
     )
 }

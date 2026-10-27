@@ -29,7 +29,7 @@ interface AccountMenuViewModel {
 
     fun selectWorkspace(workspaceId: String)
 
-    fun addUserToWorkspace(userEmail: String)
+    fun addUserToWorkspace(username: String)
 
     fun exportWorkspace(workspaceId: String)
 

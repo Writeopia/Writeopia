@@ -11,6 +11,7 @@ getUsersInWorkspace:
 SELECT
   user_entity.id AS user_entity_id,
   user_entity.name AS user_name,
+  user_entity.username AS user_username,
   user_entity.created_at AS user_created_at,
   user_entity.email AS user_email,
   role
@@ -25,6 +26,7 @@ getUsersInWorkspacePaginated:
 SELECT
   user_entity.id AS user_entity_id,
   user_entity.name AS user_name,
+  user_entity.username AS user_username,
   user_entity.created_at AS user_created_at,
   user_entity.email AS user_email,
   role
@@ -46,6 +48,7 @@ getUserInWorkspace:
 SELECT
   user_entity.id AS user_entity_id,
   user_entity.name AS user_name,
+  user_entity.username AS user_username,
   user_entity.created_at AS user_created_at,
   user_entity.email AS user_email,
   role
@@ -54,7 +57,7 @@ JOIN workspace_to_user
   ON workspace_entity.id = workspace_to_user.workspace_id
 JOIN user_entity
   ON user_entity.id = workspace_to_user.user_id
-WHERE workspace_to_user.workspace_id = ? AND user_entity.email = ?
+WHERE workspace_to_user.workspace_id = ? AND user_entity.username = ?
 LIMIT 1;
 
 insertWorkspaceToUser:
