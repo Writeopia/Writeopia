@@ -8,18 +8,18 @@ public enum MenuIcons {
     public static let all: [(name: String, symbol: String)] = [
         ("folder", "folder.fill"),
         ("file", "doc"),
-        ("favorites", "star"),
+        ("favorites", "heart"),
         ("home", "house"),
         ("settings", "gearshape"),
         ("search", "magnifyingglass"),
         ("notifications", "bell"),
         ("person", "person"),
         ("image", "photo"),
-        ("drawing", "scribble.variable"),
+        ("drawing", "pencil.line"),
         ("code", "chevron.left.forwardslash.chevron.right"),
         ("link", "link"),
-        ("chart", "chart.bar"),
-        ("ai", "sparkles"),
+        ("chart", "chart.dots.scatter"),
+        ("ai", "wand.and.stars"),
         ("zap", "bolt"),
         ("target", "scope"),
         ("play", "play"),
@@ -31,11 +31,11 @@ public enum MenuIcons {
         ("italic", "italic"),
         ("underline", "underline"),
         ("save", "square.and.arrow.down"),
-        ("download", "arrow.down.circle"),
+        ("download", "icloud.and.arrow.down"),
         ("fileDownload", "arrow.down.doc"),
         ("exportFile", "square.and.arrow.up"),
         ("sync", "arrow.triangle.2.circlepath"),
-        ("move", "arrow.up.and.down.and.arrow.left.and.right"),
+        ("move", "doc.on.clipboard"),
         ("sort", "arrow.up.arrow.down"),
         ("sortByName", "textformat.abc"),
         ("sortByCreated", "calendar.badge.plus"),
@@ -54,15 +54,15 @@ public enum MenuIcons {
         ("delete", "trash"),
         ("undo", "arrow.uturn.backward"),
         ("redo", "arrow.uturn.forward"),
-        ("circularArrowLeft", "arrow.counterclockwise"),
-        ("circularArrowRight", "arrow.clockwise"),
+        ("circularArrowLeft", "arrow.left.circle"),
+        ("circularArrowRight", "arrow.right.circle"),
         ("backArrowDesktop", "arrow.left"),
         ("backArrowAndroid", "arrow.backward"),
         ("smallArrowRight", "chevron.right"),
         ("smallArrowDown", "chevron.down"),
         ("moreVert", "ellipsis.circle"),
         ("moreHoriz", "ellipsis"),
-        ("transparent", "circle.dashed"),
+        ("transparent", "drop"),
     ]
 
     private static let symbols = Dictionary(all.map { ($0.name, $0.symbol) }, uniquingKeysWith: { first, _ in first })
@@ -109,5 +109,26 @@ public struct DocumentIconImage: View {
         Image(systemName: MenuIcons.symbol(for: icon?.label) ?? "doc.text")
             .foregroundStyle(MenuIcons.color(for: icon?.tint) ?? defaultColor)
             .accessibilityLabel("Document icon")
+    }
+}
+
+/// The icon of a folder: the one chosen in the edition menu, or the default folder.
+public struct FolderIconImage: View {
+    let icon: IconInfo?
+    var isDropTarget = false
+
+    public init(icon: IconInfo?, isDropTarget: Bool = false) {
+        self.icon = icon
+        self.isDropTarget = isDropTarget
+    }
+
+    public var body: some View {
+        Image(systemName: symbol)
+            .foregroundStyle(MenuIcons.color(for: icon?.tint) ?? WrColors.accent)
+    }
+
+    private var symbol: String {
+        if isDropTarget { return "folder.fill.badge.plus" }
+        return MenuIcons.symbol(for: icon?.label) ?? "folder.fill"
     }
 }

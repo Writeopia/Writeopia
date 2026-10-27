@@ -46,8 +46,9 @@ import io.writeopia.ai.task.ui.AiTaskIndicator
 import io.writeopia.common.utils.file.fileChooserLoad
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.dialogs.confirmation.DeleteConfirmationDialog
+import io.writeopia.commonui.folders.MoveSelectionDialog
+import io.writeopia.editor.features.editor.ui.ai.AiCommandBar
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.SideEditorOptions
-import io.writeopia.editor.features.editor.ui.folders.FolderSelectionDialog
 import io.writeopia.editor.features.editor.ui.publish.PremiumOnlyDialog
 import io.writeopia.editor.features.editor.ui.publish.PublishDialog
 import io.writeopia.editor.features.editor.ui.tags.AddDocumentTagDialog
@@ -73,7 +74,7 @@ fun DesktopNoteEditorScreen(
     onPresentationClick: () -> Unit,
     showPresentation: Boolean = false,
     onDocumentLinkClick: (String) -> Unit,
-    onDrawingClick: (StoryStep, Double) -> Unit = { _, _ -> },
+    onDrawingClick: (StoryStep, String) -> Unit = { _, _ -> },
     onNewDrawingClick: () -> Unit = {},
     onDocumentDelete: () -> Unit,
     modifier: Modifier = Modifier,
@@ -241,11 +242,10 @@ fun DesktopNoteEditorScreen(
             addImage = noteEditorViewModel::addImage,
             exportMarkdown = noteEditorViewModel::exportMarkdown,
             exportJson = noteEditorViewModel::exportJson,
-            moveToRoot = noteEditorViewModel::moveToRootFolder,
             moveToClick = {
                 showFolderSelection = true
             },
-            askAiWithMode = noteEditorViewModel::askAiWithMode,
+            aiCommand = noteEditorViewModel::aiCommand,
             addPage = noteEditorViewModel::addPage,
             deleteDocument = {
                 showDeleteConfirmation = true
@@ -264,14 +264,31 @@ fun DesktopNoteEditorScreen(
             onViewTagsClick = noteEditorViewModel::showTagsDialog,
             onAddTagClick = noteEditorViewModel::showAddTagDialog,
             onRemoveTagClick = noteEditorViewModel::removeTagFromDocument,
+            documentIconState = noteEditorViewModel.documentIcon,
+            onDocumentIconSelect = noteEditorViewModel::changeDocumentIcon,
+            onRemoveDocumentIcon = noteEditorViewModel::removeDocumentIcon,
         )
+
+        // The command field comes with the AI options and goes with them.
+        val sideMenuTab by noteEditorViewModel.sideMenuTabState.collectAsState()
+
+        AnimatedVisibility(
+            visible = isEditable && sideMenuTab == SideMenuTab.AI,
+            modifier = Modifier.align(Alignment.BottomCenter),
+            enter = fadeIn(animationSpec = tween(durationMillis = 150)),
+            exit = fadeOut(animationSpec = tween(durationMillis = 150))
+        ) {
+            AiCommandBar(
+                onRun = noteEditorViewModel::aiCommand,
+                modifier = Modifier.padding(start = 16.dp, end = 72.dp, bottom = 16.dp)
+            )
+        }
 
         if (showDeleteConfirmation) {
             DeleteConfirmationDialog(
                 onConfirmation = {
-                    noteEditorViewModel.deleteDocument()
                     showDeleteConfirmation = false
-                    onDocumentDelete()
+                    noteEditorViewModel.deleteDocument(onDeleted = onDocumentDelete)
                 },
                 onCancel = {
                     showDeleteConfirmation = false
@@ -280,8 +297,10 @@ fun DesktopNoteEditorScreen(
         }
 
         val isPublished by noteEditorViewModel.isDocumentPublished.collectAsState()
+        val notFavorite by noteEditorViewModel.notFavorite.collectAsState()
+        val isFavorite = !notFavorite
 
-        if (!isEditable || isPublished) {
+        if (!isEditable || isFavorite || isPublished) {
             Row(
                 modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -290,6 +309,14 @@ fun DesktopNoteEditorScreen(
                     Icon(
                         imageVector = WrIcons.lock,
                         contentDescription = "Locked",
+                        tint = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+                if (isFavorite) {
+                    Icon(
+                        imageVector = WrIcons.favorites,
+                        contentDescription = "Favorite",
                         tint = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.size(16.dp)
                     )
@@ -306,16 +333,15 @@ fun DesktopNoteEditorScreen(
         }
 
         if (showFolderSelection) {
-            FolderSelectionDialog(
-                noteEditorViewModel.listenForFolders,
-                selectedFolder = { folderId ->
+            MoveSelectionDialog(
+                loadFolders = noteEditorViewModel::workspaceFolders,
+                excludedIds = emptySet(),
+                currentParentId = noteEditorViewModel.documentFolderId(),
+                onMove = { folderId ->
                     showFolderSelection = false
                     noteEditorViewModel.moveToFolder(folderId)
                 },
-                expandFolder = noteEditorViewModel::expandFolder,
-                onDismissRequest = {
-                    showFolderSelection = false
-                }
+                onDismissRequest = { showFolderSelection = false }
             )
         }
 

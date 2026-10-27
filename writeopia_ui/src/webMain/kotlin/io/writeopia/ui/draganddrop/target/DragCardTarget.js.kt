@@ -44,13 +44,14 @@ actual fun DragCardTarget(
     modifier: Modifier,
     dataToDrop: DropInfo,
     showIcon: Boolean,
-    position: Double,
+    position: String,
     dragIconWidth: Dp,
     iconTintColor: Color,
     iconTintOnHover: Color,
     onIconClick: () -> Unit,
     onDragStart: () -> Unit,
     onDragStop: () -> Unit,
+    dragOnLongPress: Boolean,
     content: @Composable BoxScope.() -> Unit
 ) {
     var currentPosition by remember { mutableStateOf(Offset.Zero) }
@@ -98,6 +99,7 @@ actual fun DragCardTarget(
                         .onGloballyPositioned { layoutCoordinates ->
                             iconPosition = layoutCoordinates.positionInWindow()
                         }
+                        .holdDragGesture { currentState.isDragging }
                         .pointerInput(Unit) {
                             detectDragGestures(onDragStart = { offset ->
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)

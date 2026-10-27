@@ -30,10 +30,10 @@ public final class WriteopiaStateManager {
     public var isEditable = true
     public var fontFamily: EditorFont = .system
     /// Position after which a dragged step would be dropped.
-    public private(set) var dragPosition: Double?
+    public private(set) var dragPosition: String?
     public private(set) var isDragging = false
     public private(set) var focusRequest: FocusRequest?
-    /// Lines selected by sliding them sideways. Kept by id so they survive renumbering.
+    /// Lines selected by sliding them sideways. Kept by id, which is stable across edits.
     public private(set) var selectedStepIds: Set<String> = []
     /// Current selection of the focused text step. Drives the formatting buttons.
     public private(set) var textSelection: StepSelection?
@@ -86,7 +86,11 @@ public final class WriteopiaStateManager {
     public var title: String { writeopiaManager.title(currentStory) }
 
     /// The document content, ready to be stored.
-    public var documentContent: [StoryStep] { writeopiaManager.documentContent(currentStory) }
+    /// The steps that make the document content, to save and send. An AI answer still being
+    /// written is left out: nothing of it is saved nor sent until the stream ends, then once.
+    public var documentContent: [StoryStep] {
+        writeopiaManager.documentContent(currentStory).filter { $0.id != streamingAnswerId }
+    }
 
     // MARK: - Document
 
@@ -141,7 +145,7 @@ public final class WriteopiaStateManager {
 
     /// A whole address pasted in an empty line becomes a link card, with the cursor on the line
     /// below it. The description comes later, from the backend, through `onLinkCardCreated`.
-    private func createLinkCard(url: String, stepId: String, at position: Double) {
+    private func createLinkCard(url: String, stepId: String, at position: String) {
         dismissAiSuggestions()
         apply(writeopiaManager.createLinkCard(url: url, at: position, state: currentStory))
         guard let card = step(withId: stepId), card.type.number == StoryType.linkCard.number else { return }
@@ -166,7 +170,7 @@ public final class WriteopiaStateManager {
 
     /// A command typed at the start of the line changes the type of the step and disappears
     /// from its text, like `changeStoryType` with a written command in the Compose app.
-    private func applyCommand(_ command: TextCommands.Command, rest: String, to step: StoryStep, at position: Double, cursor: Int) {
+    private func applyCommand(_ command: TextCommands.Command, rest: String, to step: StoryStep, at position: String, cursor: Int) {
         var changed = step
         changed.spans = SpansHandler.adjust(step.spans, from: step.text ?? "", to: rest)
         changed.text = rest
@@ -237,40 +241,43 @@ public final class WriteopiaStateManager {
 
     /// The background color of the header (the title), nil for none.
     public var headerColor: Int? {
-        currentStory.stories[0]?.decoration?.backgroundColor
+        titleKey.flatMap { currentStory.stories[$0]?.decoration?.backgroundColor }
     }
 
     /// Colors the header, like `onHeaderColorSelection` of the Compose app. The cursor stays
     /// where it is.
     public func setHeaderColor(_ argb: Int?) {
-        guard isEditable, var title = currentStory.stories[0], title.isTitle else { return }
+        guard isEditable, let titleKey, var title = currentStory.stories[titleKey], title.isTitle else { return }
         title.decoration = argb.map { Decoration(backgroundColor: $0) }
         // A color, or none, takes the place of the picture of the header.
         title.url = nil
         var stories = currentStory.stories
-        stories[0] = title
+        stories[titleKey] = title
         var state = currentStory
         state.stories = stories
-        state.lastEdit = .lineEdition(position: 0, storyStep: title)
+        state.lastEdit = .lineEdition(position: titleKey, storyStep: title)
         apply(state)
     }
 
     /// The picture of the header (the `url` of the title), nil for none.
     public var headerImageUrl: String? {
-        currentStory.stories[0]?.url.flatMap { $0.isEmpty ? nil : $0 }
+        titleKey.flatMap { currentStory.stories[$0]?.url }.flatMap { $0.isEmpty ? nil : $0 }
     }
+
+    /// The key of the first step, where the title is.
+    private var titleKey: String? { currentStory.stories.keys.min() }
 
     /// Puts a picture in the header, like `onHeaderImageSelection` of the Compose app. The
     /// header has a picture or a color, so the color goes away.
     public func setHeaderImage(_ url: String?) {
-        guard isEditable, var title = currentStory.stories[0], title.isTitle else { return }
+        guard isEditable, let titleKey, var title = currentStory.stories[titleKey], title.isTitle else { return }
         title.url = url
         if url != nil { title.decoration = nil }
         var stories = currentStory.stories
-        stories[0] = title
+        stories[titleKey] = title
         var state = currentStory
         state.stories = stories
-        state.lastEdit = .lineEdition(position: 0, storyStep: title)
+        state.lastEdit = .lineEdition(position: titleKey, storyStep: title)
         apply(state)
     }
 
@@ -351,7 +358,7 @@ public final class WriteopiaStateManager {
         Span.highlights.contains(where: isSpanActive)
     }
 
-    private func updateSelection(_ selection: StepSelection, change: (Double, StoryState) -> StoryState) {
+    private func updateSelection(_ selection: StepSelection, change: (String, StoryState) -> StoryState) {
         guard isEditable, !selection.isEmpty, let (position, _) = find(selection.stepId) else { return }
         commit(change(position, currentStory))
     }
@@ -361,7 +368,7 @@ public final class WriteopiaStateManager {
     public var hasSelectedLines: Bool { !selectedPositions.isEmpty }
 
     /// Positions of the selected lines still in the document, in order.
-    public var selectedPositions: [Double] {
+    public var selectedPositions: [String] {
         guard !selectedStepIds.isEmpty else { return [] }
         return currentStory.sortedPositions.filter { position in
             currentStory.stories[position].map { selectedStepIds.contains($0.id) } == true
@@ -475,7 +482,7 @@ public final class WriteopiaStateManager {
 
     /// Where the block buttons of the side menu act: the selected lines when there are any,
     /// otherwise the line with the cursor, like the text options of the desktop app.
-    public var blockPositions: [Double] {
+    public var blockPositions: [String] {
         if !selectedPositions.isEmpty { return selectedPositions }
         guard let focus = currentStory.focus, let step = currentStory.stories[focus], !step.isTitle else { return [] }
         return [focus]
@@ -532,15 +539,15 @@ public final class WriteopiaStateManager {
         commit(writeopiaManager.addDocumentLink(after: position, documentId: documentId, title: title, state: currentStory))
     }
 
-    private func applyToSelectedLines(_ change: ([Double], StoryState) -> StoryState) {
+    private func applyToSelectedLines(_ change: ([String], StoryState) -> StoryState) {
         apply(change, to: selectedPositions)
     }
 
-    private func applyToBlocks(_ change: ([Double], StoryState) -> StoryState) {
+    private func applyToBlocks(_ change: ([String], StoryState) -> StoryState) {
         apply(change, to: blockPositions)
     }
 
-    private func apply(_ change: ([Double], StoryState) -> StoryState, to positions: [Double]) {
+    private func apply(_ change: ([String], StoryState) -> StoryState, to positions: [String]) {
         guard isEditable, !positions.isEmpty else { return }
         commit(change(positions, currentStory))
     }
@@ -568,10 +575,10 @@ public final class WriteopiaStateManager {
     public var documentText: String { writeopiaManager.documentText(currentStory) }
 
     /// Position of the last step.
-    public var lastPosition: Double? { currentStory.sortedPositions.last }
+    public var lastPosition: String? { currentStory.sortedPositions.last }
 
     /// The step with the cursor, or the last text step when nothing has the focus.
-    public var currentTextStep: (position: Double, step: StoryStep)? {
+    public var currentTextStep: (position: String, step: StoryStep)? {
         if let focus = currentStory.focus, let step = currentStory.stories[focus], step.isTextStep {
             return (focus, step)
         }
@@ -583,8 +590,8 @@ public final class WriteopiaStateManager {
     /// Adds a loading step after `position` and returns its id, so it can later become the
     /// answer. Mirrors `loadingAtPosition` of the SDK.
     @discardableResult
-    public func loadingAtPosition(_ position: Double?) -> String {
-        let loading = StoryStep(type: .loading, position: 0)
+    public func loadingAtPosition(_ position: String?) -> String {
+        let loading = StoryStep(type: .loading, position: Rank.first)
         var state = writeopiaManager.addAtPosition(loading, after: position, state: currentStory)
         state.focus = nil
         commit(state)
@@ -595,9 +602,12 @@ public final class WriteopiaStateManager {
     /// The AI answer still being written; it can't be accepted yet.
     public private(set) var streamingAnswerId: String?
 
-    /// The answer with `stepId` is complete (or failed).
+    /// The answer with `stepId` is complete (or failed): it becomes part of the content, so
+    /// the final text is saved and sent now, once.
     public func aiAnswerFinished(stepId: String) {
-        if streamingAnswerId == stepId { streamingAnswerId = nil }
+        guard streamingAnswerId == stepId else { return }
+        streamingAnswerId = nil
+        changeCount += 1
     }
 
     /// Shows `text` as an AI answer in the step with `stepId` (the loading step at first).
@@ -618,9 +628,33 @@ public final class WriteopiaStateManager {
         else { return }
         var lines = MarkdownSteps.parse(step.text ?? "")
         if lines.isEmpty {
-            lines = [StoryStep(type: .text, text: step.text ?? "", position: 0)]
+            lines = [StoryStep(type: .text, text: step.text ?? "", position: Rank.first)]
         }
         currentStory = writeopiaManager.replaceStep(id: stepId, with: lines, state: currentStory)
+        changeCount += 1
+    }
+
+    // MARK: - AI rewrites
+
+    /// Starts a rewrite by the AI: the steps with `stepIds` go away and `steps` (a skeleton,
+    /// and the blocks the rewrite keeps) take their place. The document before is kept in the
+    /// history, so the rewrite can be undone; the steps that went away are deleted when saved.
+    /// Returns false when none of the steps is in the document.
+    @discardableResult
+    public func beginAiRewrite(of stepIds: Set<String>, with steps: [StoryStep]) -> Bool {
+        guard isEditable, currentStory.stories.values.contains(where: { stepIds.contains($0.id) }) else { return false }
+        selectedStepIds.removeAll()
+        textSelection = nil
+        textSelectionRect = nil
+        commit(writeopiaManager.replaceSteps(ids: stepIds, with: steps, state: currentStory))
+        return true
+    }
+
+    /// Shows the next shape of a rewrite: `steps` take the place of the steps with `stepIds`.
+    /// No history entry, so an undo goes back to before the rewrite began.
+    public func updateAiRewrite(of stepIds: Set<String>, with steps: [StoryStep]) {
+        guard isEditable else { return }
+        currentStory = writeopiaManager.replaceSteps(ids: stepIds, with: steps, state: currentStory)
         changeCount += 1
     }
 
@@ -643,7 +677,7 @@ public final class WriteopiaStateManager {
                 text: item,
                 checked: listStep.type.number == StoryType.checkItem.number ? false : nil,
                 tags: [TagInfo(tag: AiTag.suggestion)] + (index == 0 ? [TagInfo(tag: AiTag.firstSuggestion)] : []),
-                position: 0
+                position: Rank.first
             )
         }
         currentStory = writeopiaManager.addSteps(suggestions, after: position, state: currentStory)
@@ -678,7 +712,7 @@ public final class WriteopiaStateManager {
     }
 
     /// Position of the step with `stepId`.
-    public func position(of stepId: String) -> Double? {
+    public func position(of stepId: String) -> String? {
         find(stepId)?.0
     }
 
@@ -693,7 +727,7 @@ public final class WriteopiaStateManager {
     @discardableResult
     public func addImage(path: String?, url: String? = nil, uploading: Bool = false) -> String? {
         guard isEditable else { return nil }
-        let image = StoryStep(type: .image, url: url, path: path, position: 0)
+        let image = StoryStep(type: .image, url: url, path: path, position: Rank.first)
 
         var state = currentStory
         if let focus = state.focus, let current = state.stories[focus] {
@@ -755,7 +789,7 @@ public final class WriteopiaStateManager {
         Self.dragPayloadPrefix + step.id
     }
 
-    public func onDragHover(_ position: Double?) {
+    public func onDragHover(_ position: String?) {
         dragPosition = position
         isDragging = position != nil
     }
@@ -766,14 +800,14 @@ public final class WriteopiaStateManager {
     }
 
     /// Moves the step with `stepId` right after the step at `position`, from the reorder drag.
-    public func moveStep(stepId: String, after position: Double) {
-        _ = moveRequest(payload: dragPayload(for: StoryStep(id: stepId, type: .text, position: 0)), after: position)
+    public func moveStep(stepId: String, after position: String) {
+        _ = moveRequest(payload: dragPayload(for: StoryStep(id: stepId, type: .text, position: Rank.first)), after: position)
     }
 
     /// Moves the dragged step right after the step at `position`. Returns false for payloads
     /// that aren't steps of this document.
     @discardableResult
-    public func moveRequest(payload: String, after position: Double) -> Bool {
+    public func moveRequest(payload: String, after position: String) -> Bool {
         defer { onDragStop() }
 
         guard isEditable,
@@ -832,7 +866,7 @@ public final class WriteopiaStateManager {
     /// nothing changed. Edits the user makes go through here; changes that arrive on their own
     /// (an AI answer streaming, an upload finishing) set `currentStory` directly, so an undo
     /// goes back to before the action that started them.
-    private func commit(_ newState: StoryState, textEditAt position: Double? = nil) {
+    private func commit(_ newState: StoryState, textEditAt position: String? = nil) {
         guard newState != currentStory else { return }
         if let position {
             backstack.addTextState(currentStory, position: position)
@@ -856,13 +890,13 @@ public final class WriteopiaStateManager {
 
     // MARK: - Private
 
-    private func find(_ stepId: String) -> (Double, StoryStep)? {
+    private func find(_ stepId: String) -> (String, StoryStep)? {
         currentStory.stories.first { $0.value.id == stepId }.map { ($0.key, $0.value) }
     }
 
     /// Replaces the document with `newState` and remembers the one before it for undo. Text
     /// typed at `textEditAt` is grouped, see `SnapshotBackstackManager.addTextState`.
-    private func apply(_ newState: StoryState, textEditAt position: Double? = nil) {
+    private func apply(_ newState: StoryState, textEditAt position: String? = nil) {
         guard newState != currentStory else { return }
 
         let isStructural = newState.lastEdit == .whole

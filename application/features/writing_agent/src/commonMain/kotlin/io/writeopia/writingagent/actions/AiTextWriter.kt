@@ -3,12 +3,14 @@ package io.writeopia.writingagent.actions
 import io.writeopia.ai.AiCommand
 import io.writeopia.ai.AiStreaming
 import io.writeopia.sdk.model.action.Action
+import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryType
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.TagInfo
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.ui.manager.WriteopiaStateManager
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
@@ -25,15 +27,28 @@ object AiTextWriter {
      */
     suspend fun streamAt(
         manager: WriteopiaStateManager,
-        position: Double,
+        position: String,
         answers: Flow<ResultData<String>>,
         type: StoryType = StoryTypes.AI_ANSWER.type,
         tags: Set<TagInfo> = emptySet(),
         prefix: String = "",
     ) {
+        // One step for the whole answer, rewritten at each chunk and ephemeral while the answer
+        // comes: nothing is saved nor synced until the stream ends, then the final text once.
+        val answerId = GenerateId.generate()
+        var text = ""
+        // Where the loading story went: at [position], or right before the story there.
+        var answerPosition = position
+
+        fun step(ephemeral: Boolean) =
+            StoryStep(id = answerId, type = type, text = prefix + text.trim(), tags = tags, ephemeral = ephemeral)
+
         answers.onStart {
-            manager.loadingAtPosition(position)
-        }.onCompletion {
+            answerPosition = manager.loadingAtPosition(position)
+        }.onCompletion { cause ->
+            // Leaving the document cancels the stream: the answer is dropped, never saved.
+            if (cause is CancellationException) return@onCompletion
+            manager.changeStoryState(Action.StoryStateChange(step(ephemeral = false), answerPosition), trackIt = false)
             manager.trackState()
         }.map { result ->
             when (result) {
@@ -43,19 +58,14 @@ object AiTextWriter {
                 is ResultData.Idle,
                 is ResultData.InProgress -> ""
             }
-        }.collect { text ->
-            manager.changeStoryState(
-                Action.StoryStateChange(
-                    storyStep = StoryStep(type = type, text = prefix + text.trim(), tags = tags),
-                    position = position,
-                ),
-                trackIt = false
-            )
+        }.collect { chunk ->
+            text = chunk
+            manager.changeStoryState(Action.StoryStateChange(step(ephemeral = true), answerPosition), trackIt = false)
         }
     }
 
     /** Says in the document, at [position], that no AI could answer. */
-    fun noAiAt(manager: WriteopiaStateManager, position: Double) {
+    fun noAiAt(manager: WriteopiaStateManager, position: String) {
         manager.addAtPosition(
             StoryStep(type = StoryTypes.AI_ANSWER.type, text = NO_AI_MESSAGE),
             position

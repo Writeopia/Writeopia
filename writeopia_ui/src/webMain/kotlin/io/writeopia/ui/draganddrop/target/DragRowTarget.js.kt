@@ -46,7 +46,7 @@ actual fun DragRowTarget(
     dataToDrop: DropInfo,
     onClick: () -> Unit,
     showIcon: Boolean,
-    position: Double,
+    position: String,
     emptySpaceClick: () -> Unit,
     dragIconWidth: Dp,
     iconTintOnHover: Color,
@@ -92,6 +92,7 @@ actual fun DragRowTarget(
                         .onPointerEvent(PointerEventType.Enter) { active = true }
                         .onPointerEvent(PointerEventType.Exit) { active = false }
                         .clickable(onClick = onClick)
+                        .holdDragGesture { currentState.isDragging }
                         .pointerInput(Unit) {
                             detectDragGestures(onDragStart = { offset ->
                                 onDragStart()

@@ -55,14 +55,14 @@ import WrModels
     }
 
     func insertStep(
-        _ db: SQLiteDatabase, id: String, document: String, type: Int64, text: String?, position: Double,
+        _ db: SQLiteDatabase, id: String, document: String, type: Int64, text: String?, position: Int,
         parent: String? = nil, checked: Bool = false, tags: String = "", spans: String = "", link: String? = nil,
         color: Int64? = nil
     ) throws {
         try db.run(
             "INSERT INTO storyStepEntity VALUES (?, ?, ?, ?, NULL, NULL, ?, ?, ?, ?, 0, 0, ?, ?, ?, ?, 1800)",
             [
-                .text(id), .text(UUID().uuidString), .integer(type), .text(parent), .text(text), .bool(checked), .real(position),
+                .text(id), .text(UUID().uuidString), .integer(type), .text(parent), .text(text), .bool(checked), .real(Double(position)),
                 .text(document), .integer(color), .text(tags), .text(spans), .text(link),
             ]
         )
@@ -179,5 +179,15 @@ import WrModels
             SpanInfo(start: 0, end: 2, span: "LINK"),
         ])
         #expect(ComposeDatabase.spans("0:4:LINK:https://a.com:8080/p") == [SpanInfo(start: 0, end: 4, span: "LINK", extra: "https://a.com:8080/p")])
+    }
+
+    @Test func readsBothRanksAndOldNumbersAsRanks() {
+        // Since its migration 21 the Compose app keeps ranks; before, numbers
+        #expect(ComposeDatabase.rank("0001000003") == "0001000003")
+        #expect(ComposeDatabase.rank("0001000000i") == "0001000000i")
+        #expect(ComposeDatabase.rank("2") == Rank.at(2))
+        #expect(ComposeDatabase.rank("1.5") == Rank.at(1))
+        #expect(ComposeDatabase.rank("20000.0") == Rank.at(20000))
+        #expect(ComposeDatabase.rank(nil) == Rank.first)
     }
 }

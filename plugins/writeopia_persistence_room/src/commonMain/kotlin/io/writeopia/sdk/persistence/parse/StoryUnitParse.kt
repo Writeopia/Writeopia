@@ -9,15 +9,15 @@ import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.TagInfo
 import io.writeopia.sdk.persistence.entity.story.StoryStepEntity
 
-fun Map<Double, StoryStep>.toEntity(documentId: String): List<StoryStepEntity> =
+fun Map<String, StoryStep>.toEntity(documentId: String): List<StoryStepEntity> =
+    // The key of the map is the position of the step, whatever it was loaded with
     flatMap { (position, storyUnit) ->
-        val dbPos = storyUnit.dbPosition ?: position
         if (storyUnit.isGroup) {
-            listOf(storyUnit.toEntity(dbPos, documentId)) + storyUnit.steps.map { innerStory ->
-                innerStory.copy(parentId = storyUnit.id).toEntity(dbPos, documentId)
+            listOf(storyUnit.toEntity(position, documentId)) + storyUnit.steps.map { innerStory ->
+                innerStory.copy(parentId = storyUnit.id).toEntity(position, documentId)
             }
         } else {
-            listOf(storyUnit.toEntity(dbPos, documentId))
+            listOf(storyUnit.toEntity(position, documentId))
         }
     }
 
@@ -56,7 +56,7 @@ fun StoryStepEntity.toModel(
         lastUpdatedAt = lastUpdatedAt
     )
 
-fun StoryStep.toEntity(position: Double, documentId: String): StoryStepEntity =
+fun StoryStep.toEntity(position: String, documentId: String): StoryStepEntity =
     StoryStepEntity(
         id = id,
         localId = localId,

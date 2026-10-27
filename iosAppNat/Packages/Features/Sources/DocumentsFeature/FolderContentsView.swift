@@ -37,6 +37,9 @@ final class FolderContentsViewModel {
     let tag: DocumentTag?
     let settings: FolderDisplaySettings
     let repository: DocumentsRepository
+    /// What opening this folder syncs: the whole workspace, so what changed in any folder (a
+    /// document favorited elsewhere, say) arrives here, or just this folder, like before.
+    let syncScope: SyncScope
     private let aiClient: AiStreaming?
 
     init(
@@ -45,7 +48,8 @@ final class FolderContentsViewModel {
         tag: DocumentTag? = nil,
         repository: DocumentsRepository,
         aiClient: AiStreaming? = nil,
-        settings: FolderDisplaySettings = FolderDisplaySettings(preferences: nil)
+        settings: FolderDisplaySettings = FolderDisplaySettings(preferences: nil),
+        syncScope: SyncScope = .workspace
     ) {
         self.folderId = folderId
         // The folder that was opened, so its menu works before the stored copy is read.
@@ -54,6 +58,7 @@ final class FolderContentsViewModel {
         self.repository = repository
         self.aiClient = aiClient
         self.settings = settings
+        self.syncScope = syncScope
     }
 
     /// The "folder" that lists every favorite of the workspace.
@@ -182,7 +187,7 @@ final class FolderContentsViewModel {
 
             await perform {
                 var document = try await self.repository.createDocument(title: "", parentId: self.folderId)
-                document.content.append(StoryStep(type: .image, path: file.path(percentEncoded: false), position: 1))
+                document.content.append(StoryStep(type: .image, path: file.path(percentEncoded: false), position: Rank.at(1)))
                 try await self.repository.save(document)
             }
         }
@@ -279,12 +284,17 @@ final class FolderContentsViewModel {
 
         await loadLocal()
 
-        // Favorites and tags come from what's synced already; a folder syncs itself.
-        guard !isFavorites, !isTag, let syncing = repository as? DocumentSyncing else { return }
+        guard let syncing = repository as? DocumentSyncing else { return }
         isSyncing = true
         defer { isSyncing = false }
         do {
-            try await syncing.syncFolder(folderId)
+            // Favorites and tags gather documents from every folder: the whole workspace syncs
+            // whatever the scope.
+            if isFavorites || isTag || syncScope == .workspace {
+                try await syncing.syncWorkspaceChanges()
+            } else {
+                try await syncing.syncFolder(folderId)
+            }
             syncError = nil
             await loadLocal()
         } catch is CancellationError {
@@ -348,10 +358,28 @@ final class FolderContentsViewModel {
         return created
     }
 
+    /// An item dropped into a folder, kept while the move can be undone, like the snackbar of the
+    /// Compose app.
+    struct DroppedMove: Identifiable, Equatable {
+        let id = UUID()
+        let item: FolderItem.Payload
+        let itemTitle: String
+        let folderTitle: String
+        /// The folder the item was in before the drop.
+        let previousParentId: String
+    }
+
+    /// The last drop into a folder, while it can still be undone.
+    private(set) var lastDrop: DroppedMove?
+
     /// Moves the dragged item into `folder`. The item leaves the grid right away and the folder
     /// is reloaded afterwards, so its item count reflects the move.
     func move(_ payload: String, into folder: Folder) async -> Bool {
         guard let dragged = FolderItem.Payload(payload), dragged.id != folder.id else { return false }
+
+        // Read before the move, for its undo. An item dragged from another window isn't listed
+        // here, so it's read from the repository.
+        let source = await dropSource(of: dragged)
 
         let previousFolders = folders
         let previousDocuments = documents
@@ -365,6 +393,15 @@ final class FolderContentsViewModel {
             case .folder: try await repository.moveFolder(id: dragged.id, toFolder: folder.id)
             case .document: try await repository.moveDocument(id: dragged.id, toFolder: folder.id)
             }
+            if let source {
+                lastDrop = DroppedMove(
+                    item: dragged,
+                    itemTitle: source.title,
+                    folderTitle: folder.displayTitle,
+                    // A document without a parent is at the root.
+                    previousParentId: source.parentId ?? Folder.rootId
+                )
+            }
             await load()
             return true
         } catch let error as MoveError {
@@ -377,6 +414,47 @@ final class FolderContentsViewModel {
             actionError = error.userMessage
         }
         return false
+    }
+
+    /// The title and folder of a dragged item, from this folder's list or else the repository.
+    private func dropSource(of dragged: FolderItem.Payload) async -> (title: String, parentId: String?)? {
+        switch dragged.kind {
+        case .folder:
+            let found = folders.first { $0.id == dragged.id }
+            let folder: Folder? = if let found { found } else { try? await repository.folder(id: dragged.id) }
+            return folder.map { ($0.displayTitle, $0.parentId) }
+        case .document:
+            let found = documents.first { $0.id == dragged.id }
+            let document: WrDocument? = if let found { found } else { try? await repository.document(id: dragged.id) }
+            return document.map { ($0.displayTitle, $0.parentId) }
+        }
+    }
+
+    /// The drop being undone, so a second tap doesn't move it again.
+    @ObservationIgnored private var undoingDropId: UUID?
+
+    /// Puts the item of `drop` back in the folder it was in. Only the current drop is undone;
+    /// when the move fails, its banner stays so it can be tried again.
+    func undo(_ drop: DroppedMove) async {
+        guard lastDrop == drop, undoingDropId != drop.id else { return }
+        undoingDropId = drop.id
+        defer { undoingDropId = nil }
+
+        do {
+            switch drop.item.kind {
+            case .folder: try await repository.moveFolder(id: drop.item.id, toFolder: drop.previousParentId)
+            case .document: try await repository.moveDocument(id: drop.item.id, toFolder: drop.previousParentId)
+            }
+            dismiss(drop)
+        } catch {
+            actionError = error.userMessage
+        }
+        await load()
+    }
+
+    /// Forgets `drop` once it can no longer be undone. A newer drop is kept.
+    func dismiss(_ drop: DroppedMove) {
+        if lastDrop == drop { lastDrop = nil }
     }
 
     // MARK: - Edition menu of the folder
@@ -511,6 +589,10 @@ public struct DocumentsRootView: View {
             // A different workspace means a different tree: start again from its root.
             .id("\(session.workspace?.id ?? "")-\(session.documentsVersion)")
             .onChange(of: session.workspace?.id) { router.reset() }
+            // An icon picked in the editor shows on the cards and in the side menu too.
+            .onReceive(NotificationCenter.default.publisher(for: .documentIconChanged)) { _ in
+                router.contentsChanged()
+            }
     }
 }
 
@@ -560,7 +642,8 @@ private struct DocumentsNavigation: View {
                             writingAgent: session.writingAgent,
                             imageGenerator: session.writingAgent,
                             headerImages: session.headerImages,
-                            loadActivity: session.contentLoad
+                            loadActivity: session.contentLoad,
+                            rootTitle: rootTitle
                         ) { link in
                             router.path.append(DocumentsRoute.document(id: link.id, title: link.title ?? "Untitled"))
                         }
@@ -755,10 +838,18 @@ struct FolderContentsView: View {
                 .background(.regularMaterial, in: Capsule())
                 .padding(.bottom, 8)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
+            } else if let drop = viewModel.lastDrop {
+                DropUndoBanner(
+                    drop: drop,
+                    onUndo: { Task { await viewModel.undo(drop) } },
+                    onTimeout: { withAnimation(.snappy) { viewModel.dismiss(drop) } }
+                )
+                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
         .animation(.snappy, value: viewModel.hasSelection)
         .animation(.snappy, value: viewModel.isSummarizing)
+        .animation(.snappy, value: viewModel.lastDrop)
         .alert(
             "Could not summarize",
             isPresented: Binding(get: { viewModel.summaryError != nil }, set: { if !$0 { viewModel.summaryError = nil } })
@@ -990,6 +1081,10 @@ struct FolderContentsView: View {
                 .fontWeight(.semibold)
                 .lineLimit(1)
         }
+        #if os(macOS)
+        // The toolbar of macOS draws a capsule around the item, tight on its content.
+        .padding(.horizontal, 10)
+        #endif
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isHeader)
         .accessibilityIdentifier("documents.folderTitle")

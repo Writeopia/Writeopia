@@ -26,7 +26,7 @@ actual fun TextEditorScreen(
     onDocumentLinkClick: (String) -> Unit,
     onNewDrawingClick: () -> Unit,
     onNewImageClick: () -> Unit,
-    onDrawingClick: (StoryStep, Double) -> Unit,
+    onDrawingClick: (StoryStep, String) -> Unit,
     nestedScrollConnection: NestedScrollConnection?,
     isToolbarVisible: Boolean,
     isWideLayout: Boolean,

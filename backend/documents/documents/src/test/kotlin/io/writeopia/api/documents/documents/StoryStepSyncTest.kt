@@ -2,6 +2,7 @@
 
 package io.writeopia.api.documents.documents
 
+import io.writeopia.sdk.utils.iterables.Rank
 import io.writeopia.api.documents.documents.repository.getDocumentById
 import io.writeopia.api.documents.documents.repository.getStoryStepsAfterTime
 import io.writeopia.api.documents.documents.repository.saveDocument
@@ -34,7 +35,7 @@ class StoryStepSyncTest {
             workspaceId = workspaceId,
             lastSyncTimestamp = lastSync,
             requestTimestamp = requestTimestamp,
-            changes = listOf(StoryStepChangeApi(storyStep = step.toApi(1.0), position = 1.0)),
+            changes = listOf(StoryStepChangeApi(storyStep = step.toApi(Rank.at(1)), position = Rank.at(1))),
             deletions = emptyList()
         )
 
@@ -48,7 +49,7 @@ class StoryStepSyncTest {
                 lastSyncedAt = Instant.fromEpochMilliseconds(lastSyncedAt),
                 workspaceId = workspaceId,
                 parentId = "root",
-                content = mapOf(0.0 to StoryStep(id = "title", type = StoryTypes.TITLE.type, text = "Plan"))
+                content = mapOf(Rank.at(0) to StoryStep(id = "title", type = StoryTypes.TITLE.type, text = "Plan"))
             )
         )
     }

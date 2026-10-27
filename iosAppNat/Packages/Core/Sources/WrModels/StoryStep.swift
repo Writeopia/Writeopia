@@ -1,6 +1,8 @@
 import Foundation
 
 /// A block of content inside a document. See `CLAUDE_CODE_WRITEOPIA_MANUAL.md` for the format.
+/// Its `position` is a rank (see `Rank`): a sort key with room between any two, so a step can
+/// be added between two others without moving the rest (see `Positions.swift` in the editor).
 public struct StoryStep: Codable, Identifiable, Equatable, Hashable, Sendable {
     public let id: String
     public var type: StoryType
@@ -11,7 +13,7 @@ public struct StoryStep: Codable, Identifiable, Equatable, Hashable, Sendable {
     public var steps: [StoryStep]
     public var tags: [TagInfo]
     public var spans: [SpanInfo]
-    public var position: Double
+    public var position: String
     public var documentLink: DocumentLink?
     /// Group this step belongs to, if any.
     public var parentId: String?
@@ -29,7 +31,7 @@ public struct StoryStep: Codable, Identifiable, Equatable, Hashable, Sendable {
         steps: [StoryStep] = [],
         tags: [TagInfo] = [],
         spans: [SpanInfo] = [],
-        position: Double,
+        position: String,
         documentLink: DocumentLink? = nil,
         parentId: String? = nil,
         decoration: Decoration? = nil,
@@ -62,7 +64,17 @@ public struct StoryStep: Codable, Identifiable, Equatable, Hashable, Sendable {
         steps = try container.decodeIfPresent([StoryStep].self, forKey: .steps) ?? []
         tags = try container.decodeIfPresent([TagInfo].self, forKey: .tags) ?? []
         spans = try container.decodeIfPresent([SpanInfo].self, forKey: .spans) ?? []
-        position = try container.decodeIfPresent(Double.self, forKey: .position) ?? 0
+        // Positions are ranks; a step saved before they were carries a number (an index, or
+        // 1.5 between 1 and 2), read as the rank at its whole part, like the Kotlin SDK.
+        if let rank = try? container.decodeIfPresent(String.self, forKey: .position) {
+            position = rank
+        } else if let whole = try? container.decodeIfPresent(Int.self, forKey: .position) {
+            position = Rank.at(Swift.max(whole, 0))
+        } else if let fraction = try container.decodeIfPresent(Double.self, forKey: .position) {
+            position = Rank.at(Swift.max(Int(fraction.rounded(.down)), 0))
+        } else {
+            position = Rank.first
+        }
         documentLink = try container.decodeIfPresent(DocumentLink.self, forKey: .documentLink)
         parentId = try container.decodeIfPresent(String.self, forKey: .parentId)
         decoration = try container.decodeIfPresent(Decoration.self, forKey: .decoration)
@@ -74,8 +86,8 @@ public struct StoryStep: Codable, Identifiable, Equatable, Hashable, Sendable {
     public func hasSameContent(as other: StoryStep) -> Bool {
         var this = self
         var that = other
-        this.position = 0
-        that.position = 0
+        this.position = Rank.none
+        that.position = Rank.none
         this.lastUpdatedAt = nil
         that.lastUpdatedAt = nil
         return this == that
@@ -115,6 +127,9 @@ public struct StoryType: Codable, Equatable, Hashable, Sendable {
     public static let onDragSpace = StoryType(name: "on_drag_space", number: 17)
     public static let aiAnswer = StoryType(name: "ai_answer", number: 18)
     public static let loading = StoryType(name: "loading", number: 19)
+    /// A placeholder drawn where text is being rewritten by the AI. Never saved: its text is
+    /// the text it replaced, so the drawer takes about the same room.
+    public static let skeleton = StoryType(name: "skeleton", number: 25)
     public static let documentLink = StoryType(name: "document_link", number: 20)
     public static let divider = StoryType(name: "divider", number: 21)
     public static let codeBlock = StoryType(name: "code_block", number: 23)

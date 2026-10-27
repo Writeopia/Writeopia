@@ -23,8 +23,8 @@ class PresentationsApiTest {
     private val presentationJson = """
         {"id":"p1","documentId":"d1","title":"Sky","createdAt":1700000000000,"slides":[
           {"title":"Sky","content":[
-            {"id":"s2","type":{"name":"unordered_list_item","number":16},"text":"Second","position":2.0},
-            {"id":"s1","type":{"name":"message","number":0},"text":"First","position":1.0}
+            {"id":"s2","type":{"name":"unordered_list_item","number":16},"text":"Second","position":2},
+            {"id":"s1","type":{"name":"message","number":0},"text":"First","position":1}
           ]},
           {"title":"Bye","content":[]}
         ]}

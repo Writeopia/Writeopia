@@ -2,6 +2,7 @@
 
 package io.writeopia.api.documents.documents.repository
 
+import io.writeopia.sdk.utils.iterables.Rank
 import io.writeopia.api.geteway.configurePersistence
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.id.GenerateId
@@ -21,11 +22,11 @@ class DocumentRepositoryTest {
 
         val now = Clock.System.now()
 
-        val content: Map<Double, StoryStep> = mapOf(
-            0.0 to StoryStep(type = StoryTypes.TEXT.type, text = "message1"),
-            1.0 to StoryStep(type = StoryTypes.TEXT.type, text = "message2"),
-            2.0 to StoryStep(type = StoryTypes.TEXT.type, text = "message3"),
-            3.0 to StoryStep(type = StoryTypes.TEXT.type, text = "message4"),
+        val content: Map<String, StoryStep> = mapOf(
+            Rank.at(0) to StoryStep(type = StoryTypes.TEXT.type, text = "message1"),
+            Rank.at(1) to StoryStep(type = StoryTypes.TEXT.type, text = "message2"),
+            Rank.at(2) to StoryStep(type = StoryTypes.TEXT.type, text = "message3"),
+            Rank.at(3) to StoryStep(type = StoryTypes.TEXT.type, text = "message4"),
         )
 
         val workspaceId = GenerateId.generate()

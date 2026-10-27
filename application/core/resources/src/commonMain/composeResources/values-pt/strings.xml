@@ -3,7 +3,7 @@
   <string name="error_loading_notes">Error ao carregar notas</string>
   <string name="you_dont_have_notes">Você não tem notas</string>
   <string name="add_sample_notes">Add sample notes</string>
-  <string name="undo">Refazer</string>
+  <string name="undo">Desfazer</string>
   <string name="redo">Para frente</string>
   <string name="untitled">Sem título</string>
   <string name="note">Nota</string>
@@ -74,6 +74,9 @@
   <string name="sort_by_creation">Ordenar por data de criação</string>
   <string name="sort_by_update">Ordenar por data de atualização</string>
   <string name="lock_document">Bloquear edição</string>
+  <string name="document_icon">Ícone</string>
+  <string name="document_icon_title">Ícone do documento</string>
+  <string name="document_icon_remove">Remover ícone</string>
   <string name="move_to">Move para...</string>
   <string name="move_to_home">Move home</string>
   <string name="move">Mover</string>
@@ -86,7 +89,7 @@
   <string name="move_no_folders_found">Nenhuma pasta encontrada</string>
   <string name="move_error_loading_folders">Erro ao carregar as pastas</string>
   <string name="search_folders">Buscar pastas</string>
-  <string name="move_selection_confirmation">Mover os itens selecionados para \"%1$s\"?</string>
+  <string name="move_selection_confirmation">Mover os itens selecionados para “%1$s”?</string>
   <string name="text">Texto</string>
   <string name="insert">Inserir</string>
   <string name="box">Caixa</string>
@@ -158,6 +161,11 @@
   <string name="add">Adicionar</string>
   <string name="user_email">Email de usuário</string>
   <string name="choose_workspace">Escolha a área de trabalho</string>
+  <string name="workspace_sync_title">Sincronizando sua área de trabalho</string>
+  <string name="workspace_sync_message">Seus documentos estão sendo trazidos para este dispositivo. Isso pode levar um momento.</string>
+  <string name="workspace_sync_in_background">Continuar em segundo plano</string>
+  <string name="workspace_sync_failed">A sincronização não terminou. Ela será tentada novamente quando você abrir seus documentos.</string>
+  <string name="workspace_sync_continue">Continuar</string>
   <string name="your_teams">Seus times</string>
   <string name="teams">Times</string>
   <string name="login_failed">Falha no login. Por favor, verifique suas credenciais.</string>
@@ -264,4 +272,12 @@
   <string name="header_image_failed">A IA não conseguiu desenhar um cabeçalho. Tente novamente.</string>
   <string name="header_image_cost">Usa seus tokens de IA</string>
   <string name="header_image_save_failed">Não foi possível salvar a imagem no workspace. Tente novamente.</string>
+  <string name="quick_actions">Ações rápidas</string>
+  <string name="ai_command">Comando</string>
+  <string name="ai_command_hint">Diga à IA o que fazer com o texto</string>
+  <string name="ai_command_run">Executar</string>
+  <string name="quick_actions_cursor_hint">As ações rápidas funcionam no documento ou nas linhas selecionadas.</string>
+  <string name="folder_screen_create_note">Criar uma nota</string>
+  <string name="moved_item_to_folder">“%1$s” movido para “%2$s”</string>
+  <string name="moved_items_to_folder">%1$d itens movidos para “%2$s”</string>
 </resources>

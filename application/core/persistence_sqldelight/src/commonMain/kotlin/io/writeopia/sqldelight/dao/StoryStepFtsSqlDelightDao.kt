@@ -11,14 +11,14 @@ class StoryStepFtsSqlDelightDao(writeopiaDb: WriteopiaDb?) {
     private val storyStepEntityQueries: StoryStepEntityFtsQueries? =
         writeopiaDb?.storyStepEntityFtsQueries
 
-    fun searchInDocument(query: String, documentId: String): Set<Int> =
+    fun searchInDocument(query: String, documentId: String): Set<String> =
         storyStepEntityQueries?.searchFts(query)
             ?.executeAsList()
             ?.filter { (_, documentIdFts) -> documentIdFts == documentId }
-            ?.mapNotNullTo(mutableSetOf()) { (position, _) -> position?.toInt() }
+            ?.mapNotNullTo(mutableSetOf()) { (position, _) -> position }
             ?: emptySet()
 
-    suspend fun insertForFts(storyStep: StoryStep, documentId: String, position: Double) {
+    suspend fun insertForFts(storyStep: StoryStep, documentId: String, position: String) {
         storyStepEntityQueries?.insertFts(
             text = storyStep.text,
             id = storyStep.id,

@@ -1,5 +1,6 @@
 package io.writeopia.normalization.merge
 
+import io.writeopia.sdk.utils.iterables.Rank
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryType
 import io.writeopia.sdk.models.story.StoryTypes
@@ -27,7 +28,7 @@ class MergeNormalizationTest {
         val mergedStep = mergeNormalization.mergeSteps(MapStoryData.imageSimpleGroup())
 
         assertEquals(1, mergedStep.size)
-        assertTrue(mergedStep[0.0]?.isGroup ?: false)
+        assertTrue(mergedStep[Rank.at(0)]?.isGroup ?: false)
     }
 
     @Test
@@ -44,10 +45,10 @@ class MergeNormalizationTest {
         val mergedStep = mergeNormalization.mergeSteps(MapStoryData.stepsList())
 
         assertEquals(3, mergedStep.size)
-        assertTrue(mergedStep[0.0]?.isGroup ?: false)
-        assertTrue(mergedStep[1.0] is StoryStep)
-        assertTrue(mergedStep[2.0] is StoryStep)
-        assertEquals("group_image", mergedStep[0.0]!!.type.name)
+        assertTrue(mergedStep[Rank.at(0)]?.isGroup ?: false)
+        assertTrue(mergedStep[Rank.at(1)] is StoryStep)
+        assertTrue(mergedStep[Rank.at(2)] is StoryStep)
+        assertEquals("group_image", mergedStep[Rank.at(0)]!!.type.name)
     }
 
     @Test
@@ -66,12 +67,12 @@ class MergeNormalizationTest {
 
         assertEquals(1, mergedStep.size, "2 image groups should have been merged into one")
         assertTrue(
-            mergedStep[0.0]?.isGroup ?: false,
+            mergedStep[Rank.at(0)]?.isGroup ?: false,
             "the first story unit should still be a GroupStep"
         )
         assertEquals(
             StoryTypes.GROUP_IMAGE.type,
-            mergedStep[0.0]!!.type,
+            mergedStep[Rank.at(0)]!!.type,
             "the first story unit should still be a GroupImage"
         )
     }
@@ -99,8 +100,8 @@ class MergeNormalizationTest {
 
         val steps = MapStoryData.stepsList()
 
-        val mergedStep = mergeNormalization.mergeSteps(steps + Pair(steps.size.toDouble(), last))
-        assertEquals(last.first(), mergedStep[(mergedStep.size - 1).toDouble()])
+        val mergedStep = mergeNormalization.mergeSteps(steps + Pair(Rank.at(steps.size), last))
+        assertEquals(last.first(), mergedStep[Rank.at(mergedStep.size - 1)])
     }
 //
 //    @Test

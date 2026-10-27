@@ -44,3 +44,13 @@ fun DropTarget(
         }
     }
 }
+
+/**
+ * The data being dragged, while a drag is in progress. [DropTarget] only hands the data over when
+ * it is dropped, so targets that react to what hovers over them read it from here.
+ */
+@Composable
+fun draggedData(): DropInfo? {
+    val dragInfo = LocalDragTargetInfo.current
+    return if (dragInfo.isDragging) dragInfo.dataToDrop else null
+}

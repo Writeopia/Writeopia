@@ -50,4 +50,26 @@ import WrModels
         simulation.load(nodes: [GraphNodeData(id: "x", label: "x", kind: .folder)], links: [])
         #expect(simulation.nodes[0].x == before.0 && simulation.nodes[0].y == before.1)
     }
+
+    @Test func theSimulationKeepsNodesFarEnoughApartToReadTheirNames() {
+        let simulation = GraphSimulation(size: CGSize(width: 800, height: 600))
+        let documents = (0..<10).map { GraphNodeData(id: "d\($0)", label: "d\($0)", kind: .document) }
+        simulation.load(
+            nodes: [GraphNodeData(id: "f", label: "f", kind: .folder)] + documents,
+            links: documents.map { GraphLinkData(source: "f", target: $0.id) }
+        )
+        // All bunched up, as on a small circle.
+        for (index, node) in simulation.nodes.enumerated() {
+            let angle = CGFloat(index) * 2 * .pi / CGFloat(simulation.nodes.count)
+            node.x = 400 + 5 * cos(angle)
+            node.y = 300 + 5 * sin(angle)
+        }
+        for _ in 0..<1000 { simulation.tick() }
+
+        let nodes = simulation.nodes
+        let closest = nodes.indices.flatMap { i in
+            (i + 1..<nodes.count).map { j in hypot(nodes[i].x - nodes[j].x, nodes[i].y - nodes[j].y) }
+        }.min() ?? 0
+        #expect(closest > GraphSimulation.collisionDistance * 0.9)
+    }
 }

@@ -38,8 +38,8 @@ private final class DescribingRepository: DocumentsRepository, LinkCardDescribin
 }
 
 private let document = WrDocument(id: "d", title: "Links", workspaceId: "w", content: [
-    StoryStep(id: "t", type: .title, text: "Links", position: 0),
-    StoryStep(id: "a", type: .text, text: "", position: 1),
+    StoryStep(id: "t", type: .title, text: "Links", position: Rank.at(0)),
+    StoryStep(id: "a", type: .text, text: "", position: Rank.at(1)),
 ])
 
 private func waitForDescription(_ manager: WriteopiaStateManager) async {

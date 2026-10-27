@@ -1,5 +1,6 @@
 package io.writeopia.commonui.folders
 
+import io.writeopia.sdk.utils.iterables.Rank
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.hoverable
@@ -63,7 +64,7 @@ fun LazyListScope.documentList(
             is MenuItemUi.DocumentUi -> {
                 DocumentItem(
                     item,
-                    position = i.toDouble(),
+                    position = Rank.at(i),
                     selectedDocument,
                     changeIcon = { id, icon, tint ->
                         changeIcon(id, icon, tint, IconChange.DOCUMENT)
@@ -75,7 +76,7 @@ fun LazyListScope.documentList(
             is MenuItemUi.FolderUi -> {
                 FolderItem(
                     item,
-                    position = i.toDouble(),
+                    position = Rank.at(i),
                     editFolder,
                     selectedFolder,
                     moveRequest,
@@ -93,7 +94,7 @@ fun LazyListScope.documentList(
 @Composable
 private fun FolderItem(
     folder: MenuItemUi.FolderUi,
-    position: Double,
+    position: String,
     editFolder: (MenuItemUi.FolderUi) -> Unit,
     navigateToFolder: (String) -> Unit,
     moveRequest: (MenuItemUi, String) -> Unit,
@@ -223,7 +224,7 @@ private fun FolderItem(
 @Composable
 private fun DocumentItem(
     document: MenuItemUi.DocumentUi,
-    position: Double,
+    position: String,
     navigateToEditDocument: (String, String) -> Unit,
     changeIcon: (String, String, Int) -> Unit,
     modifier: Modifier = Modifier,

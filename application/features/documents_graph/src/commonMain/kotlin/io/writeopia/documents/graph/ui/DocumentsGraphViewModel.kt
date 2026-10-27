@@ -57,9 +57,13 @@ class DocumentsGraphViewModel(
     private var maxWidth: Float = 1000F
     private var maxHeight: Float = 1000F
 
-    fun initSize(maxWidth: Float, maxHeight: Float) {
+    // The forces are tuned in dp, like the points of the Swift app; the graph is laid out in pixels.
+    private var density: Float = 1F
+
+    fun initSize(maxWidth: Float, maxHeight: Float, density: Float = 1F) {
         this.maxWidth = maxWidth
         this.maxHeight = maxHeight
+        this.density = density
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -132,12 +136,13 @@ class DocumentsGraphViewModel(
         applyChargeForce(nodes)
         applyCenteringForce(nodes)
         updatePositions(nodes, dt)
+        applyCollision(nodes)
 
         return this
     }
 
     private fun applyLinkForce(links: List<Link>) {
-        val linkDistance = 40F
+        val linkDistance = LINK_DISTANCE * density
         val strength = 0.15f
 
         for (link in links) {
@@ -156,7 +161,9 @@ class DocumentsGraphViewModel(
     }
 
     private fun applyChargeForce(nodes: List<Node>) {
-        val chargeStrength = if (nodes.size < 10) 100f else 2000f
+        // Forces grow with distance (links, centre) but charge falls with its square: in pixels
+        // it scales with the cube of the density to keep the same balance.
+        val chargeStrength = CHARGE_STRENGTH * density * density * density
 
         for (i in nodes.indices) {
             for (j in i + 1 until nodes.size) {
@@ -180,7 +187,7 @@ class DocumentsGraphViewModel(
     private fun applyCenteringForce(nodes: List<Node>) {
         val centerX = maxWidth / 2
         val centerY = maxHeight / 2
-        val strength = 0.003f
+        val strength = 0.002f
 
         for (node in nodes) {
             node.vx += (centerX - node.x) * strength
@@ -197,5 +204,43 @@ class DocumentsGraphViewModel(
             node.x += node.vx * dt
             node.y += node.vy * dt
         }
+    }
+
+    /**
+     * Pushes apart the nodes closer than [COLLISION_DISTANCE], so the dots and their names don't
+     * sit on top of each other. It moves the positions, after the velocities, like a d3 collide.
+     */
+    private fun applyCollision(nodes: List<Node>) {
+        val minDistance = COLLISION_DISTANCE * density
+
+        for (i in nodes.indices) {
+            for (j in i + 1 until nodes.size) {
+                val nodeA = nodes[i]
+                val nodeB = nodes[j]
+                val dx = nodeB.x - nodeA.x
+                val dy = nodeB.y - nodeA.y
+                val distance = sqrt(dx * dx + dy * dy).coerceAtLeast(0.01f)
+                if (distance >= minDistance) continue
+
+                val push = (minDistance - distance) / 4
+                val px = push * dx / distance
+                val py = push * dy / distance
+
+                if (!nodeA.isDragged) {
+                    nodeA.x -= px
+                    nodeA.y -= py
+                }
+                if (!nodeB.isDragged) {
+                    nodeB.x += px
+                    nodeB.y += py
+                }
+            }
+        }
+    }
+
+    private companion object {
+        const val LINK_DISTANCE = 100F
+        const val CHARGE_STRENGTH = 12000F
+        const val COLLISION_DISTANCE = 64F
     }
 }

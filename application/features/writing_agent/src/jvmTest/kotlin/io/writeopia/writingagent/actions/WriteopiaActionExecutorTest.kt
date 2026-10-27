@@ -1,10 +1,12 @@
 package io.writeopia.writingagent.actions
 
+import io.writeopia.sdk.utils.iterables.Rank
 import io.writeopia.ai.AiCommand
 import io.writeopia.ai.AiImageGenerator
 import io.writeopia.ai.AiStreaming
 import io.writeopia.app.dto.writingagent.WritingSuggestionAction
 import io.writeopia.sdk.manager.WriteopiaManager
+import io.writeopia.sdk.model.story.LastEdit
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
@@ -14,8 +16,10 @@ import io.writeopia.ui.manager.WriteopiaStateManager
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
@@ -26,6 +30,12 @@ import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalCoroutinesApi::class, ExperimentalTime::class)
 class WriteopiaActionExecutorTest {
+
+    /** Exact keys: the document positions are deterministic in these tests. */
+    @BeforeTest
+    fun noJitter() {
+        Rank.jitter = false
+    }
 
     private val title = StoryStep(id = "title", type = StoryTypes.TITLE.type, text = "Groceries")
     private val first = StoryStep(id = "p1", type = StoryTypes.TEXT.type, text = "We need milk.")
@@ -39,7 +49,7 @@ class WriteopiaActionExecutorTest {
         ).apply {
             loadDocument(
                 Document(
-                    content = mapOf(0.0 to title, 1.0 to first, 2.0 to second),
+                    content = mapOf(Rank.at(0) to title, Rank.at(1) to first, Rank.at(2) to second),
                     workspaceId = "",
                     createdAt = now,
                     lastUpdatedAt = now,
@@ -99,7 +109,8 @@ class WriteopiaActionExecutorTest {
             listOf(StoryTypes.TITLE, StoryTypes.TEXT, StoryTypes.CODE_BLOCK, StoryTypes.TEXT),
             manager.typesInOrder()
         )
-        assertEquals("", manager.currentStory.value.stories[2.0]?.text)
+        // Right after the paragraph, half way to the next one
+        assertEquals("", manager.currentStory.value.stories[Rank.between(Rank.at(1), Rank.at(2))]?.text)
     }
 
     @Test
@@ -128,7 +139,7 @@ class WriteopiaActionExecutorTest {
         val executor = WriteopiaActionExecutor(manager, resolveAi = { null })
 
         // Something was inserted above, so the paragraph is not where it was.
-        manager.addAtPosition(StoryStep(type = StoryTypes.TEXT.type, text = "Intro."), 1.0)
+        manager.addAtPosition(StoryStep(type = StoryTypes.TEXT.type, text = "Intro."), Rank.at(1))
         executor.execute(WritingSuggestionAction.CHECK_LIST, "p1", WritingAgentUi.None)
 
         assertEquals(
@@ -156,7 +167,8 @@ class WriteopiaActionExecutorTest {
         executor.execute(WritingSuggestionAction.SECTION_HEADING, "p2", WritingAgentUi.None)
 
         assertEquals(listOf("Groceries", "We need milk.", "Shopping list", "And eggs."), manager.textsInOrder())
-        val heading = manager.currentStory.value.stories[2.0]
+        // Right before the paragraph, which keeps its position
+        val heading = manager.currentStory.value.stories[Rank.between(Rank.at(1), Rank.at(2))]
         assertNotNull(heading)
         assertTrue(heading.tags.any { it.tag == Tag.H2 })
     }
@@ -166,11 +178,11 @@ class WriteopiaActionExecutorTest {
         val manager = manager()
         val executor = WriteopiaActionExecutor(manager, resolveAi = { ai("\"Weekly groceries.\"\n") })
 
-        val localIdBefore = manager.currentStory.value.stories[0.0]?.localId
+        val localIdBefore = manager.currentStory.value.stories[Rank.at(0)]?.localId
 
         executor.execute(WritingSuggestionAction.DOCUMENT_TITLE, null, WritingAgentUi.None)
 
-        val titleStep = manager.currentStory.value.stories[0.0]
+        val titleStep = manager.currentStory.value.stories[Rank.at(0)]
         assertNotNull(titleStep)
         assertEquals(StoryTypes.TITLE.type, titleStep.type)
         assertEquals("Weekly groceries", titleStep.text)
@@ -189,7 +201,7 @@ class WriteopiaActionExecutorTest {
         ).apply {
             loadDocument(
                 Document(
-                    content = mapOf(0.0 to first, 1.0 to second),
+                    content = mapOf(Rank.at(0) to first, Rank.at(1) to second),
                     workspaceId = "",
                     createdAt = now,
                     lastUpdatedAt = now,
@@ -203,7 +215,9 @@ class WriteopiaActionExecutorTest {
         executor.execute(WritingSuggestionAction.DOCUMENT_TITLE, null, WritingAgentUi.None)
 
         assertEquals(listOf(StoryTypes.TITLE, StoryTypes.TEXT, StoryTypes.TEXT), manager.typesInOrder())
-        assertEquals("Groceries", manager.currentStory.value.stories[0.0]?.text)
+        // Before the first paragraph, which keeps its position
+        assertEquals("Groceries", manager.textsInOrder().first())
+        assertEquals("We need milk.", manager.currentStory.value.stories[Rank.at(0)]?.text)
     }
 
     @Test
@@ -213,7 +227,7 @@ class WriteopiaActionExecutorTest {
 
         executor.execute(WritingSuggestionAction.DOCUMENT_TITLE, null, WritingAgentUi.None)
 
-        assertEquals("Groceries", manager.currentStory.value.stories[0.0]?.text)
+        assertEquals("Groceries", manager.currentStory.value.stories[Rank.at(0)]?.text)
     }
 
     @Test
@@ -229,11 +243,38 @@ class WriteopiaActionExecutorTest {
             manager.textsInOrder()
         )
         // The TL;DR is a card under the title; the conclusion is a plain AI answer.
-        val tldr = manager.currentStory.value.stories[1.0]
+        // Right after the title, half way to the first paragraph
+        val tldr = manager.currentStory.value.stories[Rank.between(Rank.at(0), Rank.at(1))]
         assertNotNull(tldr)
         assertEquals(StoryTypes.TEXT.type, tldr.type)
         assertTrue(tldr.tags.any { it.tag == Tag.CARD_BLOCK })
         assertEquals(StoryTypes.AI_ANSWER, manager.typesInOrder().last())
+    }
+
+    @Test
+    fun `a streamed answer is one step, rewritten at each chunk`() = runTest {
+        val manager = manager()
+        val edits = mutableListOf<StoryStep>()
+        val watching = launch(UnconfinedTestDispatcher(testScheduler)) {
+            manager.currentStory.collect { state ->
+                (state.lastEdit as? LastEdit.LineEdition)?.storyStep
+                    ?.takeIf { step -> step.type == StoryTypes.AI_ANSWER.type }
+                    ?.let(edits::add)
+            }
+        }
+        val executor = WriteopiaActionExecutor(manager, resolveAi = { ai("Short version.") })
+
+        executor.execute(WritingSuggestionAction.CONCLUSION, "title", WritingAgentUi.None)
+        watching.cancel()
+
+        // The fake AI streams two chunks: both went to the same step, so only one is ever saved,
+        // and only once the stream ended: the chunks are ephemeral, the final text is not.
+        val answer = manager.currentStory.value.stories.values.last()
+        assertEquals(StoryTypes.AI_ANSWER.type, answer.type)
+        assertEquals("Short version.", answer.text)
+        assertEquals(setOf(answer.id), edits.map { step -> step.id }.toSet())
+        assertEquals(listOf(true, true, false), edits.map { step -> step.ephemeral })
+        assertTrue(!answer.ephemeral)
     }
 
     @Test
@@ -256,7 +297,8 @@ class WriteopiaActionExecutorTest {
 
         executor.execute(WritingSuggestionAction.SPREADSHEET, "p1", WritingAgentUi.None)
 
-        val spreadsheet = manager.currentStory.value.stories[2.0]
+        // Right after the paragraph, half way to the next one
+        val spreadsheet = manager.currentStory.value.stories[Rank.between(Rank.at(1), Rank.at(2))]
         assertNotNull(spreadsheet)
         assertEquals(StoryTypes.SPREADSHEET.type, spreadsheet.type)
         assertEquals(
@@ -301,7 +343,8 @@ class WriteopiaActionExecutorTest {
             listOf(StoryTypes.TITLE, StoryTypes.TEXT, StoryTypes.IMAGE, StoryTypes.TEXT),
             manager.typesInOrder()
         )
-        val image = manager.currentStory.value.stories[2.0]
+        // Right after the paragraph, half way to the next one
+        val image = manager.currentStory.value.stories[Rank.between(Rank.at(1), Rank.at(2))]
         assertNotNull(image)
         assertEquals("https://images.test/milk.png", image.url)
         assertTrue(picked.isEmpty(), "the picker should not open when the cloud draws")
@@ -324,7 +367,7 @@ class WriteopiaActionExecutorTest {
     @Test
     fun `without the cloud an image is picked and added below the paragraph`() = runTest {
         val manager = manager()
-        val added = mutableListOf<Pair<String, Double>>()
+        val added = mutableListOf<Pair<String, String>>()
         val executor = WriteopiaActionExecutor(manager, resolveAi = { null }, addImage = { path, pos -> added.add(path to pos) })
         val ui = object : WritingAgentUi {
             override fun pickImage(onPicked: (String) -> Unit) = onPicked("/tmp/cat.png")
@@ -334,6 +377,7 @@ class WriteopiaActionExecutorTest {
 
         executor.execute(WritingSuggestionAction.IMAGE, "p1", ui)
 
-        assertEquals(listOf("/tmp/cat.png" to 2.0), added)
+        // The position of the paragraph after it: the picked image is added before it
+        assertEquals(listOf("/tmp/cat.png" to Rank.at(2)), added)
     }
 }

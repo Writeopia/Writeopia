@@ -29,7 +29,7 @@ import kotlin.time.ExperimentalTime
 class OnUpdateDocumentTracker(
     private val documentUpdate: DocumentUpdate,
     private val documentFilter: DocumentFilter = DocumentFilterObject,
-    private val onStoryStepUpdate: suspend (StoryStep, Double) -> Unit = { _, _ -> },
+    private val onStoryStepUpdate: suspend (StoryStep, String) -> Unit = { _, _ -> },
     private val onDocumentUpdate: suspend (Document) -> Unit = {}
 ) : DocumentTracker {
 
@@ -384,6 +384,16 @@ class OnUpdateDocumentTracker(
                         )
                     }
 
+                    // What the deletion changed: the neighbours, or the steps that took the
+                    // place of the deleted ones (an accepted AI answer, say).
+                    val updatedSteps = lastEdit.updatedSteps.filter { (_, step) -> !step.ephemeral }
+                    if (updatedSteps.isNotEmpty()) {
+                        documentUpdate.saveStorySteps(
+                            steps = updatedSteps.stamped(),
+                            documentId = documentInfo.id
+                        )
+                    }
+
                     val stories = storyState.stories
                     val titleFromContent = stories.values
                         .firstOrNull { storyStep ->
@@ -415,7 +425,7 @@ private fun nowMillis(): Long = Clock.System.now().toEpochMilliseconds()
  * The steps as edited now. The time goes with them to the database, so the sync can tell the
  * steps changed since it last sent the document from the rest.
  */
-private fun List<Pair<Double, StoryStep>>.stamped(): List<Pair<Double, StoryStep>> {
+private fun List<Pair<String, StoryStep>>.stamped(): List<Pair<String, StoryStep>> {
     val now = nowMillis()
     return map { (position, step) -> position to step.copy(lastUpdatedAt = now) }
 }

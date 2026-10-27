@@ -18,11 +18,14 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -136,8 +139,11 @@ fun HeaderEditionOptions(
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        LazyRow(
+        LazyVerticalGrid(
+            modifier = Modifier.fillMaxWidth().heightIn(max = imagesGridMaxHeight),
+            columns = GridCells.Adaptive(minSize = tileWidth),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
             contentPadding = PaddingValues(horizontal = 16.dp)
         ) {
             if (headerImages.canGenerate) {
@@ -170,7 +176,10 @@ fun HeaderEditionOptions(
 }
 
 private val tileHeight = 56.dp
-private val tileWidth = 88.dp
+private val tileWidth = 100.dp
+
+// About three rows of pictures; more pictures scroll inside the grid.
+private val imagesGridMaxHeight = 200.dp
 
 @Composable
 private fun GenerateImageTile(enabled: Boolean, onClick: () -> Unit) {
@@ -183,7 +192,7 @@ private fun GenerateImageTile(enabled: Boolean, onClick: () -> Unit) {
             .border(BorderStroke(1.dp, WriteopiaTheme.colorScheme.dividerColor), shape)
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .height(tileHeight)
-            .width(tileWidth + 24.dp)
+            .fillMaxWidth()
             .padding(horizontal = 8.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
@@ -221,7 +230,7 @@ private fun ImageTile(url: String, isSelected: Boolean, onClick: () -> Unit) {
             .clickable(onClick = onClick)
             .border(BorderStroke(if (isSelected) 2.dp else 1.dp, borderColor), shape)
             .height(tileHeight)
-            .width(animatedWidth(isSelected, tileWidth, tileWidth + 12.dp))
+            .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surfaceVariant)
     )
 }

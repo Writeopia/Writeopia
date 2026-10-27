@@ -79,6 +79,9 @@
   <string name="sort_by_creation">Sort by creation date</string>
   <string name="sort_by_update">Sort by last update</string>
   <string name="lock_document">Lock document</string>
+  <string name="document_icon">Icon</string>
+  <string name="document_icon_title">Document icon</string>
+  <string name="document_icon_remove">Remove icon</string>
   <string name="move_to">Move to...</string>
   <string name="move_to_home">Move home</string>
   <string name="move">Move</string>
@@ -91,7 +94,7 @@
   <string name="move_no_folders_found">No folders found</string>
   <string name="move_error_loading_folders">Error loading folders</string>
   <string name="search_folders">Search folders</string>
-  <string name="move_selection_confirmation">Move the selected items to \"%1$s\"?</string>
+  <string name="move_selection_confirmation">Move the selected items to “%1$s”?</string>
   <string name="text">Text</string>
   <string name="insert">Insert</string>
   <string name="decoration">Decoration</string>
@@ -170,6 +173,11 @@
   <string name="add">Add</string>
   <string name="user_email">User email</string>
   <string name="choose_workspace">Choose your workspace</string>
+  <string name="workspace_sync_title">Syncing your workspace</string>
+  <string name="workspace_sync_message">Your documents are being brought to this device. This may take a moment.</string>
+  <string name="workspace_sync_in_background">Continue in background</string>
+  <string name="workspace_sync_failed">The sync didn\'t finish. It will be tried again when you open your documents.</string>
+  <string name="workspace_sync_continue">Continue</string>
   <string name="your_teams">Your teams</string>
   <string name="teams">Teams</string>
   <string name="drawing">Drawing</string>
@@ -345,11 +353,13 @@
   <string name="graph_card_show_documents">Show its documents</string>
   <string name="tag_screen_empty">No documents carry this tag yet.</string>
   <string name="folder_screen_empty">This folder is empty.</string>
+  <string name="folder_screen_create_note">Create a note</string>
   <string name="documents_graph">Documents graph</string>
   <string name="document_tag_add_dialog_title">Add a tag</string>
   <string name="document_tag_add_existing">Pick a tag</string>
   <string name="document_tag_add_search">Search tags</string>
-  <string name="document_tag_add_no_match">No tag matches. Create one below.</string>
+  <string name="document_tag_add_no_match">No tag matches. Create one in the New tag tab.</string>
+  <string name="document_tag_add_empty">The workspace has no other tags yet. Create one in the New tag tab.</string>
   <string name="document_tag_add_new">New tag</string>
   <string name="document_tag_name">Name</string>
   <string name="document_tag_description">What does this tag mean?</string>
@@ -369,4 +379,11 @@
   <string name="header_image_failed">The AI could not draw a header. Try again.</string>
   <string name="header_image_cost">Uses your AI tokens</string>
   <string name="header_image_save_failed">The image could not be saved to the workspace. Try again.</string>
+  <string name="quick_actions">Quick actions</string>
+  <string name="ai_command">Command</string>
+  <string name="ai_command_hint">Tell the AI what to do with the text</string>
+  <string name="ai_command_run">Run</string>
+  <string name="quick_actions_cursor_hint">Quick actions work on the document or on selected lines.</string>
+  <string name="moved_item_to_folder">“%1$s” moved to “%2$s”</string>
+  <string name="moved_items_to_folder">%1$d items moved to “%2$s”</string>
 </resources>

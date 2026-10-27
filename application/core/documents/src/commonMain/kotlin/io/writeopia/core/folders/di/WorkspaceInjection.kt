@@ -60,7 +60,6 @@ class WorkspaceInjection private constructor(
         return WorkspaceSync(
             folderRepository = folderRepo,
             documentRepository = documentRepo,
-            authRepository = authCoreInjection.provideAuthRepository(),
             documentsApi = provideDocumentsApi(),
             documentSyncService = provideDocumentSyncService(),
             folderConflictHandler = FolderConflictHandler(

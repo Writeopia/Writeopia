@@ -2,6 +2,7 @@
 
 package io.writeopia.ui.manager
 
+import io.writeopia.sdk.utils.iterables.Rank
 import io.writeopia.sdk.manager.WriteopiaManager
 import io.writeopia.sdk.model.action.Action
 import io.writeopia.sdk.model.story.LastEdit
@@ -41,27 +42,27 @@ import kotlin.time.ExperimentalTime
 class WriteopiaStateManagerTest {
 
     private val imagesInLineRepo: StoriesRepository = object : StoriesRepository {
-        override suspend fun history(): Map<Double, StoryStep> = MapStoryData.imageStepsList()
+        override suspend fun history(): Map<String, StoryStep> = MapStoryData.imageStepsList()
     }
 
     private val imageGroupRepo: StoriesRepository = object : StoriesRepository {
-        override suspend fun history(): Map<Double, StoryStep> = MapStoryData.imageGroup()
+        override suspend fun history(): Map<String, StoryStep> = MapStoryData.imageGroup()
     }
 
     private val messagesRepo: StoriesRepository = object : StoriesRepository {
-        override suspend fun history(): Map<Double, StoryStep> = MapStoryData.messagesInLine()
+        override suspend fun history(): Map<String, StoryStep> = MapStoryData.messagesInLine()
     }
 
     private val singleMessageRepo: StoriesRepository = object : StoriesRepository {
-        override suspend fun history(): Map<Double, StoryStep> = MapStoryData.singleMessage()
+        override suspend fun history(): Map<String, StoryStep> = MapStoryData.singleMessage()
     }
 
     private val singleMessageRepoLineBreak: StoriesRepository = object : StoriesRepository {
-        override suspend fun history(): Map<Double, StoryStep> = MapStoryData.singleMessageLineBreak()
+        override suspend fun history(): Map<String, StoryStep> = MapStoryData.singleMessageLineBreak()
     }
 
     private val complexMessagesRepository: StoriesRepository = object : StoriesRepository {
-        override suspend fun history(): Map<Double, StoryStep> = MapStoryData.syncHistory()
+        override suspend fun history(): Map<String, StoryStep> = MapStoryData.syncHistory()
     }
 
     private val userRepository: UserRepository = object : UserRepository {
@@ -81,8 +82,8 @@ class WriteopiaStateManagerTest {
         manager.newDocument()
 
         val currentStory = manager.currentStory.value.stories
-        val expected = mapOf<Double, StoryStep>(
-            0.0 to StoryStep(type = StoryTypes.TITLE.type),
+        val expected = mapOf<String, StoryStep>(
+            Rank.at(0) to StoryStep(type = StoryTypes.TITLE.type),
         ).mapValues { (_, storyStep) ->
             storyStep.type
         }
@@ -96,7 +97,7 @@ class WriteopiaStateManagerTest {
     @Test
     fun whenALineBreakHappensOneNewItemShouldBeCreated() {
         val input = MapStoryData.singleCheckItem()
-        val checkItem = input[0.0]
+        val checkItem = input[Rank.at(0)]
 
         val now = Clock.System.now()
 
@@ -121,7 +122,7 @@ class WriteopiaStateManagerTest {
         val currentStory = storyManager.currentStory.value.stories
 
         storyManager.onLineBreak(
-            Action.LineBreak(storyStep = checkItem!!, position = 0.0)
+            Action.LineBreak(storyStep = checkItem!!, position = Rank.at(0))
         )
 
         val newStory = storyManager.currentStory.value.stories
@@ -138,6 +139,48 @@ class WriteopiaStateManagerTest {
             newStory.size,
             "the size of the story should be 2"
         )
+    }
+
+    @Test
+    fun theFocusMovingToTheNewLineShouldKeepTheLineBreakEdition() {
+        val input = MapStoryData.singleCheckItem()
+        val checkItem = input[Rank.at(0)]
+
+        val now = Clock.System.now()
+
+        val storyManager =
+            WriteopiaStateManager.create(
+                writeopiaManager = WriteopiaManager(),
+                dispatcher = UnconfinedTestDispatcher(),
+                userRepository = userRepository,
+            ).apply {
+                loadDocument(
+                    Document(
+                        content = input,
+                        workspaceId = "",
+                        createdAt = now,
+                        lastUpdatedAt = now,
+                        parentId = "root",
+                        lastSyncedAt = null,
+                    )
+                )
+            }
+
+        storyManager.onLineBreak(
+            Action.LineBreak(storyStep = checkItem!!, position = Rank.at(0))
+        )
+
+        val lineBreak = storyManager.currentStory.value.lastEdit
+        assertTrue(lineBreak is LastEdit.LineBreakEdition)
+
+        // The new line takes the focus right after the break, before the trackers read the state.
+        val newPosition = lineBreak.newStep.first
+        storyManager.onFocusChange(newPosition, true)
+
+        val state = storyManager.currentStory.value
+        assertEquals(lineBreak, state.lastEdit)
+        assertEquals(newPosition, state.focus)
+        assertEquals(newPosition, state.selection.position)
     }
 
     @Test
@@ -172,7 +215,7 @@ class WriteopiaStateManagerTest {
                     text = title,
                     type = StoryTypes.TITLE.type
                 ),
-                position = 0.0,
+                position = Rank.at(0),
             )
         )
 
@@ -204,8 +247,8 @@ class WriteopiaStateManagerTest {
         val currentStory = storyManager.currentStory.value.stories
         val initialSize = currentStory.size
 
-        val positionFrom = 1.0
-        val positionTo = 0.0
+        val positionFrom = Rank.at(1)
+        val positionTo = Rank.at(0)
         val sender = currentStory[positionFrom]!!
         val receiver = currentStory[positionTo]!!
 
@@ -258,8 +301,8 @@ class WriteopiaStateManagerTest {
         val currentStory = storyManager.currentStory.value.stories
         val initialSize = currentStory.size
 
-        val positionFrom = 1.0
-        val positionTo = 0.0
+        val positionFrom = Rank.at(1)
+        val positionTo = Rank.at(0)
 
         storyManager.mergeRequest(
             Action.Merge(
@@ -305,8 +348,8 @@ class WriteopiaStateManagerTest {
         val currentStory = storyManager.currentStory.value.stories
         val initialSize = currentStory.size
 
-        val positionFrom = 1.0
-        val positionTo = 0.0
+        val positionFrom = Rank.at(1)
+        val positionTo = Rank.at(0)
 
         storyManager.mergeRequest(
             Action.Merge(
@@ -388,10 +431,10 @@ class WriteopiaStateManagerTest {
 
         val currentStory = storyManager.currentStory.value.stories
         val initialSize = currentStory.size
-        val initialImageGroupSize = currentStory[0.0]!!.steps.size
+        val initialImageGroupSize = currentStory[Rank.at(0)]!!.steps.size
 
-        val positionFrom = 1.0
-        val positionTo = 0.0
+        val positionFrom = Rank.at(1)
+        val positionTo = Rank.at(0)
 
         val mergeInfo = Action.Merge(
             receiver = currentStory[positionTo]!!,
@@ -432,8 +475,8 @@ class WriteopiaStateManagerTest {
                 lastSyncedAt = null,
             )
         )
-        val positionTo = 1.0
-        val positionFrom = 0.0
+        val positionTo = Rank.at(1)
+        val positionFrom = Rank.at(0)
 
         val currentStory = storyManager.currentStory.value.stories
         val initialGroupSize = currentStory[positionFrom]!!.steps.size
@@ -485,8 +528,8 @@ class WriteopiaStateManagerTest {
 
         val currentStory = storyManager.currentStory.value.stories
 
-        val positionTo = (currentStory.size - 2).toDouble()
-        val positionFrom = 1.0
+        val positionTo = Rank.at(currentStory.size - 2)
+        val positionFrom = Rank.at(1)
 
         val storyToMove = currentStory[positionFrom]!!.steps[0]
 
@@ -499,7 +542,7 @@ class WriteopiaStateManagerTest {
         )
 
         val newStory = storyManager.currentStory.value.stories
-        val lastContentStep = newStory[(newStory.size - 3).toDouble()]!!
+        val lastContentStep = newStory[Rank.at(newStory.size - 3)]!!
 
         assertEquals(
             StoryTypes.IMAGE.type,
@@ -528,7 +571,7 @@ class WriteopiaStateManagerTest {
         val now = Clock.System.now()
 
         val simpleMessagesRepo: StoriesRepository = object : StoriesRepository {
-            override suspend fun history(): Map<Double, StoryStep> = MapStoryData.simpleMessages()
+            override suspend fun history(): Map<String, StoryStep> = MapStoryData.simpleMessages()
         }
 
         val storyManager =
@@ -573,7 +616,7 @@ class WriteopiaStateManagerTest {
         val now = Clock.System.now()
 
         val simpleMessagesRepo: StoriesRepository = object : StoriesRepository {
-            override suspend fun history(): Map<Double, StoryStep> = MapStoryData.simpleMessages()
+            override suspend fun history(): Map<String, StoryStep> = MapStoryData.simpleMessages()
         }
 
         val storyManager =
@@ -594,8 +637,8 @@ class WriteopiaStateManagerTest {
             )
         )
 
-        val positionFrom = 2.0
-        val positionTo = 5.0
+        val positionFrom = Rank.at(2)
+        val positionTo = Rank.at(5)
 
         val currentStory = storyManager.currentStory.value.stories
         val storyUnitToMove = currentStory[positionFrom]!!
@@ -630,7 +673,7 @@ class WriteopiaStateManagerTest {
                 lastSyncedAt = null,
             )
         )
-        val groupPosition = 0.0
+        val groupPosition = Rank.at(0)
 
         val currentStory = storyManager.currentStory.value.stories
         assertEquals(
@@ -688,8 +731,8 @@ class WriteopiaStateManagerTest {
 
         storyManager.onDelete(
             Action.DeleteStory(
-                storyManager.currentStory.value.stories[3.0]!!,
-                3.0
+                storyManager.currentStory.value.stories[Rank.at(3)]!!,
+                Rank.at(3)
             )
         )
 
@@ -727,7 +770,7 @@ class WriteopiaStateManagerTest {
 
             val stories = storyManager.currentStory.value.stories
             val initialSize = stories.size
-            val position = 0.0
+            val position = Rank.at(0)
 
             storyManager.onLineBreak(Action.LineBreak(stories[position]!!, position = position))
 
@@ -761,7 +804,7 @@ class WriteopiaStateManagerTest {
 
             val stories = storyManager.currentStory.value.stories
             val initialSize = stories.size
-            val breakPosition = 0.0
+            val breakPosition = Rank.at(0)
 
             storyManager.onLineBreak(Action.LineBreak(stories[breakPosition]!!, breakPosition))
 
@@ -805,8 +848,8 @@ class WriteopiaStateManagerTest {
 
         val stories = storyManager.currentStory.value.stories
 
-        val positionTo = 1.0
-        val positionFrom = 3.0
+        val positionTo = Rank.at(1)
+        val positionFrom = Rank.at(3)
         storyManager.mergeRequest(
             Action.Merge(
                 receiver = stories[positionTo]!!,
@@ -818,12 +861,12 @@ class WriteopiaStateManagerTest {
 
         val newStory = storyManager.currentStory.value.stories
 
-        assertEquals(2, (newStory[1.0]!!).steps.size, "The images should have been merged")
+        assertEquals(2, (newStory[Rank.at(1)]!!).steps.size, "The images should have been merged")
 
         val stories2 = storyManager.currentStory.value.stories
 
-        val positionTo2 = 1.0
-        val positionFrom2 = 3.0
+        val positionTo2 = Rank.at(1)
+        val positionFrom2 = Rank.at(3)
         storyManager.mergeRequest(
             Action.Merge(
                 receiver = (stories2[positionTo2]!!).steps.first(),
@@ -837,12 +880,12 @@ class WriteopiaStateManagerTest {
 
         assertEquals(
             3,
-            (newStory2[1.0]!!).steps.distinctBy { storyUnit -> storyUnit.localId }.size,
+            (newStory2[Rank.at(1)]!!).steps.distinctBy { storyUnit -> storyUnit.localId }.size,
             "The images should have been merged"
         )
 
-        val positionFrom3 = 1.0
-        val positionTo3 = 4.0
+        val positionFrom3 = Rank.at(1)
+        val positionTo3 = Rank.at(4)
         val storyToMove = (newStory[positionFrom3]!!).steps.first()
         storyManager.moveRequest(
             Action.Move(
@@ -856,12 +899,12 @@ class WriteopiaStateManagerTest {
 
         assertEquals(
             2,
-            (newStory3[1.0]!!).steps.size,
+            (newStory3[Rank.at(1)]!!).steps.size,
             "One image should have been separated"
         )
         assertEquals(
             storyToMove.id,
-            newStory3[5.0]!!.id,
+            newStory3[Rank.at(5)]!!.id,
             "The correct StoryUnit should have been moved"
         )
     }
@@ -890,7 +933,7 @@ class WriteopiaStateManagerTest {
         )
         val currentStory = storyManager.currentStory.value.stories
 
-        storyManager.onLineBreak(Action.LineBreak(input[0.0]!!, 0.0))
+        storyManager.onLineBreak(Action.LineBreak(input[Rank.at(0)]!!, Rank.at(0)))
         storyManager.undo()
         val newStory = storyManager.currentStory.value.stories
 
@@ -921,10 +964,10 @@ class WriteopiaStateManagerTest {
         )
         val currentStory = storyManager.currentStory.value.stories
 
-        storyManager.onLineBreak(Action.LineBreak(input[0.0]!!, 0.0))
+        storyManager.onLineBreak(Action.LineBreak(input[Rank.at(0)]!!, Rank.at(0)))
 
-        storyManager.onLineBreak(Action.LineBreak(input[0.0]!!, 1.0))
-        storyManager.onLineBreak(Action.LineBreak(input[0.0]!!, 2.0))
+        storyManager.onLineBreak(Action.LineBreak(input[Rank.at(0)]!!, Rank.at(1)))
+        storyManager.onLineBreak(Action.LineBreak(input[Rank.at(0)]!!, Rank.at(2)))
         storyManager.undo()
         storyManager.undo()
         storyManager.undo()
@@ -949,6 +992,83 @@ class WriteopiaStateManagerTest {
     }
 
     @Test
+    fun addingATitleToASelectionShouldEditAllLinesInOneBulkEdition() = runTest {
+        val now = Clock.System.now()
+
+        val storyManager =
+            WriteopiaStateManager.create(
+                writeopiaManager = WriteopiaManager(),
+                dispatcher = UnconfinedTestDispatcher(testScheduler),
+                userRepository = userRepository,
+            )
+        storyManager.loadDocument(
+            Document(
+                content = messagesRepo.history(),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+            )
+        )
+
+        // No titles in the document: the section goes from the first line to the last one.
+        storyManager.onSectionSelected(Rank.at(0))
+        val selected = storyManager.onEditPositions.value
+        assertTrue(selected.size > 1)
+
+        storyManager.addTitle(Tag.H1)
+
+        val state = storyManager.currentStory.value
+        val lastEdit = state.lastEdit
+        assertTrue(lastEdit is LastEdit.BulkEdition)
+        assertEquals(selected, lastEdit.steps.map { (position, _) -> position }.toSet())
+        lastEdit.steps.forEach { (_, step) ->
+            assertTrue(step.tags.any { it.tag == Tag.H1 })
+        }
+        selected.forEach { position ->
+            assertTrue(state.stories[position]!!.tags.any { it.tag == Tag.H1 })
+        }
+    }
+
+    @Test
+    fun aLineTitledAgainAfterABulkTitleChangeShouldChange() = runTest {
+        val now = Clock.System.now()
+
+        val storyManager =
+            WriteopiaStateManager.create(
+                writeopiaManager = WriteopiaManager(),
+                dispatcher = UnconfinedTestDispatcher(testScheduler),
+                userRepository = userRepository,
+            )
+        storyManager.loadDocument(
+            Document(
+                content = messagesRepo.history(),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+            )
+        )
+        val hasTitle = { storyManager.currentStory.value.stories[Rank.at(0)]!!.tags.any { it.tag == Tag.H1 } }
+
+        storyManager.onFocusChange(Rank.at(0), true)
+        storyManager.addTitle(Tag.H1)
+        assertTrue(hasTitle())
+
+        // The selection holds the titled line: the bulk change takes its title away.
+        storyManager.onSectionSelected(Rank.at(0))
+        storyManager.addTitle(Tag.H1)
+        assertFalse(hasTitle())
+        assertEquals(Rank.at(0), storyManager.currentStory.value.focus)
+
+        storyManager.clearSelection()
+        storyManager.addTitle(Tag.H1)
+        assertTrue(hasTitle())
+    }
+
+    @Test
     @Ignore // Async nature of selection should be considered in the test
     fun itShouldBePossibleToSelectMessages() = runTest {
         val now = Clock.System.now()
@@ -970,11 +1090,11 @@ class WriteopiaStateManagerTest {
             )
         )
 
-        storyManager.onSelected(true, 1.0)
-        storyManager.onSelected(true, 3.0)
-        storyManager.onSelected(true, 5.0)
+        storyManager.onSelected(true, Rank.at(1))
+        storyManager.onSelected(true, Rank.at(3))
+        storyManager.onSelected(true, Rank.at(5))
 
-        assertEquals(setOf(1.0, 3.0, 5.0), storyManager.onEditPositions.value)
+        assertEquals(setOf(Rank.at(1), Rank.at(3), Rank.at(5)), storyManager.onEditPositions.value)
     }
 
     @Test
@@ -1002,7 +1122,7 @@ class WriteopiaStateManagerTest {
         val selectionCount = 3
         val selections = buildList {
             repeat(selectionCount) { index ->
-                this.add((index * 2).toDouble())
+                this.add(Rank.at(index * 2))
             }
         }
 
@@ -1060,7 +1180,7 @@ class WriteopiaStateManagerTest {
         val selectionCount = 3
         val selections = buildList {
             repeat(selectionCount) { index ->
-                this.add(index.toDouble())
+                this.add(Rank.at(index))
             }
         }
 
@@ -1158,7 +1278,7 @@ class WriteopiaStateManagerTest {
         )
 
         repeat(3) { index ->
-            storyManager.onSelected(true, index.toDouble())
+            storyManager.onSelected(true, Rank.at(index))
         }
 
         storyManager.toggleSpan(Span.BOLD)
@@ -1166,7 +1286,7 @@ class WriteopiaStateManagerTest {
         val stories = storyManager.currentStory.value.stories
 
         repeat(3) { i ->
-            assertEquals(stories[i.toDouble()]!!.spans.first().span, Span.BOLD)
+            assertEquals(stories[Rank.at(i)]!!.spans.first().span, Span.BOLD)
         }
     }
 
@@ -1183,7 +1303,7 @@ class WriteopiaStateManagerTest {
         storyManager.loadDocument(
             Document(
                 content = mapOf(
-                    0.0 to StoryStep(
+                    Rank.at(0) to StoryStep(
                         type = StoryTypes.TEXT.type,
                         text = "helloworld",
                         spans = setOf(
@@ -1208,7 +1328,7 @@ class WriteopiaStateManagerTest {
                     SpanInfo.create(0, 11, Span.COMMENT, conversationId)
                 ),
             ),
-            position = 0.0,
+            position = Rank.at(0),
             lineBreakByContent = true,
         )
         advanceUntilIdle()
@@ -1255,7 +1375,7 @@ class WriteopiaStateManagerTest {
                 end = text.lastIndex,
                 spans = emptySet()
             ),
-            position = 0.0,
+            position = Rank.at(0),
             lineBreakByContent = false
         )
 
@@ -1263,7 +1383,7 @@ class WriteopiaStateManagerTest {
 
         val stories = storyManager.currentStory.value.stories
 
-        assertEquals(stories[0.0]!!.spans.first().span, Span.BOLD)
+        assertEquals(stories[Rank.at(0)]!!.spans.first().span, Span.BOLD)
     }
 
     @Test
@@ -1277,7 +1397,7 @@ class WriteopiaStateManagerTest {
         )
         storyManager.loadDocument(
             Document(
-                content = mapOf(0.0 to StoryStep(type = StoryTypes.TEXT.type, text = "")),
+                content = mapOf(Rank.at(0) to StoryStep(type = StoryTypes.TEXT.type, text = "")),
                 workspaceId = "",
                 createdAt = now,
                 lastUpdatedAt = now,
@@ -1288,17 +1408,17 @@ class WriteopiaStateManagerTest {
 
         storyManager.handleTextInput(
             TextInput("[", start = 1, end = 1, spans = emptySet()),
-            position = 0.0,
+            position = Rank.at(0),
             lineBreakByContent = false
         )
         storyManager.handleTextInput(
             TextInput("[]", start = 2, end = 2, spans = emptySet()),
-            position = 0.0,
+            position = Rank.at(0),
             lineBreakByContent = false
         )
         advanceUntilIdle()
 
-        val story = storyManager.currentStory.value.stories[0.0]!!
+        val story = storyManager.currentStory.value.stories[Rank.at(0)]!!
 
         assertEquals(StoryTypes.CHECK_ITEM.type, story.type)
         assertEquals("", story.text)
@@ -1314,7 +1434,7 @@ class WriteopiaStateManagerTest {
         )
         storyManager.loadDocument(
             Document(
-                content = mapOf(0.0 to StoryStep(type = StoryTypes.TEXT.type, text = "")),
+                content = mapOf(Rank.at(0) to StoryStep(type = StoryTypes.TEXT.type, text = "")),
                 workspaceId = "",
                 createdAt = now,
                 lastUpdatedAt = now,
@@ -1326,7 +1446,7 @@ class WriteopiaStateManagerTest {
         fun type(text: String) {
             storyManager.handleTextInput(
                 TextInput(text, start = text.length, end = text.length, spans = emptySet()),
-                position = 0.0,
+                position = Rank.at(0),
                 lineBreakByContent = false
             )
         }
@@ -1334,13 +1454,13 @@ class WriteopiaStateManagerTest {
         type("#")
         type("##")
         advanceUntilIdle()
-        val typing = storyManager.currentStory.value.stories[0.0]!!
+        val typing = storyManager.currentStory.value.stories[Rank.at(0)]!!
         assertEquals("##", typing.text)
         assertTrue(typing.tags.isEmpty(), "Without the space the hashes are plain text")
 
         type("## ")
         advanceUntilIdle()
-        val heading = storyManager.currentStory.value.stories[0.0]!!
+        val heading = storyManager.currentStory.value.stories[Rank.at(0)]!!
         assertEquals(StoryTypes.TEXT.type, heading.type)
         assertEquals("", heading.text)
         assertTrue(heading.tags.any { it.tag == Tag.H2 })
@@ -1356,7 +1476,7 @@ class WriteopiaStateManagerTest {
         )
         storyManager.loadDocument(
             Document(
-                content = mapOf(0.0 to StoryStep(type = StoryTypes.TEXT.type, text = "")),
+                content = mapOf(Rank.at(0) to StoryStep(type = StoryTypes.TEXT.type, text = "")),
                 workspaceId = "",
                 createdAt = now,
                 lastUpdatedAt = now,
@@ -1368,7 +1488,7 @@ class WriteopiaStateManagerTest {
         fun type(text: String) {
             storyManager.handleTextInput(
                 TextInput(text, start = text.length, end = text.length, spans = emptySet()),
-                position = 0.0,
+                position = Rank.at(0),
                 lineBreakByContent = false
             )
         }
@@ -1376,12 +1496,12 @@ class WriteopiaStateManagerTest {
         type("-")
         type("--")
         advanceUntilIdle()
-        assertEquals(StoryTypes.TEXT.type, storyManager.currentStory.value.stories[0.0]!!.type)
-        assertEquals("--", storyManager.currentStory.value.stories[0.0]!!.text)
+        assertEquals(StoryTypes.TEXT.type, storyManager.currentStory.value.stories[Rank.at(0)]!!.type)
+        assertEquals("--", storyManager.currentStory.value.stories[Rank.at(0)]!!.text)
 
         type("---")
         advanceUntilIdle()
-        assertEquals(StoryTypes.DIVIDER.type, storyManager.currentStory.value.stories[0.0]!!.type)
+        assertEquals(StoryTypes.DIVIDER.type, storyManager.currentStory.value.stories[Rank.at(0)]!!.type)
     }
 
     @Test
@@ -1394,7 +1514,7 @@ class WriteopiaStateManagerTest {
         )
         storyManager.loadDocument(
             Document(
-                content = mapOf(0.0 to StoryStep(type = StoryTypes.TEXT.type, text = "")),
+                content = mapOf(Rank.at(0) to StoryStep(type = StoryTypes.TEXT.type, text = "")),
                 workspaceId = "",
                 createdAt = now,
                 lastUpdatedAt = now,
@@ -1405,17 +1525,17 @@ class WriteopiaStateManagerTest {
 
         storyManager.handleTextInput(
             TextInput("-", start = 1, end = 1, spans = emptySet()),
-            position = 0.0,
+            position = Rank.at(0),
             lineBreakByContent = false
         )
         storyManager.handleTextInput(
             TextInput("- ", start = 2, end = 2, spans = emptySet()),
-            position = 0.0,
+            position = Rank.at(0),
             lineBreakByContent = false
         )
         advanceUntilIdle()
 
-        val story = storyManager.currentStory.value.stories[0.0]!!
+        val story = storyManager.currentStory.value.stories[Rank.at(0)]!!
         assertEquals(StoryTypes.UNORDERED_LIST_ITEM.type, story.type)
         assertEquals("", story.text)
     }
@@ -1446,12 +1566,12 @@ class WriteopiaStateManagerTest {
         val initialStories = storyManager.currentStory.value.stories
         assertEquals(
             StoryTypes.AI_ANSWER.type,
-            initialStories[0.0]!!.type,
+            initialStories[Rank.at(0)]!!.type,
             "Initial type should be AI_ANSWER"
         )
 
         // Accept the AI answer
-        storyManager.acceptStoryStep(0.0)
+        storyManager.acceptStoryStep(Rank.at(0))
 
         // Wait for coroutine to complete
         advanceUntilIdle()
@@ -1500,7 +1620,7 @@ class WriteopiaStateManagerTest {
         )
 
         // Accept the AI answer
-        storyManager.acceptStoryStep(0.0)
+        storyManager.acceptStoryStep(Rank.at(0))
 
         // Wait for coroutine to complete
         advanceUntilIdle()
@@ -1526,6 +1646,117 @@ class WriteopiaStateManagerTest {
     }
 
     @Test
+    fun acceptStoryStepDeletesTheAnswerAndKeepsItsTextAsNewSteps() = runTest {
+        val now = Clock.System.now()
+
+        val storyManager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        )
+        storyManager.loadDocument(
+            Document(
+                content = MapStoryData.aiAnswerWithListItems(),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+            )
+        )
+        val answer = storyManager.currentStory.value.stories[Rank.at(0)]!!
+
+        storyManager.acceptStoryStep(Rank.at(0))
+        advanceUntilIdle()
+
+        val state = storyManager.currentStory.value
+        val lines = state.stories.entries.sortedBy { it.key }.map { it.value }
+        assertEquals(listOf("First item", "Second item", "Third item"), lines.map { it.text })
+
+        // The answer is deleted like any other step, so it never comes back from a sync, and
+        // the lines are new steps: a step with the answer's id would never be saved again.
+        assertTrue(lines.none { line -> line.id == answer.id }, "The answer's id should be gone")
+        assertTrue(lines.none { line -> line.ephemeral }, "The lines should be saved")
+
+        val lastEdit = state.lastEdit as LastEdit.BulkDeleteEdition
+        assertEquals(listOf(answer.id), lastEdit.deletedIds)
+        assertEquals(lines.map { it.id }, lastEdit.updatedSteps.map { (_, step) -> step.id })
+        assertEquals(
+            List(3) { StoryTypes.UNORDERED_LIST_ITEM.type },
+            lastEdit.updatedSteps.map { (_, step) -> step.type },
+            "The edit should carry the lines as the commands left them"
+        )
+    }
+
+    @Test
+    fun acceptStoryStepOfAnAnswerNeverSavedDeletesNothing() = runTest {
+        val now = Clock.System.now()
+
+        val storyManager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        )
+        // An answer still coming is ephemeral: not in the database, nothing to tombstone.
+        val answer = StoryStep(type = StoryTypes.AI_ANSWER.type, text = "Partial answer", ephemeral = true)
+        storyManager.loadDocument(
+            Document(
+                content = mapOf(Rank.at(0) to answer),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+            )
+        )
+
+        storyManager.acceptStoryStep(Rank.at(0))
+        advanceUntilIdle()
+
+        val state = storyManager.currentStory.value
+        val line = state.stories[Rank.at(0)]!!
+        assertEquals("Partial answer", line.text)
+        assertFalse(line.ephemeral, "The accepted line should be saved")
+        assertEquals(LastEdit.BulkEdition(listOf(Rank.at(0) to line)), state.lastEdit)
+    }
+
+    @Test
+    fun acceptStoryStepOfOneLineDeletesTheAnswerToo() = runTest {
+        val now = Clock.System.now()
+
+        val storyManager = WriteopiaStateManager.create(
+            writeopiaManager = WriteopiaManager(),
+            dispatcher = UnconfinedTestDispatcher(testScheduler),
+            userRepository = userRepository,
+        )
+        val answer = StoryStep(type = StoryTypes.AI_ANSWER.type, text = "Just one line")
+        storyManager.loadDocument(
+            Document(
+                content = mapOf(Rank.at(0) to answer),
+                workspaceId = "",
+                createdAt = now,
+                lastUpdatedAt = now,
+                parentId = "root",
+                lastSyncedAt = null,
+            )
+        )
+
+        storyManager.acceptStoryStep(Rank.at(0))
+        advanceUntilIdle()
+
+        val state = storyManager.currentStory.value
+        val line = state.stories[Rank.at(0)]!!
+        assertEquals(1, state.stories.size)
+        assertEquals(StoryTypes.TEXT.type, line.type)
+        assertEquals("Just one line", line.text)
+        assertTrue(line.id != answer.id, "The line should be a new step")
+
+        val lastEdit = state.lastEdit as LastEdit.BulkDeleteEdition
+        assertEquals(listOf(answer.id), lastEdit.deletedIds)
+        assertEquals(listOf(Rank.at(0) to line), lastEdit.updatedSteps)
+    }
+
+    @Test
     @Ignore
     fun acceptStoryStepShouldConvertCheckboxesToCheckItems() = runTest {
         val now = Clock.System.now()
@@ -1547,7 +1778,7 @@ class WriteopiaStateManagerTest {
         )
 
         // Accept the AI answer
-        storyManager.acceptStoryStep(0.0)
+        storyManager.acceptStoryStep(Rank.at(0))
 
         // Wait for coroutine to complete
         advanceUntilIdle()
@@ -1592,7 +1823,7 @@ class WriteopiaStateManagerTest {
         )
 
         // Accept the AI answer
-        storyManager.acceptStoryStep(0.0)
+        storyManager.acceptStoryStep(Rank.at(0))
 
         // Wait for coroutine to complete
         advanceUntilIdle()
@@ -1640,7 +1871,7 @@ class WriteopiaStateManagerTest {
         )
 
         // Accept the AI answer
-        storyManager.acceptStoryStep(0.0)
+        storyManager.acceptStoryStep(Rank.at(0))
 
         // Wait for coroutine to complete
         advanceUntilIdle()
@@ -1701,7 +1932,7 @@ class WriteopiaStateManagerTest {
         )
 
         // Accept the AI answer
-        storyManager.acceptStoryStep(0.0)
+        storyManager.acceptStoryStep(Rank.at(0))
 
         // Wait for coroutine to complete
         advanceUntilIdle()
@@ -1758,28 +1989,28 @@ class WriteopiaStateManagerTest {
         )
 
         // Accept the AI answer (3 list items)
-        storyManager.acceptStoryStep(0.0)
+        storyManager.acceptStoryStep(Rank.at(0))
 
         // Wait for coroutine to complete
         advanceUntilIdle()
 
-        // Verify the lastEdit is a BulkEdition containing all modified steps
+        // Verify the lastEdit is one deletion of the answer carrying all the lines it became
         val lastEdit = storyManager.currentStory.value.lastEdit
-        require(lastEdit is LastEdit.BulkEdition) {
-            "LastEdit should be BulkEdition to preserve all modified steps, but was ${lastEdit::class.simpleName}"
+        require(lastEdit is LastEdit.BulkDeleteEdition) {
+            "LastEdit should be BulkDeleteEdition to delete the answer with its lines, but was ${lastEdit::class.simpleName}"
         }
         assertEquals(
             3,
-            lastEdit.steps.size,
-            "BulkEdition should contain all 3 modified list items"
+            lastEdit.updatedSteps.size,
+            "The edit should carry all 3 list items"
         )
 
-        // Verify each step in the BulkEdition has the correct type
-        lastEdit.steps.forEach { (_, step) ->
+        // Verify each step in the edit has the correct type
+        lastEdit.updatedSteps.forEach { (_, step) ->
             assertEquals(
                 StoryTypes.UNORDERED_LIST_ITEM.type,
                 step.type,
-                "Each step in BulkEdition should be UNORDERED_LIST_ITEM"
+                "Each step in the edit should be UNORDERED_LIST_ITEM"
             )
         }
     }
@@ -1805,7 +2036,7 @@ class WriteopiaStateManagerTest {
         )
 
         // Accept the AI answer
-        storyManager.acceptStoryStep(0.0)
+        storyManager.acceptStoryStep(Rank.at(0))
 
         // Wait for coroutine to complete
         advanceUntilIdle()
@@ -1865,7 +2096,7 @@ class WriteopiaStateManagerTest {
         }
 
         // Set focus to the title (position 0)
-        storyManager.onFocusChange(0.0, true)
+        storyManager.onFocusChange(Rank.at(0), true)
         advanceUntilIdle()
 
         // Add image without explicit position (cursor is on title)
@@ -1914,7 +2145,7 @@ class WriteopiaStateManagerTest {
         }
 
         // Set focus to the text content (position 1)
-        storyManager.onFocusChange(1.0, true)
+        storyManager.onFocusChange(Rank.at(1), true)
         advanceUntilIdle()
 
         // Add image without explicit position (cursor is on text)
@@ -1963,8 +2194,8 @@ class WriteopiaStateManagerTest {
         val initialSize = storyManager.currentStory.value.stories.size
 
         // Add image with explicit position at an existing story location
-        // This should insert at position 1.0 (where text is)
-        storyManager.addImage("/path/to/image.png", position = 1.0)
+        // This should insert at position 1L (where text is)
+        storyManager.addImage("/path/to/image.png", position = Rank.at(1))
         advanceUntilIdle()
 
         val newStories = storyManager.currentStory.value.stories
@@ -2011,7 +2242,7 @@ class WriteopiaStateManagerTest {
         }
 
         // Set focus to the title (position 0)
-        storyManager.onFocusChange(0.0, true)
+        storyManager.onFocusChange(Rank.at(0), true)
         advanceUntilIdle()
 
         val initialSize = storyManager.currentStory.value.stories.size
@@ -2069,7 +2300,7 @@ class WriteopiaStateManagerTest {
         }
 
         // Set focus to the text content (position 1)
-        storyManager.onFocusChange(1.0, true)
+        storyManager.onFocusChange(Rank.at(1), true)
         advanceUntilIdle()
 
         val initialSize = storyManager.currentStory.value.stories.size
@@ -2118,7 +2349,7 @@ class WriteopiaStateManagerTest {
         }
 
         // Set focus to the title (only position available)
-        storyManager.onFocusChange(0.0, true)
+        storyManager.onFocusChange(Rank.at(0), true)
         advanceUntilIdle()
 
         // Add image
@@ -2162,7 +2393,7 @@ class WriteopiaStateManagerTest {
         manager.loadDocument(
             Document(
                 content = mapOf(
-                    0.0 to StoryStep(
+                    Rank.at(0) to StoryStep(
                         text = "hello",
                         type = StoryTypes.TEXT.type,
                         spans = setOf(SpanInfo.create(0, 5, Span.COMMENT, conversation.id)),
@@ -2196,7 +2427,7 @@ class WriteopiaStateManagerTest {
 
         manager.loadDocument(
             Document(
-                content = mapOf(0.0 to StoryStep(text = "hello", type = StoryTypes.TEXT.type)),
+                content = mapOf(Rank.at(0) to StoryStep(text = "hello", type = StoryTypes.TEXT.type)),
                 workspaceId = "",
                 createdAt = now,
                 lastUpdatedAt = now,
@@ -2239,7 +2470,7 @@ class WriteopiaStateManagerTest {
         val baseDocument = Document(
             id = "document-1",
             content = mapOf(
-                0.0 to StoryStep(
+                Rank.at(0) to StoryStep(
                     text = "hello",
                     type = StoryTypes.TEXT.type,
                     spans = setOf(SpanInfo.create(0, 5, Span.COMMENT, first.id)),
@@ -2257,7 +2488,7 @@ class WriteopiaStateManagerTest {
         manager.updateDocument(
             baseDocument.copy(
                 content = mapOf(
-                    0.0 to StoryStep(
+                    Rank.at(0) to StoryStep(
                         text = "world",
                         type = StoryTypes.TEXT.type,
                         spans = setOf(SpanInfo.create(0, 5, Span.COMMENT, second.id)),
@@ -2286,7 +2517,7 @@ class WriteopiaStateManagerTest {
         manager.loadDocument(
             Document(
                 content = mapOf(
-                    0.0 to StoryStep(text = "hello world", type = StoryTypes.TEXT.type)
+                    Rank.at(0) to StoryStep(text = "hello world", type = StoryTypes.TEXT.type)
                 ),
                 workspaceId = "",
                 createdAt = now,
@@ -2296,11 +2527,11 @@ class WriteopiaStateManagerTest {
             )
         )
 
-        val story = manager.currentStory.value.stories[0.0]!!
+        val story = manager.currentStory.value.stories[Rank.at(0)]!!
         manager.changeStoryState(
             Action.StoryStateChange(
                 storyStep = story,
-                position = 0.0,
+                position = Rank.at(0),
                 selectionStart = 0,
                 selectionEnd = 5,
             )
@@ -2309,7 +2540,7 @@ class WriteopiaStateManagerTest {
         val conversation = manager.createComment("first") ?: fail("Comment was not created")
         val second = manager.addComment(conversation.id, "second") ?: fail("Comment was not appended")
 
-        val span = manager.currentStory.value.stories[0.0]!!.spans.single()
+        val span = manager.currentStory.value.stories[Rank.at(0)]!!.spans.single()
         assertEquals(Span.COMMENT, span.span)
         assertEquals(conversation.id, span.extra)
         assertEquals(conversation.id, manager.getCommentConversationAtSelection()?.id)
@@ -2332,7 +2563,7 @@ class WriteopiaStateManagerTest {
         manager.loadDocument(
             Document(
                 content = mapOf(
-                    0.0 to StoryStep(text = "hello world", type = StoryTypes.TEXT.type)
+                    Rank.at(0) to StoryStep(text = "hello world", type = StoryTypes.TEXT.type)
                 ),
                 workspaceId = "",
                 createdAt = now,
@@ -2342,11 +2573,11 @@ class WriteopiaStateManagerTest {
             )
         )
 
-        val story = manager.currentStory.value.stories[0.0]!!
+        val story = manager.currentStory.value.stories[Rank.at(0)]!!
         manager.changeStoryState(
             Action.StoryStateChange(
                 storyStep = story,
-                position = 0.0,
+                position = Rank.at(0),
                 selectionStart = 0,
                 selectionEnd = 0,
             )
@@ -2354,12 +2585,12 @@ class WriteopiaStateManagerTest {
 
         val conversation = manager.createComment(
             "captured",
-            Selection(start = 0, end = 5, position = 0.0),
+            Selection(start = 0, end = 5, position = Rank.at(0)),
         ) ?: fail("Comment was not created from captured selection")
 
         assertEquals(
             SpanInfo.create(0, 5, Span.COMMENT, conversation.id),
-            manager.currentStory.value.stories[0.0]!!.spans.single(),
+            manager.currentStory.value.stories[Rank.at(0)]!!.spans.single(),
         )
     }
 
@@ -2381,7 +2612,7 @@ class WriteopiaStateManagerTest {
         manager.loadDocument(
             Document(
                 content = mapOf(
-                    0.0 to StoryStep(
+                    Rank.at(0) to StoryStep(
                         text = "hello",
                         type = StoryTypes.TEXT.type,
                         spans = setOf(SpanInfo.create(0, 5, Span.COMMENT, conversation.id)),
@@ -2404,11 +2635,11 @@ class WriteopiaStateManagerTest {
             listOf("comment-2"),
             manager.getCommentConversationAtSelection()?.comments?.map { it.id },
         )
-        assertTrue(manager.currentStory.value.stories[0.0]!!.spans.isNotEmpty())
+        assertTrue(manager.currentStory.value.stories[Rank.at(0)]!!.spans.isNotEmpty())
 
         assertTrue(manager.deleteComment(conversation.id, "comment-2"))
         assertTrue(manager.commentConversations.value.isEmpty())
-        assertTrue(manager.currentStory.value.stories[0.0]!!.spans.isEmpty())
+        assertTrue(manager.currentStory.value.stories[Rank.at(0)]!!.spans.isEmpty())
     }
 
     @Test
@@ -2426,12 +2657,12 @@ class WriteopiaStateManagerTest {
         manager.loadDocument(
             Document(
                 content = mapOf(
-                    0.0 to StoryStep(
+                    Rank.at(0) to StoryStep(
                         text = "first",
                         type = StoryTypes.TEXT.type,
                         spans = setOf(SpanInfo.create(0, 5, Span.COMMENT, conversation.id)),
                     ),
-                    1.0 to StoryStep(
+                    Rank.at(1) to StoryStep(
                         text = "second",
                         type = StoryTypes.TEXT.type,
                         spans = setOf(SpanInfo.create(0, 6, Span.COMMENT, conversation.id)),
@@ -2448,16 +2679,16 @@ class WriteopiaStateManagerTest {
 
         manager.changeStoryState(
             Action.StoryStateChange(
-                manager.currentStory.value.stories[0.0]!!.copy(spans = emptySet()),
-                0.0,
+                manager.currentStory.value.stories[Rank.at(0)]!!.copy(spans = emptySet()),
+                Rank.at(0),
             )
         )
         assertEquals(mapOf(conversation.id to conversation.comments), manager.commentConversations.value)
 
         manager.changeStoryState(
             Action.StoryStateChange(
-                manager.currentStory.value.stories[1.0]!!.copy(spans = emptySet()),
-                1.0,
+                manager.currentStory.value.stories[Rank.at(1)]!!.copy(spans = emptySet()),
+                Rank.at(1),
             )
         )
         assertTrue(manager.commentConversations.value.isEmpty())
@@ -2478,7 +2709,7 @@ class WriteopiaStateManagerTest {
         manager.loadDocument(
             Document(
                 content = mapOf(
-                    0.0 to StoryStep(
+                    Rank.at(0) to StoryStep(
                         text = "helloworld",
                         type = StoryTypes.TEXT.type,
                         spans = setOf(SpanInfo.create(0, 10, Span.COMMENT, conversation.id)),
@@ -2500,7 +2731,7 @@ class WriteopiaStateManagerTest {
                 end = 6,
                 spans = setOf(SpanInfo.create(0, 11, Span.COMMENT, conversation.id)),
             ),
-            position = 0.0,
+            position = Rank.at(0),
             lineBreakByContent = true,
         )
         advanceUntilIdle()
@@ -2526,7 +2757,7 @@ class WriteopiaStateManagerTest {
         manager.loadDocument(
             Document(
                 content = mapOf(
-                    0.0 to StoryStep(
+                    Rank.at(0) to StoryStep(
                         text = "hello",
                         type = StoryTypes.TEXT.type,
                         spans = setOf(
@@ -2543,17 +2774,17 @@ class WriteopiaStateManagerTest {
             )
         )
 
-        val original = manager.currentStory.value.stories[0.0]!!
+        val original = manager.currentStory.value.stories[Rank.at(0)]!!
         manager.changeStoryState(
             Action.StoryStateChange(
                 storyStep = original.copy(text = "changed"),
-                position = 0.0,
+                position = Rank.at(0),
             )
         )
         manager.undo()
         advanceUntilIdle()
 
-        val restored = manager.currentStory.value.stories[0.0]!!
+        val restored = manager.currentStory.value.stories[Rank.at(0)]!!
         assertTrue(restored.spans.isEmpty())
         val lastEdit = manager.currentStory.value.lastEdit
         assertTrue(lastEdit is LastEdit.BulkEdition)
@@ -2575,7 +2806,7 @@ class WriteopiaStateManagerTest {
         manager.loadDocument(
             Document(
                 content = mapOf(
-                    0.0 to StoryStep(
+                    Rank.at(0) to StoryStep(
                         text = "hello",
                         type = StoryTypes.TEXT.type,
                         spans = setOf(SpanInfo.create(0, 5, Span.COMMENT, conversation.id)),
@@ -2590,11 +2821,11 @@ class WriteopiaStateManagerTest {
             )
         )
 
-        val story = manager.currentStory.value.stories[0.0]!!
+        val story = manager.currentStory.value.stories[Rank.at(0)]!!
         manager.changeStoryState(
             Action.StoryStateChange(
                 storyStep = story.copy(spans = emptySet()),
-                position = 0.0,
+                position = Rank.at(0),
             )
         )
         assertTrue(manager.commentConversations.value.isEmpty())
@@ -2605,7 +2836,7 @@ class WriteopiaStateManagerTest {
         assertEquals(mapOf(conversation.id to conversation.comments), manager.commentConversations.value)
         assertEquals(
             conversation.id,
-            manager.currentStory.value.stories[0.0]!!
+            manager.currentStory.value.stories[Rank.at(0)]!!
                 .spans
                 .single { it.span == Span.COMMENT }
                 .extra,
@@ -2615,7 +2846,7 @@ class WriteopiaStateManagerTest {
         advanceUntilIdle()
 
         assertTrue(manager.commentConversations.value.isEmpty())
-        assertTrue(manager.currentStory.value.stories[0.0]!!.spans.isEmpty())
+        assertTrue(manager.currentStory.value.stories[Rank.at(0)]!!.spans.isEmpty())
     }
 
     @Test
@@ -2636,12 +2867,12 @@ class WriteopiaStateManagerTest {
         manager.loadDocument(
             Document(
                 content = mapOf(
-                    0.0 to StoryStep(
+                    Rank.at(0) to StoryStep(
                         text = "first",
                         type = StoryTypes.TEXT.type,
                         spans = setOf(SpanInfo.create(0, 5, Span.COMMENT, conversation.id)),
                     ),
-                    1.0 to StoryStep(
+                    Rank.at(1) to StoryStep(
                         text = "second",
                         type = StoryTypes.TEXT.type,
                         spans = setOf(SpanInfo.create(0, 6, Span.COMMENT, conversation.id)),
@@ -2687,7 +2918,7 @@ class WriteopiaStateManagerTest {
         manager.loadDocument(
             Document(
                 content = mapOf(
-                    0.0 to StoryStep(
+                    Rank.at(0) to StoryStep(
                         text = "hello world",
                         type = StoryTypes.TEXT.type,
                         spans = setOf(
@@ -2713,7 +2944,7 @@ class WriteopiaStateManagerTest {
         assertEquals(mapOf(second.id to second.comments), manager.commentConversations.value)
         assertEquals(
             setOf(SpanInfo.create(6, 11, Span.COMMENT, second.id)),
-            manager.currentStory.value.stories[0.0]!!.spans,
+            manager.currentStory.value.stories[Rank.at(0)]!!.spans,
         )
     }
 

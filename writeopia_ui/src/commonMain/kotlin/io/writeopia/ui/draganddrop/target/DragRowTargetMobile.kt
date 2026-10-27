@@ -44,7 +44,7 @@ fun DragRowTargetMobile(
     modifier: Modifier,
     dataToDrop: DropInfo,
     showIcon: Boolean,
-    position: Double,
+    position: String,
     emptySpaceClick: () -> Unit,
     dragIconWidth: Dp,
     iconTintOnHover: Color,

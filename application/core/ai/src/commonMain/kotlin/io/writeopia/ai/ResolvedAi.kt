@@ -1,6 +1,8 @@
 package io.writeopia.ai
 
 import io.writeopia.LocalAiRepository
+import io.writeopia.app.dto.ai.AiCommandIntentResponse
+import io.writeopia.app.dto.ai.AiCommandRequest
 import io.writeopia.genai.repository.GenAiRepository
 import io.writeopia.model.AiProvider
 import io.writeopia.sdk.models.utils.ResultData
@@ -38,7 +40,7 @@ sealed class ResolvedAi(val provider: AiProvider) : AiStreaming {
 
         override fun stream(command: AiCommand, prompt: String): Flow<ResultData<String>> {
             val genAi = repository
-                ?: return flowOf(ResultData.Error(Exception("Cloud AI is not available in this app")))
+                ?: return flowOf(ResultData.Error(Exception(NOT_AVAILABLE)))
 
             return when (command) {
                 AiCommand.PROMPT -> genAi.streamGenerate(prompt)
@@ -47,6 +49,20 @@ sealed class ResolvedAi(val provider: AiProvider) : AiStreaming {
                 AiCommand.FAQ -> genAi.streamFaq(prompt)
                 AiCommand.TAGS -> genAi.streamTags(prompt)
             }
+        }
+
+        /** What a free command does with the text it is about, decided by the backend. */
+        suspend fun commandIntent(request: AiCommandRequest): ResultData<AiCommandIntentResponse> =
+            repository?.commandIntent(request)
+                ?: ResultData.Error(Exception(NOT_AVAILABLE))
+
+        /** The answer of a free command, written for the intent the request carries. */
+        fun streamCommand(request: AiCommandRequest): Flow<ResultData<String>> =
+            repository?.streamCommand(request)
+                ?: flowOf(ResultData.Error(Exception(NOT_AVAILABLE)))
+
+        companion object {
+            private const val NOT_AVAILABLE = "Cloud AI is not available in this app"
         }
     }
 }

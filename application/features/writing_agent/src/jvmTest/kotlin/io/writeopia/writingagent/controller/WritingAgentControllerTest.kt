@@ -1,5 +1,6 @@
 package io.writeopia.writingagent.controller
 
+import io.writeopia.sdk.utils.iterables.Rank
 import io.writeopia.app.dto.writingagent.FolderCandidate
 import io.writeopia.app.dto.writingagent.FolderSuggestionDto
 import io.writeopia.app.dto.writingagent.FolderSuggestionsRequest
@@ -138,9 +139,9 @@ class WritingAgentControllerTest {
     private val title = StoryStep(id = "title", type = StoryTypes.TITLE.type, text = "Groceries")
     private val paragraph = StoryStep(id = "p1", type = StoryTypes.TEXT.type, text = "We need milk")
 
-    private fun state(vararg steps: StoryStep, focus: Double? = 1.0) =
+    private fun state(vararg steps: StoryStep, focus: String? = Rank.at(1)) =
         StoryState(
-            stories = steps.withIndex().associate { (i, step) -> i.toDouble() to step },
+            stories = steps.withIndex().associate { (i, step) -> Rank.at(i) to step },
             focus = focus
         )
 

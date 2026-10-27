@@ -4,6 +4,11 @@ import androidx.compose.runtime.Composable
 import org.jetbrains.compose.resources.stringResource
 import writeopia.application.core.resources.generated.resources.Res
 import writeopia.application.core.resources.generated.resources.accent_color
+import writeopia.application.core.resources.generated.resources.workspace_sync_title
+import writeopia.application.core.resources.generated.resources.workspace_sync_message
+import writeopia.application.core.resources.generated.resources.workspace_sync_in_background
+import writeopia.application.core.resources.generated.resources.workspace_sync_failed
+import writeopia.application.core.resources.generated.resources.workspace_sync_continue
 import writeopia.application.core.resources.generated.resources.writing_suggestions
 import writeopia.application.core.resources.generated.resources.writing_suggestion_apply
 import writeopia.application.core.resources.generated.resources.writing_suggestion_code_block
@@ -25,6 +30,7 @@ import writeopia.application.core.resources.generated.resources.document_tag_add
 import writeopia.application.core.resources.generated.resources.document_tag_add_existing
 import writeopia.application.core.resources.generated.resources.document_tag_add_new
 import writeopia.application.core.resources.generated.resources.document_tag_add_no_match
+import writeopia.application.core.resources.generated.resources.document_tag_add_empty
 import writeopia.application.core.resources.generated.resources.document_tag_add_search
 import writeopia.application.core.resources.generated.resources.document_tag_ai_failed
 import writeopia.application.core.resources.generated.resources.document_tag_cancel
@@ -40,9 +46,13 @@ import writeopia.application.core.resources.generated.resources.document_tags_no
 import writeopia.application.core.resources.generated.resources.document_tags_more
 import writeopia.application.core.resources.generated.resources.graph_grouping_folders
 import writeopia.application.core.resources.generated.resources.tag_screen_empty
+import writeopia.application.core.resources.generated.resources.folder_screen_create_note
 import writeopia.application.core.resources.generated.resources.folder_screen_empty
 import writeopia.application.core.resources.generated.resources.documents_graph
 import writeopia.application.core.resources.generated.resources.untitled
+import writeopia.application.core.resources.generated.resources.undo
+import writeopia.application.core.resources.generated.resources.moved_item_to_folder
+import writeopia.application.core.resources.generated.resources.moved_items_to_folder
 import writeopia.application.core.resources.generated.resources.graph_card_kind_document
 import writeopia.application.core.resources.generated.resources.graph_card_kind_folder
 import writeopia.application.core.resources.generated.resources.graph_card_kind_tag
@@ -108,6 +118,11 @@ import writeopia.application.core.resources.generated.resources.total_tokens
 import writeopia.application.core.resources.generated.resources.are_you_sure
 import writeopia.application.core.resources.generated.resources.arrangement
 import writeopia.application.core.resources.generated.resources.ask_ai
+import writeopia.application.core.resources.generated.resources.quick_actions
+import writeopia.application.core.resources.generated.resources.ai_command
+import writeopia.application.core.resources.generated.resources.ai_command_hint
+import writeopia.application.core.resources.generated.resources.ai_command_run
+import writeopia.application.core.resources.generated.resources.quick_actions_cursor_hint
 import writeopia.application.core.resources.generated.resources.auto_configure_local_ai
 import writeopia.application.core.resources.generated.resources.auto_configure_local_ai_error
 import writeopia.application.core.resources.generated.resources.auto_configure_local_ai_success
@@ -169,6 +184,9 @@ import writeopia.application.core.resources.generated.resources.light_theme
 import writeopia.application.core.resources.generated.resources.links
 import writeopia.application.core.resources.generated.resources.local_folder
 import writeopia.application.core.resources.generated.resources.lock_document
+import writeopia.application.core.resources.generated.resources.document_icon
+import writeopia.application.core.resources.generated.resources.document_icon_title
+import writeopia.application.core.resources.generated.resources.document_icon_remove
 import writeopia.application.core.resources.generated.resources.logout
 import writeopia.application.core.resources.generated.resources.signing_out
 import writeopia.application.core.resources.generated.resources.manage_teams
@@ -478,6 +496,15 @@ object WrStrings {
     fun lockDocument() = stringResource(Res.string.lock_document)
 
     @Composable
+    fun documentIcon() = stringResource(Res.string.document_icon)
+
+    @Composable
+    fun documentIconTitle() = stringResource(Res.string.document_icon_title)
+
+    @Composable
+    fun documentIconRemove() = stringResource(Res.string.document_icon_remove)
+
+    @Composable
     fun moveTo() = stringResource(Res.string.move_to)
 
     @Composable
@@ -521,6 +548,17 @@ object WrStrings {
         stringResource(Res.string.move_selection_confirmation, folderTitle)
 
     @Composable
+    fun undo() = stringResource(Res.string.undo)
+
+    @Composable
+    fun movedItemToFolder(itemTitle: String, folderTitle: String) =
+        stringResource(Res.string.moved_item_to_folder, itemTitle, folderTitle)
+
+    @Composable
+    fun movedItemsToFolder(count: Int, folderTitle: String) =
+        stringResource(Res.string.moved_items_to_folder, count, folderTitle)
+
+    @Composable
     fun text() = stringResource(Res.string.text)
 
     @Composable
@@ -552,6 +590,21 @@ object WrStrings {
 
     @Composable
     fun askAi() = stringResource(Res.string.ask_ai)
+
+    @Composable
+    fun quickActions() = stringResource(Res.string.quick_actions)
+
+    @Composable
+    fun aiCommand() = stringResource(Res.string.ai_command)
+
+    @Composable
+    fun aiCommandHint() = stringResource(Res.string.ai_command_hint)
+
+    @Composable
+    fun aiCommandRun() = stringResource(Res.string.ai_command_run)
+
+    @Composable
+    fun quickActionsCursorHint() = stringResource(Res.string.quick_actions_cursor_hint)
 
     @Composable
     fun summary() = stringResource(Res.string.summarize)
@@ -1336,6 +1389,9 @@ object WrStrings {
     fun folderScreenEmpty() = stringResource(Res.string.folder_screen_empty)
 
     @Composable
+    fun folderScreenCreateNote() = stringResource(Res.string.folder_screen_create_note)
+
+    @Composable
     fun documentsGraph() = stringResource(Res.string.documents_graph)
 
     @Composable
@@ -1349,6 +1405,9 @@ object WrStrings {
 
     @Composable
     fun documentTagAddNoMatch() = stringResource(Res.string.document_tag_add_no_match)
+
+    @Composable
+    fun documentTagAddEmpty() = stringResource(Res.string.document_tag_add_empty)
 
     @Composable
     fun documentTagAddNew() = stringResource(Res.string.document_tag_add_new)
@@ -1406,4 +1465,19 @@ object WrStrings {
 
     @Composable
     fun headerImageSaveFailed() = stringResource(Res.string.header_image_save_failed)
+
+    @Composable
+    fun workspaceSyncTitle() = stringResource(Res.string.workspace_sync_title)
+
+    @Composable
+    fun workspaceSyncMessage() = stringResource(Res.string.workspace_sync_message)
+
+    @Composable
+    fun workspaceSyncInBackground() = stringResource(Res.string.workspace_sync_in_background)
+
+    @Composable
+    fun workspaceSyncFailed() = stringResource(Res.string.workspace_sync_failed)
+
+    @Composable
+    fun workspaceSyncContinue() = stringResource(Res.string.workspace_sync_continue)
 }

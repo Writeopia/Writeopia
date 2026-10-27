@@ -58,10 +58,14 @@ private struct MainLayout: View {
             }
         }
         .tabViewStyle(.sidebarAdaptable)
+        // The header and the footer are measured by the sidebar in a cell of its own, without
+        // the environment of the tab view (seen when the iPad rotates), so they get the session
+        // from here instead of looking it up.
         .tabViewSidebarHeader {
             Text(session.workspace?.name ?? String(localized: "Documents"))
                 .font(.headline)
                 .lineLimit(1)
+                .environment(session)
         }
         .tabViewSidebarFooter {
             // The tree expands in place, which the rows of a tab section can't do.
@@ -70,6 +74,7 @@ private struct MainLayout: View {
                 selection = .folders
             }
             .padding(.top, 12)
+            .environment(session)
         }
         .environment(\.openEditors, openEditors)
         .onChange(of: selection) { _, tab in route(to: tab) }

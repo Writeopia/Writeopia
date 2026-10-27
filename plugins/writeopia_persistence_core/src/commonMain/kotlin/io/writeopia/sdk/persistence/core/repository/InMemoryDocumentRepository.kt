@@ -107,11 +107,11 @@ class InMemoryDocumentRepository : DocumentRepository {
         }
     }
 
-    override suspend fun saveStoryStep(storyStep: StoryStep, position: Double, documentId: String) {
+    override suspend fun saveStoryStep(storyStep: StoryStep, position: String, documentId: String) {
         saveStorySteps(listOf(position to storyStep), documentId)
     }
 
-    override suspend fun saveStorySteps(steps: List<Pair<Double, StoryStep>>, documentId: String) {
+    override suspend fun saveStorySteps(steps: List<Pair<String, StoryStep>>, documentId: String) {
         documentsMap[documentId]?.let { document ->
             val newContent = document.content.toMutableMap()
             steps.forEach { (position, storyStep) ->
@@ -135,7 +135,7 @@ class InMemoryDocumentRepository : DocumentRepository {
                 deletedAt = Clock.System.now().toEpochMilliseconds()
             )
             val newContent = document.content.filterNot { (_, step) -> step.id == storyStepId }
-                .values.mapIndexed { index, step -> index.toDouble() to step }.toMap()
+
             documentsMap[documentId] = document.copy(content = newContent)
             refreshDocuments()
         }
@@ -190,7 +190,7 @@ class InMemoryDocumentRepository : DocumentRepository {
     override suspend fun moveDocumentsToWorkspace(oldUserId: String, newUserId: String) {
     }
 
-    override suspend fun updateStoryStep(storyStep: StoryStep, position: Double, documentId: String) {
+    override suspend fun updateStoryStep(storyStep: StoryStep, position: String, documentId: String) {
     }
 
     override suspend fun search(query: String, workspaceId: String): List<Document> =

@@ -1,6 +1,6 @@
 import WrModels
 
-/// Finds the steps that can receive the focus around a position.
+/// Finds the steps that can receive the focus around a position, in one pass over the keys.
 public struct FocusHandler {
     private let isFocusable: (StoryStep) -> Bool
 
@@ -8,11 +8,15 @@ public struct FocusHandler {
         self.isFocusable = isFocusable
     }
 
-    public func findNextFocus(after position: Double, in stories: [Double: StoryStep]) -> Double? {
-        stories.keys.sorted().first { $0 > position && stories[$0].map(isFocusable) == true }
+    public func findNextFocus(after position: String, in stories: [String: StoryStep]) -> String? {
+        stories.reduce(nil) { best, entry in
+            entry.key > position && isFocusable(entry.value) && (best == nil || entry.key < best!) ? entry.key : best
+        }
     }
 
-    public func findPreviousFocus(before position: Double, in stories: [Double: StoryStep]) -> Double? {
-        stories.keys.sorted().last { $0 < position && stories[$0].map(isFocusable) == true }
+    public func findPreviousFocus(before position: String, in stories: [String: StoryStep]) -> String? {
+        stories.reduce(nil) { best, entry in
+            entry.key < position && isFocusable(entry.value) && (best == nil || entry.key > best!) ? entry.key : best
+        }
     }
 }

@@ -1,5 +1,7 @@
 package io.writeopia.genai.repository
 
+import io.writeopia.app.dto.ai.AiCommandIntentResponse
+import io.writeopia.app.dto.ai.AiCommandRequest
 import io.writeopia.app.dto.ai.AiImageRequest
 import io.writeopia.sdk.serialization.request.HeaderImageGenerateRequest
 import io.writeopia.sdk.ai.AiClient
@@ -105,6 +107,14 @@ class GenAiRepository(
 
     fun streamTags(prompt: String, model: String? = null): Flow<ResultData<String>> =
         genAiApi.streamTags(prompt, model ?: defaultModel)
+
+    /** Whether a free command replaces the text it is about, or adds to it. */
+    suspend fun commandIntent(request: AiCommandRequest): ResultData<AiCommandIntentResponse> =
+        genAiApi.commandIntent(request.copy(model = request.model ?: defaultModel))
+
+    /** The answer of a free command, streamed. */
+    fun streamCommand(request: AiCommandRequest): Flow<ResultData<String>> =
+        genAiApi.streamCommand(request.copy(model = request.model ?: defaultModel))
 
     /**
      * A picture for [paragraph], drawn by the backend with the whole document as context. The

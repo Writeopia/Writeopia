@@ -2,6 +2,7 @@
 
 package io.writeopia.sdk.persistence.sqldelight.dao
 
+import io.writeopia.sdk.utils.iterables.Rank
 import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import io.writeopia.sdk.models.comment.Comment
@@ -92,8 +93,9 @@ class DocumentSqlDao(
 
             storyStepQueries?.deleteByDocumentId(document.id)
             val tombstoned = tombstonedIdsAmong(document.content.values.flatMap { step -> step.allIds() })
-            document.content.values.forEachIndexed { i, storyStep ->
-                insertStoryStep(storyStep, i.toDouble(), document.id, tombstoned)
+            // Each step at its position: the key is the position, never the index in the map
+            document.content.forEach { (position, storyStep) ->
+                insertStoryStep(storyStep, position, document.id, tombstoned)
             }
 
             commentQueries?.deleteByDocumentId(document.id)
@@ -144,7 +146,7 @@ class DocumentSqlDao(
      */
     suspend fun insertStoryStep(
         storyStep: StoryStep,
-        position: Double,
+        position: String,
         documentId: String,
         tombstoned: Set<String>? = null,
     ) {
@@ -175,12 +177,12 @@ class DocumentSqlDao(
             // Recursively save nested steps with parent_id set to this step's id
             steps.forEachIndexed { index, childStep ->
                 val childWithParent = childStep.copy(parentId = id)
-                insertStoryStep(childWithParent, index.toDouble(), documentId, tombstoned)
+                insertStoryStep(childWithParent, Rank.at(index), documentId, tombstoned)
             }
         }
     }
 
-    suspend fun insertStorySteps(steps: List<Pair<Double, StoryStep>>, documentId: String) {
+    suspend fun insertStorySteps(steps: List<Pair<String, StoryStep>>, documentId: String) {
         val tombstoned = tombstonedIdsAmong(steps.flatMap { (_, step) -> step.allIds() })
         steps.forEach { (position, storyStep) ->
             insertStoryStep(storyStep, position, documentId, tombstoned)

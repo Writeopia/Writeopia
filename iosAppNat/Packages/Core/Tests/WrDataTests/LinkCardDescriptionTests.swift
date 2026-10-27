@@ -61,7 +61,7 @@ private func makeRepository(_ backend: DescribingBackend) -> SyncedDocumentsRepo
     @Test func describesTheCardThroughTheBackendAndReadsItBackFromTheSync() async throws {
         let backend = DescribingBackend()
         let repository = makeRepository(backend)
-        let card = StoryStep(id: "card", type: .linkCard, url: "https://writeopia.io", position: 1)
+        let card = StoryStep(id: "card", type: .linkCard, url: "https://writeopia.io", position: Rank.at(1))
 
         let described = try await repository.describeLinkCard(documentId: "d", step: card)
 
@@ -72,7 +72,7 @@ private func makeRepository(_ backend: DescribingBackend) -> SyncedDocumentsRepo
         // The backend got the card, its position and the time of the request.
         let sentStep = try #require(backend.describeBody["storyStep"] as? [String: Any])
         #expect(sentStep["url"] as? String == "https://writeopia.io")
-        #expect(backend.describeBody["position"] as? Double == 1)
+        #expect(backend.describeBody["position"] as? String == Rank.at(1))
         let requestTimestamp = try #require(backend.describeBody["requestTimestamp"] as? Int64)
 
         // Then the document was synced from just before the request, with nothing to send.
@@ -85,7 +85,7 @@ private func makeRepository(_ backend: DescribingBackend) -> SyncedDocumentsRepo
         let backend = DescribingBackend()
         backend.describeStatus = 502
         let repository = makeRepository(backend)
-        let card = StoryStep(id: "card", type: .linkCard, url: "https://writeopia.io", position: 1)
+        let card = StoryStep(id: "card", type: .linkCard, url: "https://writeopia.io", position: Rank.at(1))
 
         await #expect(throws: Error.self) {
             try await repository.describeLinkCard(documentId: "d", step: card)

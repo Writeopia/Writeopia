@@ -28,6 +28,7 @@ private final class GatedSyncingRepository: DocumentsRepository, DocumentSyncing
     func deleteItems(ids: [String]) async throws {}
 
     func syncFolder(_ folderId: String) async throws {}
+    func syncWorkspaceChanges() async throws {}
     func fetchAndMerge(documentId: String) async throws -> WrDocument? {
         mergeStarted = true
         await withCheckedContinuation { gate = $0 }
@@ -42,7 +43,7 @@ private final class GatedSyncingRepository: DocumentsRepository, DocumentSyncing
 }
 
 private let document = WrDocument(id: "d", title: "Plan", workspaceId: "w", content: [
-    StoryStep(id: "t", type: .title, text: "Plan", position: 0),
+    StoryStep(id: "t", type: .title, text: "Plan", position: Rank.at(0)),
 ])
 
 @Suite struct ContentLoadActivityTests {

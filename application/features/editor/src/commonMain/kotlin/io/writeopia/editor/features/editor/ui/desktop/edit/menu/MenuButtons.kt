@@ -5,6 +5,7 @@ import androidx.compose.ui.Modifier
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.buttons.CommonButton
 import io.writeopia.resources.WrStrings
+import io.writeopia.theme.WriteopiaTheme
 import kotlinx.coroutines.flow.StateFlow
 
 @Composable
@@ -35,17 +36,6 @@ fun MoveToButton(clickListener: () -> Unit, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun MoveToHomeButton(clickListener: () -> Unit, modifier: Modifier = Modifier) {
-    CommonButton(
-        modifier = modifier,
-        icon = WrIcons.move,
-        iconDescription = WrStrings.moveToHome(),
-        text = WrStrings.moveToHome(),
-        clickListener = clickListener
-    )
-}
-
-@Composable
 fun FavoriteButton(isFavorite: StateFlow<Boolean>, clickListener: () -> Unit, modifier: Modifier = Modifier) {
     CommonButton(
         modifier = modifier,
@@ -54,5 +44,33 @@ fun FavoriteButton(isFavorite: StateFlow<Boolean>, clickListener: () -> Unit, mo
         text = WrStrings.favorite(),
         clickListener = clickListener,
         isEnabledState = isFavorite
+    )
+}
+
+@Composable
+fun DeleteButton(clickListener: () -> Unit, modifier: Modifier = Modifier) {
+    CommonButton(
+        modifier = modifier,
+        icon = WrIcons.delete,
+        iconDescription = WrStrings.delete(),
+        text = WrStrings.delete(),
+        clickListener = clickListener
+    )
+}
+
+/** Opens the icons for the title. Highlighted while they are open. */
+@Composable
+fun DocumentIconButton(isOpen: Boolean, clickListener: () -> Unit, modifier: Modifier = Modifier) {
+    CommonButton(
+        modifier = modifier,
+        icon = WrIcons.documentIcon,
+        iconDescription = WrStrings.documentIcon(),
+        text = WrStrings.documentIcon(),
+        defaultColor = if (isOpen) {
+            WriteopiaTheme.colorScheme.highlight
+        } else {
+            WriteopiaTheme.colorScheme.defaultButton
+        },
+        clickListener = clickListener
     )
 }

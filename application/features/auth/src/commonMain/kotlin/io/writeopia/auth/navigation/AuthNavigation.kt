@@ -38,6 +38,8 @@ import io.writeopia.auth.spacechoice.LocalAiSetupScreen
 import io.writeopia.auth.spacechoice.LocalFolderSetupScreen
 import io.writeopia.auth.spacechoice.SpaceChoiceScreen
 import io.writeopia.auth.workspace.ChooseWorkspace
+import io.writeopia.auth.workspace.WorkspaceSyncScreen
+import io.writeopia.auth.workspace.WorkspaceSyncState
 import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.configuration.LocalPlatform
 import io.writeopia.common.utils.configuration.PlatformType
@@ -293,7 +295,11 @@ fun NavGraphBuilder.authNavigation(
                     onWorkspaceSelected = { workspace ->
                         workspacesViewModel.chooseWorkspace(
                             workspace.copy(selected = true),
-                            sideEffect = toAppNavigation
+                            sideEffect = {
+                                // The web keeps nothing on the device: there is no sync to
+                                // wait for before the documents.
+                                if (isWeb) toAppNavigation() else navController.navigateToWorkspaceSync()
+                            }
                         )
                     },
                     onCreateWorkspace = { name -> workspacesViewModel.createWorkspace(name) },
@@ -302,6 +308,38 @@ fun NavGraphBuilder.authNavigation(
                     onBackClick = { navController.navigateUp() },
                     canGoBack
                 )
+            }
+        }
+
+        composable(Destinations.WORKSPACE_SYNC.id) {
+            val syncViewModel = authInjection.provideWorkspaceSyncViewModel()
+            val state by syncViewModel.state.collectAsState()
+            // Left once: the sync may end right as the person asks to go on.
+            var left by remember { mutableStateOf(false) }
+            val leave = {
+                if (!left) {
+                    left = true
+                    // This screen takes no place in the stack: back from the documents goes
+                    // where it went before, and the sync goes on in the background.
+                    navController.popBackStack()
+                    toAppNavigation()
+                }
+            }
+
+            LaunchedEffect(Unit) {
+                syncViewModel.startSync()
+            }
+
+            LaunchedEffect(state) {
+                if (state == WorkspaceSyncState.DONE) leave()
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(WriteopiaTheme.colorScheme.globalBackground)
+            ) {
+                WorkspaceSyncScreen(state = state, onContinue = leave)
             }
         }
 
@@ -510,6 +548,11 @@ fun NavController.navigateToApp() {
 
 fun NavController.navigateToWorkspaceChoice() {
     navigateAndResetStack(Destinations.CHOOSE_WORKSPACE.id)
+}
+
+/** The sync of the chosen workspace, shown before the documents. */
+fun NavController.navigateToWorkspaceSync() {
+    navigate(Destinations.WORKSPACE_SYNC.id)
 }
 
 fun NavController.navigateToEmailConfirm() {

@@ -1,13 +1,14 @@
 package io.writeopia.editor.features.editor.viewmodel
 
 import io.writeopia.editor.features.presentation.viewmodel.PresentationsController
-import io.writeopia.commonui.dtos.MenuItemUi
 import io.writeopia.editor.model.EditState
 import io.writeopia.model.Font
 import io.writeopia.sdk.model.story.Selection
 import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.document.DocumentTag
+import io.writeopia.sdk.models.document.Folder
+import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.story.Tag
@@ -54,11 +55,12 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 
     val fontFamily: StateFlow<Font>
 
-    val listenForFolders: StateFlow<List<MenuItemUi.FolderUi>>
-
     val loadingState: StateFlow<Boolean>
 
     val notFavorite: StateFlow<Boolean>
+
+    /** The icon drawn next to the title, null when the document has none. */
+    val documentIcon: StateFlow<MenuItem.Icon?>
 
     val showSearchState: StateFlow<Boolean>
 
@@ -203,17 +205,19 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
     fun changeFontFamily(font: Font)
 
     /** Adds the image at [position], or at the cursor without one. */
-    fun addImage(imagePath: String, position: Double? = null)
+    fun addImage(imagePath: String, position: String? = null)
 
     fun exportMarkdown(path: String)
 
     fun exportJson(path: String)
 
-    fun expandFolder(folderId: String)
+    /** Every folder of the workspace, for the "move to" picker. */
+    suspend fun workspaceFolders(): List<Folder>
+
+    /** The folder the document is in. */
+    fun documentFolderId(): String
 
     fun moveToFolder(folderId: String)
-
-    fun moveToRootFolder()
 
     fun askAiWithMode(targetMode: AiTargetMode)
 
@@ -225,7 +229,14 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 
     fun aiTags(targetMode: AiTargetMode)
 
-    fun aiSection(position: Double)
+    fun aiSection(position: String)
+
+    /**
+     * Runs a free [command] typed by the user about the document and the lines selected right
+     * now, if any. The AI decides whether its answer replaces those lines or is added to the
+     * document.
+     */
+    fun aiCommand(command: String)
 
     fun addPage()
 
@@ -233,11 +244,17 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 
     fun cutSelection()
 
-    fun deleteDocument()
+    /** Deletes the document; [onDeleted] runs once it is gone, so the editor can close. */
+    fun deleteDocument(onDeleted: () -> Unit = {})
 
     fun toggleFavorite()
 
-    fun receiveExternalFile(files: List<ExternalFile>, position: Double)
+    /** Puts the icon named [label] (from WrIcons), painted in [tint], next to the title. */
+    fun changeDocumentIcon(label: String, tint: Int)
+
+    fun removeDocumentIcon()
+
+    fun receiveExternalFile(files: List<ExternalFile>, position: String)
 
     fun setTheme(isDarkTheme: Boolean)
 

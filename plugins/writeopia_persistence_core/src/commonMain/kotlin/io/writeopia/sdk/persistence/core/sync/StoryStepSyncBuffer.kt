@@ -27,7 +27,7 @@ class StoryStepSyncBuffer(
      */
     data class PendingStoryStepChange(
         val storyStep: StoryStep,
-        val position: Double,
+        val position: String,
         val documentId: String,
         val timestamp: Long
     )
@@ -50,7 +50,7 @@ class StoryStepSyncBuffer(
      * @param position The position of the StoryStep in the document.
      * @param documentId The ID of the document containing the StoryStep.
      */
-    fun addChange(storyStep: StoryStep, position: Double, documentId: String) {
+    fun addChange(storyStep: StoryStep, position: String, documentId: String) {
         // Remove from deletions if it was previously marked for deletion
         pendingDeletions.remove(storyStep.id)
 

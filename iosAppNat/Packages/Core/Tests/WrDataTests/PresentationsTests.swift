@@ -31,7 +31,7 @@ private let sample = """
         #expect(slides[1].steps[1].text == "This is a check box!")
         #expect(slides[1].steps[1].checked == false)
         #expect(slides[1].steps[2].text == "This is a list item!")
-        #expect(slides[1].steps.map(\.position) == [1, 2, 3])
+        #expect(slides[1].steps.map(\.position) == [1, 2, 3].map(Rank.at))
         #expect(slides[2].steps.map(\.text) == ["The presentation is over!"])
     }
 
@@ -111,7 +111,7 @@ private let sample = """
         #expect(document.title == "Slide 2")
         #expect(document.content.first?.type.number == StoryType.title.number)
         #expect(document.content.first?.text == "Slide 2")
-        #expect(document.content.map(\.position) == [0, 1, 2, 3])
+        #expect(document.content.map(\.position) == [0, 1, 2, 3].map(Rank.at))
     }
 }
 
@@ -172,7 +172,7 @@ private let sample = """
         var saved = presentation(documentId: "doc", title: "Sky", createdAt: 1)
         try await repository.savePresentation(saved)
 
-        saved.slides = [Slide(title: "Only one", steps: [StoryStep(type: .text, text: "Left", position: 1)])]
+        saved.slides = [Slide(title: "Only one", steps: [StoryStep(type: .text, text: "Left", position: Rank.at(1))])]
         try await repository.savePresentation(saved)
 
         let loaded = try await repository.presentation(id: saved.id)

@@ -14,10 +14,12 @@ import io.writeopia.auth.register.RegisterViewModel
 import io.writeopia.auth.register.ResetPasswordViewModel
 import io.writeopia.auth.spacechoice.LocalFolderSetupViewModel
 import io.writeopia.auth.workspace.ChooseWorkspaceViewModel
+import io.writeopia.auth.workspace.WorkspaceSyncViewModel
 import io.writeopia.auth.core.data.WorkspaceApi
 import io.writeopia.core.configuration.di.AppConfigurationInjector
 import io.writeopia.core.configuration.repository.ConfigurationRepository
 import io.writeopia.core.folders.di.FoldersInjector
+import io.writeopia.core.folders.di.WorkspaceInjection
 import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.core.folders.repository.folder.NotesUseCase
 import io.writeopia.di.AppConnectionInjection
@@ -101,6 +103,14 @@ class AuthInjection private constructor(
             configRepository = appConfigurationInjector.provideNotesConfigurationRepository(),
             notesUseCase = provideNotesUseCase(),
             localAiRepository = localAiInjection.provideRepository(),
+        )
+    }
+
+    @Composable
+    fun provideWorkspaceSyncViewModel(): WorkspaceSyncViewModel = viewModel {
+        WorkspaceSyncViewModel(
+            authRepository = authCoreInjection.provideAuthRepository(),
+            workspaceSync = WorkspaceInjection.singleton().provideWorkspaceSync(),
         )
     }
 

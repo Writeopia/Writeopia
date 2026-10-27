@@ -1,5 +1,6 @@
 package io.writeopia.normalization.builder
 
+import io.writeopia.sdk.utils.iterables.Rank
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.normalization.builder.StepsMapNormalizationBuilder
 import io.writeopia.utils.MapStoryData
@@ -18,7 +19,7 @@ class StepsMapNormalizationBuilderTest {
 
         assertEquals(
             StoryTypes.GROUP_IMAGE.type,
-            normalized[0.0]!!.type,
+            normalized[Rank.at(0)]!!.type,
             "The first non space StoryUnit should be a GroupStep"
         )
 
@@ -29,21 +30,21 @@ class StepsMapNormalizationBuilderTest {
         )
         assertEquals(
             StoryTypes.GROUP_IMAGE.type,
-            normalized[2.0]?.type,
+            normalized[Rank.at(2)]?.type,
             "The images in the same position should be merged into GroupImage"
         )
         assertEquals(
             3,
-            normalized[2.0]?.steps?.size,
+            normalized[Rank.at(2)]?.steps?.size,
             "The images in the same position should be merged into GroupImage"
         )
         assertEquals(
             StoryTypes.TEXT.type,
-            normalized[(normalized.size - 1).toDouble()]?.type,
+            normalized[Rank.at(normalized.size - 1)]?.type,
             "The last message should stay as it was"
         )
 
-        val group = (normalized[4.0])
+        val group = (normalized[Rank.at(4)])
         group!!.steps.forEach { storyUnit ->
             assertEquals(
                 group.id,

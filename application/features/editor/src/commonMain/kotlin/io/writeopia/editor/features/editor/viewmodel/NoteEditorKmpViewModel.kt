@@ -2,6 +2,7 @@
 
 package io.writeopia.editor.features.editor.viewmodel
 
+import io.writeopia.sdk.utils.iterables.Rank
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -14,7 +15,6 @@ import io.writeopia.ai.task.AiTaskManager
 import io.writeopia.ai.task.AiTaskType
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.genai.repository.GenAiRepository
-import io.writeopia.common.utils.collections.toNodeTree
 import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.sync.ContentLoadActivity
 import io.writeopia.core.presentations.PresentationsStore
@@ -27,8 +27,6 @@ import io.writeopia.common.utils.file.SaveImage
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.common.utils.toList
 import io.writeopia.core.folders.repository.folder.DocumentLoadUseCase
-import io.writeopia.commonui.dtos.MenuItemUi
-import io.writeopia.commonui.extensions.toFolderUi
 import io.writeopia.core.folders.repository.InDocumentSearchRepository
 import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.core.folders.repository.tag.DocumentTagRepository
@@ -49,6 +47,8 @@ import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.comment.CommentConversation
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.DocumentTag
+import io.writeopia.sdk.models.document.Folder
+import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.span.Span
@@ -99,6 +99,9 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapConcat
@@ -109,6 +112,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import kotlin.concurrent.Volatile
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
@@ -380,7 +384,7 @@ class NoteEditorKmpViewModel(
 
 //    val selectionOfText = writeopiaManager.
 
-    private val findsOfSearch: Flow<Set<Int>> =
+    private val findsOfSearch: Flow<Set<String>> =
         combine(writeopiaManager.documentInfo, searchText) { info, query ->
             info.id to query
         }.map { (documentId, query) ->
@@ -444,7 +448,9 @@ class NoteEditorKmpViewModel(
     private val _shouldGoToNextScreen = MutableStateFlow(false)
     override val shouldGoToNextScreen = _shouldGoToNextScreen.asStateFlow()
 
-    private val expandedFolders = MutableStateFlow(setOf<String>())
+    // The document's folder once moved from the editor: the loaded document still has the old one.
+    @Volatile
+    private var movedToFolderId: String? = null
 
     override val isEditState: StateFlow<EditState> by lazy {
         writeopiaManager.onEditPositions.map { set ->
@@ -596,12 +602,42 @@ class NoteEditorKmpViewModel(
         .map { info -> !info.isFavorite }
         .stateIn(viewModelScope, started = SharingStarted.WhileSubscribed(), initialValue = false)
 
+    /**
+     * An icon saved elsewhere (the side menu, a sync) reaches the open editor. The first value
+     * is the one the document was loaded with; only later changes are taken.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun listenForSavedIcon() {
+        viewModelScope.launch(Dispatchers.Default) {
+            documentId
+                .filter { id -> id.isNotEmpty() }
+                .flatMapLatest { id ->
+                    documentRepository.listenForDocumentInfoById(id)
+                        .filterNotNull()
+                        .map { info -> info.icon }
+                        .distinctUntilChanged()
+                        .drop(1)
+                }
+                .collect(writeopiaManager::setDocumentIcon)
+        }
+    }
+
+    override val documentIcon: StateFlow<MenuItem.Icon?> = writeopiaManager
+        .documentInfo
+        .map { info -> info.icon }
+        .distinctUntilChanged()
+        .stateIn(viewModelScope, started = SharingStarted.Eagerly, initialValue = null)
+
+    // Here, after [documentId] and [documentIcon]: an init block runs in the order of the
+    // class, and the listener starts on another thread right away.
+    init {
+        listenForSavedIcon()
+    }
+
     private var aiJob: Job? = null
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override val toDrawWithDecoration: StateFlow<DrawState> by lazy {
-        val infoFlow = documentId.flatMapLatest(documentRepository::listenForDocumentInfoById)
-
         val toDraw = combine(
             writeopiaManager.toDraw,
             findsOfSearch,
@@ -618,11 +654,13 @@ class NoteEditorKmpViewModel(
             _totalSearchResultsState.value = finds.size
 
             if (activeFindPosition != null) {
-                writeopiaManager.scrollToPosition(activeFindPosition)
+                val index = mutableStories.indexOfFirst { it.position == activeFindPosition }
+                if (index != -1) writeopiaManager.scrollToPosition(index)
             }
 
             finds.forEach { position ->
-                val realPosition = minOf(position * 2, mutableStories.lastIndex)
+                val realPosition = mutableStories.indexOfFirst { it.position == position }
+                if (realPosition == -1) return@forEach
                 val toDraw = mutableStories[realPosition]
                 val story = toDraw.storyStep
 
@@ -648,14 +686,13 @@ class NoteEditorKmpViewModel(
             drawState.copy(stories = mutableStories, focus = null)
         }
 
-        toDraw.flatMapLatest { drawState ->
-            infoFlow.map { info -> drawState to info }
-        }.map { (drawState, info) ->
-            val imageVector = info?.icon
+        // The icon of the editor's own state: a choice made here shows before it is saved.
+        combine(toDraw, documentIcon) { drawState, icon ->
+            val imageVector = icon
                 ?.label
                 ?.let(WrIcons::fromName)
 
-            val tint = info?.icon?.tint
+            val tint = icon?.tint
 
             val newStories = drawState.stories
                 .map { drawStory ->
@@ -682,35 +719,6 @@ class NoteEditorKmpViewModel(
 
     private val _documentToShareInfo = MutableStateFlow<ShareDocument?>(null)
     override val documentToShareInfo: StateFlow<ShareDocument?> = _documentToShareInfo.asStateFlow()
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    override val listenForFolders: StateFlow<List<MenuItemUi.FolderUi>> =
-        authRepository.listenForWorkspace()
-            .flatMapLatest { workspace ->
-                combine(
-                    expandedFolders,
-                    folderRepository.listenForFoldersByParentId(
-                        "root",
-                        workspace.id
-                    ),
-                ) { expanded, map ->
-                    val folderUiMap = map.mapValues { (_, item) ->
-                        item.map {
-                            it.toFolderUi(expanded = expanded.contains(it.id))
-                        }
-                    }
-
-                    folderUiMap
-                        .toNodeTree(
-                            MenuItemUi.FolderUi.root(),
-                            filterPredicate = { menuItemUi ->
-                                menuItemUi.expanded
-                            }
-                        )
-                        .toList()
-                        .filter { it.id != "root" }
-                }
-            }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     override fun changeSideMenu(tab: SideMenuTab) {
         _sideMenuTabState.value = tab
@@ -780,7 +788,7 @@ class NoteEditorKmpViewModel(
     override fun onHeaderImageSelection(url: String?) {
         if (!isEditable.value) return
 
-        writeopiaManager.currentStory.value.stories[0.0]?.let { storyStep ->
+        writeopiaManager.currentStory.value.stories[Rank.at(0)]?.let { storyStep ->
             val action = Action.StoryStateChange(
                 storyStep = storyStep.copy(
                     url = url,
@@ -788,7 +796,7 @@ class NoteEditorKmpViewModel(
                         backgroundColor = if (url != null) null else storyStep.decoration.backgroundColor
                     )
                 ),
-                position = 0.0,
+                position = Rank.at(0),
                 preserveFocus = true
             )
             writeopiaManager.changeStoryState(action)
@@ -1002,7 +1010,7 @@ class NoteEditorKmpViewModel(
      * Only cards that still have no description here are touched: anything else the user may
      * be editing is left alone.
      */
-    private suspend fun applyServerLinkCards(documentId: String, steps: List<Pair<Double, StoryStep>>) {
+    private suspend fun applyServerLinkCards(documentId: String, steps: List<Pair<String, StoryStep>>) {
         val stories = writeopiaManager.currentStory.value.stories
 
         steps.forEach { (_, serverStep) ->
@@ -1033,7 +1041,7 @@ class NoteEditorKmpViewModel(
     override fun onHeaderColorSelection(color: Int?) {
         if (!isEditable.value) return
 
-        writeopiaManager.currentStory.value.stories[0.0]?.let { storyStep ->
+        writeopiaManager.currentStory.value.stories[Rank.at(0)]?.let { storyStep ->
             // A color, or none, takes the place of the picture of the header.
             val action = Action.StoryStateChange(
                 storyStep = storyStep.copy(
@@ -1042,7 +1050,7 @@ class NoteEditorKmpViewModel(
                         backgroundColor = color
                     )
                 ),
-                position = 0.0,
+                position = Rank.at(0),
                 preserveFocus = true
             )
             writeopiaManager.changeStoryState(action)
@@ -1150,6 +1158,15 @@ class NoteEditorKmpViewModel(
         writeopiaManager.toggleLockDocument()
     }
 
+    // Saved with the document's metadata, like the lock: the title draws it once it is saved.
+    override fun changeDocumentIcon(label: String, tint: Int) {
+        writeopiaManager.changeDocumentIcon(MenuItem.Icon(label, tint))
+    }
+
+    override fun removeDocumentIcon() {
+        writeopiaManager.changeDocumentIcon(null)
+    }
+
     /** The favorite request in flight, so the next one goes after it with the latest state. */
     private var favoriteSyncJob: Job? = null
 
@@ -1192,7 +1209,7 @@ class NoteEditorKmpViewModel(
         }
     }
 
-    override fun addImage(imagePath: String, position: Double?) {
+    override fun addImage(imagePath: String, position: String?) {
         viewModelScope.launch(Dispatchers.Default) {
             val path = workspaceConfigRepository
                 .loadWorkspacePath(authRepository.getUser().id)
@@ -1219,33 +1236,18 @@ class NoteEditorKmpViewModel(
         }
     }
 
-    override fun expandFolder(folderId: String) {
-        val expanded = expandedFolders.value
-        if (expanded.contains(folderId)) {
-            viewModelScope.launch(Dispatchers.Default) {
-                expandedFolders.value = expanded - folderId
-            }
-        } else {
-            viewModelScope.launch {
-                val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
-                folderRepository.listenForFoldersByParentId(
-                    folderId,
-                    workspace.id
-                )
-                expandedFolders.value = expanded + folderId
-            }
-        }
+    override suspend fun workspaceFolders(): List<Folder> {
+        val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
+        return folderRepository.getFoldersForWorkspace(workspace.id)
     }
+
+    override fun documentFolderId(): String = movedToFolderId ?: writeopiaManager.getDocument().parentId
 
     override fun moveToFolder(folderId: String) {
         viewModelScope.launch(Dispatchers.Default) {
             documentRepository.moveToFolder(documentId = documentId.value, parentId = folderId)
-        }
-    }
-
-    override fun moveToRootFolder() {
-        viewModelScope.launch(Dispatchers.Default) {
-            documentRepository.moveToFolder(documentId = documentId.value, parentId = "root")
+            // Only once saved: a failed move leaves the folder the document is still in.
+            movedToFolderId = folderId
         }
     }
 
@@ -1269,12 +1271,12 @@ class NoteEditorKmpViewModel(
         documentAi(targetMode, AiCommand.TAGS)
     }
 
-    override fun aiSection(position: Double) {
+    override fun aiSection(position: String) {
         val sectionText = writeopiaManager.getStory(position)?.text ?: return
 
         val docId = documentId.value
         val taskId = "editor-$docId-${GenerateId.generate()}"
-        val answerPosition = position + 0.001
+        val answerPosition = writeopiaManager.positionAfter(position)
 
         aiTaskManager.enqueueTask(
             id = taskId,
@@ -1306,6 +1308,29 @@ class NoteEditorKmpViewModel(
                 promptPosition = answerPosition
             )
             Result.success(Unit)
+        }
+    }
+
+    override fun aiCommand(command: String) {
+        val trimmed = command.trim()
+        if (trimmed.isEmpty()) return
+
+        val docId = documentId.value
+        val taskId = "editor-$docId-${GenerateId.generate()}"
+
+        aiTaskManager.enqueueTask(
+            id = taskId,
+            type = AiTaskType.TEXT_GENERATION,
+            description = "Running command..."
+        ) {
+            val ai = aiClients.resolve(authRepository.getUser().id)
+
+            if (ai == null) {
+                PromptService.noAiAvailable(AiCommandService.answerTarget(writeopiaManager), writeopiaManager)
+                return@enqueueTask Result.failure(Exception(PromptService.NO_AI_MESSAGE))
+            }
+
+            AiCommandService.run(trimmed, writeopiaManager, ai)
         }
     }
 
@@ -1367,14 +1392,27 @@ class NoteEditorKmpViewModel(
         deleteSelection()
     }
 
-    override fun deleteDocument() {
+    override fun deleteDocument(onDeleted: () -> Unit) {
         viewModelScope.launch(Dispatchers.Default) {
             val document = writeopiaManager.getDocument()
-            documentRepository.deleteDocument(document, document.workspaceId)
+            // The editor stays open until the document is gone: leaving it clears this
+            // ViewModel, which would cancel the deletion.
+            try {
+                documentRepository.deleteDocument(document, document.workspaceId)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                println("error deleting document: ${e.message}")
+                return@launch
+            }
+
+            withContext(Dispatchers.Main) {
+                onDeleted()
+            }
         }
     }
 
-    override fun receiveExternalFile(files: List<ExternalFile>, position: Double) {
+    override fun receiveExternalFile(files: List<ExternalFile>, position: String) {
         viewModelScope.launch(Dispatchers.Default) {
             val newFiles = workspaceConfigRepository
                 .loadWorkspacePath(authRepository.getUser().id)

@@ -1,5 +1,6 @@
 package io.writeopia.manager
 
+import io.writeopia.sdk.utils.iterables.Rank
 import io.writeopia.sdk.manager.SpansHandler
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.span.SpanInfo
@@ -140,12 +141,12 @@ class SpansHandlerTest {
     fun `bulk comment spans should preserve conversation identity`() {
         val existing = SpanInfo.create(0, 5, Span.COMMENT, "conversation-1")
         val stories = mapOf(
-            0.0 to StoryStep(
+            Rank.at(0) to StoryStep(
                 type = io.writeopia.sdk.models.story.StoryTypes.TEXT.type,
                 text = "first",
                 spans = setOf(existing),
             ),
-            1.0 to StoryStep(
+            Rank.at(1) to StoryStep(
                 type = io.writeopia.sdk.models.story.StoryTypes.TEXT.type,
                 text = "second",
             ),
@@ -162,11 +163,11 @@ class SpansHandlerTest {
                 existing,
                 SpanInfo.create(0, 5, Span.COMMENT, "conversation-2"),
             ),
-            result.getValue(0.0).spans,
+            result.getValue(Rank.at(0)).spans,
         )
         assertEquals(
             setOf(SpanInfo.create(0, 6, Span.COMMENT, "conversation-2")),
-            result.getValue(1.0).spans,
+            result.getValue(Rank.at(1)).spans,
         )
     }
 
@@ -174,12 +175,12 @@ class SpansHandlerTest {
     fun `bulk adding an existing comment identity should cover the full range`() {
         val partial = SpanInfo.create(1, 3, Span.COMMENT, "conversation-1")
         val stories = mapOf(
-            0.0 to StoryStep(
+            Rank.at(0) to StoryStep(
                 type = io.writeopia.sdk.models.story.StoryTypes.TEXT.type,
                 text = "first",
                 spans = setOf(partial),
             ),
-            1.0 to StoryStep(
+            Rank.at(1) to StoryStep(
                 type = io.writeopia.sdk.models.story.StoryTypes.TEXT.type,
                 text = "second",
             ),
@@ -193,11 +194,11 @@ class SpansHandlerTest {
 
         assertEquals(
             setOf(SpanInfo.create(0, 5, Span.COMMENT, "conversation-1")),
-            result.getValue(0.0).spans,
+            result.getValue(Rank.at(0)).spans,
         )
         assertEquals(
             setOf(SpanInfo.create(0, 6, Span.COMMENT, "conversation-1")),
-            result.getValue(1.0).spans,
+            result.getValue(Rank.at(1)).spans,
         )
     }
 
@@ -206,12 +207,12 @@ class SpansHandlerTest {
         val first = SpanInfo.create(0, 5, Span.COMMENT, "conversation-1")
         val second = SpanInfo.create(0, 5, Span.COMMENT, "conversation-2")
         val stories = mapOf(
-            0.0 to StoryStep(
+            Rank.at(0) to StoryStep(
                 type = io.writeopia.sdk.models.story.StoryTypes.TEXT.type,
                 text = "first",
                 spans = setOf(first, second),
             ),
-            1.0 to StoryStep(
+            Rank.at(1) to StoryStep(
                 type = io.writeopia.sdk.models.story.StoryTypes.TEXT.type,
                 text = "second",
                 spans = setOf(
@@ -226,8 +227,8 @@ class SpansHandlerTest {
             "conversation-2",
         )
 
-        assertEquals(setOf(first), result.getValue(0.0).spans)
-        assertTrue(result.getValue(1.0).spans.isEmpty())
+        assertEquals(setOf(first), result.getValue(Rank.at(0)).spans)
+        assertTrue(result.getValue(Rank.at(1)).spans.isEmpty())
     }
 
     @Test

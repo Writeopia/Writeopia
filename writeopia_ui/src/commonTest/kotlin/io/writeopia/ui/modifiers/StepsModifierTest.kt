@@ -1,5 +1,6 @@
 package io.writeopia.ui.modifiers
 
+import io.writeopia.sdk.utils.iterables.Rank
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
@@ -18,10 +19,10 @@ class StepsModifierTest {
             StoryStep(type = StoryTypes.TEXT.type, tags = setOf(TagInfo(Tag.HIGH_LIGHT_BLOCK))),
             StoryStep(type = StoryTypes.TEXT.type, tags = setOf(TagInfo(Tag.HIGH_LIGHT_BLOCK)))
         ).mapIndexed { index, step ->
-            DrawStory(step, index.toDouble())
+            DrawStory(step, Rank.at(index))
         }
 
-        val result = StepsModifier.modify(input, 0.0)
+        val result = StepsModifier.modify(input, Rank.at(0))
             .map { it.storyStep.tags }
             .flatten()
         val expected = listOf(
@@ -47,10 +48,10 @@ class StepsModifierTest {
             StoryStep(type = StoryTypes.TEXT.type, tags = setOf(TagInfo(Tag.HIGH_LIGHT_BLOCK))),
             StoryStep(type = StoryTypes.TEXT.type, tags = setOf(TagInfo(Tag.HIGH_LIGHT_BLOCK)))
         ).mapIndexed { index, step ->
-            DrawStory(step, index.toDouble())
+            DrawStory(step, Rank.at(index))
         }
 
-        val result = StepsModifier.modify(input, 0.0)
+        val result = StepsModifier.modify(input, Rank.at(0))
             .map { it.storyStep.tags }
             .flatten()
             .filter { tagInfo ->
@@ -74,10 +75,10 @@ class StepsModifierTest {
         val input = listOf(
             StoryStep(type = StoryTypes.CODE_BLOCK.type, text = "code line")
         ).mapIndexed { index, step ->
-            DrawStory(step, index.toDouble())
+            DrawStory(step, Rank.at(index))
         }
 
-        val result = StepsModifier.modify(input, -1.0)
+        val result = StepsModifier.modify(input, Rank.NONE)
         val codeBlocks = result.filter { it.storyStep.type == StoryTypes.CODE_BLOCK.type }
 
         assertEquals(1, codeBlocks.size)
@@ -91,10 +92,10 @@ class StepsModifierTest {
             StoryStep(type = StoryTypes.CODE_BLOCK.type, text = "line 1"),
             StoryStep(type = StoryTypes.CODE_BLOCK.type, text = "line 2")
         ).mapIndexed { index, step ->
-            DrawStory(step, index.toDouble())
+            DrawStory(step, Rank.at(index))
         }
 
-        val result = StepsModifier.modify(input, -1.0)
+        val result = StepsModifier.modify(input, Rank.NONE)
         val codeBlocks = result.filter { it.storyStep.type == StoryTypes.CODE_BLOCK.type }
 
         assertEquals(2, codeBlocks.size)
@@ -109,10 +110,10 @@ class StepsModifierTest {
             StoryStep(type = StoryTypes.CODE_BLOCK.type, text = "line 2"),
             StoryStep(type = StoryTypes.CODE_BLOCK.type, text = "line 3")
         ).mapIndexed { index, step ->
-            DrawStory(step, index.toDouble())
+            DrawStory(step, Rank.at(index))
         }
 
-        val result = StepsModifier.modify(input, -1.0)
+        val result = StepsModifier.modify(input, Rank.NONE)
         val codeBlocks = result.filter { it.storyStep.type == StoryTypes.CODE_BLOCK.type }
 
         assertEquals(3, codeBlocks.size)
@@ -128,10 +129,10 @@ class StepsModifierTest {
             StoryStep(type = StoryTypes.CODE_BLOCK.type, text = "line 2"),
             StoryStep(type = StoryTypes.CODE_BLOCK.type, text = "line 3")
         ).mapIndexed { index, step ->
-            DrawStory(step, index.toDouble())
+            DrawStory(step, Rank.at(index))
         }
 
-        val result = StepsModifier.modify(input, -1.0)
+        val result = StepsModifier.modify(input, Rank.NONE)
         val codeBlocks = result.filter { it.storyStep.type == StoryTypes.CODE_BLOCK.type }
 
         assertEquals(3, codeBlocks.size)
@@ -147,11 +148,11 @@ class StepsModifierTest {
             StoryStep(type = StoryTypes.CODE_BLOCK.type, text = "line 2"),
             StoryStep(type = StoryTypes.CODE_BLOCK.type, text = "line 3")
         ).mapIndexed { index, step ->
-            DrawStory(step, index.toDouble())
+            DrawStory(step, Rank.at(index))
         }
 
-        // Use Int.MIN_VALUE to indicate "no drag" - using -1 would cause the first space to be ON_DRAG_SPACE
-        val result = StepsModifier.modify(input, Double.MIN_VALUE)
+        // Rank.NONE means "no drag": it is below every position
+        val result = StepsModifier.modify(input, Rank.NONE)
 
         // Find spaces between code blocks (both SPACE and ON_DRAG_SPACE types)
         val spacesInsideCodeBlock = result.filter {
@@ -186,10 +187,10 @@ class StepsModifierTest {
             StoryStep(type = StoryTypes.CODE_BLOCK.type, text = "block2 line 1"),
             StoryStep(type = StoryTypes.CODE_BLOCK.type, text = "block2 line 2")
         ).mapIndexed { index, step ->
-            DrawStory(step, index.toDouble())
+            DrawStory(step, Rank.at(index))
         }
 
-        val result = StepsModifier.modify(input, -1.0)
+        val result = StepsModifier.modify(input, Rank.NONE)
         val codeBlocks = result.filter { it.storyStep.type == StoryTypes.CODE_BLOCK.type }
 
         assertEquals(4, codeBlocks.size)
@@ -212,10 +213,10 @@ class StepsModifierTest {
             StoryStep(type = StoryTypes.CODE_BLOCK.type, text = "block2 line 1"),
             StoryStep(type = StoryTypes.CODE_BLOCK.type, text = "block2 line 2")
         ).mapIndexed { index, step ->
-            DrawStory(step, index.toDouble())
+            DrawStory(step, Rank.at(index))
         }
 
-        val result = StepsModifier.modify(input, -1.0)
+        val result = StepsModifier.modify(input, Rank.NONE)
         val codeBlocks = result.filter { it.storyStep.type == StoryTypes.CODE_BLOCK.type }
 
         assertEquals(4, codeBlocks.size)
@@ -235,10 +236,10 @@ class StepsModifierTest {
             StoryStep(type = StoryTypes.TEXT.type, text = "text 1"),
             StoryStep(type = StoryTypes.TEXT.type, text = "text 2")
         ).mapIndexed { index, step ->
-            DrawStory(step, index.toDouble())
+            DrawStory(step, Rank.at(index))
         }
 
-        val result = StepsModifier.modify(input, -1.0)
+        val result = StepsModifier.modify(input, Rank.NONE)
         val types = result.map { it.storyStep.type }
 
         // Text items should have spaces between them
@@ -261,11 +262,11 @@ class StepsModifierTest {
             StoryStep(type = StoryTypes.CODE_BLOCK.type, text = "code 2"),
             StoryStep(type = StoryTypes.TEXT.type, text = "outro")
         ).mapIndexed { index, step ->
-            DrawStory(step, index.toDouble())
+            DrawStory(step, Rank.at(index))
         }
 
-        // Use Int.MIN_VALUE to indicate "no drag" - using -1 would cause the first space to be ON_DRAG_SPACE
-        val result = StepsModifier.modify(input, Double.MIN_VALUE)
+        // Rank.NONE means "no drag": it is below every position
+        val result = StepsModifier.modify(input, Rank.NONE)
 
         // Get non-space items
         val contentItems = result.filter {

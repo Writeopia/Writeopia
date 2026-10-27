@@ -23,6 +23,8 @@ struct EditorSideOptions: View {
     let onDelete: () -> Void
     /// Opens the presentations of the document (with the cloud AI, or Ollama on the Mac).
     var onPresentationClick: () -> Void = {}
+    /// The name of the root folder in "Move to".
+    var rootTitle: String = String(localized: "Documents")
     /// The open panel; the editor closes it on a click outside.
     @Binding var tab: SideTab?
     private static let panelWidth: CGFloat = 280
@@ -32,6 +34,8 @@ struct EditorSideOptions: View {
         case page
         case text
         case export
+        /// The AI options, on the Mac only: the phones and tablets open the AI dialog instead.
+        case ai
     }
 
     var body: some View {
@@ -76,11 +80,18 @@ struct EditorSideOptions: View {
                 .accessibilityIdentifier("editor.side.presentation")
             }
             if viewModel.isAiAvailable && !viewModel.isLocked {
+                #if os(macOS)
+                // Like the Compose desktop app: the AI options open in a panel, with the command
+                // field at the bottom of the editor, never in a dialog over the text.
+                tabButton(.ai, systemImage: "sparkles", label: "AI", tint: WrColors.accent)
+                    .accessibilityIdentifier("editor.side.ai")
+                #else
                 MenuButton(systemImage: "sparkles", label: "AI", tint: WrColors.accent) {
                     tab = nil
                     onAiClick()
                 }
                 .accessibilityIdentifier("editor.side.ai")
+                #endif
             }
         }
         .padding(.vertical, 8)
@@ -92,9 +103,10 @@ struct EditorSideOptions: View {
         _ option: SideTab,
         systemImage: String,
         label: LocalizedStringKey,
+        tint: Color = .primary,
         isEnabled: Bool = true
     ) -> some View {
-        MenuButton(systemImage: systemImage, label: label, isEnabled: isEnabled, isActive: tab == option) {
+        MenuButton(systemImage: systemImage, label: label, tint: tint, isEnabled: isEnabled, isActive: tab == option) {
             tab = tab == option ? nil : option
         }
     }
@@ -105,7 +117,7 @@ struct EditorSideOptions: View {
             VStack(alignment: .leading, spacing: 16) {
                 switch tab {
                 case .page:
-                    SidePagePanel(viewModel: viewModel, onDelete: onDelete)
+                    SidePagePanel(viewModel: viewModel, rootTitle: rootTitle, onDelete: onDelete)
                 case .text:
                     SideTextPanel(
                         viewModel: viewModel,
@@ -119,6 +131,8 @@ struct EditorSideOptions: View {
                     )
                 case .export:
                     SideExportPanel(viewModel: viewModel, onPublishClick: onPublishClick)
+                case .ai:
+                    SideAiPanel(viewModel: viewModel)
                 }
             }
             .padding(16)
@@ -137,11 +151,65 @@ struct EditorSideOptions: View {
     }
 }
 
-/// Lock, font and delete, like `PageOptions` of the desktop app.
+/// The quick actions of the AI with "Apply to", like `AiQuickActions` of the Compose desktop
+/// app. The free command is typed in the field at the bottom of the editor, which shows with
+/// this panel.
+private struct SideAiPanel: View {
+    let viewModel: NoteEditorViewModel
+    @State private var mode: AiTargetMode = .document
+
+    private var manager: WriteopiaStateManager { viewModel.writeopiaManager }
+    private var needsSelection: Bool { mode == .selectedLines && !manager.hasSelectedLines }
+
+    var body: some View {
+        PanelSection("Apply to:") {
+            Picker("Apply to", selection: $mode) {
+                ForEach([AiTargetMode.document, .selectedLines, .cursor]) { mode in
+                    Text(mode.title).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .accessibilityIdentifier("side.ai.mode")
+
+            if needsSelection {
+                Text("Select lines in the document first")
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
+        }
+
+        PanelSection("Quick actions") {
+            // The quick actions all work on existing text, so there is none for the cursor:
+            // the command field is the way there.
+            if mode == .cursor {
+                Text("Quick actions work on the document or on selected lines.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(NoteEditorViewModel.commands(for: mode)) { command in
+                    Button {
+                        viewModel.runAi(command, mode: mode)
+                    } label: {
+                        Label(command.title, systemImage: command.systemImage)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .disabled(needsSelection || viewModel.isAiRunning)
+                    .accessibilityIdentifier("side.ai.\(command.rawValue)")
+                }
+            }
+        }
+    }
+}
+
+/// Lock, favorite, icon, move, font and delete, like `PageOptions` of the desktop app.
 private struct SidePagePanel: View {
     @Bindable var viewModel: NoteEditorViewModel
+    let rootTitle: String
     let onDelete: () -> Void
     @State private var confirmsDelete = false
+    @State private var showsMove = false
+    @State private var showsIcons = false
     @State private var showsTags = false
 
     var body: some View {
@@ -165,6 +233,47 @@ private struct SidePagePanel: View {
             }
             .tint(WrColors.accent)
             .accessibilityIdentifier("side.lock")
+
+            Toggle(isOn: Binding(get: { viewModel.isFavorite }, set: { _ in Task { await viewModel.toggleFavorite() } })) {
+                Label("Favorite", systemImage: viewModel.isFavorite ? "star.fill" : "star")
+            }
+            .tint(WrColors.accent)
+            .disabled(viewModel.isSavingFavorite)
+            .accessibilityIdentifier("side.favorite")
+
+            Button {
+                showsIcons = true
+            } label: {
+                Label {
+                    Text("Icon")
+                } icon: {
+                    DocumentIconImage(icon: viewModel.documentIcon, defaultColor: .secondary)
+                }
+            }
+            .accessibilityIdentifier("side.icon")
+            .popover(isPresented: $showsIcons) {
+                MenuIconPicker(initial: viewModel.documentIcon) { icon in
+                    Task { await viewModel.changeIcon(icon) }
+                }
+            }
+
+            Button {
+                showsMove = true
+            } label: {
+                Label("Move to…", systemImage: "arrow.forward.folder")
+            }
+            .accessibilityIdentifier("side.move")
+            .sheet(isPresented: $showsMove) {
+                FolderPickerSheet(
+                    excludedFolderIds: [],
+                    currentParentId: viewModel.folderId,
+                    rootTitle: rootTitle,
+                    repository: viewModel.folderRepository
+                ) { folderId in
+                    Task { await viewModel.move(to: folderId) }
+                }
+                .wrSheetSize(width: 440, height: 520)
+            }
         }
 
         PanelSection("Font") {

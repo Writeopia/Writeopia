@@ -9,7 +9,7 @@ public enum MarkdownToDocument {
         var title: String?
         if let titleIndex = steps.firstIndex(where: { $0.hasTag("H1") }) {
             title = steps.remove(at: titleIndex).text
-            for index in steps.indices { steps[index].position = Double(index + 1) }
+            for index in steps.indices { steps[index].position = Rank.at(index + 1) }
         }
 
         guard title != nil || !steps.isEmpty else { return nil }
@@ -19,7 +19,7 @@ public enum MarkdownToDocument {
             id: UUID().uuidString,
             title: documentTitle,
             workspaceId: workspaceId,
-            content: [StoryStep(type: .title, text: documentTitle, position: 0, lastUpdatedAt: now)] + steps,
+            content: [StoryStep(type: .title, text: documentTitle, position: Rank.first, lastUpdatedAt: now)] + steps,
             createdAt: now,
             lastUpdatedAt: now,
             parentId: parentId

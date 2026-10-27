@@ -48,6 +48,8 @@ public struct WrTextField: View {
     private let systemImage: String
     private let kind: Kind
     @Binding private var text: String
+    @State private var isPasswordVisible = false
+    @FocusState private var isFocused: Bool
 
     public init(_ title: LocalizedStringKey, text: Binding<String>, systemImage: String, kind: Kind = .plain) {
         self.title = title
@@ -65,6 +67,24 @@ public struct WrTextField: View {
             field
                 .textFieldStyle(.plain)
                 .autocorrectionDisabled()
+                .focused($isFocused)
+
+            if isPassword {
+                Button {
+                    let wasFocused = isFocused
+                    isPasswordVisible.toggle()
+                    // Swapping between SecureField and TextField drops the focus.
+                    if wasFocused {
+                        DispatchQueue.main.async { isFocused = true }
+                    }
+                } label: {
+                    Image(systemName: isPasswordVisible ? "eye.slash" : "eye")
+                        .foregroundStyle(WrColors.textLighter)
+                        .frame(width: 20)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(isPasswordVisible ? "Hide password" : "Show password")
+            }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
@@ -75,14 +95,18 @@ public struct WrTextField: View {
         }
     }
 
+    private var isPassword: Bool {
+        kind == .password || kind == .newPassword
+    }
+
     @ViewBuilder
     private var field: some View {
         switch kind {
         case .password:
-            SecureField(title, text: $text)
+            passwordField
                 .textContentType(.password)
         case .newPassword:
-            SecureField(title, text: $text)
+            passwordField
                 .textContentType(.newPassword)
         case .email:
             TextField(title, text: $text)
@@ -102,6 +126,18 @@ public struct WrTextField: View {
                 #endif
         case .plain:
             TextField(title, text: $text)
+        }
+    }
+
+    @ViewBuilder
+    private var passwordField: some View {
+        if isPasswordVisible {
+            TextField(title, text: $text)
+                #if os(iOS)
+                .textInputAutocapitalization(.never)
+                #endif
+        } else {
+            SecureField(title, text: $text)
         }
     }
 }

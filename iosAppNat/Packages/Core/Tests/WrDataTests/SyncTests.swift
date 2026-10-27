@@ -5,8 +5,8 @@ import WrModels
 import WrNetwork
 import WrStorage
 
-private func step(_ id: String, _ text: String, at position: Double, updated: Int64?) -> StoryStep {
-    StoryStep(id: id, type: .text, text: text, position: position, lastUpdatedAt: updated)
+private func step(_ id: String, _ text: String, at position: Int, updated: Int64?) -> StoryStep {
+    StoryStep(id: id, type: .text, text: text, position: Rank.at(position), lastUpdatedAt: updated)
 }
 
 @Suite struct DocumentMergerTests {
@@ -73,6 +73,15 @@ private func makeStore() -> LocalDocumentsRepository {
 /// Answers the sync endpoints from an in-memory backend.
 final class FakeBackend: HTTPTransport {
     var folderDiff: FolderContents = FolderContents()
+    /// What the workspace diff answers, and the `lastSync` of each time it was asked.
+    var workspaceDiff: FolderContents = FolderContents()
+    private(set) var workspaceDiffSince: [Int64] = []
+    /// Runs while the workspace diff is being answered, before the backend answers.
+    var onWorkspaceDiff: (() async -> Void)?
+    /// The deletions and moves made elsewhere, answered to `/events/diff` with the server
+    /// time 779, and the `lastEventSync` of each time they were asked.
+    var events: [SyncEvent] = []
+    private(set) var eventsDiffSince: [Int64] = []
     var remoteDocument: WrDocument?
     /// The JSON the search answers; the search fails when nil.
     var searchResponse: String?
@@ -134,6 +143,17 @@ final class FakeBackend: HTTPTransport {
             contents.documents.removeAll { deletedIds.contains($0.id) }
             contents.folders.removeAll { deletedFolderIds.contains($0.id) }
             response = try JSONEncoder().encode(contents)
+        case "/api/docs/workspace/diff":
+            workspaceDiffSince.append((body["lastSync"] as? NSNumber)?.int64Value ?? -1)
+            await onWorkspaceDiff?()
+            response = try JSONEncoder().encode(workspaceDiff)
+        case "/api/docs/workspace/events/diff":
+            eventsDiffSince.append((body["lastEventSync"] as? NSNumber)?.int64Value ?? -1)
+            let events = self.events.map { event -> String in
+                let newParent = event.newParentId.map { "\"\($0)\"" } ?? "null"
+                return #"{"id":"\#(event.id)","eventType":"\#(event.eventType)","entityId":"\#(event.entityId)","oldParentId":null,"newParentId":\#(newParent),"createdAt":\#(event.createdAt)}"#
+            }
+            response = Data(#"{"events":[\#(events.joined(separator: ","))],"serverTimestamp":779}"#.utf8)
         case "/api/docs/workspace/document":
             if documentSendFails {
                 status = 500
@@ -497,9 +517,9 @@ final class FakeBackend: HTTPTransport {
     @Test func editsWriteOnlyTheChangedSteps() async throws {
         let store = LocalDocumentsRepository(directory: directory, workspaceId: "w", seedsWelcome: false)
         var document = WrDocument(id: "d", title: "Doc", workspaceId: "w", content: [
-            StoryStep(id: "a", type: .text, text: "one", position: 0),
-            StoryStep(id: "b", type: .text, text: "two", position: 1),
-            StoryStep(id: "c", type: .text, text: "three", position: 2),
+            StoryStep(id: "a", type: .text, text: "one", position: Rank.at(0)),
+            StoryStep(id: "b", type: .text, text: "two", position: Rank.at(1)),
+            StoryStep(id: "c", type: .text, text: "three", position: Rank.at(2)),
         ], parentId: Folder.rootId)
         try store.store(document)
 
@@ -516,8 +536,8 @@ final class FakeBackend: HTTPTransport {
     @Test func aStepDeletedInTheEditorLeavesATombstoneAndNoSyncBringsItBack() throws {
         let store = LocalDocumentsRepository(directory: directory, workspaceId: "w", seedsWelcome: false)
         let document = WrDocument(id: "d", title: "Doc", workspaceId: "w", content: [
-            StoryStep(id: "a", type: .text, text: "one", position: 0),
-            StoryStep(id: "b", type: .text, text: "two", position: 1),
+            StoryStep(id: "a", type: .text, text: "one", position: Rank.at(0)),
+            StoryStep(id: "b", type: .text, text: "two", position: Rank.at(1)),
         ], parentId: Folder.rootId)
         try store.store(document)
 
@@ -540,7 +560,7 @@ final class FakeBackend: HTTPTransport {
     @Test func theEditorMayBringADeletedStepBack() throws {
         let store = LocalDocumentsRepository(directory: directory, workspaceId: "w", seedsWelcome: false)
         let document = WrDocument(id: "d", title: "Doc", workspaceId: "w", content: [
-            StoryStep(id: "a", type: .text, text: "one", position: 0),
+            StoryStep(id: "a", type: .text, text: "one", position: Rank.at(0)),
         ], parentId: Folder.rootId)
         try store.store(document)
         try store.saveEdit(document: document, changedSteps: [], deletedStepIds: ["a"])
@@ -555,8 +575,8 @@ final class FakeBackend: HTTPTransport {
     @Test func stepsDeletedElsewhereGoWithoutATombstone() throws {
         let store = LocalDocumentsRepository(directory: directory, workspaceId: "w", seedsWelcome: false)
         try store.store(WrDocument(id: "d", title: "Doc", workspaceId: "w", content: [
-            StoryStep(id: "a", type: .text, text: "one", position: 0),
-            StoryStep(id: "b", type: .text, text: "two", position: 1),
+            StoryStep(id: "a", type: .text, text: "one", position: Rank.at(0)),
+            StoryStep(id: "b", type: .text, text: "two", position: Rank.at(1)),
         ], parentId: Folder.rootId))
 
         try store.deleteSteps(ids: ["b"])
@@ -574,7 +594,7 @@ final class FakeBackend: HTTPTransport {
             checked: true,
             tags: [TagInfo(tag: "H2")],
             spans: [SpanInfo(start: 0, end: 4, span: "LINK", extra: "https://x.io")],
-            position: 3.5,
+            position: Rank.at(35),
             documentLink: DocumentLink(id: "other", title: "Other"),
             lastUpdatedAt: 42
         )
@@ -586,7 +606,7 @@ final class FakeBackend: HTTPTransport {
     @Test func oldJsonFilesAreImportedOnce() async throws {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let old = WrDocument(id: "old", title: "From a file", workspaceId: "local", content: [
-            StoryStep(id: "t", type: .title, text: "From a file", position: 0),
+            StoryStep(id: "t", type: .title, text: "From a file", position: Rank.at(0)),
         ], parentId: Folder.rootId)
         try JSONEncoder().encode(old).write(to: directory.appending(path: "From a file_old.wrdoc.json"))
         let folder = Folder(id: "f", parentId: Folder.rootId, title: "Old folder", workspaceId: "local")
@@ -729,7 +749,7 @@ final class FakeBackend: HTTPTransport {
     @Test func duplicateCopiesDocumentsAndFoldersWithNewIds() async throws {
         let store = makeStore()
         let document = WrDocument(id: "d", title: "Notes", workspaceId: "w", content: [
-            StoryStep(id: "s", type: .text, text: "Hello", position: 0),
+            StoryStep(id: "s", type: .text, text: "Hello", position: Rank.at(0)),
         ], parentId: "root")
         try store.store(document)
         try store.store(Folder(id: "f", parentId: "root", title: "Projects", workspaceId: "w"))
@@ -883,3 +903,148 @@ final class FakeBackend: HTTPTransport {
         #expect(!unknown.isPremium)
     }
 }
+
+@Suite struct WorkspaceChangesSyncTests {
+    private func makeRepository(_ backend: FakeBackend) -> SyncedDocumentsRepository {
+        let client = APIClient(transport: backend, tokenStore: InMemoryTokenStore(accessToken: "a"), baseURL: URL(string: "https://x.io")!)
+        return SyncedDocumentsRepository(
+            local: makeStore(),
+            remote: RemoteDocumentsRepository(client: client, workspaceId: "w"),
+            api: SyncAPI(client: client, workspaceId: "w")
+        )
+    }
+
+    @Test func favoritesBringWhatChangedInEveryFolder() async throws {
+        let backend = FakeBackend()
+        backend.workspaceDiff = FolderContents(
+            folders: [Folder(id: "work", parentId: "root", title: "Work", workspaceId: "w")],
+            documents: [WrDocument(id: "plan", title: "Plan", workspaceId: "w", parentId: "work", icon: IconInfo(label: "zap"))]
+        )
+        backend.favoriteIds = ["plan"]
+        let repository = makeRepository(backend)
+        let draft = WrDocument(id: "draft", title: "Written offline", workspaceId: "w", parentId: "root")
+        try repository.local.store(draft)
+
+        try await repository.syncWorkspaceChanges()
+
+        let favorites = try await repository.favorites()
+        #expect(favorites.documents.map(\.id) == ["plan"])
+        #expect(favorites.documents.first?.icon == IconInfo(label: "zap"))
+        #expect(try repository.local.storedFolder(id: "work")?.title == "Work")
+        // What was changed here is sent too.
+        #expect(backend.sentDocuments.map { $0["id"] as? String } == ["draft"])
+        #expect(backend.workspaceDiffSince == [0])
+        #expect(try repository.local.workspaceContentsSyncedAt() != nil)
+        #expect(!backend.requestLog.contains("POST /api/docs/workspace/document/folder/diff"))
+    }
+
+    @Test func theNextTimeOnlyAsksForWhatChangedSince() async throws {
+        let backend = FakeBackend()
+        let repository = makeRepository(backend)
+        try repository.local.setWorkspaceContentsSyncedAt(1_000)
+
+        try await repository.syncWorkspaceChanges()
+
+        #expect(backend.workspaceDiffSince == [1_000])
+        #expect(try #require(try repository.local.workspaceContentsSyncedAt()) > 1_000)
+    }
+
+    @Test func deletionsAndMovesMadeElsewhereArriveWithTheWorkspace() async throws {
+        let backend = FakeBackend()
+        backend.events = [
+            SyncEvent(id: "e1", eventType: "DELETE_DOCUMENT", entityId: "gone", createdAt: 1),
+            SyncEvent(id: "e2", eventType: "DELETE_FOLDER", entityId: "old", createdAt: 2),
+            SyncEvent(id: "e3", eventType: "MOVE_DOCUMENT", entityId: "moved", newParentId: "b", createdAt: 3),
+            SyncEvent(id: "e4", eventType: "MOVE_FOLDER", entityId: "f", newParentId: "b", createdAt: 4),
+            SyncEvent(id: "e5", eventType: "SOMETHING_NEW", entityId: "moved", createdAt: 5),
+        ]
+        let repository = makeRepository(backend)
+        try repository.local.store(WrDocument(id: "gone", title: "Synced", workspaceId: "w", lastUpdatedAt: 10, parentId: "root", lastSyncedAt: 20))
+        try repository.local.store(Folder(id: "old", parentId: "root", title: "Old", workspaceId: "w", lastSyncedAt: Date()))
+        try repository.local.store(WrDocument(id: "inside", title: "Inside", workspaceId: "w", lastUpdatedAt: 10, parentId: "old", lastSyncedAt: 20))
+        try repository.local.store(WrDocument(id: "moved", title: "Moved", workspaceId: "w", lastUpdatedAt: 10, parentId: "a", lastSyncedAt: 20))
+        try repository.local.store(Folder(id: "f", parentId: "a", title: "Folder", workspaceId: "w", lastSyncedAt: Date()))
+
+        try await repository.syncWorkspaceChanges()
+
+        #expect(try repository.local.storedDocument(id: "gone") == nil)
+        #expect(try repository.local.storedFolder(id: "old") == nil)
+        #expect(try repository.local.storedDocument(id: "inside") == nil)
+        let moved = try #require(try repository.local.storedDocument(id: "moved"))
+        #expect(moved.parentId == "b")
+        // Received as it is: nothing of its own to send.
+        #expect(!moved.isOutdated)
+        #expect(try repository.local.storedFolder(id: "f")?.parentId == "b")
+        #expect(backend.eventsDiffSince == [0])
+        // The backend's time, not this device's.
+        #expect(try repository.local.eventsSyncedAt() == 779)
+        // The events go before the diff, so nothing received puts a deleted item back.
+        let log = backend.requestLog
+        #expect(try #require(log.firstIndex(of: "POST /api/docs/workspace/events/diff")) < #require(log.firstIndex(of: "POST /api/docs/workspace/diff")))
+    }
+
+    @Test func theNextTimeOnlyAsksForTheEventsSince() async throws {
+        let backend = FakeBackend()
+        let repository = makeRepository(backend)
+        try repository.local.setEventsSyncedAt(500)
+
+        try await repository.syncWorkspaceChanges()
+
+        #expect(backend.eventsDiffSince == [500])
+    }
+
+    @Test func theDeletionsMadeHereInAnyFolderAreSentFirst() async throws {
+        let backend = FakeBackend()
+        let repository = makeRepository(backend)
+        try repository.local.store(WrDocument(id: "doc", title: "Doc", workspaceId: "w", lastUpdatedAt: 10, parentId: "deep", lastSyncedAt: 20))
+        try repository.local.store(Folder(id: "sub", parentId: "deep", title: "Sub", workspaceId: "w", lastSyncedAt: Date()))
+        try repository.local.softDeleteDocument(id: "doc")
+        try repository.local.deleteFolderTree(id: "sub", soft: true)
+
+        try await repository.syncWorkspaceChanges()
+
+        #expect(backend.deletedIds == ["doc"])
+        #expect(backend.deletedFolderIds == ["sub"])
+        #expect(try repository.local.storedDocument(id: "doc") == nil)
+        #expect(try repository.local.storedFolder(id: "sub") == nil)
+        let log = backend.requestLog
+        #expect(try #require(log.firstIndex { $0.hasSuffix("/document/delete") }) < #require(log.firstIndex(of: "POST /api/docs/workspace/diff")))
+    }
+
+    @Test func aSyncAskedWhileOneRunsJoinsItInsteadOfReceivingTheWorkspaceTwice() async throws {
+        let backend = FakeBackend()
+        let gate = AsyncGate()
+        backend.onWorkspaceDiff = { await gate.wait() }
+        let repository = makeRepository(backend)
+
+        let first = Task { try await repository.syncWorkspaceChanges() }
+        while backend.workspaceDiffSince.isEmpty { await Task.yield() }
+        let second = Task { try await repository.syncWorkspaceChanges() }
+        for _ in 0..<10 { await Task.yield() }
+        #expect(backend.workspaceDiffSince.count == 1)
+
+        gate.open()
+        try await first.value
+        try await second.value
+
+        #expect(backend.workspaceDiffSince.count == 1)
+    }
+}
+
+/// Holds whoever waits until opened.
+private final class AsyncGate {
+    private var continuations: [CheckedContinuation<Void, Never>] = []
+    private var isOpen = false
+
+    func wait() async {
+        if isOpen { return }
+        await withCheckedContinuation { continuations.append($0) }
+    }
+
+    func open() {
+        isOpen = true
+        continuations.forEach { $0.resume() }
+        continuations.removeAll()
+    }
+}
+

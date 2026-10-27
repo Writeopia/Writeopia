@@ -9,10 +9,10 @@ import WrModels
 /// AI features of the desktop app: accepting answers, writing sections and list suggestions.
 @Suite struct DesktopAiFeaturesTests {
     private let document = WrDocument(id: "d", title: "Trip", workspaceId: "w", content: [
-        StoryStep(id: "t", type: .title, text: "Trip", position: 0),
-        StoryStep(id: "h", type: .text, text: "Packing", tags: [TagInfo(tag: "H2")], position: 1),
-        StoryStep(id: "l", type: .text, text: "Passport", position: 2),
-        StoryStep(id: "e", type: .text, text: "End", position: 3),
+        StoryStep(id: "t", type: .title, text: "Trip", position: Rank.at(0)),
+        StoryStep(id: "h", type: .text, text: "Packing", tags: [TagInfo(tag: "H2")], position: Rank.at(1)),
+        StoryStep(id: "l", type: .text, text: "Passport", position: Rank.at(2)),
+        StoryStep(id: "e", type: .text, text: "End", position: Rank.at(3)),
     ])
 
     private func viewModel(_ ai: FakeAi?) async -> NoteEditorViewModel {
@@ -53,6 +53,9 @@ import WrModels
         #expect(steps[5].type == .unorderedListItem)
         #expect(steps[6].type == .checkItem && steps[6].checked == false)
         #expect(!steps.contains { $0.type.number == StoryType.aiAnswer.number })
+        // The answer is deleted (its id is gone, so the save leaves a tombstone and no sync
+        // brings it back) and its lines are new steps.
+        #expect(!steps.contains { $0.id == answer.id })
         #expect(manager.documentContent.count == 7)
     }
 
@@ -64,6 +67,20 @@ import WrModels
         #expect(manager.streamingAnswerId == loadingId)
         manager.aiAnswerFinished(stepId: loadingId)
         #expect(manager.streamingAnswerId == nil)
+    }
+
+    @Test func answerIsNotPartOfTheContentUntilItsStreamEnds() async {
+        let viewModel = await viewModel(FakeAi())
+        let manager = viewModel.writeopiaManager
+
+        let answerId = manager.loadingAtPosition(manager.lastPosition)
+        manager.showAiAnswer("Bring clothes", stepId: answerId)
+        #expect(!manager.documentContent.contains { $0.id == answerId })
+
+        let changesBefore = manager.changeCount
+        manager.aiAnswerFinished(stepId: answerId)
+        #expect(manager.documentContent.contains { $0.id == answerId && $0.text == "Bring clothes" })
+        #expect(manager.changeCount == changesBefore + 1)
     }
 
     // MARK: - Generate section

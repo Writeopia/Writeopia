@@ -1,5 +1,6 @@
 package io.writeopia.manager
 
+import io.writeopia.sdk.utils.iterables.Rank
 import io.writeopia.sdk.manager.ContentHandler
 import io.writeopia.sdk.model.action.Action
 import io.writeopia.sdk.models.command.CommandFactory
@@ -13,6 +14,7 @@ import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
 import io.writeopia.sdk.normalization.builder.StepsMapNormalizationBuilder
 import io.writeopia.sdk.utils.alias.UnitsNormalizationMap
+import io.writeopia.sdk.utils.extensions.associateWithPosition
 import io.writeopia.utils.MapStoryData
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -22,7 +24,8 @@ class ContentHandlerTest {
 
     @Test
     fun `should be possible to add content correctly`() {
-        val input = MapStoryData.imageStepsList()
+        Rank.jitter = false
+        val input = MapStoryData.imageStepsList().values.associateWithPosition()
 
         val contentHandler =
             ContentHandler(
@@ -31,18 +34,20 @@ class ContentHandlerTest {
             )
 
         val storyStep = StoryStep(type = StoryTypes.TEXT.type)
-        val newStory = contentHandler.addNewContent(input, storyStep, 1.0)
+        val newStory = contentHandler.addNewContent(input, storyStep, Rank.at(1)).map
 
-        val expected = mapOf<Double, StoryStep>(
-            0.0 to StoryStep(type = StoryTypes.IMAGE.type),
-            1.0 to storyStep,
-            2.0 to StoryStep(type = StoryTypes.IMAGE.type),
-            3.0 to StoryStep(type = StoryTypes.IMAGE.type),
+        // The new step goes right before the one at Rank.at(1), between it and the previous one
+        val expected = mapOf<String, StoryStep>(
+            Rank.at(0) to StoryStep(type = StoryTypes.IMAGE.type),
+            Rank.between(Rank.at(0), Rank.at(1)) to storyStep,
+            Rank.at(1) to StoryStep(type = StoryTypes.IMAGE.type),
+            Rank.at(2) to StoryStep(type = StoryTypes.IMAGE.type),
         ).mapValues { (_, storyStep) ->
             storyStep.type
         }
 
         assertEquals(expected, newStory.mapValues { (_, storyStep) -> storyStep.type })
+        Rank.jitter = true
     }
 
     @Test
@@ -54,8 +59,8 @@ class ContentHandlerTest {
         )
 
         val (_, newState) = contentHandler.onLineBreak(
-            mapOf(0.0 to storyStep),
-            Action.LineBreak(storyStep, 0.0)
+            mapOf(Rank.at(0) to storyStep),
+            Action.LineBreak(storyStep, Rank.at(0))
         )
 
         // With no next position, new line goes at position + 1
@@ -74,8 +79,8 @@ class ContentHandlerTest {
         )
 
         val (_, newState) = contentHandler.onLineBreak(
-            mapOf(0.0 to storyStep),
-            Action.LineBreak(storyStep, 0.0)
+            mapOf(Rank.at(0) to storyStep),
+            Action.LineBreak(storyStep, Rank.at(0))
         )
 
         // With intermediate positions, the new lines are at calculated positions
@@ -99,8 +104,8 @@ class ContentHandlerTest {
         )
 
         val (_, newState) = contentHandler.onLineBreak(
-            mapOf(0.0 to storyStep),
-            Action.LineBreak(storyStep, 0.0)
+            mapOf(Rank.at(0) to storyStep),
+            Action.LineBreak(storyStep, Rank.at(0))
         )
 
         val sortedStories = newState.stories.entries.sortedBy { it.key }
@@ -127,8 +132,8 @@ class ContentHandlerTest {
         )
 
         val (_, newState) = contentHandler.onLineBreak(
-            mapOf(0.0 to storyStep),
-            Action.LineBreak(storyStep, 0.0)
+            mapOf(Rank.at(0) to storyStep),
+            Action.LineBreak(storyStep, Rank.at(0))
         )
 
         val sortedStories = newState.stories.entries.sortedBy { it.key }
@@ -155,8 +160,8 @@ class ContentHandlerTest {
         )
 
         val (_, newState) = contentHandler.onLineBreak(
-            mapOf(0.0 to storyStep),
-            Action.LineBreak(storyStep, 0.0)
+            mapOf(Rank.at(0) to storyStep),
+            Action.LineBreak(storyStep, Rank.at(0))
         )
 
         val sortedStories = newState.stories.entries.sortedBy { it.key }
@@ -183,8 +188,8 @@ class ContentHandlerTest {
         )
 
         val (_, newState) = contentHandler.onLineBreak(
-            mapOf(0.0 to storyStep),
-            Action.LineBreak(storyStep, 0.0)
+            mapOf(Rank.at(0) to storyStep),
+            Action.LineBreak(storyStep, Rank.at(0))
         )
 
         val sortedStories = newState.stories.entries.sortedBy { it.key }
@@ -211,8 +216,8 @@ class ContentHandlerTest {
         )
 
         val (_, newState) = contentHandler.onLineBreak(
-            mapOf(0.0 to storyStep),
-            Action.LineBreak(storyStep, 0.0)
+            mapOf(Rank.at(0) to storyStep),
+            Action.LineBreak(storyStep, Rank.at(0))
         )
 
         val spans = newState.stories.entries
@@ -239,7 +244,7 @@ class ContentHandlerTest {
             spans = setOf(
                 SpanInfo.create(0, 5, Span.COMMENT, conversationId)
             ),
-            nextPosition = 1.0,
+            nextPosition = Rank.at(1),
         )
         val second = StoryStep(
             type = StoryTypes.TEXT.type,
@@ -247,12 +252,12 @@ class ContentHandlerTest {
             spans = setOf(
                 SpanInfo.create(0, 5, Span.COMMENT, conversationId)
             ),
-            previousPosition = 0.0,
+            previousPosition = Rank.at(0),
         )
 
         val newState = contentHandler.eraseStory(
-            Action.EraseStory(second, 1.0),
-            mapOf(0.0 to first, 1.0 to second),
+            Action.EraseStory(second, Rank.at(1)),
+            mapOf(Rank.at(0) to first, Rank.at(1) to second),
         )
 
         assertEquals(
@@ -260,7 +265,7 @@ class ContentHandlerTest {
                 SpanInfo.create(0, 5, Span.COMMENT, conversationId),
                 SpanInfo.create(5, 10, Span.COMMENT, conversationId),
             ),
-            newState.stories.getValue(0.0).spans,
+            newState.stories.getValue(Rank.at(0)).spans,
         )
     }
 
@@ -273,7 +278,7 @@ class ContentHandlerTest {
             spans = setOf(
                 SpanInfo.create(0, 5, Span.COMMENT, "conversation-1")
             ),
-            nextPosition = 1.0,
+            nextPosition = Rank.at(1),
         )
         val second = StoryStep(
             type = StoryTypes.TEXT.type,
@@ -281,15 +286,15 @@ class ContentHandlerTest {
             spans = setOf(
                 SpanInfo.create(0, 5, Span.COMMENT, "conversation-2")
             ),
-            previousPosition = 0.0,
+            previousPosition = Rank.at(0),
         )
 
         val newState = contentHandler.eraseStory(
-            Action.EraseStory(second, 1.0),
-            mapOf(0.0 to first, 1.0 to second),
+            Action.EraseStory(second, Rank.at(1)),
+            mapOf(Rank.at(0) to first, Rank.at(1) to second),
         )
 
-        val merged = newState.stories.getValue(0.0)
+        val merged = newState.stories.getValue(Rank.at(0))
         assertEquals("helloworld", merged.text)
         assertEquals(
             setOf(
@@ -311,7 +316,7 @@ class ContentHandlerTest {
             text = "-[]$text"
         )
 
-        val position = 1.0
+        val position = Rank.at(1)
         val mutable = input.toMutableMap()
         mutable[position] = storyStep
 
@@ -339,7 +344,7 @@ class ContentHandlerTest {
             text = "#$text"
         )
 
-        val position = 1.0
+        val position = Rank.at(1)
         val mutable = input.toMutableMap()
         mutable[position] = storyStep
 
@@ -355,7 +360,7 @@ class ContentHandlerTest {
         assertEquals(StoryTypes.TEXT.type, textStory?.type)
         assertEquals(text, textStory?.text)
 
-        val deletePosition = 2.0
+        val deletePosition = Rank.at(2)
 
         val newState2 = contentHandler.deleteStory(
             Action.DeleteStory(newState.stories[deletePosition]!!, deletePosition),
@@ -363,7 +368,7 @@ class ContentHandlerTest {
             "test-document-id"
         )
 
-        assertEquals(1.0, newState2?.focus)
+        assertEquals(Rank.at(1), newState2?.focus)
     }
 
     @Test
@@ -371,12 +376,12 @@ class ContentHandlerTest {
         val input = MapStoryData.simpleMessages()
         val contentHandler = ContentHandler(stepsNormalizer = normalizer())
 
-        val newState = contentHandler.deleteStory(Action.DeleteStory(input[1.0]!!, 1.0), input, "test-document-id")
+        val newState = contentHandler.deleteStory(Action.DeleteStory(input[Rank.at(1)]!!, Rank.at(1)), input, "test-document-id")
 
-        // After deletion, the story at position 1.0 is removed, leaving 5 stories
+        // After deletion, the story at position 1L is removed, leaving 5 stories
         assertEquals(5, newState!!.stories.size)
-        // Position 1.0 should no longer exist
-        assertEquals(null, newState.stories[1.0])
+        // Position 1L should no longer exist
+        assertEquals(null, newState.stories[Rank.at(1)])
     }
 
     @Test
@@ -385,8 +390,8 @@ class ContentHandlerTest {
         val contentHandler = ContentHandler(stepsNormalizer = normalizer())
 
         val lastStory = input.values.last()
-        val lastIndex = (input.values.size - 1).toDouble()
-        val secondLastStory = input[lastIndex - 1]
+        val lastIndex = Rank.at(input.values.size - 1)
+        val secondLastStory = input[Rank.at(input.values.size - 2)]
 
         val newState = contentHandler.eraseStory(Action.EraseStory(lastStory, lastIndex), input)
 
@@ -398,12 +403,12 @@ class ContentHandlerTest {
         val input = MapStoryData.simpleMessages()
         val contentHandler = ContentHandler(stepsNormalizer = normalizer())
 
-        val newState = contentHandler.eraseStory(Action.EraseStory(input[1.0]!!, 1.0), input)
+        val newState = contentHandler.eraseStory(Action.EraseStory(input[Rank.at(1)]!!, Rank.at(1)), input)
 
-        // After erasing, the story at position 1.0 is removed and merged with previous, leaving 5 stories
+        // After erasing, the story at position 1L is removed and merged with previous, leaving 5 stories
         assertEquals(5, newState.stories.size)
-        // Position 1.0 should no longer exist
-        assertEquals(null, newState.stories[1.0])
+        // Position 1L should no longer exist
+        assertEquals(null, newState.stories[Rank.at(1)])
     }
 
     @Test
@@ -411,9 +416,9 @@ class ContentHandlerTest {
         val input = MapStoryData.messagesWithHeader()
         val contentHandler = ContentHandler(stepsNormalizer = normalizer())
 
-        val state = contentHandler.collapseItem(input, 0.0)
+        val state = contentHandler.collapseItem(input, Rank.at(0))
 
-        assertTrue { state.stories[0.0]!!.tags.any { it.tag == Tag.COLLAPSED } }
+        assertTrue { state.stories[Rank.at(0)]!!.tags.any { it.tag == Tag.COLLAPSED } }
         state.stories.values.drop(0).all { it.tags.any { it.tag.isHidden() } }
     }
 
@@ -421,12 +426,12 @@ class ContentHandlerTest {
     fun `when changing the type of a story it should not change the position of the box highlight`() {
         val input = MapStoryData.messagesWithHighlight()
         val contentHandler = ContentHandler(stepsNormalizer = normalizer())
-        val position = 1.0
+        val position = Rank.at(1)
 
         val newState = contentHandler.changeStoryType(
             currentStory = input,
             typeInfo = TypeInfo(StoryTypes.TEXT.type),
-            position = 1.0,
+            position = Rank.at(1),
             CommandInfo(CommandFactory.h1(), CommandTrigger.WRITTEN)
         )
 

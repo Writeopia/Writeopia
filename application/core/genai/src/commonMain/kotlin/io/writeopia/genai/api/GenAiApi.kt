@@ -2,6 +2,7 @@ package io.writeopia.genai.api
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.preparePost
@@ -12,6 +13,8 @@ import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.readUTF8Line
+import io.writeopia.app.dto.ai.AiCommandIntentResponse
+import io.writeopia.app.dto.ai.AiCommandRequest
 import io.writeopia.app.dto.ai.AiImageRequest
 import io.writeopia.app.dto.ai.AiImageResponse
 import io.writeopia.sdk.serialization.response.HeaderImageApi
@@ -154,6 +157,34 @@ class GenAiApi(
     fun streamTags(prompt: String, model: String? = null): Flow<ResultData<String>> =
         streamFromEndpoint(EndPoints.aiTags(), prompt, model)
 
+    /**
+     * Asks the backend what a free command does with the text it is about: replace it or add
+     * to it. The answer is an error when the backend could not decide.
+     */
+    suspend fun commandIntent(request: AiCommandRequest): ResultData<AiCommandIntentResponse> = try {
+        val response = client.post("$baseUrl/${EndPoints.aiCommandIntent()}") {
+            contentType(ContentType.Application.Json)
+            setBody(request.copy(stream = false))
+        }
+        val body = response.body<AiCommandIntentResponse>()
+
+        if (body.intent != null) {
+            ResultData.Complete(body)
+        } else {
+            ResultData.Error(
+                GenAiException(body.error ?: "The AI could not decide what to do (${response.status})")
+            )
+        }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        ResultData.Error(e)
+    }
+
+    /** Streams the answer of a free command, written for the intent the request carries. */
+    fun streamCommand(request: AiCommandRequest): Flow<ResultData<String>> =
+        streamFromEndpoint(EndPoints.aiCommand()) { setBody(request.copy(stream = true)) }
+
     /** Asks the backend to draw a picture for a paragraph. The answer carries its URL. */
     suspend fun generateImage(request: AiImageRequest): ResultData<AiImageResponse> = try {
         val response = client.post("$baseUrl/${EndPoints.aiImage()}") {
@@ -235,12 +266,19 @@ class GenAiApi(
         endpoint: String,
         prompt: String,
         model: String?
+    ): Flow<ResultData<String>> =
+        streamFromEndpoint(endpoint) { setBody(GenAiRequest(prompt, model, stream = true)) }
+
+    /** Streams the SSE answer of [endpoint] to a request whose [body] the caller sets. */
+    private fun streamFromEndpoint(
+        endpoint: String,
+        body: HttpRequestBuilder.() -> Unit
     ): Flow<ResultData<String>> = callbackFlow {
         try {
             client.preparePost {
                 url("$baseUrl/$endpoint")
                 contentType(ContentType.Application.Json)
-                setBody(GenAiRequest(prompt, model, stream = true))
+                body()
             }.execute { response ->
                 val channel = response.body<ByteReadChannel>()
 

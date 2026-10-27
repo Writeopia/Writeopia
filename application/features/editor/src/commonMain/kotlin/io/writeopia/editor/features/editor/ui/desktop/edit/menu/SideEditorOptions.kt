@@ -62,12 +62,16 @@ import io.writeopia.common.utils.configuration.PlatformType
 import io.writeopia.common.utils.file.fileChooserLoad
 import io.writeopia.common.utils.file.fileChooserSave
 import io.writeopia.common.utils.icons.WrIcons
+import io.writeopia.editor.configuration.ui.DocumentIconPicker
+import io.writeopia.editor.features.editor.ui.ai.AiOptionsTabs
+import io.writeopia.editor.features.editor.ui.ai.AiQuickActions
 import io.writeopia.editor.features.editor.ui.tags.DocumentTagChipsRow
 import io.writeopia.editor.features.editor.viewmodel.AiTargetMode
 import io.writeopia.editor.features.editor.viewmodel.SideMenuTab
 import io.writeopia.model.Font
 import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.models.document.DocumentTag
+import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.story.Tag
 import io.writeopia.theme.WriteopiaTheme
@@ -107,9 +111,8 @@ fun SideEditorOptions(
     onImagePickRequest: (() -> Unit)? = null,
     exportJson: (String) -> Unit,
     exportMarkdown: (String) -> Unit,
-    moveToRoot: () -> Unit,
     moveToClick: () -> Unit,
-    askAiWithMode: (AiTargetMode) -> Unit,
+    aiCommand: (String) -> Unit,
     aiSummary: (AiTargetMode) -> Unit,
     aiActionPoints: (AiTargetMode) -> Unit,
     aiFaq: (AiTargetMode) -> Unit,
@@ -126,6 +129,9 @@ fun SideEditorOptions(
     onViewTagsClick: () -> Unit = {},
     onAddTagClick: () -> Unit = {},
     onRemoveTagClick: (String) -> Unit = {},
+    documentIconState: StateFlow<MenuItem.Icon?> = MutableStateFlow(null),
+    onDocumentIconSelect: (String, Int) -> Unit = { _, _ -> },
+    onRemoveDocumentIcon: () -> Unit = {},
 ) {
     val menuType by sideMenuTabState.collectAsState()
 
@@ -170,13 +176,15 @@ fun SideEditorOptions(
                                 setEditable,
                                 fontStyleSelected(),
                                 moveToClick,
-                                moveToRoot,
                                 deleteDocument,
                                 toggleFavorite,
                                 documentTagsState = documentTagsState,
                                 onViewTagsClick = onViewTagsClick,
                                 onAddTagClick = onAddTagClick,
                                 onRemoveTagClick = onRemoveTagClick,
+                                documentIconState = documentIconState,
+                                onDocumentIconSelect = onDocumentIconSelect,
+                                onRemoveDocumentIcon = onRemoveDocumentIcon,
                             )
                         }
 
@@ -223,7 +231,7 @@ fun SideEditorOptions(
                                 currentModel = currentModel,
                                 models = models,
                                 hasSelectedLinesState = hasSelectedLinesState,
-                                askAiWithMode = askAiWithMode,
+                                aiCommand = aiCommand,
                                 aiSummary = aiSummary,
                                 aiActionPoints = aiActionPoints,
                                 aiFaq = aiFaq,
@@ -393,7 +401,6 @@ private fun PageOptions(
     setEditable: () -> Unit,
     selectedState: StateFlow<Font>,
     moveButtonClick: () -> Unit,
-    moveToRoot: () -> Unit,
     deleteDocument: () -> Unit,
     toggleFavorite: () -> Unit,
     modifier: Modifier = Modifier,
@@ -401,8 +408,12 @@ private fun PageOptions(
     onViewTagsClick: () -> Unit = {},
     onAddTagClick: () -> Unit = {},
     onRemoveTagClick: (String) -> Unit = {},
+    documentIconState: StateFlow<MenuItem.Icon?> = MutableStateFlow(null),
+    onDocumentIconSelect: (String, Int) -> Unit = { _, _ -> },
+    onRemoveDocumentIcon: () -> Unit = {},
 ) {
     val currentPlatform = LocalPlatform.current
+    var showIconPicker by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier.border(
@@ -448,7 +459,21 @@ private fun PageOptions(
         MoveToButton(moveButtonClick, modifier = Modifier.fillMaxWidth())
         Spacer(modifier = Modifier.height(4.dp))
 
-        MoveToHomeButton(moveToRoot, modifier = Modifier.fillMaxWidth())
+        DocumentIconButton(
+            isOpen = showIconPicker,
+            clickListener = { showIconPicker = !showIconPicker },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        // Opens in place: the side menu is a popup, a second one on top of it can't take clicks
+        AnimatedVisibility(showIconPicker) {
+            DocumentIconPicker(
+                documentIconState = documentIconState,
+                onIconSelect = onDocumentIconSelect,
+                onRemoveIcon = onRemoveDocumentIcon,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
         Spacer(modifier = Modifier.height(4.dp))
 
         TextButton(
@@ -513,7 +538,7 @@ private fun DocumentTagsSection(
 const val SIDE_MENU_TAGS_TAG = "SideMenuTags"
 
 @Composable
-private fun Title(text: String) {
+internal fun Title(text: String) {
     Text(
         text,
         style = MaterialTheme.typography.titleSmall,
@@ -731,7 +756,7 @@ private fun DecorationCommands(commands: Iterable<DecorationButton>) {
 }
 
 @Composable
-private fun TextButton(
+internal fun TextButton(
     modifier: Modifier = Modifier,
     text: String,
     highlight: Boolean = false,
@@ -785,7 +810,7 @@ private fun TextButton(
 }
 
 @Composable
-private fun targetModeLabel(targetMode: AiTargetMode): String = when (targetMode) {
+internal fun targetModeLabel(targetMode: AiTargetMode): String = when (targetMode) {
     AiTargetMode.DOCUMENT -> WrStrings.document()
     AiTargetMode.SELECTED_LINES -> WrStrings.selectedLines()
     AiTargetMode.CURSOR -> WrStrings.cursor()
@@ -794,7 +819,7 @@ private fun targetModeLabel(targetMode: AiTargetMode): String = when (targetMode
 // Mobile has no mouse-precision clicking, so AI buttons get more vertical padding and a
 // larger font than the compact desktop side panel.
 @Composable
-private fun aiButtonPadding(): PaddingValues =
+internal fun aiButtonPadding(): PaddingValues =
     if (LocalPlatform.current.isMobile()) {
         PaddingValues(horizontal = 10.dp, vertical = 14.dp)
     } else {
@@ -802,7 +827,7 @@ private fun aiButtonPadding(): PaddingValues =
     }
 
 @Composable
-private fun aiButtonTextStyle(): TextStyle =
+internal fun aiButtonTextStyle(): TextStyle =
     if (LocalPlatform.current.isMobile()) {
         MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
     } else {
@@ -810,7 +835,7 @@ private fun aiButtonTextStyle(): TextStyle =
     }
 
 @Composable
-private fun AiTargetButton(
+internal fun AiTargetButton(
     text: String,
     isSelected: Boolean,
     onClick: () -> Unit,
@@ -1205,28 +1230,14 @@ internal fun AiOptions(
     models: Flow<List<String>>,
     hasSelectedLinesState: StateFlow<Boolean>,
     selectModel: (String) -> Unit,
-    askAiWithMode: (AiTargetMode) -> Unit,
     aiSummary: (AiTargetMode) -> Unit,
     aiActionPoints: (AiTargetMode) -> Unit,
     aiFaq: (AiTargetMode) -> Unit,
     aiTags: (AiTargetMode) -> Unit,
+    aiCommand: (String) -> Unit,
     showModelSelection: Boolean = true,
-    availableTargetModes: List<AiTargetMode> = listOf(
-        AiTargetMode.DOCUMENT,
-        AiTargetMode.SELECTED_LINES,
-        AiTargetMode.CURSOR
-    ),
-    fixedTargetMode: AiTargetMode? = null,
     modifier: Modifier = Modifier,
 ) {
-    var selectedTargetMode by remember {
-        mutableStateOf(fixedTargetMode ?: availableTargetModes.firstOrNull() ?: AiTargetMode.DOCUMENT)
-    }
-    val hasSelectedLines by hasSelectedLinesState.collectAsState()
-
-    // Buttons are disabled when Selected Lines mode is active but no lines are selected
-    val actionsEnabled = selectedTargetMode != AiTargetMode.SELECTED_LINES || hasSelectedLines
-
     Column(
         modifier = modifier.border(
             1.dp,
@@ -1237,115 +1248,35 @@ internal fun AiOptions(
             .verticalScroll(rememberScrollState())
             .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp)
     ) {
-        Title(WrStrings.askAi())
+        val targetModes = listOf(AiTargetMode.DOCUMENT, AiTargetMode.SELECTED_LINES, AiTargetMode.CURSOR)
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Apply to section. When the target mode is fixed by the caller (e.g. mobile's
-        // selected-lines menu, which always targets the selection it was opened from), only that
-        // one mode is shown, already selected and not changeable, so the user still sees what
-        // the actions below are about to run on.
-        Text(
-            text = WrStrings.applyTo(),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(bottom = 4.dp)
-        )
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            if (fixedTargetMode != null) {
-                AiTargetButton(
-                    text = targetModeLabel(fixedTargetMode),
-                    isSelected = true,
-                    onClick = {},
-                    modifier = Modifier.weight(1f)
-                )
-            } else {
-                availableTargetModes.forEach { targetMode ->
-                    AiTargetButton(
-                        text = targetModeLabel(targetMode),
-                        isSelected = selectedTargetMode == targetMode,
-                        onClick = { selectedTargetMode = targetMode },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-        }
-
-        // Show warning when Selected Lines is chosen but no lines are selected
-        if (fixedTargetMode == null &&
-            selectedTargetMode == AiTargetMode.SELECTED_LINES &&
-            !hasSelectedLines
-        ) {
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = WrStrings.selectLinesFirst(),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(horizontal = 4.dp)
+        // On desktop and web the free command has a field at the bottom of the editor, so the
+        // panel holds the quick actions only. A tablet in landscape has no such field: it keeps
+        // the command tab, like the sheet of the phone.
+        if (LocalPlatform.current.isMobile()) {
+            AiOptionsTabs(
+                hasSelectedLinesState = hasSelectedLinesState,
+                availableTargetModes = targetModes,
+                fixedTargetMode = null,
+                aiSummary = aiSummary,
+                aiActionPoints = aiActionPoints,
+                aiFaq = aiFaq,
+                aiTags = aiTags,
+                aiCommand = aiCommand,
             )
-        }
+        } else {
+            Title(WrStrings.askAi())
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-        TextButton(
-            modifier = Modifier.fillMaxWidth(),
-            text = "Prompt",
-            paddingValues = aiButtonPadding(),
-            textStyle = aiButtonTextStyle(),
-            enabled = actionsEnabled,
-            onClick = { askAiWithMode(selectedTargetMode) }
-        )
-
-        // Summary/Action Points/FAQ/Tags all summarize existing content, which doesn't apply
-        // to Cursor mode (there is no selection or document to summarize, only new text to
-        // generate at the cursor) - only Prompt is offered there.
-        if (selectedTargetMode != AiTargetMode.CURSOR) {
-            Spacer(modifier = Modifier.height(2.dp))
-
-            TextButton(
-                modifier = Modifier.fillMaxWidth(),
-                text = WrStrings.summary(),
-                paddingValues = aiButtonPadding(),
-                textStyle = aiButtonTextStyle(),
-                enabled = actionsEnabled,
-                onClick = { aiSummary(selectedTargetMode) }
-            )
-
-            Spacer(modifier = Modifier.height(2.dp))
-
-            TextButton(
-                modifier = Modifier.fillMaxWidth(),
-                text = WrStrings.actionPoints(),
-                paddingValues = aiButtonPadding(),
-                textStyle = aiButtonTextStyle(),
-                enabled = actionsEnabled,
-                onClick = { aiActionPoints(selectedTargetMode) }
-            )
-
-            Spacer(modifier = Modifier.height(2.dp))
-
-            TextButton(
-                modifier = Modifier.fillMaxWidth(),
-                text = "FAQ",
-                paddingValues = aiButtonPadding(),
-                textStyle = aiButtonTextStyle(),
-                enabled = actionsEnabled,
-                onClick = { aiFaq(selectedTargetMode) }
-            )
-
-            Spacer(modifier = Modifier.height(2.dp))
-
-            TextButton(
-                modifier = Modifier.fillMaxWidth(),
-                text = "Tags",
-                paddingValues = aiButtonPadding(),
-                textStyle = aiButtonTextStyle(),
-                enabled = actionsEnabled,
-                onClick = { aiTags(selectedTargetMode) }
+            AiQuickActions(
+                hasSelectedLinesState = hasSelectedLinesState,
+                availableTargetModes = targetModes,
+                fixedTargetMode = null,
+                aiSummary = aiSummary,
+                aiActionPoints = aiActionPoints,
+                aiFaq = aiFaq,
+                aiTags = aiTags,
             )
         }
 

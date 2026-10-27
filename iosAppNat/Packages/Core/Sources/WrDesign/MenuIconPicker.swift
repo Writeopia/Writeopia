@@ -1,27 +1,30 @@
 import SwiftUI
-import WrDesign
 import WrModels
 
 /// The icon of a folder or a document, like `IconsPicker` of the Compose app: the colors on
 /// top, then the icons. A choice applies right away, so the sidebar, the cards and the editor
 /// show it while the picker is still open to try another one.
-struct MenuIconPicker: View {
+public struct MenuIconPicker: View {
     let initial: IconInfo?
     /// The button that takes the icon away: "No icon" for a document, the default folder for a
     /// folder.
     let removeTitle: LocalizedStringKey
     let removeIdentifier: String
     let onPick: (IconInfo?) -> Void
+    /// Fixed for popovers; nil fills the width, like in the bottom sheet of phones.
+    let width: CGFloat?
     @State private var iconName: String?
     @State private var tint: Int?
 
-    init(
+    public init(
         initial: IconInfo?,
         removeTitle: LocalizedStringKey = "No icon",
         removeIdentifier: String = "documentIcon.remove",
+        width: CGFloat? = 300,
         onPick: @escaping (IconInfo?) -> Void
     ) {
         self.initial = initial
+        self.width = width
         self.removeTitle = removeTitle
         self.removeIdentifier = removeIdentifier
         self.onPick = onPick
@@ -33,7 +36,7 @@ struct MenuIconPicker: View {
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 8)
 
-    var body: some View {
+    public var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
                 ForEach(MenuIcons.tints, id: \.self) { tintButton($0) }
@@ -57,7 +60,8 @@ struct MenuIconPicker: View {
             .accessibilityIdentifier(removeIdentifier)
         }
         .padding(12)
-        .frame(width: 300)
+        .frame(width: width)
+        .frame(maxWidth: width == nil ? .infinity : nil)
     }
 
     private func tintButton(_ value: Int) -> some View {
@@ -103,58 +107,5 @@ struct MenuIconPicker: View {
         .help(name)
         .accessibilityLabel(Text(name))
         .accessibilityAddTraits(isSelected ? .isSelected : [])
-    }
-}
-
-/// The icon of a document in a list, opening the icon picker when clicked, like the icon of a
-/// document in the side menu of the Compose app.
-struct DocumentIconButton: View {
-    let icon: IconInfo?
-    let onPick: (IconInfo?) -> Void
-    @State private var showsPicker = false
-
-    var body: some View {
-        Button {
-            showsPicker = true
-        } label: {
-            DocumentIconImage(icon: icon, defaultColor: .secondary)
-                .frame(width: 20, height: 32)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .help("Change icon")
-        .accessibilityLabel("Change icon")
-        .accessibilityIdentifier("documentIcon.button")
-        .popover(isPresented: $showsPicker, arrowEdge: .trailing) {
-            MenuIconPicker(initial: icon, onPick: onPick)
-                .presentationCompactAdaptation(.popover)
-        }
-    }
-}
-
-/// The icon of a folder, opening the icon and color picker when clicked, like the icon of a
-/// folder card and of the side menu tree of the Compose app. The folder keeps its name; the
-/// edition sheet changes both.
-struct FolderIconButton: View {
-    let icon: IconInfo?
-    var isDropTarget = false
-    let onPick: (IconInfo?) -> Void
-    @State private var showsPicker = false
-
-    var body: some View {
-        Button {
-            showsPicker = true
-        } label: {
-            FolderIconImage(icon: icon, isDropTarget: isDropTarget)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .help("Change icon")
-        .accessibilityLabel("Change icon")
-        .accessibilityIdentifier("folderIcon.button")
-        .popover(isPresented: $showsPicker, arrowEdge: .trailing) {
-            MenuIconPicker(initial: icon, removeTitle: "Default icon", removeIdentifier: "folderIcon.remove", onPick: onPick)
-                .presentationCompactAdaptation(.popover)
-        }
     }
 }

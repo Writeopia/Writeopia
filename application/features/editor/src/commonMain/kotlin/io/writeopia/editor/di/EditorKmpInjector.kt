@@ -25,6 +25,7 @@ import io.writeopia.sdk.models.drawing.DrawingData
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
+import io.writeopia.sdk.utils.iterables.Rank
 import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.sdk.repository.DocumentRepository
@@ -52,7 +53,7 @@ import kotlinx.serialization.json.Json
 data class DrawingSaveEvent(
     val documentId: String,
     val storyStep: StoryStep,
-    val position: Double
+    val position: String
 )
 
 class EditorKmpInjector private constructor(
@@ -188,20 +189,13 @@ class EditorKmpInjector private constructor(
                 )
             }
 
-            // Calculate position: end of document for new drawings
+            // Positions are sort keys: an existing drawing keeps its own, a new one goes after
+            // the last step.
+            val afterLast = document?.content?.keys?.maxOrNull()?.let(Rank::after) ?: Rank.FIRST
             val position = if (storyStepId.isNotEmpty()) {
-                // For updates, find the existing position
-                document?.content?.entries?.find { it.value.id == storyStepId }?.key
-                    ?: (document?.content?.size ?: 0).toDouble()
+                document?.content?.entries?.find { it.value.id == storyStepId }?.key ?: afterLast
             } else {
-                // For new drawings, add at the end with title protection
-                val endPosition = (document?.content?.size ?: 0).toDouble()
-                val storyAtEnd = document?.content?.get(endPosition)
-                if (storyAtEnd?.type == StoryTypes.TITLE.type) {
-                    endPosition + 1
-                } else {
-                    endPosition
-                }
+                afterLast
             }
 
             // Save to database

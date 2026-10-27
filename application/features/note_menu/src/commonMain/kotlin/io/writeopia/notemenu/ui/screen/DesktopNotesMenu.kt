@@ -46,7 +46,7 @@ import io.writeopia.notemenu.ui.screen.documents.NotesCardsScreen
 import io.writeopia.notemenu.ui.screen.file.fileChooserLoad
 import io.writeopia.notemenu.ui.screen.menu.CreateFolderDialog
 import io.writeopia.notemenu.ui.screen.menu.EditFileDialog
-import io.writeopia.notemenu.ui.screen.menu.MoveSelectionDialog
+import io.writeopia.commonui.folders.MoveSelectionDialog
 import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
 import io.writeopia.notemenu.viewmodel.ConfigState
 import io.writeopia.notemenu.viewmodel.getPath
@@ -106,6 +106,7 @@ fun DesktopNotesMenu(
                         } else {
                             WrStrings.folderScreenEmpty()
                         },
+                        showCreateNoteWhenEmpty = currentTag == null,
                         isDarkTheme = isDarkTheme,
                         documents = chooseNoteViewModel.documentsState.collectAsState().value,
                         showAddMenuState = chooseNoteViewModel.showAddMenuState,

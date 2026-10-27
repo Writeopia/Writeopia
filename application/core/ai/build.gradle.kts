@@ -42,6 +42,7 @@ kotlin {
                 implementation(project(":writeopia_models"))
                 implementation(project(":writeopia"))
                 implementation(project(":application:core:auth_core"))
+                implementation(project(":common:endpoints"))
 
                 implementation(libs.kotlinx.coroutines.core)
             }

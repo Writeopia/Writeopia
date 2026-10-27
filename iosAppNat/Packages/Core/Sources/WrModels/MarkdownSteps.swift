@@ -14,7 +14,7 @@ public enum MarkdownSteps {
                 text: type.number == StoryType.codeBlock.number ? text : text.replacingOccurrences(of: "**", with: ""),
                 checked: checked,
                 tags: tag.map { [TagInfo(tag: $0)] } ?? [],
-                position: Double(steps.count + 1),
+                position: Rank.at(steps.count + 1),
                 lastUpdatedAt: now
             ))
         }

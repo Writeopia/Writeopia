@@ -39,8 +39,8 @@ object DefaultDrawersJs : DrawersFactory {
         onHeaderClick: () -> Unit,
         drawConfig: DrawConfig,
         fontFamily: FontFamily?,
-        generateSection: (Double) -> Unit,
-        receiveExternalFile: (List<ExternalFile>, Double) -> Unit,
+        generateSection: (String) -> Unit,
+        receiveExternalFile: (List<ExternalFile>, String) -> Unit,
         onDocumentLinkClick: (String) -> Unit,
         linkLeadingIcon: ImageVector?,
         equationToImageUrl: String?,
@@ -48,7 +48,7 @@ object DefaultDrawersJs : DrawersFactory {
     ): Map<Int, StoryStepDrawer> =
         CommonDrawers.create(
             manager,
-            30.dp,
+            marginAtBottom = 300.dp,
             aiExplanation,
             editable,
             onHeaderClick,

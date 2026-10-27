@@ -14,10 +14,24 @@ import WrNetwork
 final class FakeAi: AiStreaming {
     var answers: [String] = []
     var error: Error?
+    /// What the judge answers for a free command; nil for an AI without a judge.
+    var intent: AiCommandIntent?
     private(set) var requests: [(AiCommand, String)] = []
+    private(set) var commandRequests: [AiCommandRequest] = []
 
     func stream(_ command: AiCommand, prompt: String) -> AsyncThrowingStream<String, Error> {
         requests.append((command, prompt))
+        return answersStream()
+    }
+
+    func commandIntent(_ request: AiCommandRequest) async throws -> AiCommandIntent? { intent }
+
+    func streamCommand(_ request: AiCommandRequest) -> AsyncThrowingStream<String, Error> {
+        commandRequests.append(request)
+        return answersStream()
+    }
+
+    private func answersStream() -> AsyncThrowingStream<String, Error> {
         let answers = answers
         let error = error
         return AsyncThrowingStream { continuation in
@@ -29,6 +43,14 @@ final class FakeAi: AiStreaming {
 
 final class OneDocumentRepository: DocumentsRepository {
     let document: WrDocument
+    /// The moves, favorites and icons asked for, in order.
+    private(set) var moves: [String] = []
+    private(set) var favorites: [Bool] = []
+    private(set) var icons: [IconInfo?] = []
+    /// Makes the moves, favorites and icons fail.
+    var failsActions = false
+    /// How long a favorite takes to save.
+    var favoriteDelay: Duration?
     init(_ document: WrDocument) { self.document = document }
 
     func folderContents(folderId: String) async throws -> FolderContents { FolderContents() }
@@ -36,19 +58,30 @@ final class OneDocumentRepository: DocumentsRepository {
     func search(query: String) async throws -> [WrDocument] { [] }
     func createFolder(title: String, parentId: String) async throws -> Folder { throw APIError.notFound }
     func createDocument(title: String, parentId: String) async throws -> WrDocument { throw APIError.notFound }
-    func moveDocument(id: String, toFolder folderId: String) async throws {}
+    func moveDocument(id: String, toFolder folderId: String) async throws {
+        if failsActions { throw APIError.notFound }
+        moves.append(folderId)
+    }
     func moveFolder(id: String, toFolder folderId: String) async throws {}
     func save(_ document: WrDocument) async throws {}
     func deleteDocument(id: String) async throws {}
     func duplicate(ids: [String]) async throws {}
-    func setFavorite(ids: [String], favorite: Bool) async throws {}
+    func setFavorite(ids: [String], favorite: Bool) async throws {
+        if let favoriteDelay { try await Task.sleep(for: favoriteDelay) }
+        if failsActions { throw APIError.notFound }
+        favorites.append(favorite)
+    }
+    func updateDocumentIcon(id: String, icon: IconInfo?) async throws {
+        if failsActions { throw APIError.notFound }
+        icons.append(icon)
+    }
     func deleteItems(ids: [String]) async throws {}
 }
 
 private let document = WrDocument(id: "d", title: "Plan", workspaceId: "w", content: [
-    StoryStep(id: "t", type: .title, text: "Plan", position: 0),
-    StoryStep(id: "a", type: .text, text: "First idea", position: 1),
-    StoryStep(id: "b", type: .text, text: "Second idea", position: 2),
+    StoryStep(id: "t", type: .title, text: "Plan", position: Rank.at(0)),
+    StoryStep(id: "a", type: .text, text: "First idea", position: Rank.at(1)),
+    StoryStep(id: "b", type: .text, text: "Second idea", position: Rank.at(2)),
 ])
 
 private func loadedViewModel(_ ai: FakeAi?) async -> NoteEditorViewModel {
@@ -67,8 +100,8 @@ private func waitForAi(_ viewModel: NoteEditorViewModel) async {
     @Test func aiIsOnlyAvailableWithAClient() async {
         #expect(await loadedViewModel(nil).isAiAvailable == false)
         #expect(await loadedViewModel(FakeAi()).isAiAvailable)
-        #expect(NoteEditorViewModel.commands(for: .cursor) == [.prompt])
-        #expect(NoteEditorViewModel.commands(for: .document) == AiCommand.allCases)
+        #expect(NoteEditorViewModel.commands(for: .cursor) == [])
+        #expect(NoteEditorViewModel.commands(for: .document) == AiCommand.quickActions)
     }
 
     @Test func summaryOfDocumentStreamsIntoAnAnswerAtTheEnd() async {
@@ -378,7 +411,7 @@ final class CreatingRepository: DocumentsRepository {
 
         #expect(ai.requests.first?.1 == "First idea")
         #expect(viewModel.writeopiaManager.currentStory.sortedStories.map { $0.text ?? "" } == ["Plan", "First idea", "Summary", "Second idea"])
-        #expect(NoteEditorViewModel.commands(for: .selectedLines) == AiCommand.allCases)
+        #expect(NoteEditorViewModel.commands(for: .selectedLines) == AiCommand.quickActions)
         #expect(!AiTargetMode.pickable.contains(.selectedLines))
     }
 }
@@ -501,6 +534,7 @@ final class SyncingRepository: DocumentsRepository, DocumentSyncing, StepStore {
     }
 
     func syncFolder(_ folderId: String) async throws {}
+    func syncWorkspaceChanges() async throws {}
     func fetchAndMerge(documentId: String) async throws -> WrDocument? { merged }
     func pushSteps(document: WrDocument, changes: [StoryStep], deletions: [String], lastSyncTimestamp: Int64) async throws -> Int64 {
         if let pushError { throw pushError }
@@ -511,9 +545,9 @@ final class SyncingRepository: DocumentsRepository, DocumentSyncing, StepStore {
 
 @Suite struct PersistenceTests {
     private let synced = WrDocument(id: "d", title: "Plan", workspaceId: "w", content: [
-        StoryStep(id: "t", type: .title, text: "Plan", position: 0, lastUpdatedAt: 10),
-        StoryStep(id: "a", type: .text, text: "First idea", position: 1, lastUpdatedAt: 10),
-        StoryStep(id: "b", type: .text, text: "Second idea", position: 2, lastUpdatedAt: 10),
+        StoryStep(id: "t", type: .title, text: "Plan", position: Rank.at(0), lastUpdatedAt: 10),
+        StoryStep(id: "a", type: .text, text: "First idea", position: Rank.at(1), lastUpdatedAt: 10),
+        StoryStep(id: "b", type: .text, text: "Second idea", position: Rank.at(2), lastUpdatedAt: 10),
     ], lastUpdatedAt: 10, lastSyncedAt: 50)
 
     private func viewModel(_ repository: SyncingRepository) async -> NoteEditorViewModel {
@@ -606,7 +640,7 @@ final class SyncingRepository: DocumentsRepository, DocumentSyncing, StepStore {
 
     @Test func backendMergeIsShownOnlyBeforeTyping() async throws {
         var remote = synced
-        remote.content.append(StoryStep(id: "c", type: .text, text: "From another device", position: 3, lastUpdatedAt: 99))
+        remote.content.append(StoryStep(id: "c", type: .text, text: "From another device", position: Rank.at(3), lastUpdatedAt: 99))
 
         let untouched = SyncingRepository(synced)
         untouched.merged = remote
@@ -637,7 +671,7 @@ final class SyncingRepository: DocumentsRepository, DocumentSyncing, StepStore {
 @Suite struct DeleteFromEditorTests {
     @Test func deletingStopsSavingAndSending() async throws {
         let repository = SyncingRepository(WrDocument(id: "d", title: "Plan", workspaceId: "w", content: [
-            StoryStep(id: "t", type: .title, text: "Plan", position: 0),
+            StoryStep(id: "t", type: .title, text: "Plan", position: Rank.at(0)),
         ]))
         let viewModel = NoteEditorViewModel(documentId: "d", repository: repository)
         await viewModel.loadDocument()

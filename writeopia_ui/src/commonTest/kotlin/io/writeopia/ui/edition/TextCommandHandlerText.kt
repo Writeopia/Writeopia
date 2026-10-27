@@ -1,5 +1,6 @@
 package io.writeopia.ui.edition
 
+import io.writeopia.sdk.utils.iterables.Rank
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import kotlin.test.Test
@@ -22,16 +23,16 @@ class TextCommandHandlerText {
         )
 
         assertTrue {
-            handler.handleCommand("## ", step, 0.0)
+            handler.handleCommand("## ", step, Rank.at(0))
         }
         assertTrue {
-            handler.handleCommand("## Heading", step, 0.0)
+            handler.handleCommand("## Heading", step, Rank.at(0))
         }
         assertTrue {
-            handler.handleCommand("command ", step, 0.0)
+            handler.handleCommand("command ", step, Rank.at(0))
         }
         assertFalse {
-            handler.handleCommand("notACommand ", step, 0.0)
+            handler.handleCommand("notACommand ", step, Rank.at(0))
         }
     }
 
@@ -40,7 +41,7 @@ class TextCommandHandlerText {
         val triggered = mutableListOf<String>()
         val handler = TextCommandHandler(
             commandsMap = listOf("# ", "## ", "### ", "- ", "-[]", "---").associateWith { command ->
-                { _: StoryStep, _: Double ->
+                { _: StoryStep, _: String ->
                     triggered.add(command)
                     Unit
                 }
@@ -48,18 +49,18 @@ class TextCommandHandlerText {
         )
 
         listOf("#", "##", "###", "-", "--", "-[", "#hashtag", "a - b").forEach { text ->
-            assertFalse(handler.handleCommand(text, step, 0.0), "'$text' is not a command")
+            assertFalse(handler.handleCommand(text, step, Rank.at(0)), "'$text' is not a command")
             assertFalse(handler.isExactCommand(text, step), "'$text' is not a command")
         }
         assertTrue(triggered.isEmpty())
 
         assertTrue(handler.isExactCommand("## ", step))
-        assertTrue(handler.handleCommand("## ", step, 0.0))
-        assertTrue(handler.handleCommand("### Heading", step, 0.0))
-        assertTrue(handler.handleCommand("- item", step, 0.0))
-        assertTrue(handler.handleCommand("-[]", step, 0.0))
-        assertTrue(handler.handleCommand("---", step, 0.0))
-        assertTrue(handler.handleCommand("--- ", step, 0.0))
+        assertTrue(handler.handleCommand("## ", step, Rank.at(0)))
+        assertTrue(handler.handleCommand("### Heading", step, Rank.at(0)))
+        assertTrue(handler.handleCommand("- item", step, Rank.at(0)))
+        assertTrue(handler.handleCommand("-[]", step, Rank.at(0)))
+        assertTrue(handler.handleCommand("---", step, Rank.at(0)))
+        assertTrue(handler.handleCommand("--- ", step, Rank.at(0)))
 
         assertEquals(listOf("## ", "### ", "- ", "-[]", "---", "---"), triggered)
     }
@@ -69,7 +70,7 @@ class TextCommandHandlerText {
         val handler = TextCommandHandler(commandsMap = mapOf("## " to { _, _ -> }))
         val title = StoryStep(type = StoryTypes.TITLE.type)
 
-        assertFalse(handler.handleCommand("## Title", title, 0.0))
+        assertFalse(handler.handleCommand("## Title", title, Rank.at(0)))
         assertFalse(handler.isExactCommand("## ", title))
     }
 }

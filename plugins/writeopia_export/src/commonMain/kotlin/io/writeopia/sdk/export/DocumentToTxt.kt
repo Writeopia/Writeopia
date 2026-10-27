@@ -37,7 +37,7 @@ object DocumentToTxt : DocumentWriter {
     override fun writeDocument(document: Document, path: String, writeConfigFile: Boolean) {}
 
     private fun writeToWriter(
-        content: Map<Double, StoryStep>,
+        content: Map<String, StoryStep>,
         kmpFileWriter: KmpFileWriter,
     ) {
         content.asSequence()

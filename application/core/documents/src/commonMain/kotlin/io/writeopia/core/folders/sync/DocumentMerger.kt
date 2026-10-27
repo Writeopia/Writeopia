@@ -6,6 +6,7 @@ import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.story.StoryStep
+import io.writeopia.sdk.utils.iterables.Rank
 import kotlin.time.ExperimentalTime
 
 /**
@@ -58,7 +59,7 @@ class DocumentMerger {
     }
 
     private fun mergeCommentConversations(
-        mergedContent: Map<Double, StoryStep>,
+        mergedContent: Map<String, StoryStep>,
         primary: Map<String, List<Comment>>,
         fallback: Map<String, List<Comment>>,
     ): Map<String, List<Comment>> {
@@ -104,15 +105,15 @@ class DocumentMerger {
     }
 
     private fun mergeContent(
-        localContent: Map<Double, StoryStep>,
-        backendContent: Map<Double, StoryStep>
-    ): Map<Double, StoryStep> {
+        localContent: Map<String, StoryStep>,
+        backendContent: Map<String, StoryStep>
+    ): Map<String, StoryStep> {
         // Build maps from StoryStep ID to (position, StoryStep) for lookup
         val localById = localContent.entries.associate { (pos, step) -> step.id to (pos to step) }
         val backendById = backendContent.entries.associate { (pos, step) -> step.id to (pos to step) }
 
         val allStepIds = localById.keys + backendById.keys
-        val mergedSteps = mutableListOf<Pair<Double, StoryStep>>()
+        val mergedSteps = mutableListOf<Pair<String, StoryStep>>()
 
         for (stepId in allStepIds) {
             val localEntry = localById[stepId]
@@ -138,7 +139,30 @@ class DocumentMerger {
             mergedSteps.add(position to step)
         }
 
-        // Sort by position and rebuild the map
-        return mergedSteps.sortedBy { it.first }.toMap()
+        return mergedSteps.sortedBy { it.first }.withDistinctPositions()
+    }
+
+    /**
+     * The steps as a map, in order. Two different steps at the same position (each side added
+     * one there) can't share a key: the later one goes half way to the next position, so no
+     * step is lost and the order holds.
+     */
+    private fun List<Pair<String, StoryStep>>.withDistinctPositions(): Map<String, StoryStep> {
+        val result = linkedMapOf<String, StoryStep>()
+        var lastKey: String? = null
+
+        forEachIndexed { index, (position, step) ->
+            val key = if (lastKey == null || position > lastKey) {
+                position
+            } else {
+                val nextDistinct = subList(index + 1, size).firstOrNull { (next, _) -> next > position }?.first
+                // A rank between the last one and the next distinct position: there always is one
+                Rank.between(lastKey, nextDistinct)
+            }
+            result[key] = step
+            lastKey = key
+        }
+
+        return result
     }
 }

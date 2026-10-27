@@ -58,9 +58,13 @@ public struct NoteEditorView: View {
     @Environment(\.openEditors) private var openEditors
     /// Selection waiting for a URL. Kept here because the alert takes the focus from the text.
     @State private var sideTab: EditorSideOptions.SideTab?
+    /// The command field of the AI panel has the keyboard focus (the Mac).
+    @State private var aiCommandFocused = false
     @State private var linkSelection: StepSelection?
     @State private var linkURL = ""
     private let fallbackTitle: String
+    /// The name of the root folder in "Move to", like the documents list shows it.
+    private let rootTitle: String
     private let openDocumentLink: (DocumentLink) -> Void
 
     public init(
@@ -76,6 +80,7 @@ public struct NoteEditorView: View {
         imageGenerator: AiImageGenerating? = nil,
         headerImages: HeaderImagesAPI? = nil,
         loadActivity: ContentLoadActivity? = nil,
+        rootTitle: String = String(localized: "Documents"),
         openDocumentLink: @escaping (DocumentLink) -> Void = { _ in }
     ) {
         _viewModel = State(initialValue: NoteEditorViewModel(
@@ -92,6 +97,7 @@ public struct NoteEditorView: View {
             loadActivity: loadActivity
         ))
         fallbackTitle = title
+        self.rootTitle = rootTitle
         self.openDocumentLink = openDocumentLink
     }
 
@@ -220,14 +226,15 @@ public struct NoteEditorView: View {
             Button("Link to page") { Task { await viewModel.linkSelectionToNewPage() } }
                 .keyboardShortcut("l", modifiers: .command)
                 .disabled(!canEdit || !manager.hasSelectedLines)
-            // Backspace and Delete remove the selected lines wherever the keyboard focus is;
-            // without a selection they reach the text as usual.
+            // Backspace and Delete remove the selected lines wherever the keyboard focus is,
+            // except in the AI command field, where they edit the command; without a selection
+            // they reach the text as usual.
             Button("Delete lines") { withAnimation(.snappy) { manager.deleteSelectedLines() } }
                 .keyboardShortcut(.delete, modifiers: [])
-                .disabled(!canEdit || !manager.hasSelectedLines)
+                .disabled(!canEdit || !manager.hasSelectedLines || aiCommandFocused)
             Button("Delete lines forward") { withAnimation(.snappy) { manager.deleteSelectedLines() } }
                 .keyboardShortcut(.deleteForward, modifiers: [])
-                .disabled(!canEdit || !manager.hasSelectedLines)
+                .disabled(!canEdit || !manager.hasSelectedLines || aiCommandFocused)
         }
         .opacity(0)
         .allowsHitTesting(false)
@@ -286,316 +293,407 @@ public struct NoteEditorView: View {
         }
     }
 
-    public var body: some View {
+    /// The free command to the AI, at the bottom of the text while the AI panel of the side
+    /// options is open, like the Compose desktop app. Only the Mac has the panel.
+    @ViewBuilder
+    private var aiCommandField: some View {
+        #if os(macOS)
         Group {
-            if viewModel.hasLoaded {
-                WriteopiaEditor(manager: viewModel.writeopiaManager, customDrawers: customDrawers)
-                    .dropDestination(for: URL.self) { urls, _ in dropImages(urls) }
-                    .overlay(alignment: .bottomTrailing) { writingSuggestions }
-                    .safeAreaInset(edge: .bottom, spacing: 0) {
-                        // A locked document can't be edited, so its menu is hidden. While lines are
-                        // selected, the selection menu takes the place of the regular one.
-                        // In landscape the side options take their place.
-                        if viewModel.isLocked || isWideLayout {
-                            EmptyView()
-                        } else if viewModel.writeopiaManager.hasSelectedLines {
-                            SelectionMenu(
-                                manager: viewModel.writeopiaManager,
-                                showsAi: viewModel.isAiAvailable,
-                                onAiClick: { showSelectedLinesAiDialog = true },
-                                onLinkToPage: { Task { await viewModel.linkSelectionToNewPage() } },
-                                onCopy: { viewModel.copySelectedLines(to: SystemLinePasteboard()) },
-                                onCut: { withAnimation(.snappy) { viewModel.cutSelectedLines(to: SystemLinePasteboard()) } }
-                            )
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-                        } else {
-                            EditorBottomMenu(
-                                manager: viewModel.writeopiaManager,
-                                showsAi: viewModel.isAiAvailable,
-                                onAiClick: {
-                                    aiCursorStepId = viewModel.writeopiaManager.currentTextStep?.step.id
-                                    showAiDialog = true
-                                },
-                                onLinkClick: linkClick,
-                                onDrawingClick: { drawingTarget = DrawingTarget(stepId: nil, drawing: nil) },
-                                onImagePicked: addImage
-                            )
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-                        }
-                    }
-                    .overlay(alignment: .trailing) {
-                        if isWideLayout {
-                            EditorSideOptions(
-                                viewModel: viewModel,
-                                onBack: { dismiss() },
-                                onAiClick: {
-                                    if viewModel.writeopiaManager.hasSelectedLines {
-                                        showSelectedLinesAiDialog = true
-                                    } else {
-                                        showAiDialog = true
-                                    }
-                                },
-                                onLinkClick: linkClick,
-                                onDrawingClick: { drawingTarget = DrawingTarget(stepId: nil, drawing: nil) },
-                                onImagePicked: addImage,
-                                onImageFilePicked: addImage(fileURL:),
-                                onPublishClick: publishClick,
-                                onDelete: deleteDocument,
-                                onPresentationClick: { showPresentations = true },
-                                tab: $sideTab
-                            )
-                            .padding(.trailing, 10)
-                            .transition(.move(edge: .trailing).combined(with: .opacity))
-                        }
-                    }
-            } else if let errorMessage = viewModel.errorMessage {
-                ContentUnavailableView {
-                    Label("Something went wrong", systemImage: "exclamationmark.triangle")
-                } description: {
-                    Text(errorMessage)
-                } actions: {
-                    Button("Try again") { Task { await viewModel.loadDocument() } }
-                }
-            } else {
-                ProgressView()
-                    .controlSize(.large)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-        }
-        .background(WrColors.systemBackground)
-        .overlay(alignment: .top) {
-            if viewModel.isAiRunning {
-                AiRunningChip { viewModel.cancelAi() }
-                    .padding(.top, 8)
-                    .transition(.move(edge: .top).combined(with: .opacity))
-            } else if let activity = viewModel.writingAgent?.executor.activity {
-                AiRunningChip(label: activity) { viewModel.writingAgent?.executor.cancel() }
-                    .padding(.top, 8)
-                    .transition(.move(edge: .top).combined(with: .opacity))
-            }
-        }
-        .animation(.snappy, value: viewModel.isAiRunning)
-        .animation(.snappy, value: viewModel.writingAgent?.executor.activity)
-        .sheet(
-            isPresented: Binding(
-                get: { viewModel.writingAgent?.state.folderDialog != nil },
-                set: { if !$0 { viewModel.writingAgent?.dismissFolderDialog() } }
-            )
-        ) {
-            if let agent = viewModel.writingAgent, let dialog = agent.state.folderDialog {
-                FolderSuggestionDialog(controller: agent, dialog: dialog)
-                    .wrSheetSize(width: 420, height: 380)
-            }
-        }
-        .sheet(
-            isPresented: Binding(
-                get: { viewModel.writingAgent?.state.tagDialog != nil },
-                set: { if !$0 { viewModel.writingAgent?.dismissTagDialog() } }
-            )
-        ) {
-            if let agent = viewModel.writingAgent, let dialog = agent.state.tagDialog {
-                TagSuggestionDialog(controller: agent, dialog: dialog)
-                    .wrSheetSize(width: 440, height: 440)
-            }
-        }
-        .photosPicker(isPresented: $showAgentImagePicker, selection: $agentImageItem, matching: .images)
-        .onChange(of: agentImageItem) {
-            if let item = agentImageItem {
-                addImage(item)
-                agentImageItem = nil
-            }
-        }
-        .alert(
-            "Could not apply the suggestion",
-            isPresented: Binding(
-                get: { viewModel.writingAgent?.executor.error != nil },
-                set: { if !$0 { viewModel.writingAgent?.executor.error = nil } }
-            )
-        ) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(viewModel.writingAgent?.executor.error ?? "")
-        }
-        .background { keyboardShortcuts }
-        .navigationTitle(viewModel.hasLoaded ? viewModel.title : fallbackTitle)
-        .toolbarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                TitleView(
-                    title: viewModel.hasLoaded ? viewModel.title : fallbackTitle,
-                    isLocked: viewModel.isLocked,
-                    isPublished: viewModel.isPublished
+            if isWideLayout, sideTab == .ai, !viewModel.isLocked {
+                AiCommandField(
+                    onRun: { command in viewModel.runAiCommand(command) },
+                    onFocusChange: { focused in aiCommandFocused = focused }
                 )
-            }
-            if viewModel.hasLoaded {
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        showMenu = true
-                    } label: {
-                        Label("More", systemImage: "ellipsis")
-                    }
-                    .accessibilityIdentifier("editor.more")
-                }
+                .frame(maxWidth: 640)
+                .padding(.leading, 16)
+                .padding(.trailing, 72)
+                .padding(.bottom, 16)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        #if os(iOS)
-        // The side options of landscape replace the navigation bar, back button included.
-        .toolbar(isWideLayout ? .hidden : .automatic, for: .navigationBar)
+        .animation(.snappy(duration: 0.27), value: sideTab)
         #endif
-        .animation(.snappy, value: isWideLayout)
-        .sheet(isPresented: $showMenu) {
-            NoteMenuSheet(
+    }
+
+    public var body: some View {
+        // Applied in pieces: as one chain, the compiler gives up type-checking the body.
+        let content = editorContent
+            .background(WrColors.systemBackground)
+            .overlay(alignment: .top) { aiRunningChip }
+            .animation(.snappy, value: viewModel.isAiRunning)
+            .animation(.snappy, value: viewModel.writingAgent?.executor.activity)
+        return lifecycle(drawingEditor(alerts(sheets(chrome(writingAgentDialogs(content))))))
+    }
+
+    /// The editor once the document is loaded; an error or a spinner before.
+    @ViewBuilder
+    private var editorContent: some View {
+        if viewModel.hasLoaded {
+            WriteopiaEditor(manager: viewModel.writeopiaManager, customDrawers: customDrawers)
+                // The closure says it answers whether the drop was taken, so the right overload is picked.
+                .dropDestination(for: URL.self) { urls, _ -> Bool in dropImages(urls) }
+                .overlay(alignment: .bottomTrailing) { writingSuggestions }
+                .overlay(alignment: .bottom) { aiCommandField }
+                .safeAreaInset(edge: .bottom, spacing: 0) { bottomMenu }
+                .overlay(alignment: .trailing) { sideOptions }
+        } else if let errorMessage = viewModel.errorMessage {
+            ContentUnavailableView {
+                Label("Something went wrong", systemImage: "exclamationmark.triangle")
+            } description: {
+                Text(errorMessage)
+            } actions: {
+                Button("Try again") { Task { await viewModel.loadDocument() } }
+            }
+        } else {
+            ProgressView()
+                .controlSize(.large)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+
+    /// A locked document can't be edited, so its menu is hidden. While lines are selected, the
+    /// selection menu takes the place of the regular one. In landscape the side options take
+    /// their place.
+    @ViewBuilder
+    private var bottomMenu: some View {
+        if viewModel.isLocked || isWideLayout {
+            EmptyView()
+        } else if viewModel.writeopiaManager.hasSelectedLines {
+            SelectionMenu(
+                manager: viewModel.writeopiaManager,
+                showsAi: viewModel.isAiAvailable,
+                onAiClick: { showSelectedLinesAiDialog = true },
+                onLinkToPage: { Task { await viewModel.linkSelectionToNewPage() } },
+                onCopy: { viewModel.copySelectedLines(to: SystemLinePasteboard()) },
+                onCut: { withAnimation(.snappy) { viewModel.cutSelectedLines(to: SystemLinePasteboard()) } }
+            )
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+        } else {
+            EditorBottomMenu(
+                manager: viewModel.writeopiaManager,
+                showsAi: viewModel.isAiAvailable,
+                onAiClick: {
+                    aiCursorStepId = viewModel.writeopiaManager.currentTextStep?.step.id
+                    showAiDialog = true
+                },
+                onLinkClick: linkClick,
+                onDrawingClick: { drawingTarget = DrawingTarget(stepId: nil, drawing: nil) },
+                onImagePicked: addImage
+            )
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+        }
+    }
+
+    /// The column of side options of the wide layout.
+    @ViewBuilder
+    private var sideOptions: some View {
+        if isWideLayout {
+            EditorSideOptions(
                 viewModel: viewModel,
+                onBack: { dismiss() },
+                onAiClick: {
+                    if viewModel.writeopiaManager.hasSelectedLines {
+                        showSelectedLinesAiDialog = true
+                    } else {
+                        showAiDialog = true
+                    }
+                },
+                onLinkClick: linkClick,
+                onDrawingClick: { drawingTarget = DrawingTarget(stepId: nil, drawing: nil) },
+                onImagePicked: addImage,
+                onImageFilePicked: addImage(fileURL:),
                 onPublishClick: publishClick,
                 onDelete: deleteDocument,
-                onPresentationsClick: { showPresentations = true }
+                onPresentationClick: { showPresentations = true },
+                rootTitle: rootTitle,
+                tab: $sideTab
             )
-                .wrSheetSize(width: 440, height: 560)
+            .padding(.trailing, 10)
+            .transition(.move(edge: .trailing).combined(with: .opacity))
         }
-        .sheet(isPresented: $showPublish) {
-            PublishSheet(viewModel: viewModel)
-                .wrSheetSize(width: 440, height: 400)
+    }
+
+    /// The chip that says the AI, or the writing agent, is working.
+    @ViewBuilder
+    private var aiRunningChip: some View {
+        if viewModel.isAiRunning {
+            AiRunningChip { viewModel.cancelAi() }
+                .padding(.top, 8)
+                .transition(.move(edge: .top).combined(with: .opacity))
+        } else if let activity = viewModel.writingAgent?.executor.activity {
+            AiRunningChip(label: activity) { viewModel.writingAgent?.executor.cancel() }
+                .padding(.top, 8)
+                .transition(.move(edge: .top).combined(with: .opacity))
         }
-        .sheet(isPresented: $showPresentations) {
-            if let presentations = viewModel.presentations {
-                PresentationsSheet(viewModel: presentations, onOpen: openPresentation)
-                    .wrSheetSize(width: 440, height: 480)
-            }
-        }
-        #if os(iOS)
-        .fullScreenCover(item: $presentationShown) { presentation in
-            NavigationStack {
-                PresentationView(presentation: presentation)
-                    .toolbar {
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("Done") { presentationShown = nil }
-                                .accessibilityIdentifier("presentation.done")
-                        }
-                    }
-            }
-        }
-        #endif
-        .alert("Premium Feature", isPresented: $showPremium) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text("This feature is only available for premium users using an online workspace")
-        }
-        .animation(.snappy, value: viewModel.isLocked)
-        #if os(iOS)
-        // The editor has its own bottom menu, like the Compose app.
-        .toolbar(.hidden, for: .tabBar)
-        #endif
-        .sheet(isPresented: $showAiDialog) {
-            AiDialog(cursorActions: aiCursorActions) { command, mode in
-                viewModel.runAi(command, mode: mode)
-            }
-            .onAppear { viewModel.prewarmAi() }
-            .wrSheetSize(width: 420, height: 440)
-        }
-        .sheet(isPresented: $showSelectedLinesAiDialog) {
-            AiDialog(fixedMode: .selectedLines) { command, mode in
-                viewModel.runAi(command, mode: mode)
-            }
-            .onAppear { viewModel.prewarmAi() }
-            .wrSheetSize(width: 420, height: 440)
-        }
-        .alert(
-            "Could not delete the document",
-            isPresented: Binding(get: { viewModel.deleteError != nil }, set: { if !$0 { viewModel.deleteError = nil } })
-        ) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(viewModel.deleteError ?? "")
-        }
-        .alert(
-            "Could not add the image",
-            isPresented: Binding(get: { viewModel.imageError != nil }, set: { if !$0 { viewModel.imageError = nil } })
-        ) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(viewModel.imageError ?? "")
-        }
-        .alert(
-            "Could not create the page",
-            isPresented: Binding(get: { viewModel.linkError != nil }, set: { if !$0 { viewModel.linkError = nil } })
-        ) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(viewModel.linkError ?? "")
-        }
-        .animation(.snappy, value: viewModel.writeopiaManager.hasSelectedLines)
-        .alert(
-            "Add link",
-            isPresented: Binding(get: { linkSelection != nil }, set: { if !$0 { linkSelection = nil } })
-        ) {
-            TextField("https://", text: $linkURL)
-                #if os(iOS)
-                .textInputAutocapitalization(.never)
-                .keyboardType(.URL)
-                #endif
-                .autocorrectionDisabled()
-            Button("Cancel", role: .cancel) {}
-            Button("Add") {
-                if let selection = linkSelection, let url = Self.normalizedURL(linkURL) {
-                    viewModel.writeopiaManager.setLink(url, for: selection)
+    }
+
+    /// The dialogs and the error of the writing agent, and the image picker it opens.
+    private func writingAgentDialogs(_ content: some View) -> some View {
+        content
+            .sheet(
+                isPresented: Binding(
+                    get: { viewModel.writingAgent?.state.folderDialog != nil },
+                    set: { if !$0 { viewModel.writingAgent?.dismissFolderDialog() } }
+                )
+            ) {
+                if let agent = viewModel.writingAgent, let dialog = agent.state.folderDialog {
+                    FolderSuggestionDialog(controller: agent, dialog: dialog)
+                        .wrSheetSize(width: 420, height: 380)
                 }
             }
-        }
+            .sheet(
+                isPresented: Binding(
+                    get: { viewModel.writingAgent?.state.tagDialog != nil },
+                    set: { if !$0 { viewModel.writingAgent?.dismissTagDialog() } }
+                )
+            ) {
+                if let agent = viewModel.writingAgent, let dialog = agent.state.tagDialog {
+                    TagSuggestionDialog(controller: agent, dialog: dialog)
+                        .wrSheetSize(width: 440, height: 440)
+                }
+            }
+            .photosPicker(isPresented: $showAgentImagePicker, selection: $agentImageItem, matching: .images)
+            .onChange(of: agentImageItem) {
+                if let item = agentImageItem {
+                    addImage(item)
+                    agentImageItem = nil
+                }
+            }
+            .alert(
+                "Could not apply the suggestion",
+                isPresented: Binding(
+                    get: { viewModel.writingAgent?.executor.error != nil },
+                    set: { if !$0 { viewModel.writingAgent?.executor.error = nil } }
+                )
+            ) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(viewModel.writingAgent?.executor.error ?? "")
+            }
+    }
+
+    /// The keyboard shortcuts, the navigation bar and its toolbar.
+    private func chrome(_ content: some View) -> some View {
+        content
+            .background { keyboardShortcuts }
+            .navigationTitle(viewModel.hasLoaded ? viewModel.title : fallbackTitle)
+            .toolbarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    TitleView(
+                        title: viewModel.hasLoaded ? viewModel.title : fallbackTitle,
+                        isLocked: viewModel.isLocked,
+                        isFavorite: viewModel.isFavorite,
+                        isPublished: viewModel.isPublished
+                    )
+                }
+                if viewModel.hasLoaded {
+                    ToolbarItem(placement: .primaryAction) {
+                        Button {
+                            showMenu = true
+                        } label: {
+                            Label("More", systemImage: "ellipsis")
+                        }
+                        .accessibilityIdentifier("editor.more")
+                    }
+                }
+            }
+            #if os(iOS)
+            // The side options of landscape replace the navigation bar, back button included.
+            .toolbar(isWideLayout ? .hidden : .automatic, for: .navigationBar)
+            #endif
+            .animation(.snappy, value: isWideLayout)
+    }
+
+    /// The sheets of the menu, publishing, presentations and the AI, and the premium alert.
+    private func sheets(_ content: some View) -> some View {
+        content
+            .sheet(isPresented: $showMenu) {
+                NoteMenuSheet(
+                    viewModel: viewModel,
+                    onPublishClick: publishClick,
+                    onDelete: deleteDocument,
+                    onPresentationsClick: { showPresentations = true },
+                    rootTitle: rootTitle
+                )
+                    .wrSheetSize(width: 440, height: 560)
+            }
+            .sheet(isPresented: $showPublish) {
+                PublishSheet(viewModel: viewModel)
+                    .wrSheetSize(width: 440, height: 400)
+            }
+            .sheet(isPresented: $showPresentations) {
+                if let presentations = viewModel.presentations {
+                    PresentationsSheet(viewModel: presentations, onOpen: openPresentation)
+                        .wrSheetSize(width: 440, height: 480)
+                }
+            }
+            #if os(iOS)
+            .fullScreenCover(item: $presentationShown) { presentation in
+                NavigationStack {
+                    PresentationView(presentation: presentation)
+                        .toolbar {
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button("Done") { presentationShown = nil }
+                                    .accessibilityIdentifier("presentation.done")
+                            }
+                        }
+                }
+            }
+            #endif
+            .alert("Premium Feature", isPresented: $showPremium) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("This feature is only available for premium users using an online workspace")
+            }
+            .animation(.snappy, value: viewModel.isLocked)
+            #if os(iOS)
+            // The editor has its own bottom menu, like the Compose app.
+            .toolbar(.hidden, for: .tabBar)
+            #endif
+            .sheet(isPresented: $showAiDialog) {
+                AiDialog(
+                    cursorActions: aiCursorActions,
+                    isRunning: viewModel.isAiRunning,
+                    onCommand: { command, mode in viewModel.runAi(command, mode: mode) },
+                    onFreeCommand: { command in viewModel.runAiCommand(command) }
+                )
+                .onAppear { viewModel.prewarmAi() }
+                .wrSheetSize(width: 420, height: 480)
+            }
+            .sheet(isPresented: $showSelectedLinesAiDialog) {
+                AiDialog(
+                    fixedMode: .selectedLines,
+                    isRunning: viewModel.isAiRunning,
+                    onCommand: { command, mode in viewModel.runAi(command, mode: mode) },
+                    onFreeCommand: { command in viewModel.runAiCommand(command) }
+                )
+                .onAppear { viewModel.prewarmAi() }
+                .wrSheetSize(width: 420, height: 480)
+            }
+    }
+
+    /// The alerts of the errors, and the one that asks for the link of the selected text.
+    private func alerts(_ content: some View) -> some View {
+        content
+            // The menu sheet shows this error itself while it's open.
+            .alert(
+                "Something went wrong",
+                isPresented: Binding(
+                    get: { viewModel.menuActionError != nil && !showMenu },
+                    set: { if !$0 { viewModel.menuActionError = nil } }
+                )
+            ) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(viewModel.menuActionError ?? "")
+            }
+            .alert(
+                "Could not delete the document",
+                isPresented: Binding(get: { viewModel.deleteError != nil }, set: { if !$0 { viewModel.deleteError = nil } })
+            ) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(viewModel.deleteError ?? "")
+            }
+            .alert(
+                "Could not add the image",
+                isPresented: Binding(get: { viewModel.imageError != nil }, set: { if !$0 { viewModel.imageError = nil } })
+            ) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(viewModel.imageError ?? "")
+            }
+            .alert(
+                "Could not create the page",
+                isPresented: Binding(get: { viewModel.linkError != nil }, set: { if !$0 { viewModel.linkError = nil } })
+            ) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(viewModel.linkError ?? "")
+            }
+            .animation(.snappy, value: viewModel.writeopiaManager.hasSelectedLines)
+            .alert(
+                "Add link",
+                isPresented: Binding(get: { linkSelection != nil }, set: { if !$0 { linkSelection = nil } })
+            ) {
+                TextField("https://", text: $linkURL)
+                    #if os(iOS)
+                    .textInputAutocapitalization(.never)
+                    .keyboardType(.URL)
+                    #endif
+                    .autocorrectionDisabled()
+                Button("Cancel", role: .cancel) {}
+                Button("Add") {
+                    if let selection = linkSelection, let url = Self.normalizedURL(linkURL) {
+                        viewModel.writeopiaManager.setLink(url, for: selection)
+                    }
+                }
+            }
+    }
+
+    /// The drawing editor: over the whole screen on the phones, a sheet on the Mac.
+    private func drawingEditor(_ content: some View) -> some View {
         #if os(iOS)
-        .fullScreenCover(item: $drawingTarget) { target in
+        return content.fullScreenCover(item: $drawingTarget) { target in
             DrawingEditorView(drawing: target.drawing, defaultColor: defaultDrawingColor) { drawing in
                 viewModel.saveDrawing(drawing, stepId: target.stepId)
             }
         }
         #else
-        .sheet(item: $drawingTarget) { target in
+        return content.sheet(item: $drawingTarget) { target in
             DrawingEditorView(drawing: target.drawing, defaultColor: defaultDrawingColor) { drawing in
                 viewModel.saveDrawing(drawing, stepId: target.stepId)
             }
             .frame(minWidth: 800, minHeight: 560)
         }
         #endif
-        .onReceive(NotificationCenter.default.publisher(for: .documentIconChanged)) { note in
-            guard let id = note.object as? String else { return }
-            viewModel.documentIconChanged(id: id, icon: note.userInfo?["icon"] as? IconInfo)
-        }
-        .onAppear { openEditors?.opened() }
-        .onDisappear {
-            openEditors?.closed()
-            viewModel.editorClosed()
-            // Save and send what's pending before leaving.
-            Task { await viewModel.flush() }
-        }
-        .task {
-            viewModel.writingAgentUI = EditorWritingAgentUI(
-                pickImage: { showAgentImagePicker = true },
-                openDrawing: { drawingTarget = DrawingTarget(stepId: nil, drawing: nil) }
-            )
-            viewModel.writeopiaManager.onDocumentLinkClick = openDocumentLink
-            viewModel.writeopiaManager.onCopySelectedLines = { viewModel.copySelectedLines(to: SystemLinePasteboard()) }
-            viewModel.writeopiaManager.onCutSelectedLines = {
-                withAnimation(.snappy) { viewModel.cutSelectedLines(to: SystemLinePasteboard()) }
+    }
+
+    /// What happens when the screen appears, loads, changes and goes away.
+    private func lifecycle(_ content: some View) -> some View {
+        content
+            .onReceive(NotificationCenter.default.publisher(for: .documentIconChanged)) { note in
+                guard let id = note.object as? String else { return }
+                viewModel.documentIconChanged(id: id, icon: note.userInfo?["icon"] as? IconInfo)
             }
-            viewModel.writeopiaManager.onLinkRequested = linkClick
-            // A click on the empty space closes the side menu and clears the selection, like the
-            // Compose desktop app.
-            viewModel.writeopiaManager.onBackgroundClick = {
-                withAnimation(.snappy) {
-                    sideTab = nil
-                    viewModel.writeopiaManager.clearLineSelection()
+            .onAppear { openEditors?.opened() }
+            .onDisappear {
+                openEditors?.closed()
+                viewModel.editorClosed()
+                // Save and send what's pending before leaving.
+                Task { await viewModel.flush() }
+            }
+            .task {
+                viewModel.writingAgentUI = EditorWritingAgentUI(
+                    pickImage: { showAgentImagePicker = true },
+                    openDrawing: { drawingTarget = DrawingTarget(stepId: nil, drawing: nil) }
+                )
+                viewModel.writeopiaManager.onDocumentLinkClick = openDocumentLink
+                viewModel.writeopiaManager.onCopySelectedLines = { viewModel.copySelectedLines(to: SystemLinePasteboard()) }
+                viewModel.writeopiaManager.onCutSelectedLines = {
+                    withAnimation(.snappy) { viewModel.cutSelectedLines(to: SystemLinePasteboard()) }
                 }
-            }
-            await viewModel.open {
-                // A document that was just created has nothing yet: the title is ready to be typed.
-                if viewModel.hasLoaded, viewModel.title.isEmpty, viewModel.writeopiaManager.documentContent.count <= 1 {
-                    viewModel.writeopiaManager.focusTitle()
+                viewModel.writeopiaManager.onLinkRequested = linkClick
+                // A click on the empty space closes the side menu and clears the selection, like the
+                // Compose desktop app.
+                viewModel.writeopiaManager.onBackgroundClick = {
+                    withAnimation(.snappy) {
+                        sideTab = nil
+                        viewModel.writeopiaManager.clearLineSelection()
+                    }
                 }
+                await viewModel.open {
+                    // A document that was just created has nothing yet: the title is ready to be typed.
+                    if viewModel.hasLoaded, viewModel.title.isEmpty, viewModel.writeopiaManager.documentContent.count <= 1 {
+                        viewModel.writeopiaManager.focusTitle()
+                    }
+                }
+                await viewModel.loadPublishState()
             }
-            await viewModel.loadPublishState()
-        }
-        .onChange(of: viewModel.writeopiaManager.changeCount) {
-            viewModel.documentChanged()
-        }
+            .onChange(of: viewModel.writeopiaManager.changeCount) {
+                viewModel.documentChanged()
+            }
     }
 }
 /// The screen's side of the writing agent: the image picker and the drawing editor.
@@ -619,10 +717,11 @@ private struct DrawingTarget: Identifiable {
     let drawing: DrawingData?
 }
 
-/// Title of the navigation bar, with the lock and published marks of the Compose top bar.
+/// Title of the navigation bar, with the lock, favorite and published marks of the Compose top bar.
 private struct TitleView: View {
     let title: String
     let isLocked: Bool
+    let isFavorite: Bool
     let isPublished: Bool
 
     var body: some View {
@@ -635,6 +734,12 @@ private struct TitleView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .accessibilityLabel("Locked")
+            }
+            if isFavorite {
+                Image(systemName: "heart.fill")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel("Favorite")
             }
             if isPublished {
                 Image(systemName: "globe")

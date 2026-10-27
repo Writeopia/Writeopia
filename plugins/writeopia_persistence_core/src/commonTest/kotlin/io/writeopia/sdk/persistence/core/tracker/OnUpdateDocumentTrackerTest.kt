@@ -2,6 +2,7 @@
 
 package io.writeopia.sdk.persistence.core.tracker
 
+import io.writeopia.sdk.utils.iterables.Rank
 import io.writeopia.sdk.manager.DocumentUpdate
 import io.writeopia.sdk.model.document.info
 import io.writeopia.sdk.model.story.LastEdit
@@ -147,7 +148,7 @@ class OnUpdateDocumentTrackerTest {
         job.cancel()
 
         assertEquals(setOf("tag-1", "tag-2"), persisted.tagIds)
-        assertEquals(sourceDocument.content.getValue(0.0).text, persisted.content.getValue(0.0).text)
+        assertEquals(sourceDocument.content.getValue(Rank.at(0)).text, persisted.content.getValue(Rank.at(0)).text)
         assertEquals(true, persisted.lastUpdatedAt > sourceDocument.lastUpdatedAt)
     }
 
@@ -177,6 +178,40 @@ class OnUpdateDocumentTrackerTest {
         assertEquals(setOf("tag-1"), persisted.tagIds)
     }
 
+    @Test
+    fun bulkDeletionShouldDeleteTheStepsAndSaveTheOnesItChanged() = runTest {
+        val sourceDocument = sourceDocument(emptyList())
+        val recorder = RecordingDocumentUpdate()
+        val tracker = OnUpdateDocumentTracker(recorder)
+        // An accepted AI answer: the answer goes, its text stays as a new step.
+        val accepted = StoryStep(type = StoryTypes.TEXT.type, text = "accepted")
+        val skeleton = StoryStep(type = StoryTypes.SKELETON.type, text = "later", ephemeral = true)
+
+        val job = launch {
+            tracker.saveOnStoryChanges(
+                MutableStateFlow(
+                    StoryState(
+                        stories = mapOf(Rank.at(0) to accepted, Rank.at(1) to skeleton),
+                        lastEdit = LastEdit.BulkDeleteEdition(
+                            deletedIds = listOf("answer-1"),
+                            updatedSteps = listOf(Rank.at(0) to accepted, Rank.at(1) to skeleton),
+                        ),
+                    ) to sourceDocument.info()
+                ),
+                MutableStateFlow(sourceDocument.workspaceId),
+                MutableStateFlow(emptyMap()),
+            )
+        }
+
+        val saved = withTimeout(1_000) { recorder.savedSteps.await() }
+        job.cancel()
+
+        assertEquals(listOf("answer-1"), recorder.deletedStepIds)
+        assertEquals(listOf(Rank.at(0)), saved.map { (position, _) -> position })
+        assertEquals(listOf(accepted.id), saved.map { (_, step) -> step.id })
+        assertEquals(true, saved.single().second.lastUpdatedAt != null, "The step should be stamped")
+    }
+
     private fun conversation(): CommentConversation =
         CommentConversation(
             id = "conversation-1",
@@ -192,7 +227,7 @@ class OnUpdateDocumentTrackerTest {
         return Document(
             id = "document-1",
             content = mapOf(
-                0.0 to StoryStep(
+                Rank.at(0) to StoryStep(
                     text = "hello",
                     type = StoryTypes.TEXT.type,
                     spans = conversationId?.let { id ->
@@ -213,6 +248,8 @@ class OnUpdateDocumentTrackerTest {
 
     private class RecordingDocumentUpdate : DocumentUpdate {
         val savedDocument = CompletableDeferred<Document>()
+        val savedSteps = CompletableDeferred<List<Pair<String, StoryStep>>>()
+        val deletedStepIds = mutableListOf<String>()
 
         override suspend fun saveDocument(document: Document) {
             if (!savedDocument.isCompleted) savedDocument.complete(document)
@@ -222,21 +259,25 @@ class OnUpdateDocumentTrackerTest {
 
         override suspend fun saveStoryStep(
             storyStep: StoryStep,
-            position: Double,
+            position: String,
             documentId: String,
         ) = Unit
 
         override suspend fun updateStoryStep(
             storyStep: StoryStep,
-            position: Double,
+            position: String,
             documentId: String,
         ) = Unit
 
         override suspend fun saveStorySteps(
-            steps: List<Pair<Double, StoryStep>>,
+            steps: List<Pair<String, StoryStep>>,
             documentId: String,
-        ) = Unit
+        ) {
+            if (!savedSteps.isCompleted) savedSteps.complete(steps)
+        }
 
-        override suspend fun deleteStoryStep(storyStepId: String, documentId: String) = Unit
+        override suspend fun deleteStoryStep(storyStepId: String, documentId: String) {
+            deletedStepIds.add(storyStepId)
+        }
     }
 }

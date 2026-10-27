@@ -6,9 +6,9 @@ import WrModels
 /// The history by itself, like `SnapshotBackstackManagerTest` of the Kotlin SDK.
 @Suite struct SnapshotBackstackManagerTests {
     private func state(_ texts: String...) -> StoryState {
-        var stories: [Double: StoryStep] = [:]
+        var stories: [String: StoryStep] = [:]
         for (index, text) in texts.enumerated() {
-            stories[Double(index)] = StoryStep(id: "s\(index)", type: .text, text: text, position: Double(index))
+            stories[Rank.at(index)] = StoryStep(id: "s\(index)", type: .text, text: text, position: Rank.at(index))
         }
         return StoryState(stories: stories)
     }
@@ -17,7 +17,7 @@ import WrModels
         let backstack = SnapshotBackstackManager()
         #expect(!backstack.canUndo)
 
-        backstack.addTextState(state("a"), position: 0)
+        backstack.addTextState(state("a"), position: Rank.at(0))
 
         #expect(backstack.canUndo)
         #expect(!backstack.canRedo)
@@ -62,7 +62,7 @@ import WrModels
 
         // Edits 1, 4 and 7 are remembered: the first, then one in every three.
         for state in typed {
-            backstack.addTextState(state, position: 0)
+            backstack.addTextState(state, position: Rank.at(0))
         }
 
         #expect(backstack.previousState(current: typed[7]) == typed[6])
@@ -73,9 +73,9 @@ import WrModels
 
     @Test func typingInAnotherLineStartsANewGroup() {
         let backstack = SnapshotBackstackManager()
-        backstack.addTextState(state("a", ""), position: 0)
-        backstack.addTextState(state("ab", ""), position: 0)
-        backstack.addTextState(state("ab", "c"), position: 1)
+        backstack.addTextState(state("a", ""), position: Rank.at(0))
+        backstack.addTextState(state("ab", ""), position: Rank.at(0))
+        backstack.addTextState(state("ab", "c"), position: Rank.at(1))
 
         #expect(backstack.previousState(current: state("ab", "cd")) == state("ab", "c"))
         #expect(backstack.previousState(current: state("ab", "c")) == state("a", ""))
@@ -83,12 +83,12 @@ import WrModels
 
     @Test func anEditAfterAnUndoStartsANewGroup() {
         let backstack = SnapshotBackstackManager()
-        backstack.addTextState(state("a"), position: 0)
-        backstack.addTextState(state("ab"), position: 0)
+        backstack.addTextState(state("a"), position: Rank.at(0))
+        backstack.addTextState(state("ab"), position: Rank.at(0))
         let restored = backstack.previousState(current: state("abc"))
         #expect(restored == state("a"))
 
-        backstack.addTextState(state("a"), position: 0)
+        backstack.addTextState(state("a"), position: Rank.at(0))
 
         #expect(backstack.previousState(current: state("ax")) == state("a"))
     }

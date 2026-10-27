@@ -26,14 +26,13 @@ import androidx.compose.ui.input.pointer.isCtrlPressed
 import androidx.compose.ui.input.pointer.isMetaPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.sp
-import kotlin.math.max
-import kotlin.math.min
 import kotlin.math.sqrt
 
 class Node(
@@ -126,15 +125,20 @@ fun BoxWithConstraintsScope.ForceDirectedGraph(
 
     fun zoomBy(factor: Float) = viewState.zoomBy(factor)
 
-    // The label boxes, measured once per set of nodes, so a hover over a name counts too.
-    val labelSizes = remember(nodes, textMeasurer) {
-        nodes.associate { node -> node.id to textMeasurer.measure(" ${node.label} ", fadedTextStyle).size }
+    // The names, laid out once per set of nodes on a single line each, so a hover over a name
+    // counts too. Laying them out while drawing would fit each name into what is left of the
+    // canvas to the right of it, which crushes the names near the right edge, although the graph
+    // extends past the viewport and is panned to.
+    val fadedLabels = remember(nodes, textMeasurer, fadedTextStyle) {
+        measureLabels(textMeasurer, nodes, fadedTextStyle)
+    }
+    val highlightedLabels = remember(nodes, textMeasurer, highlightedTextStyle) {
+        measureLabels(textMeasurer, nodes, highlightedTextStyle)
     }
 
     fun labelRect(node: Node): Rect? {
-        if (node.label.isBlank()) return null
-        val size = labelSizes[node.id] ?: return null
-        return Rect(labelTopLeft(node, viewport), Size(size.width.toFloat(), size.height.toFloat()))
+        val size = fadedLabels[node.id]?.size ?: return null
+        return Rect(labelTopLeft(node), Size(size.width.toFloat(), size.height.toFloat()))
     }
 
     fun nodeAt(position: Offset, radius: Float): Node? {
@@ -250,14 +254,8 @@ fun BoxWithConstraintsScope.ForceDirectedGraph(
             links.forEach { link ->
                 drawLine(
                     color = Color.LightGray,
-                    start = Offset(
-                        min(link.source.x, viewport.width),
-                        min(link.source.y, viewport.height)
-                    ),
-                    end = Offset(
-                        min(link.target.x, viewport.width),
-                        min(link.target.y, viewport.height)
-                    ),
+                    start = Offset(link.source.x, link.source.y),
+                    end = Offset(link.target.x, link.target.y),
                     strokeWidth = 2f
                 )
             }
@@ -268,10 +266,7 @@ fun BoxWithConstraintsScope.ForceDirectedGraph(
 
                 drawCircle(
                     color = if (node.isDragged) Color.Red else nodeColor(node),
-                    center = Offset(
-                        max(min(node.x, viewport.width - nodeRadius / 2), 0F + nodeRadius / 2),
-                        max(min(node.y, viewport.height - nodeRadius / 2), 0F + nodeRadius / 2)
-                    ),
+                    center = Offset(node.x, node.y),
                     radius = if (hovered) radius * 1.4f else radius
                 )
             }
@@ -279,8 +274,8 @@ fun BoxWithConstraintsScope.ForceDirectedGraph(
             // Faded names first, then the ones brought forward, so those stay readable on top.
             val (highlighted, faded) = nodes.partition { node -> node.id == hoveredNodeId || node.showName }
 
-            faded.forEach { node -> drawNodeLabel(textMeasurer, node, fadedTextStyle, viewport) }
-            highlighted.forEach { node -> drawNodeLabel(textMeasurer, node, highlightedTextStyle, viewport) }
+            faded.forEach { node -> drawNodeLabel(node, fadedLabels[node.id]) }
+            highlighted.forEach { node -> drawNodeLabel(node, highlightedLabels[node.id]) }
         }
     }
 }
@@ -292,28 +287,33 @@ private fun nodeColor(node: Node): Color =
         else -> Color.Gray
     }
 
-/** Where the name of [node] is drawn: just under the circle, kept inside the viewport. */
-private fun labelTopLeft(node: Node, viewport: Size): Offset =
-    Offset(
-        max(min(node.x - 30, viewport.width - 50), 0F + 50),
-        max(min(node.y + 20, viewport.height - 50), 0F + 50)
-    )
+/**
+ * Where the name of [node] is drawn: just under the circle. Nodes are not kept inside the
+ * viewport, the graph can be larger than it: zooming out and panning reach the rest.
+ */
+private fun labelTopLeft(node: Node): Offset = Offset(node.x - 30, node.y + 20)
 
-private fun DrawScope.drawNodeLabel(
+/** The name of each node on one line, unconstrained: the canvas edge is not the graph's edge. */
+private fun measureLabels(
     textMeasurer: TextMeasurer,
-    node: Node,
+    nodes: List<Node>,
     style: TextStyle,
-    viewport: Size,
-) {
-    if (node.label.isBlank()) return
-    if (node.x < 0 || node.y < 0 || node.x > viewport.width || node.y > viewport.height) return
+): Map<String, TextLayoutResult> =
+    nodes
+        .filterNot { node -> node.label.isBlank() }
+        .associate { node ->
+            node.id to textMeasurer.measure(
+                text = " ${node.label} ",
+                style = style,
+                softWrap = false,
+                maxLines = 1
+            )
+        }
 
-    drawText(
-        textMeasurer = textMeasurer,
-        text = " ${node.label} ",
-        topLeft = labelTopLeft(node, viewport),
-        style = style
-    )
+private fun DrawScope.drawNodeLabel(node: Node, label: TextLayoutResult?) {
+    if (label == null) return
+
+    drawText(textLayoutResult = label, topLeft = labelTopLeft(node))
 }
 
 private val TAG_COLOR = Color(0xFFFFC107)

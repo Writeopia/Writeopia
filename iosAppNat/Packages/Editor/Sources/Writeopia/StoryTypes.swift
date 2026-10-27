@@ -19,6 +19,7 @@ public enum StoryTypes {
         StoryType.documentLink.number,
         StoryType.linkCard.number,
         StoryType.loading.number,
+        StoryType.skeleton.number,
         StoryType.space.number,
         StoryType.onDragSpace.number,
         StoryType.lastSpace.number,
@@ -27,6 +28,7 @@ public enum StoryTypes {
     /// Steps that only exist while editing and are never part of the document.
     public static let ephemeral: Set<Int> = [
         StoryType.loading.number,
+        StoryType.skeleton.number,
         StoryType.space.number,
         StoryType.onDragSpace.number,
         StoryType.lastSpace.number,

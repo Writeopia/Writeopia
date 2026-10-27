@@ -2,6 +2,7 @@
 
 package io.writeopia.sdk.persistence.sqldelight.dao.sql
 
+import io.writeopia.sdk.utils.iterables.Rank
 import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.synchronous
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
@@ -49,20 +50,20 @@ class SqlDelightDocumentRepositoryTest {
     fun `when saving a document when less content, the exceeding content should be erased`() =
         runTest {
             val smallContent = mapOf(
-                0.0 to StoryStep(
+                Rank.at(0) to StoryStep(
                     type = StoryTypes.TEXT.type,
                     text = "text",
-                    dbPosition = 0.0,
+                    dbPosition = Rank.at(0),
                 ),
-                1.0 to StoryStep(
+                Rank.at(1) to StoryStep(
                     type = StoryTypes.TEXT.type,
                     text = "text1",
-                    dbPosition = 1.0
+                    dbPosition = Rank.at(1)
                 )
             )
 
             val bigContent = smallContent + (
-                2.0 to StoryStep(type = StoryTypes.TEXT.type, text = "text2", dbPosition = 2.0)
+                Rank.at(2) to StoryStep(type = StoryTypes.TEXT.type, text = "text2", dbPosition = Rank.at(2))
                 )
 
             val instant = Instant.parse("2023-01-01T12:05:30Z")
@@ -210,13 +211,13 @@ class SqlDelightDocumentRepositoryTest {
             id = "document-with-comments",
             title = "Comments",
             content = mapOf(
-                0.0 to StoryStep(
+                Rank.at(0) to StoryStep(
                     type = StoryTypes.TEXT.type,
                     text = "Commented text",
                     spans = setOf(
                         SpanInfo.create(0, 9, Span.COMMENT, conversationId)
                     ),
-                    dbPosition = 0.0,
+                    dbPosition = Rank.at(0),
                 )
             ),
             commentConversations = mapOf(
@@ -238,12 +239,12 @@ class SqlDelightDocumentRepositoryTest {
         assertEquals(document.id, loadedDocument?.id)
         assertEquals(document.commentConversations, loadedDocument?.commentConversations)
         assertEquals(
-            document.content.getValue(0.0).spans,
-            loadedDocument?.content?.get(0.0)?.spans,
+            document.content.getValue(Rank.at(0)).spans,
+            loadedDocument?.content?.get(Rank.at(0))?.spans,
         )
         assertEquals(
-            document.content.getValue(0.0).text,
-            loadedDocument?.content?.get(0.0)?.text,
+            document.content.getValue(Rank.at(0)).text,
+            loadedDocument?.content?.get(Rank.at(0))?.text,
         )
 
         val loadedFromWorkspace = documentRepository.loadDocumentsWorkspace(document.workspaceId)
@@ -357,5 +358,39 @@ class SqlDelightDocumentRepositoryTest {
     @Test
     fun aDocumentWithMoreStepsThanOneQueryCanBindIsSaved() = runTest {
         DocumentRepositoryTests(documentRepository).aDocumentWithMoreStepsThanOneQueryCanBindIsSaved()
+    }
+
+    @Test
+    fun `a document saved whole keeps the positions of its steps, not their order in the map`() = runTest {
+        val workspaceId = "workspaceId"
+        val content = mapOf(
+            Rank.at(0) to StoryStep(type = StoryTypes.TEXT.type, text = "title"),
+            Rank.at(10) to StoryStep(type = StoryTypes.TEXT.type, text = "a"),
+            Rank.at(15) to StoryStep(type = StoryTypes.TEXT.type, text = "between"),
+            Rank.at(20) to StoryStep(type = StoryTypes.TEXT.type, text = "c"),
+        )
+        val document = Document(
+            createdAt = Clock.System.now(),
+            lastUpdatedAt = Clock.System.now(),
+            lastSyncedAt = null,
+            workspaceId = workspaceId,
+            parentId = "",
+            content = content,
+        )
+
+        documentRepository.saveDocument(document)
+
+        val loaded = documentRepository.loadDocumentById(document.id, workspaceId)
+        assertEquals(listOf(Rank.at(0), Rank.at(10), Rank.at(15), Rank.at(20)), loaded?.content?.keys?.toList())
+        assertEquals(listOf("title", "a", "between", "c"), loaded?.content?.values?.map { it.text })
+
+        // A step saved alone at its position keeps its place among the others
+        documentRepository.saveStoryStep(
+            content.getValue(Rank.at(15)).copy(text = "edited"),
+            position = Rank.at(15),
+            documentId = document.id
+        )
+        val reloaded = documentRepository.loadDocumentById(document.id, workspaceId)
+        assertEquals(listOf("title", "a", "edited", "c"), reloaded?.content?.values?.map { it.text })
     }
 }

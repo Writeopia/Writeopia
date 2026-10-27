@@ -88,8 +88,8 @@ final class PresentingDocumentsRepository: DocumentsRepository, @MainActor Prese
 }
 
 private let document = WrDocument(id: "d", title: "Sky", workspaceId: "w", content: [
-    StoryStep(id: "t", type: .title, text: "Sky", position: 0),
-    StoryStep(id: "a", type: .text, text: "Why is it blue?", position: 1),
+    StoryStep(id: "t", type: .title, text: "Sky", position: Rank.at(0)),
+    StoryStep(id: "a", type: .text, text: "Why is it blue?", position: Rank.at(1)),
 ])
 
 /// The local path: the AI on this machine answers and the app parses and keeps the slides.

@@ -2,6 +2,7 @@
 
 package io.writeopia.editor.features.presentation.ui
 
+import io.writeopia.sdk.utils.iterables.Rank
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -168,8 +169,8 @@ private fun SlideContent(
 private fun Slide.asDocument(id: String): Document {
     val now = Clock.System.now()
     val content = buildMap {
-        put(0.0, StoryStep(id = "$id-title", type = StoryTypes.TITLE.type, text = title))
-        this@asDocument.content.forEachIndexed { index, step -> put((index + 1).toDouble(), step) }
+        put(Rank.at(0), StoryStep(id = "$id-title", type = StoryTypes.TITLE.type, text = title))
+        this@asDocument.content.forEachIndexed { index, step -> put(Rank.at(index + 1), step) }
     }
     return Document(
         id = id,

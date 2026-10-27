@@ -3,18 +3,20 @@ package io.writeopia.sdk.utils.extensions
 import io.writeopia.sdk.model.story.Section
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.utils.collections.sortedMutableMapOf
+import io.writeopia.sdk.utils.iterables.Rank
+import io.writeopia.sdk.utils.iterables.mapValuesSorted
 
-fun Map<Double, StoryStep>.toEditState(): MutableMap<Double, List<StoryStep>> =
-    mapValues { (_, story) -> listOf(story) }.toMutableMap()
+fun Map<String, StoryStep>.toEditState(): MutableMap<String, List<StoryStep>> =
+    mapValuesSorted { (_, story) -> listOf(story) }
 
-fun <T> Iterable<T>.associateWithPosition(): Map<Double, T> {
-    var acc = -1.0
-    val result = sortedMutableMapOf<Double, T>()
-    forEach { result[++acc] = it }
+/** The ranks of a document written in order, from [Rank.FIRST], for the elements of a new document. */
+fun <T> Iterable<T>.associateWithPosition(): Map<String, T> {
+    val result = sortedMutableMapOf<String, T>()
+    forEachIndexed { index, element -> result[Rank.at(index)] = element }
     return result
 }
 
-fun Map<Double, StoryStep>.noContent(): Boolean =
+fun Map<String, StoryStep>.noContent(): Boolean =
     this.values.all { storyStep ->
         storyStep.run {
             url.isNullOrBlank() &&
@@ -49,4 +51,4 @@ fun Iterable<StoryStep>.toSections(): List<Section> {
         }
 }
 
-fun Map<Double, StoryStep>.toSections(): List<Section> = this.values.toSections()
+fun Map<String, StoryStep>.toSections(): List<Section> = this.values.toSections()

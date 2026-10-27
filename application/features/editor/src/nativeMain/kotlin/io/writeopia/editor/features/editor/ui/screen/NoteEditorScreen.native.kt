@@ -49,14 +49,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.dialogs.confirmation.DeleteConfirmationDialog
+import io.writeopia.commonui.folders.MoveSelectionSheet
+import io.writeopia.editor.configuration.ui.DocumentIconSheet
 import io.writeopia.editor.configuration.ui.HeaderEdition
 import io.writeopia.editor.configuration.ui.NoteGlobalActionsMenu
 import io.writeopia.editor.features.editor.ui.TextEditor
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.SideEditorOptions
 import io.writeopia.editor.features.editor.ui.tags.AddDocumentTagDialog
 import io.writeopia.editor.features.editor.ui.tags.DocumentTagsDialog
-import io.writeopia.editor.features.editor.ui.folders.FolderSelectionDialog
-import io.writeopia.editor.features.editor.ui.mobile.MobileAiDialog
+import io.writeopia.editor.features.editor.ui.mobile.MobileAiSheet
 import io.writeopia.editor.features.editor.viewmodel.AiTargetMode
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.editor.features.editor.viewmodel.ShareDocument
@@ -88,7 +89,7 @@ internal fun NoteEditorScreen(
     onDocumentLinkClick: (String) -> Unit,
     onNewDrawingClick: () -> Unit = {},
     onNewImageClick: () -> Unit = {},
-    onDrawingClick: (StoryStep, Double) -> Unit = { _, _ -> },
+    onDrawingClick: (StoryStep, String) -> Unit = { _, _ -> },
     nestedScrollConnection: NestedScrollConnection? = null,
     isToolbarVisible: Boolean = true,
     isWideLayout: Boolean = false,
@@ -114,6 +115,7 @@ internal fun NoteEditorScreen(
     var showAiDialog by remember { mutableStateOf(false) }
     var showSelectedLinesAiDialog by remember { mutableStateOf(false) }
     var showFolderSelection by remember { mutableStateOf(false) }
+    var showIconSheet by remember { mutableStateOf(false) }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -127,6 +129,7 @@ internal fun NoteEditorScreen(
                 TopBar(
                     titleState = noteEditorViewModel.currentTitle,
                     editableState = noteEditorViewModel.isEditable,
+                    notFavoriteState = noteEditorViewModel.notFavorite,
                     navigationClick = {
                         noteEditorViewModel.handleBackAction(navigateBack = navigateBack)
                     },
@@ -228,9 +231,8 @@ internal fun NoteEditorScreen(
                     onImagePickRequest = launchImagePicker,
                     exportMarkdown = noteEditorViewModel::exportMarkdown,
                     exportJson = noteEditorViewModel::exportJson,
-                    moveToRoot = noteEditorViewModel::moveToRootFolder,
                     moveToClick = { showFolderSelection = true },
-                    askAiWithMode = noteEditorViewModel::askAiWithMode,
+                    aiCommand = noteEditorViewModel::aiCommand,
                     addPage = noteEditorViewModel::addPage,
                     deleteDocument = { showDeleteConfirmation = true },
                     toggleFavorite = noteEditorViewModel::toggleFavorite,
@@ -247,30 +249,43 @@ internal fun NoteEditorScreen(
                     onViewTagsClick = noteEditorViewModel::showTagsDialog,
                     onAddTagClick = noteEditorViewModel::showAddTagDialog,
                     onRemoveTagClick = noteEditorViewModel::removeTagFromDocument,
+                    documentIconState = noteEditorViewModel.documentIcon,
+                    onDocumentIconSelect = noteEditorViewModel::changeDocumentIcon,
+                    onRemoveDocumentIcon = noteEditorViewModel::removeDocumentIcon,
                 )
+            }
 
-                if (showDeleteConfirmation) {
-                    DeleteConfirmationDialog(
-                        onConfirmation = {
-                            noteEditorViewModel.deleteDocument()
-                            showDeleteConfirmation = false
-                            onDocumentDelete()
-                        },
-                        onCancel = { showDeleteConfirmation = false }
-                    )
-                }
+            // Opened by the side menu on wide layouts and by the global actions menu on phones.
+            if (showDeleteConfirmation) {
+                DeleteConfirmationDialog(
+                    onConfirmation = {
+                        showDeleteConfirmation = false
+                        noteEditorViewModel.deleteDocument(onDeleted = onDocumentDelete)
+                    },
+                    onCancel = { showDeleteConfirmation = false }
+                )
+            }
 
-                if (showFolderSelection) {
-                    FolderSelectionDialog(
-                        noteEditorViewModel.listenForFolders,
-                        selectedFolder = { folderId ->
-                            showFolderSelection = false
-                            noteEditorViewModel.moveToFolder(folderId)
-                        },
-                        expandFolder = noteEditorViewModel::expandFolder,
-                        onDismissRequest = { showFolderSelection = false }
-                    )
-                }
+            if (showIconSheet) {
+                DocumentIconSheet(
+                    documentIconState = noteEditorViewModel.documentIcon,
+                    onIconSelect = noteEditorViewModel::changeDocumentIcon,
+                    onRemoveIcon = noteEditorViewModel::removeDocumentIcon,
+                    onDismissRequest = { showIconSheet = false }
+                )
+            }
+
+            if (showFolderSelection) {
+                MoveSelectionSheet(
+                    loadFolders = noteEditorViewModel::workspaceFolders,
+                    excludedIds = emptySet(),
+                    currentParentId = noteEditorViewModel.documentFolderId(),
+                    onMove = { folderId ->
+                        showFolderSelection = false
+                        noteEditorViewModel.moveToFolder(folderId)
+                    },
+                    onDismissRequest = { showFolderSelection = false }
+                )
             }
 
             // Both menus open these dialogs: the side menu on wide layouts and the global
@@ -336,6 +351,10 @@ internal fun NoteEditorScreen(
                 NoteGlobalActionsMenu(
                     isEditableState = noteEditorViewModel.isEditable,
                     setEditable = noteEditorViewModel::toggleEditable,
+                    isFavoriteState = noteEditorViewModel.notFavorite,
+                    toggleFavorite = noteEditorViewModel::toggleFavorite,
+                    onMoveToClick = { showFolderSelection = true },
+                    onDeleteClick = { showDeleteConfirmation = true },
                     onShareJson = { noteEditorViewModel.shareDocumentInJson() },
                     onShareMd = { noteEditorViewModel.shareDocumentInMarkdown() },
                     changeFontFamily = noteEditorViewModel::changeFontFamily,
@@ -346,36 +365,31 @@ internal fun NoteEditorScreen(
                     onViewTagsClick = noteEditorViewModel::showTagsDialog,
                     onAddTagClick = noteEditorViewModel::showAddTagDialog,
                     onRemoveTagClick = noteEditorViewModel::removeTagFromDocument,
+                    onIconClick = { showIconSheet = true },
                 )
             }
 
             if (showAiDialog) {
-                MobileAiDialog(
+                MobileAiSheet(
                     onDismissRequest = { showAiDialog = false },
-                    currentModel = noteEditorViewModel.currentModel,
-                    models = noteEditorViewModel.models,
                     hasSelectedLinesState = noteEditorViewModel.hasSelectedLines,
-                    selectModel = noteEditorViewModel::selectModel,
-                    askAiWithMode = noteEditorViewModel::askAiWithMode,
                     aiSummary = noteEditorViewModel::aiSummary,
                     aiActionPoints = noteEditorViewModel::aiActionPoints,
                     aiFaq = noteEditorViewModel::aiFaq,
                     aiTags = noteEditorViewModel::aiTags,
+                    aiCommand = noteEditorViewModel::aiCommand,
                 )
             }
 
             if (showSelectedLinesAiDialog) {
-                MobileAiDialog(
+                MobileAiSheet(
                     onDismissRequest = { showSelectedLinesAiDialog = false },
-                    currentModel = noteEditorViewModel.currentModel,
-                    models = noteEditorViewModel.models,
                     hasSelectedLinesState = noteEditorViewModel.hasSelectedLines,
-                    selectModel = noteEditorViewModel::selectModel,
-                    askAiWithMode = noteEditorViewModel::askAiWithMode,
                     aiSummary = noteEditorViewModel::aiSummary,
                     aiActionPoints = noteEditorViewModel::aiActionPoints,
                     aiFaq = noteEditorViewModel::aiFaq,
                     aiTags = noteEditorViewModel::aiTags,
+                    aiCommand = noteEditorViewModel::aiCommand,
                     fixedTargetMode = AiTargetMode.SELECTED_LINES,
                 )
             }
@@ -388,12 +402,14 @@ internal fun NoteEditorScreen(
 private fun TopBar(
     titleState: StateFlow<String>,
     editableState: StateFlow<Boolean>,
+    notFavoriteState: StateFlow<Boolean>,
     modifier: Modifier = Modifier,
     navigationClick: () -> Unit = {},
     shareDocument: () -> Unit
 ) {
     val title by titleState.collectAsState()
     val isEditable by editableState.collectAsState()
+    val notFavorite by notFavoriteState.collectAsState()
 
     TopAppBar(
         modifier = modifier.height(44.dp),
@@ -417,6 +433,14 @@ private fun TopBar(
                     Icon(
                         imageVector = WrIcons.lock,
                         contentDescription = "Lock",
+                        tint = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+
+                if (!notFavorite) {
+                    Icon(
+                        imageVector = WrIcons.favorites,
+                        contentDescription = "Favorite",
                         tint = MaterialTheme.colorScheme.onBackground
                     )
                 }

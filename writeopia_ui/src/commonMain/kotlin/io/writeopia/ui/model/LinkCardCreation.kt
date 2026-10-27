@@ -9,4 +9,4 @@ import io.writeopia.sdk.models.story.StoryStep
  * @param storyStep The new card. Its url is the pasted address and its text is still empty.
  * @param position Where the card is in the document.
  */
-data class LinkCardCreation(val storyStep: StoryStep, val position: Double)
+data class LinkCardCreation(val storyStep: StoryStep, val position: String)

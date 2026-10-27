@@ -26,7 +26,7 @@ struct ComposeDatabase {
         let id: String
         let presentationId: String
         let slideIndex: Int64
-        let position: Double
+        let position: Int
         let content: String
     }
 
@@ -154,7 +154,7 @@ struct ComposeDatabase {
                 path: row.text(5),
                 tags: Self.tags(row.text(10)),
                 spans: Self.spans(row.text(11)),
-                position: row.real(8) ?? 0,
+                position: Self.rank(row.text(8)),
                 documentLink: row.text(12).map { DocumentLink(id: $0) },
                 parentId: row.text(3),
                 decoration: row.integer(9).map { Decoration(backgroundColor: Int($0)) },
@@ -169,9 +169,17 @@ struct ComposeDatabase {
             let children = Dictionary(grouping: all.filter { $0.parentId != nil }, by: { $0.parentId! })
             let ids = Set(all.map(\.id))
             // A child whose group is gone is kept at the top level instead of being lost.
+            // In their order, as the ranks of 0, 1, 2...: the Compose database may hold numbers
+            // from before the ranks, indexes or fractions
             result[documentId] = all
                 .filter { $0.parentId == nil || !ids.contains($0.parentId!) }
                 .map { Self.nesting($0, children: children, depth: 0) }
+                .enumerated()
+                .map { index, step in
+                    var step = step
+                    step.position = Rank.at(index)
+                    return step
+                }
         }
         return result
     }
@@ -217,13 +225,26 @@ struct ComposeDatabase {
                 id: id,
                 presentationId: presentationId,
                 slideIndex: row.integer(2) ?? 0,
-                position: row.real(3) ?? 0,
+                position: Int((row.real(3) ?? 0).rounded(.down)),
                 content: content
             )
         }
     }
 
     // MARK: - Helpers
+
+    /// The position of a Compose step as a rank: the column holds a rank since its migration 21
+    /// (ten digits and maybe a fraction), a number before (an index, a fraction or a multiple of
+    /// 10000), read as the rank at its whole part. Only the order matters: the top-level steps
+    /// are renumbered after, and children keep their order among their siblings.
+    static func rank(_ raw: String?) -> String {
+        guard let raw else { return Rank.first }
+        let integer = raw.prefix(10)
+        if raw.count >= 10, integer.allSatisfy(\.isASCII), integer.allSatisfy(\.isNumber), !raw.contains(".") {
+            return raw
+        }
+        return Rank.at(Swift.max(Int((Double(raw) ?? 0).rounded(.down)), 0))
+    }
 
     /// A function giving the column name, or NULL when the table doesn't have it.
     private func columns(of table: String) throws -> (String) -> String {

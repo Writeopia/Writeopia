@@ -26,9 +26,9 @@ sealed class LastEdit {
      * A edition in the line was made, but the positions were not affected. In this case it is
      * possible to update just one line.
      */
-    data class LineEdition(val position: Double, val storyStep: StoryStep) : LastEdit()
+    data class LineEdition(val position: String, val storyStep: StoryStep) : LastEdit()
 
-    data class InfoEdition(val position: Double, val storyStep: StoryStep) : LastEdit()
+    data class InfoEdition(val position: String, val storyStep: StoryStep) : LastEdit()
 
     /**
      * Metadata was edited
@@ -42,8 +42,8 @@ sealed class LastEdit {
      * @param newStep The newly created line with its intermediate database position
      */
     data class LineBreakEdition(
-        val originalStep: Pair<Double, StoryStep>,
-        val newStep: Pair<Double, StoryStep>
+        val originalStep: Pair<String, StoryStep>,
+        val newStep: Pair<String, StoryStep>
     ) : LastEdit()
 
     /**
@@ -52,7 +52,7 @@ sealed class LastEdit {
      * @param steps List of position to StoryStep pairs for all changed lines
      */
     data class BulkEdition(
-        val steps: List<Pair<Double, StoryStep>>
+        val steps: List<Pair<String, StoryStep>>
     ) : LastEdit()
 
     /**
@@ -73,7 +73,7 @@ sealed class LastEdit {
      */
     data class EraseEdition(
         val deletedId: String,
-        val updatedStep: Pair<Double, StoryStep>
+        val updatedStep: Pair<String, StoryStep>
     ) : LastEdit()
 
     /**
@@ -83,6 +83,6 @@ sealed class LastEdit {
      */
     data class BulkDeleteEdition(
         val deletedIds: List<String>,
-        val updatedSteps: List<Pair<Double, StoryStep>> = emptyList()
+        val updatedSteps: List<Pair<String, StoryStep>> = emptyList()
     ) : LastEdit()
 }

@@ -31,6 +31,7 @@ import io.writeopia.ui.drawer.content.ImageDrawer
 import io.writeopia.ui.drawer.content.LastEmptySpace
 import io.writeopia.ui.drawer.content.LinkCardDrawer
 import io.writeopia.ui.drawer.content.LoadingDrawer
+import io.writeopia.ui.drawer.content.SkeletonDrawer
 import io.writeopia.ui.drawer.content.RowGroupDrawer
 import io.writeopia.ui.drawer.content.SlashCommand
 import io.writeopia.ui.drawer.content.SpaceDrawer
@@ -65,11 +66,11 @@ object CommonDrawers {
         dragIconWidth: Dp = DRAG_ICON_WIDTH.dp,
         lineBreakByContent: Boolean,
         drawConfig: DrawConfig,
-        eventListener: (KeyEvent, TextFieldValue, StoryStep, Double, EmptyErase, Int, EndOfText) -> Boolean,
+        eventListener: (KeyEvent, TextFieldValue, StoryStep, String, EmptyErase, Int, EndOfText) -> Boolean,
         isDesktop: Boolean,
         isDarkTheme: Boolean,
         fontFamily: FontFamily? = null,
-        receiveExternalFile: (List<ExternalFile>, Double) -> Unit = { _, _ -> },
+        receiveExternalFile: (List<ExternalFile>, String) -> Unit = { _, _ -> },
         headerEndContent: @Composable ((StoryStep, DrawInfo, Boolean) -> Unit)? = null,
         onDocumentLinkClick: (String) -> Unit,
         linkLeadingIcon: ImageVector? = null,
@@ -167,7 +168,9 @@ object CommonDrawers {
             onDragStop = manager::onDragStop,
             moveRequest = manager::moveRequest,
             acceptStoryStep = manager::acceptStoryStep,
-            showActionsAlways = !isDesktop
+            showActionsAlways = !isDesktop,
+            isDesktop = isDesktop,
+            onFocusChanged = manager::onFocusChange
         )
 
         val dividerDrawer = DividerDrawer(
@@ -247,7 +250,8 @@ object CommonDrawers {
         val headerDrawer = headerDrawer(
             manager = manager,
             enabled = editable,
-            modifier = Modifier.clip(RoundedCornerShape(0.dp, 0.dp, 8.dp, 8.dp)),
+            // A little room above the header, like the Swift apps, with every corner round.
+            modifier = Modifier.padding(top = 8.dp).clip(RoundedCornerShape(8.dp)),
             headerClick = onHeaderClick,
             onKeyEvent = eventListener,
             lineBreakByContent = lineBreakByContent,
@@ -279,6 +283,7 @@ object CommonDrawers {
         )
 
         val loadingDrawer = LoadingDrawer()
+        val skeletonDrawer = SkeletonDrawer()
 
         val equationsDrawer = EquationDrawer(
             showEditAlways = !isDesktop,
@@ -330,6 +335,7 @@ object CommonDrawers {
             put(StoryTypes.GROUP_IMAGE.type.number, RowGroupDrawer(imageDrawerInGroup))
             put(StoryTypes.AI_ANSWER.type.number, aiAnswerDrawer)
             put(StoryTypes.LOADING.type.number, loadingDrawer)
+            put(StoryTypes.SKELETON.type.number, skeletonDrawer)
             put(StoryTypes.DOCUMENT_LINK.type.number, documentLinkDrawer)
             put(StoryTypes.DIVIDER.type.number, dividerDrawer)
             put(StoryTypes.LINK_CARD.type.number, linkCardDrawer)
@@ -395,8 +401,8 @@ private fun RowScope.messageDrawer(
     enabled: Boolean,
     isDarkTheme: Boolean,
     emptyErase: EmptyErase,
-    eventListener: (KeyEvent, TextFieldValue, StoryStep, Double, EmptyErase, Int, EndOfText) -> Boolean,
-    onSelectionLister: (Double) -> Unit,
+    eventListener: (KeyEvent, TextFieldValue, StoryStep, String, EmptyErase, Int, EndOfText) -> Boolean,
+    onSelectionLister: (String) -> Unit,
     textToolbox: @Composable (Boolean) -> Unit,
     slashCommands: List<SlashCommand> = defaultSlashCommands,
     slashCommandsEnabled: Boolean = true,

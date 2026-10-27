@@ -21,6 +21,9 @@ import io.writeopia.core.folders.repository.folder.NotesUseCase
 import io.writeopia.di.LocalAiConfigInjector
 import io.writeopia.di.LocalAiInjection
 import io.writeopia.genai.di.GenAiInjection
+import io.writeopia.global.shell.menu.BackendSideMenuSource
+import io.writeopia.global.shell.menu.LocalSideMenuSource
+import io.writeopia.global.shell.menu.SideMenuSource
 import io.writeopia.global.shell.viewmodel.GlobalShellKmpViewModel
 import io.writeopia.global.shell.viewmodel.GlobalShellViewModel
 import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
@@ -38,7 +41,7 @@ class SideMenuKmpInjector(
     private val workspaceInjection: WorkspaceInjection = WorkspaceInjection.singleton(),
     private val appConnectionInjection: AppConnectionInjection = AppConnectionInjection.singleton(),
     private val genAiInjection: GenAiInjection? = GenAiInjection.singleton(),
-    private val useBackendOnly: Boolean = false,
+    /** Fetches every folder from the backend, kept in memory: the webapp has no database. */
     private val menuItemsRepository: MenuItemsRepository? = null,
 ) : SideMenuInjector, LocalAiConfigInjector {
     // Always get fresh connection to handle logout/login scenarios
@@ -59,6 +62,22 @@ class SideMenuKmpInjector(
             folderRepository,
         )
 
+    private fun provideSideMenuSource(notesUseCase: NotesUseCase): SideMenuSource =
+        if (menuItemsRepository != null) {
+            BackendSideMenuSource(
+                menuItemsRepository = menuItemsRepository,
+                authRepository = authCoreInjection.provideAuthRepository(),
+                notesNavigationUseCase = NotesNavigationUseCase.singleton(),
+            )
+        } else {
+            LocalSideMenuSource(
+                notesUseCase = notesUseCase,
+                authRepository = authCoreInjection.provideAuthRepository(),
+                notesNavigationUseCase = NotesNavigationUseCase.singleton(),
+                folderSync = workspaceInjection.provideFolderSync(),
+            )
+        }
+
     private fun provideDocumentsApi(): DocumentsApi =
         DocumentsApi(connectionInjector().httpClient(), connectionInjector().baseUrl())
 
@@ -68,8 +87,10 @@ class SideMenuKmpInjector(
     @Composable
     override fun provideSideMenuViewModel(keyboardEventFlow: Flow<KeyboardEvent>?): GlobalShellViewModel =
         viewModel {
+            val notesUseCase = provideNotesUseCase()
+
             GlobalShellKmpViewModel(
-                notesUseCase = provideNotesUseCase(),
+                notesUseCase = notesUseCase,
                 uiConfigurationRepo = UiConfigurationCoreInjector.singleton()
                     .provideUiConfigurationRepository(),
                 authRepository = authCoreInjection.provideAuthRepository(),
@@ -80,10 +101,8 @@ class SideMenuKmpInjector(
                 authApi = authCoreInjection.provideAuthApi(),
                 workspaceHandler = workspaceInjection.provideWorkspaceHandler(),
                 keyboardEventFlow = keyboardEventFlow,
-                useBackendOnly = useBackendOnly,
-                menuItemsRepository = menuItemsRepository,
                 genAiApi = genAiInjection?.provideGenAiApi(),
-                folderSync = workspaceInjection.provideFolderSync(),
+                sideMenuSource = provideSideMenuSource(notesUseCase),
                 aiClients = AiClients(
                     localAiRepository = localAiInjection.provideRepository(),
                     genAiRepository = genAiInjection?.provideRepository(),

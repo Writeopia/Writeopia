@@ -5,6 +5,7 @@ package io.writeopia.api.embeddings
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
+import io.writeopia.sdk.utils.iterables.Rank
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -19,7 +20,7 @@ class DocumentPlainTextTest {
             id = "doc",
             title = title,
             content = steps.withIndex().associate { (index, step) ->
-                index.toDouble() to StoryStep(type = step.first.type, text = step.second)
+                Rank.at(index) to StoryStep(type = step.first.type, text = step.second)
             },
             createdAt = now,
             lastUpdatedAt = now,

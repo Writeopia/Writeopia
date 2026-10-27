@@ -80,6 +80,7 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
         self.seedsWelcome = seedsWelcome
         db = try SQLiteDatabase(url: directory.appending(path: "writeopia.sqlite"), journalMode: journalMode)
         try createSchema()
+        try migratePositionsIfNeeded()
         if importsLegacyJson {
             try importJsonFilesIfNeeded()
         }
@@ -485,6 +486,27 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
         try setMeta("step_deletions_synced_at", String(millis))
     }
 
+    /// Where the next request for what changed in the whole workspace starts from (epoch
+    /// milliseconds, this device's clock before the last request); nil before the first time.
+    public func workspaceContentsSyncedAt() throws -> Int64? {
+        try meta("workspace_contents_synced_at").flatMap(Int64.init)
+    }
+
+    public func setWorkspaceContentsSyncedAt(_ millis: Int64) throws {
+        try setMeta("workspace_contents_synced_at", String(millis))
+    }
+
+    /// Where the next request for the deletions and moves made elsewhere (the backend's sync
+    /// events) starts from: the backend's time (epoch milliseconds) when it answered the last
+    /// one, like `Workspace.lastEventSync` of the Compose app; nil before the first time.
+    public func eventsSyncedAt() throws -> Int64? {
+        try meta("events_synced_at").flatMap(Int64.init)
+    }
+
+    public func setEventsSyncedAt(_ millis: Int64) throws {
+        try setMeta("events_synced_at", String(millis))
+    }
+
     // MARK: - Direct access, used by the sync
 
     /// The document with `id`, including soft deleted ones.
@@ -527,6 +549,27 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
     /// Folders directly inside `folderId`, soft deleted ones included.
     public func storedFolders(inFolder folderId: String) throws -> [Folder] {
         try db.query("\(Self.folderColumns) FROM folder WHERE parent_id = ?", [.text(folderId)], row: folder)
+    }
+
+    /// Documents deleted here that the backend hasn't confirmed yet, wherever they are.
+    public func storedDeletedDocuments() throws -> [WrDocument] {
+        try db.query("\(Self.documentColumns) FROM document WHERE deleted = 1", row: documentRow).map(withContent)
+    }
+
+    /// Folders deleted here that the backend hasn't confirmed yet, wherever they are.
+    public func storedDeletedFolders() throws -> [Folder] {
+        try db.query("\(Self.folderColumns) FROM folder WHERE deleted = 1", row: folder)
+    }
+
+    /// A move made elsewhere, received from the backend: the document goes to its new folder
+    /// as it is, with no change of its own to send, unlike `moveDocument`.
+    public func applyReceivedMove(documentId: String, toFolder folderId: String) throws {
+        try db.run("UPDATE document SET parent_document_id = ? WHERE id = ?", [.text(folderId), .text(documentId)])
+    }
+
+    /// A move made elsewhere, received from the backend, like `applyReceivedMove`.
+    public func applyReceivedMove(folderId: String, toFolder parentId: String) throws {
+        try db.run("UPDATE folder SET parent_id = ? WHERE id = ?", [.text(parentId), .text(folderId)])
     }
 
     /// Stores the whole document, replacing its steps. A step deleted here (it has a tombstone
@@ -648,11 +691,12 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
             )
             try db.run("DELETE FROM presentation_step WHERE presentation_id = ?", [.text(presentation.id)])
             for (index, slide) in presentation.slides.enumerated() {
-                for step in slide.asDocument(id: "\(presentation.id)-\(index)", now: presentation.createdAt).content {
+                let steps = slide.asDocument(id: "\(presentation.id)-\(index)", now: presentation.createdAt).content
+                for (stepIndex, step) in steps.enumerated() {
                     let json = String(decoding: try encoder.encode(step), as: UTF8.self)
                     try db.run(
                         "INSERT OR REPLACE INTO presentation_step (id, presentation_id, slide_index, position, content) VALUES (?, ?, ?, ?, ?)",
-                        [.text(step.id), .text(presentation.id), .integer(Int64(index)), .real(step.position), .text(json)]
+                        [.text(step.id), .text(presentation.id), .integer(Int64(index)), .real(Double(stepIndex)), .text(json)]
                     )
                 }
             }
@@ -687,7 +731,7 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
             guard let index = row.integer(0), let json = row.text(1),
                   var step = try? decoder.decode(StoryStep.self, from: Data(json.utf8))
             else { return nil }
-            step.position = row.real(2) ?? step.position
+            step.position = row.real(2).map { Rank.at(Int($0.rounded(.down))) } ?? step.position
             return (index, step)
         }
 
@@ -713,6 +757,42 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
 
     // MARK: - Schema
 
+    /// Story step positions became ranks (`Rank`): ten zero-padded digits plus an optional base-36
+    /// fraction, kept in a TEXT column; before, the column held numbers: indexes (0, 1, 2...),
+    /// fractions (1.5) or whole numbers 10000 apart. Once, the steps of every document are
+    /// renumbered in their order to the ranks of 0, 1, 2... (children are nested in the JSON, so
+    /// only the top-level rows are here) and the table is rebuilt, since SQLite can't change the
+    /// type of a column. The JSON of a row may still carry the old number; the column wins.
+    private func migratePositionsIfNeeded() throws {
+        guard try meta("positions_rank") == nil else { return }
+
+        try db.transaction {
+            try db.execute(
+                """
+                CREATE TABLE story_step_ranks (
+                    id TEXT NOT NULL,
+                    document_id TEXT NOT NULL,
+                    position TEXT NOT NULL,
+                    last_updated_at INTEGER,
+                    content TEXT NOT NULL,
+                    PRIMARY KEY (document_id, id)
+                );
+                INSERT INTO story_step_ranks (id, document_id, position, last_updated_at, content)
+                SELECT s.id, s.document_id,
+                    printf('%010d', 1000000 + (SELECT COUNT(*) FROM story_step o
+                     WHERE o.document_id = s.document_id
+                       AND (o.position < s.position OR (o.position = s.position AND o.id < s.id)))),
+                    s.last_updated_at, s.content
+                FROM story_step s;
+                DROP TABLE story_step;
+                ALTER TABLE story_step_ranks RENAME TO story_step;
+                CREATE INDEX IF NOT EXISTS story_step_document ON story_step(document_id);
+                """
+            )
+            try setMeta("positions_rank", "1")
+        }
+    }
+
     private func createSchema() throws {
         try db.execute(
             """
@@ -736,7 +816,7 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
             CREATE TABLE IF NOT EXISTS story_step (
                 id TEXT NOT NULL,
                 document_id TEXT NOT NULL,
-                position REAL NOT NULL,
+                position TEXT NOT NULL,
                 last_updated_at INTEGER,
                 content TEXT NOT NULL,
                 PRIMARY KEY (document_id, id)
@@ -971,7 +1051,7 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
             guard let json = row.text(0), var step = try? decoder.decode(StoryStep.self, from: Data(json.utf8)) else {
                 return nil
             }
-            step.position = row.real(1) ?? step.position
+            step.position = row.text(1) ?? step.position
             step.lastUpdatedAt = row.integer(2) ?? step.lastUpdatedAt
             return step
         }
@@ -1007,7 +1087,7 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
         let json = String(decoding: try encoder.encode(step), as: UTF8.self)
         try db.run(
             "INSERT OR REPLACE INTO story_step (id, document_id, position, last_updated_at, content) VALUES (?, ?, ?, ?, ?)",
-            [.text(step.id), .text(documentId), .real(step.position), .integer(step.lastUpdatedAt), .text(json)]
+            [.text(step.id), .text(documentId), .text(step.position), .integer(step.lastUpdatedAt), .text(json)]
         )
     }
 
@@ -1096,7 +1176,7 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
             for step in contents.presentationSteps {
                 try db.run(
                     "INSERT OR IGNORE INTO presentation_step (id, presentation_id, slide_index, position, content) VALUES (?, ?, ?, ?, ?)",
-                    [.text(step.id), .text(step.presentationId), .integer(step.slideIndex), .real(step.position), .text(step.content)]
+                    [.text(step.id), .text(step.presentationId), .integer(step.slideIndex), .real(Double(step.position)), .text(step.content)]
                 )
             }
             // The Compose app already gave this space its tutorials.
@@ -1127,19 +1207,19 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
             title: String(localized: "Welcome to Writeopia"),
             workspaceId: workspaceId,
             content: [
-                StoryStep(type: .title, text: String(localized: "Welcome to Writeopia"), position: 0),
+                StoryStep(type: .title, text: String(localized: "Welcome to Writeopia"), position: Rank.first),
                 StoryStep(
                     type: .message,
                     text: String(localized: "This is your private space. Everything you write here stays on this device."),
-                    position: 1
+                    position: Rank.at(1)
                 ),
-                StoryStep(type: .message, text: String(localized: "Getting started"), tags: [TagInfo(tag: "H2")], position: 2),
-                StoryStep(type: .checkItem, text: String(localized: "Create a folder to organise your notes"), checked: false, position: 3),
-                StoryStep(type: .checkItem, text: String(localized: "Create your first document"), checked: false, position: 4),
+                StoryStep(type: .message, text: String(localized: "Getting started"), tags: [TagInfo(tag: "H2")], position: Rank.at(2)),
+                StoryStep(type: .checkItem, text: String(localized: "Create a folder to organise your notes"), checked: false, position: Rank.at(3)),
+                StoryStep(type: .checkItem, text: String(localized: "Create your first document"), checked: false, position: Rank.at(4)),
                 StoryStep(
                     type: .unorderedListItem,
                     text: String(localized: "Sign in from Settings > Account to sync your notes"),
-                    position: 5
+                    position: Rank.at(5)
                 ),
             ],
             parentId: Folder.rootId

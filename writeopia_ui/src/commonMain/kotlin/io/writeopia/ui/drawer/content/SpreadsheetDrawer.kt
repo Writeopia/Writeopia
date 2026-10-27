@@ -76,13 +76,13 @@ class SpreadsheetDrawer(
     private val dragIconWidth: Dp = 24.dp,
     private val config: DrawConfig,
     private val isDesktop: Boolean = true,
-    private val onSelected: (Boolean, Double) -> Unit = { _, _ -> },
-    private val onDragHover: (Double) -> Unit = {},
+    private val onSelected: (Boolean, String) -> Unit = { _, _ -> },
+    private val onDragHover: (String) -> Unit = {},
     private val onDragStart: () -> Unit = {},
     private val onDragStop: () -> Unit = {},
     private val moveRequest: (Action.Move) -> Unit = {},
     private val enabled: Boolean = true,
-    private val receiveExternalFile: (List<ExternalFile>, Double) -> Unit = { _, _ -> },
+    private val receiveExternalFile: (List<ExternalFile>, String) -> Unit = { _, _ -> },
     private val onCellTextChange: (spreadsheetId: String, rowIndex: Int, cellIndex: Int, newText: String) -> Unit,
     private val onAddRow: (spreadsheetId: String) -> Unit,
     private val onAddColumn: (spreadsheetId: String) -> Unit,
@@ -186,7 +186,7 @@ class SpreadsheetDrawer(
                     },
                     onExit = {},
                     onFileReceived = { files ->
-                        receiveExternalFile(files, drawInfo.position + 1)
+                        receiveExternalFile(files, drawInfo.position)
                     }
                 )
             )
@@ -594,7 +594,7 @@ class SpreadsheetDrawer(
         }
     }
 
-    private fun handleDrag(position: Double, data: DropInfo?) {
+    private fun handleDrag(position: String, data: DropInfo?) {
         onDragHover(position)
 
         if (data != null) {

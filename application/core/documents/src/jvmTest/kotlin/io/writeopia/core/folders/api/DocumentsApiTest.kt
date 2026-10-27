@@ -2,6 +2,7 @@
 
 package io.writeopia.core.folders.api
 
+import io.writeopia.sdk.utils.iterables.Rank
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
 import io.writeopia.sdk.models.document.Document
@@ -52,7 +53,7 @@ class DocumentsApiTest {
         val result = api.describeLinkCard(
             documentId = "doc",
             workspaceId = Workspace.disconnectedWorkspace().id,
-            request = LinkCardDescriptionRequest(storyStep = card.toApi(1.0), position = 1.0, requestTimestamp = 1L)
+            request = LinkCardDescriptionRequest(storyStep = card.toApi(Rank.at(1)), position = Rank.at(1), requestTimestamp = 1L)
         )
 
         assertIs<ResultData.Error<StoryStep>>(result)

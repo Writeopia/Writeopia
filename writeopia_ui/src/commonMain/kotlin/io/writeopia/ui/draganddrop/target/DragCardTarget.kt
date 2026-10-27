@@ -14,12 +14,14 @@ expect fun DragCardTarget(
     modifier: Modifier = Modifier,
     dataToDrop: DropInfo,
     showIcon: Boolean = true,
-    position: Double,
+    position: String,
     dragIconWidth: Dp = 16.dp,
     iconTintColor: Color = Color.LightGray,
     iconTintOnHover: Color = MaterialTheme.colorScheme.onBackground,
     onIconClick: () -> Unit = {},
     onDragStart: () -> Unit = {},
     onDragStop: () -> Unit = {},
+    // On touch screens, a long press anywhere on the card starts the drag, not only the icon.
+    dragOnLongPress: Boolean = false,
     content: @Composable BoxScope.() -> Unit
 )

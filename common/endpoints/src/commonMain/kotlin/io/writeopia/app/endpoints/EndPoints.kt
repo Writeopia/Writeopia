@@ -28,6 +28,12 @@ object EndPoints {
 
     fun aiTags() = "api/ai/tags"
 
+    /** Whether a free command to the AI should replace the text it is about, or add to it. */
+    fun aiCommandIntent() = "api/ai/command-intent"
+
+    /** The answer of a free command to the AI, streamed. */
+    fun aiCommand() = "api/ai/command"
+
     fun aiStatus() = "api/ai/status"
 
     fun aiUsage() = "api/ai/usage"

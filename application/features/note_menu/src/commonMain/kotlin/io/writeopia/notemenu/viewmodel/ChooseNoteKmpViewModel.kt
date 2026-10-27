@@ -2,6 +2,7 @@
 
 package io.writeopia.notemenu.viewmodel
 
+import io.writeopia.sdk.utils.iterables.Rank
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.LocalAiRepository
@@ -22,6 +23,8 @@ import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.repository.folder.NotesUseCase
 import io.writeopia.core.folders.sync.EventSync
 import io.writeopia.core.folders.sync.FolderSync
+import io.writeopia.core.folders.sync.SyncScope
+import io.writeopia.core.folders.sync.WorkspaceSync
 import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
 import io.writeopia.notemenu.ui.dto.NotesUi
 import io.writeopia.sdk.export.DocumentToJson
@@ -55,6 +58,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
@@ -76,6 +80,9 @@ internal class ChooseNoteKmpViewModel(
     private val workspaceConfigRepository: WorkspaceConfigRepository,
     private val folderSync: FolderSync,
     private val eventSync: EventSync? = null,
+    /** Syncs the whole workspace when the screen opens; null falls back to [folderSync]. */
+    private val workspaceSync: WorkspaceSync? = null,
+    private val syncScope: SyncScope = SyncScope.WORKSPACE,
     private val folderController: FolderStateController = FolderStateController.singleton(
         notesUseCase,
         authRepository,
@@ -119,7 +126,9 @@ internal class ChooseNoteKmpViewModel(
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    override val menuItemsPerFolderId: StateFlow<Map<String, List<MenuItem>>> by lazy {
+    // Null until the first listing arrives, so an empty folder is not told apart from one still
+    // loading by an empty map.
+    private val loadedMenuItemsPerFolderId: StateFlow<Map<String, List<MenuItem>>?> by lazy {
         authRepository.listenForUser()
             .flatMapLatest { user ->
                 notesUseCase.listenForMenuItemsPerFolderId(
@@ -127,12 +136,20 @@ internal class ChooseNoteKmpViewModel(
                     user.id,
                     getWorkspaceId()
                 )
-            }.stateIn(viewModelScope, SharingStarted.Lazily, emptyMap())
+            }.stateIn(viewModelScope, SharingStarted.Lazily, null)
+    }
+
+    override val menuItemsPerFolderId: StateFlow<Map<String, List<MenuItem>>> by lazy {
+        loadedMenuItemsPerFolderId
+            .map { menuItems -> menuItems ?: emptyMap() }
+            .stateIn(viewModelScope, SharingStarted.Lazily, emptyMap())
     }
 
     override val menuItemsState: StateFlow<ResultData<List<MenuItem>>> by lazy {
         combine(
-            menuItemsPerFolderId,
+            // Stays loading until the items are read, so the empty folder message does not show
+            // while the screen opens.
+            loadedMenuItemsPerFolderId.filterNotNull(),
             authRepository.listenForWorkspace()
         ) { menuItems, workspace ->
             val pageItems = when (notesNavigation) {
@@ -723,11 +740,19 @@ internal class ChooseNoteKmpViewModel(
                     // folders, so a folder deleted elsewhere is removed here instead of re-sent.
                     eventSync?.syncEvents(workspace.id)
 
-                    folderSync.syncFolder(
-                        folderId = notesNavigation.id,
-                        workspaceId = workspace.id,
-                        orderBy = orderByState.value.type
-                    )
+                    // The whole workspace, not just this folder: the favorites and the tags
+                    // gather documents from every folder, so what changed elsewhere must come
+                    // wherever it is. The folder sync stays as the other choice.
+                    val workspaceSync = workspaceSync?.takeIf { syncScope == SyncScope.WORKSPACE }
+                    if (workspaceSync != null) {
+                        workspaceSync.syncWorkspace(workspace.id)
+                    } else {
+                        folderSync.syncFolder(
+                            folderId = notesNavigation.id,
+                            workspaceId = workspace.id,
+                            orderBy = orderByState.value.type
+                        )
+                    }
                 } finally {
                     _isSyncingState.value = false
                 }
@@ -862,8 +887,8 @@ internal class ChooseNoteKmpViewModel(
                     favorite = false,
                     title = "",
                     content = mapOf(
-                        0.0 to StoryStep(type = StoryTypes.TITLE.type, text = ""),
-                        1.0 to StoryStep(type = StoryTypes.IMAGE.type, path = path)
+                        Rank.at(0) to StoryStep(type = StoryTypes.TITLE.type, text = ""),
+                        Rank.at(1) to StoryStep(type = StoryTypes.IMAGE.type, path = path)
                     )
                 )
             }

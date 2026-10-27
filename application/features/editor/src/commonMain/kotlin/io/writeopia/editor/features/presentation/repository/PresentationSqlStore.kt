@@ -2,6 +2,7 @@
 
 package io.writeopia.editor.features.presentation.repository
 
+import io.writeopia.sdk.utils.iterables.Rank
 import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import io.writeopia.core.presentations.PresentationsStore
@@ -77,9 +78,9 @@ class PresentationSqlStore(
                 stepQueries.deleteByPresentationId(presentation.id)
                 presentation.slides.forEachIndexed { slideIndex, slide ->
                     val title = StoryStep(id = "${presentation.id}-$slideIndex-title", type = StoryTypes.TITLE.type, text = slide.title)
-                    insertStep(stepQueries, title, presentation.id, slideIndex, 0.0)
+                    insertStep(stepQueries, title, presentation.id, slideIndex, 0L)
                     slide.content.forEachIndexed { index, step ->
-                        insertStep(stepQueries, step, presentation.id, slideIndex, (index + 1).toDouble())
+                        insertStep(stepQueries, step, presentation.id, slideIndex, (index + 1).toLong())
                     }
                 }
             }
@@ -99,14 +100,14 @@ class PresentationSqlStore(
         step: StoryStep,
         presentationId: String,
         slideIndex: Int,
-        position: Double
+        index: Long
     ) {
         stepQueries.insert(
             id = step.id,
             presentation_id = presentationId,
             slide_index = slideIndex.toLong(),
-            position = position,
-            content = json.encodeToString(StoryStepApi.serializer(), step.toApi(position))
+            position = index.toDouble(),
+            content = json.encodeToString(StoryStepApi.serializer(), step.toApi(Rank.at(index)))
         )
     }
 

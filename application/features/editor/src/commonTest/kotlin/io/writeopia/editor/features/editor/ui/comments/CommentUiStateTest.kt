@@ -1,5 +1,6 @@
 package io.writeopia.editor.features.editor.ui.comments
 
+import io.writeopia.sdk.utils.iterables.Rank
 import io.writeopia.sdk.model.story.Selection
 import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.comment.CommentConversation
@@ -20,7 +21,7 @@ class CommentUiStateTest {
     fun `cursor in commented paragraph exposes the conversation`() {
         val conversation = conversation("conversation-1")
         val state = drawState(
-            selection = Selection.fromPosition(0, 1.0),
+            selection = Selection.fromPosition(0, Rank.at(1)),
             spans = setOf(SpanInfo.create(3, 7, Span.COMMENT, conversation.id)),
         )
 
@@ -35,7 +36,7 @@ class CommentUiStateTest {
     fun `selection outside comments can create a new conversation`() {
         val conversation = conversation("conversation-1")
         val state = drawState(
-            selection = Selection(start = 10, end = 14, position = 1.0),
+            selection = Selection(start = 10, end = 14, position = Rank.at(1)),
             spans = setOf(SpanInfo.create(3, 7, Span.COMMENT, conversation.id)),
         )
 
@@ -44,14 +45,14 @@ class CommentUiStateTest {
         assertEquals(null, result.activeConversation)
         assertEquals(listOf(conversation), result.paragraphConversations)
         assertTrue(result.canCreateComment)
-        assertEquals(Selection(start = 10, end = 14, position = 1.0), result.createTarget)
+        assertEquals(Selection(start = 10, end = 14, position = Rank.at(1)), result.createTarget)
     }
 
     @Test
     fun `selection adjacent to a comment can create a new conversation`() {
         val conversation = conversation("conversation-1")
         val state = drawState(
-            selection = Selection(start = 7, end = 10, position = 1.0),
+            selection = Selection(start = 7, end = 10, position = Rank.at(1)),
             spans = setOf(SpanInfo.create(3, 7, Span.COMMENT, conversation.id)),
         )
 
@@ -66,7 +67,7 @@ class CommentUiStateTest {
         val first = conversation("conversation-1")
         val second = conversation("conversation-2")
         val state = drawState(
-            selection = Selection.fromPosition(7, 1.0),
+            selection = Selection.fromPosition(7, Rank.at(1)),
             spans = setOf(
                 SpanInfo.create(3, 7, Span.COMMENT, first.id),
                 SpanInfo.create(7, 11, Span.COMMENT, second.id),
@@ -89,7 +90,7 @@ class CommentUiStateTest {
     fun `deleted replies are hidden from the active conversation`() {
         val conversationId = "conversation-1"
         val state = drawState(
-            selection = Selection.fromPosition(4, 1.0),
+            selection = Selection.fromPosition(4, Rank.at(1)),
             spans = setOf(SpanInfo.create(3, 7, Span.COMMENT, conversationId)),
         )
         val result = resolveCommentUiState(
@@ -112,7 +113,7 @@ class CommentUiStateTest {
     fun `selection overlapping a comment uses that conversation`() {
         val conversation = conversation("conversation-1")
         val state = drawState(
-            selection = Selection(start = 4, end = 6, position = 1.0),
+            selection = Selection(start = 4, end = 6, position = Rank.at(1)),
             spans = setOf(SpanInfo.create(3, 7, Span.COMMENT, conversation.id)),
         )
 
@@ -139,10 +140,10 @@ class CommentUiStateTest {
                     text = "A paragraph with enough text",
                     spans = spans,
                 ),
-                position = 1.0,
+                position = Rank.at(1),
                 cursor = selection,
             )
         ),
-        focus = 1.0,
+        focus = Rank.at(1),
     )
 }

@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -35,6 +37,7 @@ import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.NotesNavigationType
 import io.writeopia.common.utils.configuration.LocalPlatform
 import io.writeopia.common.utils.configuration.PlatformType
+import io.writeopia.commonui.snackbar.WriteopiaSnackbar
 import io.writeopia.core.folders.di.WorkspaceInjection
 import io.writeopia.documents.graph.di.DocumentsGraphInjection
 import io.writeopia.drawing.di.DrawingInjection
@@ -58,6 +61,7 @@ import io.writeopia.notemenu.navigation.NAVIGATION_PATH
 import io.writeopia.notemenu.navigation.NAVIGATION_TYPE
 import io.writeopia.notemenu.navigation.navigateToNotes
 import io.writeopia.notemenu.ui.screen.menu.EditFileDialog
+import io.writeopia.notemenu.ui.screen.menu.FolderMoveSnackbarEffect
 import io.writeopia.notemenu.ui.screen.menu.RoundedVerticalDivider
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.theme.WriteopiaTheme
@@ -239,6 +243,24 @@ fun DesktopApp(
                                 navigationBar = {},
                                 navController = navigationController
                             ) {}
+
+                            val snackbarHostState = remember { SnackbarHostState() }
+
+                            // The side menu and the notes screen share the folder controller,
+                            // so this tells about the drops on both.
+                            FolderMoveSnackbarEffect(
+                                snackbarHostState = snackbarHostState,
+                                lastMoveState = globalShellViewModel.lastMoveState,
+                                undoMove = globalShellViewModel::undoMove,
+                                dismissMove = globalShellViewModel::dismissMove
+                            )
+
+                            SnackbarHost(
+                                hostState = snackbarHostState,
+                                modifier = Modifier.align(Alignment.BottomCenter)
+                            ) { data ->
+                                WriteopiaSnackbar(snackbarData = data)
+                            }
 
                             val folderEdit =
                                 globalShellViewModel.editFolderState.collectAsState().value

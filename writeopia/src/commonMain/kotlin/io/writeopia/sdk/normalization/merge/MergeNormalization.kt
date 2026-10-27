@@ -1,6 +1,7 @@
 package io.writeopia.sdk.normalization.merge
 
 import io.writeopia.sdk.models.story.StoryStep
+import io.writeopia.sdk.utils.iterables.mapValuesSorted
 
 /**
  *
@@ -9,12 +10,12 @@ class MergeNormalization(private val stepMergers: List<StepsMergerCoordinator>) 
 
     /**
      * When using the Map version of the normalizer, it is necessary to end up with
-     * Map<Double, StoryUnit> instead of Map<Double, List<StoryUnit>> so if some list contains more than
+     * Map<String, StoryUnit> instead of Map<String, List<StoryUnit>> so if some list contains more than
      * one item, this means that some incorrect merge was made. No elements that can't be merged
      * should be together. This normalizer removes the elements that could not be merged.
      */
-    fun mergeSteps(stories: Map<Double, List<StoryStep>>): Map<Double, StoryStep> =
-        stories.mapValues { (_, steps) -> reducePossibleSteps(steps).first() }
+    fun mergeSteps(stories: Map<String, List<StoryStep>>): Map<String, StoryStep> =
+        stories.mapValuesSorted { (_, steps) -> reducePossibleSteps(steps).first() }
 
     /**
      * Note that it may happen that some elements in the same position may not be able to be

@@ -28,7 +28,7 @@ final class FakeDocumentsRepository: DocumentsRepository {
             id: UUID().uuidString,
             title: title,
             workspaceId: "w",
-            content: [StoryStep(type: .title, text: title, position: 0)],
+            content: [StoryStep(type: .title, text: title, position: Rank.at(0))],
             parentId: parentId
         )
     }
@@ -142,6 +142,77 @@ final class FakeDocumentsRepository: DocumentsRepository {
         #expect(await viewModel.move(FolderItem.folder(work).payload.rawValue, into: ideas) == false)
         #expect(viewModel.folders.map(\.id) == ["f1", "f2"])
         #expect(viewModel.actionError == MoveError.folderIntoItself.userMessage)
+        #expect(viewModel.lastDrop == nil)
+    }
+
+    @Test func dropTellsWhatMovedAndUndoMovesItBack() async throws {
+        let (viewModel, repository) = await makeViewModel()
+
+        #expect(await viewModel.move(FolderItem.document(draft).payload.rawValue, into: ideas))
+        let drop = try #require(viewModel.lastDrop)
+        #expect(drop.itemTitle == "Draft")
+        #expect(drop.folderTitle == "Ideas")
+
+        await viewModel.undo(drop)
+
+        #expect(repository.moves == ["document d1 -> f1", "document d1 -> \(Folder.rootId)"])
+        #expect(viewModel.lastDrop == nil)
+    }
+
+    @Test func undoingADropFromFavoritesPutsARootDocumentBackAtTheRoot() async throws {
+        let repository = FakeDocumentsRepository()
+        var loose = WrDocument(id: "d9", title: "Loose", workspaceId: "w", isFavorite: true)
+        loose.parentId = nil
+        var favoriteIdeas = ideas
+        favoriteIdeas.favorite = true
+        repository.contents = FolderContents(folders: [favoriteIdeas], documents: [loose])
+        let viewModel = FolderContentsViewModel(folderId: FolderContentsViewModel.favoritesId, repository: repository)
+        await viewModel.load()
+
+        #expect(await viewModel.move(FolderItem.document(loose).payload.rawValue, into: ideas))
+        #expect(viewModel.lastDrop?.previousParentId == Folder.rootId)
+    }
+
+    @Test func aFailedUndoKeepsTheBannerForAnotherTry() async throws {
+        let (viewModel, repository) = await makeViewModel()
+        #expect(await viewModel.move(FolderItem.document(draft).payload.rawValue, into: ideas))
+        let drop = try #require(viewModel.lastDrop)
+
+        repository.moveError = MoveError.folderIntoItself
+        await viewModel.undo(drop)
+        #expect(viewModel.lastDrop == drop)
+        #expect(viewModel.actionError != nil)
+
+        repository.moveError = nil
+        await viewModel.undo(drop)
+        #expect(viewModel.lastDrop == nil)
+        #expect(repository.moves == ["document d1 -> f1", "document d1 -> \(Folder.rootId)"])
+    }
+
+    @Test func aDropFromAnotherWindowCanBeUndone() async throws {
+        let (viewModel, repository) = await makeViewModel()
+        let elsewhere = WrDocument(id: "d5", title: "Elsewhere", workspaceId: "w", parentId: "f9")
+        repository.documentsById = ["d5": elsewhere]
+
+        #expect(await viewModel.move(FolderItem.document(elsewhere).payload.rawValue, into: ideas))
+        let drop = try #require(viewModel.lastDrop)
+        #expect(drop.itemTitle == "Elsewhere")
+        #expect(drop.previousParentId == "f9")
+    }
+
+    @Test func dismissingAnOlderDropKeepsTheNewerOne() async throws {
+        let (viewModel, _) = await makeViewModel()
+
+        #expect(await viewModel.move(FolderItem.document(draft).payload.rawValue, into: ideas))
+        let first = try #require(viewModel.lastDrop)
+        #expect(await viewModel.move(FolderItem.folder(work).payload.rawValue, into: ideas))
+        let second = try #require(viewModel.lastDrop)
+
+        viewModel.dismiss(first)
+        #expect(viewModel.lastDrop == second)
+
+        viewModel.dismiss(second)
+        #expect(viewModel.lastDrop == nil)
     }
 }
 
@@ -163,8 +234,8 @@ final class FakeSummaryAi: AiStreaming {
 @Suite struct DocumentsSelectionTests {
     let ideas = Folder(id: "f1", parentId: Folder.rootId, title: "Ideas", workspaceId: "w", favorite: true)
     let draft = WrDocument(id: "d1", title: "Draft", workspaceId: "w", content: [
-        StoryStep(type: .title, text: "Draft", position: 0),
-        StoryStep(type: .text, text: "Body", position: 1),
+        StoryStep(type: .title, text: "Draft", position: Rank.at(0)),
+        StoryStep(type: .text, text: "Body", position: Rank.at(1)),
     ], isFavorite: true, parentId: Folder.rootId)
     let plan = WrDocument(id: "d2", title: "Plan", workspaceId: "w", parentId: Folder.rootId)
 

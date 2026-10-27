@@ -1,5 +1,6 @@
 package io.writeopia.editor.configuration.ui
 
+import io.writeopia.sdk.utils.iterables.Rank
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -55,7 +56,7 @@ fun HeaderEdition(
 fun HeaderEditionContent(noteEditorViewModel: NoteEditorViewModel) {
     val currentStory by noteEditorViewModel.writeopiaManager.currentStory.collectAsState()
     val headerImages by noteEditorViewModel.headerImages.collectAsState()
-    val header = currentStory.stories[0.0]
+    val header = currentStory.stories[Rank.at(0)]
 
     HeaderEditionOptions(
         availableColors = ColorUtils.headerColors(),

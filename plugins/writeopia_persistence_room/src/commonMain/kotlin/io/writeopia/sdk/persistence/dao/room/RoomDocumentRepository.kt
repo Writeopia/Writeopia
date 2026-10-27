@@ -241,12 +241,11 @@ class RoomDocumentRepository(
     override suspend fun getSoftDeletedDocuments(workspaceId: String): List<Document> =
         documentEntityDao.getSoftDeletedByWorkspace(workspaceId).map { it.toModel() }
 
-    override suspend fun saveStoryStep(storyStep: StoryStep, position: Double, documentId: String) {
-        val dbPos = storyStep.dbPosition ?: position
-        insertStepsKeepingTombstones(listOf(storyStep.toEntity(dbPos, documentId)))
+    override suspend fun saveStoryStep(storyStep: StoryStep, position: String, documentId: String) {
+        insertStepsKeepingTombstones(listOf(storyStep.toEntity(position, documentId)))
     }
 
-    override suspend fun saveStorySteps(steps: List<Pair<Double, StoryStep>>, documentId: String) {
+    override suspend fun saveStorySteps(steps: List<Pair<String, StoryStep>>, documentId: String) {
         insertStepsKeepingTombstones(
             steps.map { (position, storyStep) -> storyStep.toEntity(position, documentId) }
         )
@@ -319,9 +318,8 @@ class RoomDocumentRepository(
         storyUnitEntityDao?.updateUrl(url, id)
     }
 
-    override suspend fun updateStoryStep(storyStep: StoryStep, position: Double, documentId: String) {
-        val dbPos = storyStep.dbPosition ?: position
-        storyUnitEntityDao?.updateStoryStep(storyStep.toEntity(dbPos, documentId))
+    override suspend fun updateStoryStep(storyStep: StoryStep, position: String, documentId: String) {
+        storyUnitEntityDao?.updateStoryStep(storyStep.toEntity(position, documentId))
     }
 
     override suspend fun deleteByWorkspace(userId: String) {
@@ -362,7 +360,7 @@ class RoomDocumentRepository(
      * This method removes the story units that are not in the root level (they don't have parents)
      * and loads the inner steps of the steps that have children.
      */
-    private suspend fun loadInnerSteps(storyEntities: List<StoryStepEntity>): Map<Double, StoryStep> =
+    private suspend fun loadInnerSteps(storyEntities: List<StoryStepEntity>): Map<String, StoryStep> =
         storyEntities.filter { entity -> entity.parentId == null }
             .sortedBy { it.position }
             .associate { entity -> entity.position to entity }

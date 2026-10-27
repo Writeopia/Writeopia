@@ -16,7 +16,7 @@ public enum PresentationMarkdown {
             }
             guard !title.isEmpty || !steps.isEmpty else { return nil }
             for index in steps.indices {
-                steps[index].position = Double(index + 1)
+                steps[index].position = Rank.at(index + 1)
             }
             return Slide(title: title, steps: steps)
         }

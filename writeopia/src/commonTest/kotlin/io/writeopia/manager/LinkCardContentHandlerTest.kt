@@ -1,5 +1,6 @@
 package io.writeopia.manager
 
+import io.writeopia.sdk.utils.iterables.Rank
 import io.writeopia.sdk.manager.ContentHandler
 import io.writeopia.sdk.model.story.LastEdit
 import io.writeopia.sdk.models.story.StoryStep
@@ -24,19 +25,19 @@ class LinkCardContentHandlerTest {
     @Test
     fun `the last empty line becomes a card and a text line is added below it`() {
         val stories = mapOf(
-            0.0 to StoryStep(type = StoryTypes.TITLE.type, text = "Title", nextPosition = 1.0),
-            1.0 to StoryStep(type = StoryTypes.TEXT.type, text = "", previousPosition = 0.0)
+            Rank.at(0) to StoryStep(type = StoryTypes.TITLE.type, text = "Title", nextPosition = Rank.at(1)),
+            Rank.at(1) to StoryStep(type = StoryTypes.TEXT.type, text = "", previousPosition = Rank.at(0))
         )
 
-        val state = handler.createLinkCard(stories, 1.0, "https://writeopia.io")!!
+        val state = handler.createLinkCard(stories, Rank.at(1), "https://writeopia.io")!!
 
-        val card = state.stories[1.0]!!
+        val card = state.stories[Rank.at(1)]!!
         assertEquals(StoryTypes.LINK_CARD.type, card.type)
         assertEquals("https://writeopia.io", card.url)
         assertNull(card.text)
 
         assertEquals(3, state.stories.size)
-        val below = state.stories.entries.first { (position, _) -> position > 1.0 }
+        val below = state.stories.entries.first { (position, _) -> position > Rank.at(1) }
         assertEquals(StoryTypes.TEXT.type, below.value.type)
         assertEquals("", below.value.text)
         assertEquals(below.key, state.focus)
@@ -49,22 +50,22 @@ class LinkCardContentHandlerTest {
     @Test
     fun `an existing text line below keeps its place and takes the cursor`() {
         val stories = mapOf(
-            0.0 to StoryStep(type = StoryTypes.TITLE.type, text = "Title", nextPosition = 1.0),
-            1.0 to StoryStep(type = StoryTypes.TEXT.type, text = "", previousPosition = 0.0, nextPosition = 2.0),
-            2.0 to StoryStep(type = StoryTypes.TEXT.type, text = "below", previousPosition = 1.0)
+            Rank.at(0) to StoryStep(type = StoryTypes.TITLE.type, text = "Title", nextPosition = Rank.at(1)),
+            Rank.at(1) to StoryStep(type = StoryTypes.TEXT.type, text = "", previousPosition = Rank.at(0), nextPosition = Rank.at(2)),
+            Rank.at(2) to StoryStep(type = StoryTypes.TEXT.type, text = "below", previousPosition = Rank.at(1))
         )
 
-        val state = handler.createLinkCard(stories, 1.0, "https://writeopia.io")!!
+        val state = handler.createLinkCard(stories, Rank.at(1), "https://writeopia.io")!!
 
-        assertEquals(StoryTypes.LINK_CARD.type, state.stories[1.0]!!.type)
+        assertEquals(StoryTypes.LINK_CARD.type, state.stories[Rank.at(1)]!!.type)
         assertEquals(3, state.stories.size)
-        assertEquals("below", state.stories[2.0]!!.text)
-        assertEquals(2.0, state.focus)
+        assertEquals("below", state.stories[Rank.at(2)]!!.text)
+        assertEquals(Rank.at(2), state.focus)
         assertIs<LastEdit.LineEdition>(state.lastEdit)
     }
 
     @Test
     fun `nothing happens for a position without a step`() {
-        assertNull(handler.createLinkCard(emptyMap(), 1.0, "https://writeopia.io"))
+        assertNull(handler.createLinkCard(emptyMap(), Rank.at(1), "https://writeopia.io"))
     }
 }

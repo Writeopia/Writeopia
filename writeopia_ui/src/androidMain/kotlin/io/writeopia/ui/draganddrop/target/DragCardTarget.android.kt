@@ -12,13 +12,14 @@ actual fun DragCardTarget(
     modifier: Modifier,
     dataToDrop: DropInfo,
     showIcon: Boolean,
-    position: Double,
+    position: String,
     dragIconWidth: Dp,
     iconTintColor: Color,
     iconTintOnHover: Color,
     onIconClick: () -> Unit,
     onDragStart: () -> Unit,
     onDragStop: () -> Unit,
+    dragOnLongPress: Boolean,
     content: @Composable BoxScope.() -> Unit
 ) {
     DragCardTargetMobile(
@@ -29,6 +30,7 @@ actual fun DragCardTarget(
         dragIconWidth,
         iconTintColor,
         iconTintOnHover,
+        dragOnLongPress,
         content
     )
 }

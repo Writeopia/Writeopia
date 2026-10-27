@@ -1,9 +1,13 @@
 package io.writeopia.notemenu.ui.screen.documents
 
+import io.writeopia.sdk.utils.iterables.Rank
 import androidx.compose.animation.AnimatedVisibilityScope
-import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -26,8 +31,9 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -44,6 +50,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.font.FontFamily
@@ -75,6 +82,7 @@ import io.writeopia.ui.components.SwipeBox
 import io.writeopia.ui.components.multiselection.SelectableByDrag
 import io.writeopia.ui.draganddrop.target.DragCardTarget
 import io.writeopia.ui.draganddrop.target.DropTarget
+import io.writeopia.ui.draganddrop.target.draggedData
 import io.writeopia.ui.drawer.StoryStepDrawer
 import io.writeopia.ui.drawer.preview.AiAnswerPreviewDrawer
 import io.writeopia.ui.drawer.preview.CheckItemPreviewDrawer
@@ -95,7 +103,10 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 const val DOCUMENT_ITEM_TEST_TAG = "DocumentItem_"
 const val ADD_NOTE_TEST_TAG = "addNote"
 
-@OptIn(ExperimentalSharedTransitionApi::class)
+/** Lets the list scroll past its last item, so it is not stuck at the bottom edge of the screen. */
+private val notesContentPadding =
+    PaddingValues(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 240.dp)
+
 @Composable
 fun NotesCardsScreen(
     isDarkTheme: Boolean,
@@ -119,6 +130,8 @@ fun NotesCardsScreen(
     showTapToStart: Boolean = true,
     /** Shown instead of the tap to start button when the screen is empty and it is hidden. */
     emptyMessage: String = "",
+    /** Shows a button to create a note below [emptyMessage]. */
+    showCreateNoteWhenEmpty: Boolean = false,
 ) {
     when (documents) {
         is ResultData.Complete -> {
@@ -127,12 +140,9 @@ fun NotesCardsScreen(
                     val isEmpty = documents.data.documentUiList.isEmpty()
 
                     if (isEmpty && !showTapToStart) {
-                        Text(
-                            text = emptyMessage,
-                            modifier = Modifier.fillMaxWidth().padding(24.dp),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
+                        EmptyMessage(
+                            message = emptyMessage,
+                            newNote = newNote.takeIf { showCreateNoteWhenEmpty }
                         )
                     } else if (isEmpty) {
                         TapToStartButton(isEmpty, newNote)
@@ -222,10 +232,9 @@ fun NotesCardsScreen(
             }
         }
 
+        // Nothing is shown while the items load, as the screen is often still in its transition.
         is ResultData.Loading, is ResultData.Idle, is ResultData.InProgress -> {
-            Box(modifier = modifier.fillMaxSize()) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            }
+            Box(modifier = modifier.fillMaxSize())
         }
     }
 
@@ -284,7 +293,6 @@ fun NotesCardsScreen(
     }
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun LazyStaggeredGridNotes(
     isDarkTheme: Boolean,
@@ -297,7 +305,7 @@ private fun LazyStaggeredGridNotes(
     moveRequest: (MenuItemUi, String) -> Unit,
     folderClick: (String) -> Unit,
     changeIcon: (String, String, Int, IconChange) -> Unit,
-    contentPadding: PaddingValues = PaddingValues(12.dp),
+    contentPadding: PaddingValues = notesContentPadding,
     onDragIconClick: (String) -> Unit,
     newNote: () -> Unit,
     editFolder: (MenuItemUi.FolderUi) -> Unit,
@@ -367,7 +375,6 @@ private fun LazyStaggeredGridNotes(
     )
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun LazyGridNotes(
     isDarkTheme: Boolean,
@@ -380,7 +387,7 @@ private fun LazyGridNotes(
     moveRequest: (MenuItemUi, String) -> Unit,
     selectionListener: (String, Boolean) -> Unit,
     changeIcon: (String, String, Int, IconChange) -> Unit,
-    contentPadding: PaddingValues = PaddingValues(12.dp),
+    contentPadding: PaddingValues = notesContentPadding,
     onDragIconClick: (String) -> Unit,
     newNote: () -> Unit,
     editFolder: (MenuItemUi.FolderUi) -> Unit,
@@ -447,7 +454,6 @@ private fun LazyGridNotes(
     )
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun LazyColumnNotes(
     isDarkTheme: Boolean,
@@ -459,7 +465,7 @@ private fun LazyColumnNotes(
     selectionListener: (String, Boolean) -> Unit,
     moveRequest: (MenuItemUi, String) -> Unit,
     changeIcon: (String, String, Int, IconChange) -> Unit,
-    contentPadding: PaddingValues = PaddingValues(12.dp),
+    contentPadding: PaddingValues = notesContentPadding,
     onDragIconClick: (String) -> Unit,
     newNote: () -> Unit,
     editFolder: (MenuItemUi.FolderUi) -> Unit,
@@ -522,7 +528,6 @@ private fun LazyColumnNotes(
     )
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun FolderItem(
     folderUi: MenuItemUi.FolderUi,
@@ -570,12 +575,28 @@ private fun FolderItem(
                 }
             }
 
-            val bgColor =
-                when {
-                    inBound && menuItemUI?.id != folderUi.id -> WriteopiaTheme.colorScheme.highlight
+            // A card held over the folder, other than the folder itself, is about to be moved into it.
+            val hoveringItem = draggedData()?.info as? MenuItemUi
+            val isDropTarget = inBound && hoveringItem != null && hoveringItem.id != folderUi.id
+
+            // Like the folder cards of the native apps: an accent border and tint, and the icon
+            // crossfading into the move icon.
+            val accent = MaterialTheme.colorScheme.primary
+            val borderColor by animateColorAsState(
+                targetValue = if (isDropTarget) accent else accent.copy(alpha = 0F),
+                label = "folderDropBorder"
+            )
+
+            val bgColor by animateColorAsState(
+                targetValue = when {
+                    isDropTarget -> accent.copy(alpha = 0.15F)
+                        .compositeOver(WriteopiaTheme.colorScheme.cardBg)
+
                     folderUi.selected -> WriteopiaTheme.colorScheme.selectedBg
                     else -> WriteopiaTheme.colorScheme.cardBg
-                }
+                },
+                label = "folderDropBackground"
+            )
 
             val textColor = WriteopiaTheme.colorScheme.textLight
 
@@ -584,6 +605,7 @@ private fun FolderItem(
                     .fillMaxWidth()
                     .background(WriteopiaTheme.colorScheme.cardPlaceHolderBackground)
                     .clip(MaterialTheme.shapes.large)
+                    .border(width = 2.dp, color = borderColor, shape = MaterialTheme.shapes.large)
                     .clickable {
                         folderClick(folderUi.documentId)
                     },
@@ -598,10 +620,11 @@ private fun FolderItem(
             ) {
                 DragCardTarget(
                     modifier = Modifier.clip(MaterialTheme.shapes.large),
-                    position = position.toDouble(),
-                    dataToDrop = DropInfo(folderUi, position.toDouble()),
+                    position = Rank.at(position),
+                    dataToDrop = DropInfo(folderUi, Rank.at(position)),
                     iconTintOnHover = MaterialTheme.colorScheme.onBackground,
                     onIconClick = onDragIconClick,
+                    dragOnLongPress = true,
                 ) {
                     Column(
                         modifier = Modifier
@@ -615,18 +638,28 @@ private fun FolderItem(
                         val tint = folderUi.icon?.tint?.let(::Color)
                             ?: MaterialTheme.colorScheme.primary
 
-                        Icon(
+                        Crossfade(
+                            targetState = if (isDropTarget) {
+                                WrIcons.moveToFolder
+                            } else {
+                                folderUi.icon?.label?.let(WrIcons::fromName) ?: folder
+                            },
                             modifier = Modifier
                                 .padding(6.dp)
                                 .clip(MaterialTheme.shapes.large)
                                 .clickable { showIconsOptions = !showIconsOptions }
                                 .size(56.dp)
                                 .padding(6.dp),
-                            imageVector = folderUi.icon?.label?.let(WrIcons::fromName)
-                                ?: folder,
-                            contentDescription = "Folder",
-                            tint = tint
-                        )
+                            animationSpec = tween(200),
+                            label = "folderDropIcon"
+                        ) { icon ->
+                            Icon(
+                                modifier = Modifier.fillMaxSize(),
+                                imageVector = icon,
+                                contentDescription = "Folder",
+                                tint = tint
+                            )
+                        }
 
                         DropdownMenu(
                             expanded = showIconsOptions,
@@ -698,7 +731,6 @@ private fun FolderItem(
 //    }
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun DocumentItem(
     documentUi: MenuItemUi.DocumentUi,
@@ -757,10 +789,11 @@ private fun DocumentItem(
                 activeColor = backgroundColor
             ) {
                 DragCardTarget(
-                    position = position.toDouble(),
-                    dataToDrop = DropInfo(documentUi, position.toDouble()),
+                    position = Rank.at(position),
+                    dataToDrop = DropInfo(documentUi, Rank.at(position)),
                     iconTintOnHover = MaterialTheme.colorScheme.onBackground,
-                    onIconClick = onDragIconClick
+                    onIconClick = onDragIconClick,
+                    dragOnLongPress = true
                 ) {
                     Column(
                         modifier = Modifier.background(
@@ -785,7 +818,7 @@ private fun DocumentItem(
                                 step = storyStep,
                                 drawInfo = DrawInfo(
                                     editable = false,
-                                    position = i.toDouble(),
+                                    position = Rank.at(i),
                                     selectMode = documentUi.selected,
                                     extraData = extraData
                                 ),
@@ -820,6 +853,46 @@ private fun DocumentItem(
     }
 }
 
+@Composable
+private fun EmptyMessage(message: String, newNote: (() -> Unit)?) {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = message,
+            modifier = Modifier.fillMaxWidth(),
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
+
+        if (newNote != null) {
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Filled with the accent color, so it stands out from the screen background.
+            Button(
+                modifier = Modifier.heightIn(min = 44.dp),
+                shape = RoundedCornerShape(10.dp),
+                onClick = newNote
+            ) {
+                Icon(
+                    modifier = Modifier.size(18.dp),
+                    imageVector = WrIcons.add,
+                    contentDescription = null
+                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Text(
+                    text = WrStrings.folderScreenCreateNote(),
+                    style = MaterialTheme.typography.titleMedium
+                )
+            }
+        }
+    }
+}
+
 @Preview
 @Composable
 private fun NoNotesScreen() {
@@ -844,7 +917,8 @@ private fun previewDrawers(isDarkTheme: Boolean): Map<Int, StoryStepDrawer> {
         StoryTypes.TITLE.type.number to HeaderPreviewDrawer(
             style = MaterialTheme.typography.titleLarge.copy(
                 fontWeight = FontWeight.Bold,
-            )
+            ),
+            isDarkTheme = isDarkTheme,
         ),
         StoryTypes.CHECK_ITEM.type.number to CheckItemPreviewDrawer(),
         StoryTypes.TEXT.type.number to TextPreviewDrawer(isDarkTheme = isDarkTheme),
