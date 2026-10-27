@@ -108,9 +108,10 @@ fun DragCardTargetMobile(
     ) {
         content()
 
-        val showDragIcon = showIcon ||
-            currentState.isDragging &&
+        val isDragSource = currentState.isDragging &&
             position == currentState.dataToDrop?.positionFrom
+        // With a long press starting the drag anywhere on the card, the handle is redundant.
+        val showDragIcon = !dragOnLongPress && (showIcon || isDragSource)
 
         Crossfade(
             targetState = showDragIcon,
