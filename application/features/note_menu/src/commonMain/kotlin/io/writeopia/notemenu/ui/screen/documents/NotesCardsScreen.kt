@@ -108,7 +108,6 @@ const val ADD_NOTE_TEST_TAG = "addNote"
 private val notesContentPadding =
     PaddingValues(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 240.dp)
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun NotesCardsScreen(
     isDarkTheme: Boolean,
@@ -295,7 +294,6 @@ fun NotesCardsScreen(
     }
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun LazyStaggeredGridNotes(
     isDarkTheme: Boolean,
@@ -378,7 +376,6 @@ private fun LazyStaggeredGridNotes(
     )
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun LazyGridNotes(
     isDarkTheme: Boolean,
@@ -458,7 +455,6 @@ private fun LazyGridNotes(
     )
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun LazyColumnNotes(
     isDarkTheme: Boolean,
@@ -533,7 +529,6 @@ private fun LazyColumnNotes(
     )
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun FolderItem(
     folderUi: MenuItemUi.FolderUi,
@@ -737,7 +732,6 @@ private fun FolderItem(
 //    }
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun DocumentItem(
     documentUi: MenuItemUi.DocumentUi,
