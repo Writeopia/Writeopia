@@ -205,6 +205,31 @@ import WrModels
         #expect(manager.slashCommand == nil)
     }
 
+    @Test func theCursorLeavingTheCommandOrASelectionClosesThePopup() {
+        let manager = manager(text: "Hello ")
+        manager.handleTextInput("Hello /", cursor: 7, stepId: "a")
+        manager.handleTextInput("Hello /t", cursor: 8, stepId: "a")
+
+        // Right after the filter, or one past it (a selection reported before its text change).
+        manager.onSelectionChange(stepId: "a", start: 8, end: 8)
+        manager.onSelectionChange(stepId: "a", start: 9, end: 9)
+        #expect(manager.slashCommand != nil)
+        // Another step's selection is not this command's business.
+        manager.onSelectionChange(stepId: "b", start: 0, end: 0)
+        #expect(manager.slashCommand != nil)
+
+        manager.onSelectionChange(stepId: "a", start: 3, end: 3)
+        #expect(manager.slashCommand == nil)
+
+        manager.handleTextInput("Hello /", cursor: 7, stepId: "a")
+        #expect(manager.slashCommand == nil) // "Hello /t" lost no character: no slash was typed.
+        manager.handleTextInput("Hello ", cursor: 6, stepId: "a")
+        manager.handleTextInput("Hello /", cursor: 7, stepId: "a")
+        #expect(manager.slashCommand != nil)
+        manager.onSelectionChange(stepId: "a", start: 6, end: 7)
+        #expect(manager.slashCommand == nil)
+    }
+
     @Test func dismissingKeepsTheTypedText() {
         let manager = manager()
         manager.handleTextInput("/", cursor: 1, stepId: "a")
@@ -239,6 +264,8 @@ import WrModels
         #expect(!today.isEmpty)
         let now = SlashCommandDates.now(date)
         #expect(now.hasPrefix(today + " "))
-        #expect(now.dropFirst(today.count + 1).count == 5) // HH:mm
+        let time = now.dropFirst(today.count + 1)
+        #expect(time.count == 5) // HH:mm, whatever the 12-hour setting of the device
+        #expect(time.dropFirst(2).first == ":")
     }
 }

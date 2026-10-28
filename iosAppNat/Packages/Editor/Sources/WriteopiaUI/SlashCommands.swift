@@ -102,6 +102,9 @@ enum SlashCommandDates {
 
     static func now(_ date: Date = .now) -> String {
         let time = DateFormatter()
+        // A fixed format: without the POSIX locale the 12-hour setting of the device rewrites
+        // "HH:mm" with an AM/PM marker.
+        time.locale = Locale(identifier: "en_US_POSIX")
         time.dateFormat = "HH:mm"
         return "\(today(date)) \(time.string(from: date))"
     }

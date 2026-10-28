@@ -443,6 +443,16 @@ public final class WriteopiaStateManager {
         if textSelection != selection {
             textSelection = selection
         }
+        // The popup of commands belongs to the cursor right after what was typed: a selection,
+        // or the cursor moved elsewhere, ends it. One character of slack, because a text view
+        // may report the selection before the text change that goes with it.
+        if let slashCommand, slashCommand.stepId == stepId {
+            let start = slashCommand.slashIndex + 1
+            let end = start + slashCommand.filter.utf16.count + 1
+            if !selection.isEmpty || selection.start < start || selection.start > end {
+                dismissSlashCommands()
+            }
+        }
         let rect = selection.isEmpty ? nil : rect
         if textSelectionRect != rect {
             textSelectionRect = rect
