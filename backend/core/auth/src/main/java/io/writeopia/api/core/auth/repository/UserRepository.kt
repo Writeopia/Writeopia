@@ -213,25 +213,3 @@ fun WriteopiaDbBackend.searchUsersByUsernameNotInWorkspace(
                 username = result.username,
             )
         }
-
-fun WriteopiaDbBackend.searchUsersByUsernameInWorkspace(
-    workspaceId: String,
-    usernameQuery: String,
-    limit: Long,
-    offset: Long,
-): List<UsernameSearchResult> =
-    this.userEntityQueries
-        .searchUsersByUsernameInWorkspace(
-            workspaceId,
-            escapeLikeWildcards(usernameQuery),
-            limit,
-            offset
-        )
-        .executeAsList()
-        .map { result ->
-            UsernameSearchResult(
-                id = result.id,
-                name = result.name,
-                username = result.username,
-            )
-        }

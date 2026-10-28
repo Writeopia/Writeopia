@@ -459,7 +459,7 @@ class TextDrawer(
                         }
 
                         // Detect user mention ('@')
-                        if (mentionsEnabled) {
+                        if (mentionsEnabled && onMentionSearch != null) {
                             val mentionResult = detectMentionState(
                                 text = value.text,
                                 cursorPos = value.selection.start,
@@ -561,13 +561,15 @@ class TextDrawer(
                 )
             }
 
+            val popupTargetIndex = when {
+                filteredMentionUsers.isEmpty() -> 0
+                else -> selectedMentionIndex.coerceIn(0, filteredMentionUsers.lastIndex)
+            }
+
             MentionPopup(
                 expanded = showMentionPopup && filteredMentionUsers.isNotEmpty(),
                 users = filteredMentionUsers,
-                selectedIndex = selectedMentionIndex.coerceIn(
-                    0,
-                    filteredMentionUsers.lastIndex.coerceAtLeast(0),
-                ),
+                selectedIndex = popupTargetIndex,
                 onUserSelected = selectMention,
                 onDismiss = {
                     showMentionPopup = false

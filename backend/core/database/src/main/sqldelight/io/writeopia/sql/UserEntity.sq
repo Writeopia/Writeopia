@@ -112,17 +112,6 @@ ORDER BY user_entity.username ASC
 LIMIT ?
 OFFSET ?;
 
-searchUsersByUsernameInWorkspace:
-SELECT user_entity.id, user_entity.name, user_entity.username
-FROM user_entity
-JOIN workspace_to_user
-  ON workspace_to_user.workspace_id = ? AND workspace_to_user.user_id = user_entity.id
-WHERE user_entity.username ILIKE '%' || ? || '%' ESCAPE '\'
-  AND user_entity.status = 'ACTIVE'
-ORDER BY user_entity.username ASC
-LIMIT ?
-OFFSET ?;
-
 selectAccountTypeById:
 SELECT account_type
 FROM user_entity

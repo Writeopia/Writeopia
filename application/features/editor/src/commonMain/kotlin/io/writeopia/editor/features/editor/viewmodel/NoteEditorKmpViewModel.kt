@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalTime::class, ExperimentalCoroutinesApi::class, FlowPreview::class)
+@file:OptIn(ExperimentalTime::class, ExperimentalCoroutinesApi::class)
 
 package io.writeopia.editor.features.editor.viewmodel
 
@@ -91,7 +91,6 @@ import io.writeopia.writingagent.controller.WritingAgentController
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -102,7 +101,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filter
@@ -264,61 +262,61 @@ class NoteEditorKmpViewModel(
         }
     }
 
-    private var currentWorkspaceId: String = Workspace.disconnectedWorkspace().id
+    private val _mentionSuggestions = MutableStateFlow<List<MentionUser>>(emptyList())
+    override val mentionSuggestions: StateFlow<List<MentionUser>> = _mentionSuggestions.asStateFlow()
+
+    private var mentionSearchJob: Job? = null
+
+    override fun searchMention(query: String) {
+        mentionSearchJob?.cancel()
+        if (workspaceApi == null || query.length < 2) {
+            _mentionSuggestions.value = emptyList()
+            return
+        }
+
+        mentionSearchJob = viewModelScope.launch(Dispatchers.Default) {
+            val workspaceId = (authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()).id
+            if (workspaceId.isBlank() ||
+                workspaceId == Workspace.disconnectedWorkspace().id ||
+                !authRepository.isLoggedIn()
+            ) {
+                _mentionSuggestions.value = emptyList()
+                return@launch
+            }
+
+            delay(200)
+            val result = workspaceApi.searchUsers(workspaceId, query, pageSize = 5)
+            when (result) {
+                is ResultData.Complete -> {
+                    val users = result.data.users
+                        .filter { it.username.isNotBlank() }
+                        .map { user ->
+                            MentionUser(
+                                id = user.id,
+                                name = user.name,
+                                username = user.username,
+                            )
+                        }
+                    _mentionSuggestions.value = users
+                }
+
+                else -> {
+                    _mentionSuggestions.value = emptyList()
+                }
+            }
+        }
+    }
+
+    override fun clearMentionSearch() {
+        mentionSearchJob?.cancel()
+        _mentionSuggestions.value = emptyList()
+    }
 
     init {
         viewModelScope.launch(Dispatchers.Default) {
-            writeopiaManager.workspaceIdFlow.collect { workspaceId ->
-                currentWorkspaceId = workspaceId
-                writeopiaManager.clearMentionSearch()
+            writeopiaManager.workspaceIdFlow.collect {
+                clearMentionSearch()
             }
-        }
-
-        viewModelScope.launch(Dispatchers.Default) {
-            writeopiaManager.mentionSearchQuery
-                .debounce(200)
-                .distinctUntilChanged()
-                .collect { query ->
-                    if (query == null) {
-                        return@collect
-                    }
-
-                    val workspaceId = currentWorkspaceId
-                    val workspaceUsersNotAvailable = workspaceApi == null ||
-                        workspaceId.isBlank() ||
-                        workspaceId == Workspace.disconnectedWorkspace().id ||
-                        !authRepository.isLoggedIn()
-
-                    if (workspaceUsersNotAvailable) {
-                        writeopiaManager.setWorkspaceUsers(emptyList())
-                    } else {
-                        val result = workspaceApi.searchUsers(
-                            workspaceId = workspaceId,
-                            usernameQuery = query,
-                            page = 1,
-                            pageSize = 10,
-                            membersOnly = true,
-                        )
-                        when (result) {
-                            is ResultData.Complete -> {
-                                val users = result.data.users
-                                    .filter { it.username.isNotBlank() }
-                                    .map { user ->
-                                        MentionUser(
-                                            id = user.id,
-                                            name = user.name,
-                                            username = user.username,
-                                        )
-                                    }
-                                writeopiaManager.setWorkspaceUsers(users)
-                            }
-
-                            else -> {
-                                writeopiaManager.setWorkspaceUsers(emptyList())
-                            }
-                        }
-                    }
-                }
         }
 
         viewModelScope.launch(Dispatchers.Default) {
@@ -1167,6 +1165,7 @@ class NoteEditorKmpViewModel(
         }
         aiJob?.cancel()
         writingAgent?.stop()
+        clearMentionSearch()
         writeopiaManager.onClear()
     }
 

@@ -26,12 +26,14 @@ import androidx.compose.ui.unit.dp
 import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
+import io.writeopia.sdk.models.user.MentionUser
 import io.writeopia.ui.drawer.StoryStepDrawer
 import io.writeopia.ui.drawer.content.VideoDrawer
 import io.writeopia.ui.drawer.TextToolbox
 import io.writeopia.ui.icons.WrSdkIcons
 import io.writeopia.ui.manager.WriteopiaStateManager
 import io.writeopia.ui.model.DrawConfig
+import kotlinx.coroutines.flow.StateFlow
 import io.writeopia.ui.spellcheck.SpellChecker
 
 object DefaultDrawersDesktop : DrawersFactory {
@@ -51,7 +53,10 @@ object DefaultDrawersDesktop : DrawersFactory {
         onDocumentLinkClick: (String) -> Unit,
         linkLeadingIcon: ImageVector?,
         equationToImageUrl: String?,
-        customDrawers: Map<Int, StoryStepDrawer>
+        customDrawers: Map<Int, StoryStepDrawer>,
+        mentionUsersState: StateFlow<List<MentionUser>>,
+        onMentionSearch: (String) -> Unit,
+        onMentionDismiss: () -> Unit
     ): Map<Int, StoryStepDrawer> {
         val textToolbox: @Composable (Boolean) -> Unit = @Composable { hasSelection ->
             TextToolbox(
@@ -83,6 +88,9 @@ object DefaultDrawersDesktop : DrawersFactory {
             textToolbox = textToolbox,
             linkLeadingIcon = linkLeadingIcon,
             spellChecker = spellChecker,
+            mentionUsersState = mentionUsersState,
+            onMentionSearch = onMentionSearch,
+            onMentionDismiss = onMentionDismiss,
             headerEndContent = { storyStep, drawInfo, isHovered ->
                 // Todo: This code needs to be fixed!
                 val isTitle = storyStep.tags.any { it.tag.isTitle() }

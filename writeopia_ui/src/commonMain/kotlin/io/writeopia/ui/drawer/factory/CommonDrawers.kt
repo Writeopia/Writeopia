@@ -19,8 +19,11 @@ import androidx.compose.ui.unit.dp
 import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
+import io.writeopia.sdk.models.user.MentionUser
 import io.writeopia.ui.drawer.SimpleTextDrawer
 import io.writeopia.ui.drawer.StoryStepDrawer
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import io.writeopia.ui.drawer.content.AddButtonDrawer
 import io.writeopia.ui.drawer.content.AiAnswerDrawer
 import io.writeopia.ui.drawer.content.CodeBlockDrawer
@@ -81,7 +84,10 @@ object CommonDrawers {
             onTagToggle = manager::toggleTagForPosition
         ),
         slashCommandsEnabled: Boolean = true,
-        spellChecker: SpellChecker? = null
+        spellChecker: SpellChecker? = null,
+        mentionUsersState: StateFlow<List<MentionUser>> = MutableStateFlow(emptyList()),
+        onMentionSearch: (String) -> Unit = {},
+        onMentionDismiss: () -> Unit = {}
     ): Map<Int, StoryStepDrawer> {
         val commonTextModifier = Modifier.padding(
             start = drawConfig.codeBlockStartPadding.dp,
@@ -105,7 +111,10 @@ object CommonDrawers {
                     textToolbox = textToolbox,
                     slashCommands = slashCommands,
                     slashCommandsEnabled = slashCommandsEnabled,
-                    spellChecker = spellChecker
+                    spellChecker = spellChecker,
+                    mentionUsersState = mentionUsersState,
+                    onMentionSearch = onMentionSearch,
+                    onMentionDismiss = onMentionDismiss
                 )
             }
 
@@ -406,7 +415,10 @@ private fun RowScope.messageDrawer(
     textToolbox: @Composable (Boolean) -> Unit,
     slashCommands: List<SlashCommand> = defaultSlashCommands,
     slashCommandsEnabled: Boolean = true,
-    spellChecker: SpellChecker? = null
+    spellChecker: SpellChecker? = null,
+    mentionUsersState: StateFlow<List<MentionUser>> = MutableStateFlow(emptyList()),
+    onMentionSearch: (String) -> Unit = {},
+    onMentionDismiss: () -> Unit = {}
 ): TextDrawer =
     TextDrawer(
         modifier = modifier.weight(1F),
@@ -426,8 +438,8 @@ private fun RowScope.messageDrawer(
         textToolbox = textToolbox,
         slashCommands = slashCommands,
         slashCommandsEnabled = slashCommandsEnabled,
-        mentionUsersState = manager.workspaceUsers,
-        onMentionSearch = manager::searchMentionUsers,
-        onMentionDismiss = manager::clearMentionSearch,
+        mentionUsersState = mentionUsersState,
+        onMentionSearch = onMentionSearch,
+        onMentionDismiss = onMentionDismiss,
         spellChecker = spellChecker
     )
