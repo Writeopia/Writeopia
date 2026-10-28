@@ -22,6 +22,7 @@ import io.writeopia.app.dto.WorkspaceUserApi
 import io.writeopia.app.requests.AddUserToWorkspaceRequest
 import io.writeopia.sdk.serialization.data.DocumentApi
 import io.writeopia.sdk.serialization.data.WorkspaceApi
+import io.writeopia.sdk.serialization.data.auth.LoginRequest
 import io.writeopia.sdk.serialization.json.SendDocumentsRequest
 import io.writeopia.sdk.serialization.request.WorkspaceNameChangeRequest
 import io.writeopia.sdk.serialization.request.WorkspaceRoleChangeRequest
@@ -924,5 +925,120 @@ class WorkspacesTest {
         db.deleteUserByEmail(activeEmail)
         db.deleteUserByEmail(activeEmail2)
         db.deleteUserByEmail(unconfirmedEmail)
+    }
+
+    @Test
+    fun `it should search workspace members with membersOnly flag for autocomplete`() = testApplication {
+        application {
+            module(db, debugMode = true, adminKey = "somekey")
+        }
+
+        val client = defaultClient()
+
+        val suffix = Random.nextInt(100000)
+        val ownerEmail = "mention_owner_$suffix@gmail.com"
+        val ownerUsername = "mention_owner_$suffix"
+        val memberEmail = "mention_member_$suffix@gmail.com"
+        val memberUsername = "mention_member_$suffix"
+        val outsideEmail = "mention_outside_$suffix@gmail.com"
+        val outsideUsername = "mention_outside_$suffix"
+
+        // Register owner
+        client.post("/api/auth/register") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                db.verifiedRegisterRequest(
+                    workspaceName = "Mention Workspace",
+                    name = "Mention Owner",
+                    email = ownerEmail,
+                    username = ownerUsername,
+                    password = "testpassword123&",
+                )
+            )
+        }
+        db.enableUserByEmail(ownerEmail)
+
+        val workspace = client.get("/api/workspace/user/email/$ownerEmail") {
+            contentType(ContentType.Application.Json)
+        }.body<List<WorkspaceApi>>().first()
+
+        // Register member
+        client.post("/api/auth/register") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                db.verifiedRegisterRequest(
+                    workspaceName = "Member Workspace",
+                    name = "Mention Member",
+                    email = memberEmail,
+                    username = memberUsername,
+                    password = "testpassword123&",
+                )
+            )
+        }
+        db.enableUserByEmail(memberEmail)
+
+        // Register outside user
+        client.post("/api/auth/register") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                db.verifiedRegisterRequest(
+                    workspaceName = "Outside Workspace",
+                    name = "Outside User",
+                    email = outsideEmail,
+                    username = outsideUsername,
+                    password = "testpassword123&",
+                )
+            )
+        }
+        db.enableUserByEmail(outsideEmail)
+
+        client.post("/api/workspace/user") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                AddUserToWorkspaceRequest(
+                    username = memberUsername,
+                    workspaceId = workspace.id,
+                    role = "EDITOR"
+                )
+            )
+        }
+
+        // 1. Search with membersOnly=true and empty query returns workspace members
+        val emptyQueryResponse = client.get(
+            "/api/workspace/${workspace.id}/users/search?username=&membersOnly=true"
+        ) {
+            contentType(ContentType.Application.Json)
+        }
+        assertEquals(HttpStatusCode.OK, emptyQueryResponse.status)
+        val emptyQueryResults = emptyQueryResponse.body<PaginatedUserSearchResponse>()
+        assertTrue(emptyQueryResults.users.any { it.username == ownerUsername })
+        assertTrue(emptyQueryResults.users.any { it.username == memberUsername })
+        assertTrue(emptyQueryResults.users.none { it.username == outsideUsername })
+
+        // 2. Search with membersOnly=true and filter returns matching member only
+        val memberQueryResponse = client.get(
+            "/api/workspace/${workspace.id}/users/search?username=mention_member&membersOnly=true"
+        ) {
+            contentType(ContentType.Application.Json)
+        }
+        assertEquals(HttpStatusCode.OK, memberQueryResponse.status)
+        val memberQueryResults = memberQueryResponse.body<PaginatedUserSearchResponse>()
+        assertTrue(memberQueryResults.users.any { it.username == memberUsername })
+        assertTrue(memberQueryResults.users.none { it.username == ownerUsername })
+
+        // 3. Search members as non-admin member
+        val nonAdminSearchResponse = client.get(
+            "/api/workspace/${workspace.id}/users/search?username=mention_owner&membersOnly=true"
+        ) {
+            contentType(ContentType.Application.Json)
+        }
+        assertEquals(HttpStatusCode.OK, nonAdminSearchResponse.status)
+        val nonAdminResults = nonAdminSearchResponse.body<PaginatedUserSearchResponse>()
+        assertTrue(nonAdminResults.users.any { it.username == ownerUsername })
+
+        // Clean up
+        db.deleteUserByEmail(ownerEmail)
+        db.deleteUserByEmail(memberEmail)
+        db.deleteUserByEmail(outsideEmail)
     }
 }

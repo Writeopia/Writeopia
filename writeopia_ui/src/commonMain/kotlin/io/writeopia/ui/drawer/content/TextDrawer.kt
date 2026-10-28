@@ -98,7 +98,10 @@ class TextDrawer(
     private val textToolbox: @Composable (Boolean) -> Unit = {},
     private val slashCommands: List<SlashCommand> = defaultSlashCommands,
     private val slashCommandsEnabled: Boolean = true,
+    private val mentionsEnabled: Boolean = true,
     private val mentionUsersState: StateFlow<List<MentionUser>> = MutableStateFlow(emptyList()),
+    private val onMentionSearch: (String) -> Unit = {},
+    private val onMentionDismiss: () -> Unit = {},
     private val spellChecker: SpellChecker? = null
 ) : SimpleTextDrawer {
 
@@ -226,6 +229,7 @@ class TextDrawer(
             mentionStartPosition = -1
             mentionFilter = ""
             selectedMentionIndex = 0
+            onMentionDismiss()
 
             onTextEdit(
                 TextInput(newText, newCursorPos, newCursorPos, updatedSpans),
@@ -346,6 +350,7 @@ class TextDrawer(
                                             mentionStartPosition = -1
                                             mentionFilter = ""
                                             selectedMentionIndex = 0
+                                            onMentionDismiss()
                                         }
                                         return@onPreviewKeyEvent true
                                     }
@@ -364,6 +369,13 @@ class TextDrawer(
                         }
                         .onFocusChanged { focusState ->
                             isFocused = focusState.isFocused
+                            if (!focusState.isFocused && showMentionPopup) {
+                                showMentionPopup = false
+                                mentionStartPosition = -1
+                                mentionFilter = ""
+                                selectedMentionIndex = 0
+                                onMentionDismiss()
+                            }
                             onFocusChanged(drawInfo.position, focusState)
                         }
                         .testTag("MessageDrawer_${drawInfo.position}")
@@ -447,7 +459,7 @@ class TextDrawer(
                         }
 
                         // Detect user mention ('@')
-                        if (mentionUsers.isNotEmpty()) {
+                        if (mentionsEnabled) {
                             val mentionResult = detectMentionState(
                                 text = value.text,
                                 cursorPos = value.selection.start,
@@ -461,6 +473,7 @@ class TextDrawer(
                                     mentionStartPosition = mentionResult.startPosition
                                     mentionFilter = mentionResult.filter
                                     selectedMentionIndex = 0
+                                    onMentionSearch(mentionResult.filter)
                                 }
 
                                 MentionDetectionResult.Dismissed -> {
@@ -468,6 +481,7 @@ class TextDrawer(
                                     mentionStartPosition = -1
                                     mentionFilter = ""
                                     selectedMentionIndex = 0
+                                    onMentionDismiss()
                                 }
 
                                 MentionDetectionResult.Unchanged -> Unit
@@ -560,6 +574,7 @@ class TextDrawer(
                     mentionStartPosition = -1
                     mentionFilter = ""
                     selectedMentionIndex = 0
+                    onMentionDismiss()
                 },
             )
         }

@@ -427,5 +427,7 @@ private fun RowScope.messageDrawer(
         slashCommands = slashCommands,
         slashCommandsEnabled = slashCommandsEnabled,
         mentionUsersState = manager.workspaceUsers,
+        onMentionSearch = manager::searchMentionUsers,
+        onMentionDismiss = manager::clearMentionSearch,
         spellChecker = spellChecker
     )

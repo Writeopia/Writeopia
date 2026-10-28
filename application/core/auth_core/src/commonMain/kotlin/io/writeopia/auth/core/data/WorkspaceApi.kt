@@ -143,20 +143,6 @@ class WorkspaceApi(
         }
     }
 
-    suspend fun getWorkspaceMemberUsers(
-        workspaceId: String
-    ): ResultData<List<WorkspaceUserApi>> = try {
-        val response = client.get("$baseUrl/api/workspace/$workspaceId/users")
-        if (response.status.isSuccess()) {
-            ResultData.Complete(response.body<List<WorkspaceUserApi>>())
-        } else {
-            ResultData.Error()
-        }
-    } catch (e: Exception) {
-        e.printStackTrace()
-        ResultData.Error(e)
-    }
-
     suspend fun getUsersOfWorkspacePaginated(
         workspaceId: String,
         page: Int,
@@ -183,13 +169,17 @@ class WorkspaceApi(
         workspaceId: String,
         usernameQuery: String,
         page: Int = 1,
-        pageSize: Int = 5
+        pageSize: Int = 5,
+        membersOnly: Boolean = false,
     ): ResultData<PaginatedUserSearchResponse> = try {
         val response = client.get("$baseUrl/api/workspace/$workspaceId/users/search") {
             url {
                 parameters.append("username", usernameQuery)
                 parameters.append("page", page.toString())
                 parameters.append("pageSize", pageSize.toString())
+                if (membersOnly) {
+                    parameters.append("membersOnly", "true")
+                }
             }
         }
 

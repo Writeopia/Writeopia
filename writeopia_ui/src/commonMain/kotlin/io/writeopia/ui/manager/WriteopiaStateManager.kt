@@ -252,6 +252,18 @@ class WriteopiaStateManager(
     private val _workspaceUsers = MutableStateFlow<List<MentionUser>>(emptyList())
     val workspaceUsers: StateFlow<List<MentionUser>> = _workspaceUsers.asStateFlow()
 
+    private val _mentionSearchQuery = MutableStateFlow<String?>(null)
+    val mentionSearchQuery: StateFlow<String?> = _mentionSearchQuery.asStateFlow()
+
+    fun searchMentionUsers(query: String) {
+        _mentionSearchQuery.value = query
+    }
+
+    fun clearMentionSearch() {
+        _mentionSearchQuery.value = null
+        _workspaceUsers.value = emptyList()
+    }
+
     fun setWorkspaceUsers(users: List<MentionUser>) {
         _workspaceUsers.value = users
     }
