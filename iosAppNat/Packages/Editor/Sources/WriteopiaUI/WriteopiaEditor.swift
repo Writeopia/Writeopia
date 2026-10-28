@@ -101,6 +101,8 @@ public struct WriteopiaEditor: View {
                         ForEach(manager.toDraw) { draw in
                             StoryStepDrawer(draw: draw, manager: manager)
                                 .id(draw.id)
+                                // The popup of commands hangs under its step, over the next ones.
+                                .zIndex(manager.slashCommand?.stepId == draw.id ? 1 : 0)
                         }
                     }
                     // The code blocks, boxes and cards, each painted as one piece behind its
@@ -129,7 +131,10 @@ public struct WriteopiaEditor: View {
                     // the last step reaches the background too.
                     .frame(minHeight: geometry.size.height, alignment: layout == .slide ? .center : .top)
                     .contentShape(Rectangle())
-                    .onTapGesture { manager.onBackgroundClick?() }
+                    .onTapGesture {
+                        manager.dismissSlashCommands()
+                        manager.onBackgroundClick?()
+                    }
                     .dragSelectionBox(dragSelection, enabled: manager.isEditable)
                 }
             }

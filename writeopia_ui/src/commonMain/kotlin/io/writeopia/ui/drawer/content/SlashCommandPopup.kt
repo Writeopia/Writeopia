@@ -1,6 +1,5 @@
 package io.writeopia.ui.drawer.content
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,6 +12,7 @@ import io.writeopia.sdk.models.command.CommandFactory
 import io.writeopia.sdk.models.command.CommandInfo
 import io.writeopia.sdk.models.command.CommandTrigger
 import io.writeopia.sdk.models.command.TypeInfo
+import io.writeopia.sdk.models.story.Decoration
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
 import io.writeopia.sdk.models.story.TagInfo
@@ -133,6 +133,20 @@ fun createTypeCommands(
             )
             null
         }
+    ),
+    SlashCommand(
+        name = "Divider",
+        description = "Change line to a divider",
+        icon = WrSdkIcons.divider,
+        commandText = "/divider",
+        action = { position ->
+            onTypeChange(
+                position,
+                TypeInfo(StoryTypes.DIVIDER.type, Decoration()),
+                CommandInfo(CommandFactory.divider(), CommandTrigger.CLICKED)
+            )
+            null
+        }
     )
 )
 
@@ -158,8 +172,10 @@ fun SlashCommandPopup(
         modifier = modifier.width(280.dp),
         shape = RoundedCornerShape(8.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+        // The background of the dialogs and sheets of the app, not `surface`, which the app's
+        // theme maps to the accent color.
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
     ) {
         Column(
@@ -169,7 +185,7 @@ fun SlashCommandPopup(
                 text = "Commands",
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onPrimary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
             )
 
@@ -195,14 +211,13 @@ private fun SlashCommandItem(
             .clickable(onClick = onClick)
             .padding(horizontal = 8.dp, vertical = 2.dp)
             .clip(RoundedCornerShape(4.dp))
-            .background(MaterialTheme.colorScheme.surface)
             .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
             imageVector = command.icon,
             contentDescription = command.name,
-            tint = MaterialTheme.colorScheme.onPrimary,
+            tint = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(end = 12.dp)
         )
 
@@ -211,12 +226,12 @@ private fun SlashCommandItem(
                 text = command.name,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onPrimary
+                color = MaterialTheme.colorScheme.onBackground
             )
             Text(
                 text = command.description,
                 fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onPrimary
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }

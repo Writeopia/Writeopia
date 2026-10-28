@@ -40,6 +40,16 @@ public final class WriteopiaStateManager {
     /// Where the selected text is, in the coordinates of its text view, when the view reports
     /// it (the Mac). The formatting popup floats above it.
     public private(set) var textSelectionRect: CGRect?
+    /// Where the cursor of the focused step is, in the coordinates of its text view, when the
+    /// view reports it. The popup of commands floats under it.
+    public private(set) var caretRect: CGRect?
+    /// The "/" command being typed, which opens the popup of commands; nil when there is none.
+    public private(set) var slashCommand: SlashCommandInput?
+    /// The command Return runs, moved with the arrows and the pointer on the Mac. An index in
+    /// `filteredSlashCommands`.
+    public private(set) var slashCommandHighlight = 0
+    /// The commands the popup offers, `SlashCommand.defaults` unless the app sets others.
+    @ObservationIgnored public var slashCommands: [SlashCommand] = SlashCommand.defaults
     /// Increases on every change of the document, handy to observe edits.
     public internal(set) var changeCount = 0
     /// Whether `undo()` and `redo()` have something to go back or forward to. Drive the undo
@@ -97,11 +107,13 @@ public final class WriteopiaStateManager {
     public func loadDocument(_ document: WrDocument) {
         currentStory = writeopiaManager.loadDocument(document)
         focusRequest = nil
+        dismissSlashCommands()
         clearHistory()
     }
 
     public func newDocument() {
         apply(writeopiaManager.newDocument())
+        dismissSlashCommands()
         clearHistory()
     }
 
@@ -120,6 +132,7 @@ public final class WriteopiaStateManager {
         var newStep = step
         newStep.spans = SpansHandler.adjust(step.spans, from: step.text ?? "", to: text)
         newStep.text = text
+        trackSlashCommand(stepId: stepId, step: step, newText: text, cursor: cursor)
 
         if text.contains("\n") {
             dismissAiSuggestions()
@@ -224,6 +237,117 @@ public final class WriteopiaStateManager {
         focusRequest = FocusRequest(stepId: changed.id, cursor: newCursor)
     }
 
+    // MARK: - Slash commands
+
+    /// Follows the "/" command through the edit, like the slash detection of the Compose
+    /// `TextDrawer`. The title has no commands, and a line break ends one.
+    private func trackSlashCommand(stepId: String, step: StoryStep, newText: String, cursor: Int) {
+        let input: SlashCommandInput? = if step.isTitle || newText.contains("\n") {
+            nil
+        } else {
+            SlashCommandDetector.update(slashCommand, stepId: stepId, oldText: step.text ?? "", newText: newText, cursor: cursor)
+        }
+        guard input != slashCommand else { return }
+        slashCommand = input
+        slashCommandHighlight = 0
+    }
+
+    /// The commands matching what was typed after the "/", in the order of `slashCommands`.
+    /// Empty when no command is being typed.
+    public var filteredSlashCommands: [SlashCommand] {
+        guard let slashCommand else { return [] }
+        return slashCommands.filter { $0.matches(slashCommand.filter) }
+    }
+
+    /// Whether the popup of commands shows under the step with `stepId`: a command is being
+    /// typed in it and some command matches.
+    public func showsSlashCommands(stepId: String) -> Bool {
+        isEditable && slashCommand?.stepId == stepId && !filteredSlashCommands.isEmpty
+    }
+
+    /// Closes the popup of commands; the typed text stays as it is.
+    public func dismissSlashCommands() {
+        guard slashCommand != nil else { return }
+        slashCommand = nil
+        slashCommandHighlight = 0
+    }
+
+    /// Moves the highlight by `offset` commands, around the ends.
+    public func moveSlashCommandHighlight(by offset: Int) {
+        let count = filteredSlashCommands.count
+        guard count > 0 else { return }
+        slashCommandHighlight = ((slashCommandHighlight + offset) % count + count) % count
+    }
+
+    public func highlightSlashCommand(at index: Int) {
+        guard filteredSlashCommands.indices.contains(index), slashCommandHighlight != index else { return }
+        slashCommandHighlight = index
+    }
+
+    /// Runs the highlighted command, when the popup shows for the step with `stepId`. False
+    /// otherwise, so Return makes its line break.
+    @discardableResult
+    public func selectHighlightedSlashCommand(stepId: String) -> Bool {
+        guard showsSlashCommands(stepId: stepId) else { return false }
+        let commands = filteredSlashCommands
+        selectSlashCommand(commands[min(slashCommandHighlight, commands.count - 1)])
+        return true
+    }
+
+    /// Runs `command` on the step where the "/" was typed: the slash and the filter leave the
+    /// text, then the command inserts its text or changes the line, like `onCommandSelected`
+    /// of the Compose `TextDrawer`.
+    public func selectSlashCommand(_ command: SlashCommand) {
+        guard isEditable, let input = slashCommand, let (position, step) = find(input.stepId) else { return }
+        dismissSlashCommands()
+
+        let text = (step.text ?? "") as NSString
+        guard input.slashIndex >= 0, input.slashIndex < text.length else { return }
+        let range = NSRange(location: input.slashIndex, length: min(input.range.length, text.length - input.slashIndex))
+        let cursor = range.location + range.length
+
+        switch command.action {
+        case .insertText(let make):
+            let inserted = make()
+            let newText = text.replacingCharacters(in: range, with: inserted)
+            var changed = step
+            changed.spans = SpansHandler.adjust(step.spans, from: step.text ?? "", to: newText)
+            changed.text = newText
+            let newCursor = input.slashIndex + (inserted as NSString).length
+            apply(
+                writeopiaManager.changeStoryState(
+                    Action.StoryStateChange(storyStep: changed, position: position, selectionStart: newCursor, selectionEnd: newCursor),
+                    state: currentStory
+                ),
+                textEditAt: position
+            )
+            // The text view puts the cursor back where it was; it belongs after the inserted text.
+            focusRequest = FocusRequest(stepId: changed.id, cursor: newCursor)
+
+        case .changeType(let type):
+            let textCommand: TextCommands.Command? = switch type.number {
+            case StoryType.checkItem.number: .checkItem
+            case StoryType.unorderedListItem.number: .list
+            case StoryType.codeBlock.number: .codeBlock
+            case StoryType.divider.number: .divider
+            default: nil
+            }
+            guard let textCommand else { return }
+            applyCommand(textCommand, rest: text.replacingCharacters(in: range, with: ""), to: step, at: position, cursor: cursor)
+
+        case .toggleTag(let tag):
+            let textCommand: TextCommands.Command = switch tag {
+            case .box: .box
+            case .card: .card
+            case .h1: .h1
+            case .h2: .h2
+            case .h3: .h3
+            case .h4: .h4
+            }
+            applyCommand(textCommand, rest: text.replacingCharacters(in: range, with: ""), to: step, at: position, cursor: cursor)
+        }
+    }
+
     /// The colors of the document header, `ColorUtils.headerColors()` of the Compose app, as
     /// the ARGB `Int` the document stores.
     public static let headerColors: [Int] = [
@@ -299,6 +423,10 @@ public final class WriteopiaStateManager {
         guard let (position, _) = find(stepId) else { return }
         if hasFocus {
             currentStory.focus = position
+            // The command being typed belongs to the step that had the keyboard.
+            if slashCommand?.stepId != stepId {
+                dismissSlashCommands()
+            }
         } else if currentStory.focus == position {
             currentStory.focus = nil
             if textSelection?.stepId == stepId {
@@ -308,15 +436,34 @@ public final class WriteopiaStateManager {
         }
     }
 
-    public func onSelectionChange(stepId: String, start: Int, end: Int, rect: CGRect? = nil) {
+    /// `rect` is where the selected text is and `caret` where the cursor is, both in the
+    /// coordinates of the text view, when the view reports them.
+    public func onSelectionChange(stepId: String, start: Int, end: Int, rect: CGRect? = nil, caret: CGRect? = nil) {
         let selection = StepSelection(stepId: stepId, start: min(start, end), end: max(start, end))
         if textSelection != selection {
             textSelection = selection
+        }
+        // The popup of commands belongs to the cursor right after what was typed: a selection,
+        // or the cursor moved elsewhere, ends it. One character of slack, because a text view
+        // may report the selection before the text change that goes with it.
+        if let slashCommand, slashCommand.stepId == stepId {
+            let start = slashCommand.slashIndex + 1
+            let end = start + slashCommand.filter.utf16.count + 1
+            if !selection.isEmpty || selection.start < start || selection.start > end {
+                dismissSlashCommands()
+            }
         }
         let rect = selection.isEmpty ? nil : rect
         if textSelectionRect != rect {
             textSelectionRect = rect
         }
+        onCaretChange(stepId: stepId, rect: caret)
+    }
+
+    /// The cursor of the step with `stepId` moved to `rect`, in the coordinates of its text view.
+    public func onCaretChange(stepId: String, rect: CGRect?) {
+        guard let rect, caretRect != rect else { return }
+        caretRect = rect
     }
 
     /// Toggles `span` on the selected lines when there are any, otherwise on the selected text.
@@ -848,6 +995,7 @@ public final class WriteopiaStateManager {
         selectedStepIds.removeAll()
         textSelection = nil
         textSelectionRect = nil
+        dismissSlashCommands()
 
         var restored = state
         restored.lastEdit = .whole
