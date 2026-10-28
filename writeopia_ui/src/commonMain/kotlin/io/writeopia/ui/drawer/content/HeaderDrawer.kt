@@ -33,14 +33,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
 import io.writeopia.sdk.models.story.Decoration
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
@@ -48,6 +46,7 @@ import io.writeopia.ui.drawer.SimpleTextDrawer
 import io.writeopia.ui.drawer.StoryStepDrawer
 import io.writeopia.ui.drawer.factory.EndOfText
 import io.writeopia.ui.icons.WrSdkIcons
+import io.writeopia.ui.image.HeaderImage
 import io.writeopia.ui.manager.WriteopiaStateManager
 import io.writeopia.ui.model.DrawConfig
 import io.writeopia.ui.model.DrawInfo
@@ -104,10 +103,10 @@ class HeaderDrawer(
         Box(modifier = Modifier.hoverable(interactionSource).padding(bottom = 16.dp)) {
             Column {
                 if (imageUrl != null) {
-                    AsyncImage(
-                        model = imageUrl,
+                    // The drawing of the picture covers the band, cropped to keep its proportions.
+                    HeaderImage(
+                        url = imageUrl,
                         contentDescription = "Header image",
-                        contentScale = ContentScale.Crop,
                         modifier = modifier
                             .fillMaxWidth()
                             .height(HEADER_IMAGE_HEIGHT)

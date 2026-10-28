@@ -530,9 +530,13 @@ struct HeaderImagesSection: View {
 }
 
 /// A header picture from the CDN, scaled to cover the frame it is given with its proportions
-/// kept and the excess cropped away, with a quiet placeholder while it loads.
+/// kept and the excess cropped away, with a quiet placeholder while it loads. The drawing of the
+/// picture is what covers the frame: the blurred bands the image model paints above and below it
+/// are cut first (`HeaderPictureLoader`).
 public struct HeaderImageView: View {
     let url: URL?
+    @State private var picture: CGImage?
+    @State private var failed = false
 
     public init(url: URL?) {
         self.url = url
@@ -545,22 +549,31 @@ public struct HeaderImageView: View {
         // stretch the band or the card around it; `clipped` cuts it away.
         Color.clear
             .overlay {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .scaledToFill()
-                    case .failure:
-                        WrColors.secondaryFill
-                            .overlay(Image(systemName: "photo").foregroundStyle(.secondary))
-                    default:
-                        WrColors.secondaryFill
-                    }
+                if let picture {
+                    Image(decorative: picture, scale: 1)
+                        .resizable()
+                        .scaledToFill()
+                } else if failed {
+                    WrColors.secondaryFill
+                        .overlay(Image(systemName: "photo").foregroundStyle(.secondary))
+                } else {
+                    WrColors.secondaryFill
                 }
             }
             .clipped()
             .accessibilityLabel("Header image")
+            .task(id: url) {
+                picture = nil
+                failed = false
+                guard let url else {
+                    failed = true
+                    return
+                }
+                let loaded = await HeaderPictureLoader.shared.picture(at: url)
+                guard !Task.isCancelled else { return }
+                picture = loaded
+                failed = loaded == nil
+            }
     }
 }
 
