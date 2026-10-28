@@ -115,7 +115,8 @@ class DividerDrawer(
                         dragIconWidth = dragIconWidth,
                         onDragStart = onDragStart,
                         onDragStop = onDragStop,
-                        isHoldDraggable = drawInfo.selectMode,
+                        // The step draws no text, so on touch screens a press and hold anywhere on it starts the drag.
+                        isHoldDraggable = true,
                         emptySpaceClick = {},
                         onClick = {
                             onSelected(!drawInfo.selectMode, drawInfo.position)

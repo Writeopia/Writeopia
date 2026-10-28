@@ -30,6 +30,8 @@ actual fun DragCardTarget(
         dragIconWidth,
         iconTintColor,
         iconTintOnHover,
+        onDragStart,
+        onDragStop,
         dragOnLongPress,
         content
     )

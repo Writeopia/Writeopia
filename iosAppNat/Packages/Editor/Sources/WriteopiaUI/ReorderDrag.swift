@@ -30,6 +30,20 @@ final class ReorderCoordinator {
     @ObservationIgnored private var frames: [String: CGRect] = [:]
     @ObservationIgnored private var scrollOffsetAtLastEvent: CGFloat = 0
     @ObservationIgnored private var autoScroll: Timer?
+    /// True from a press and hold on a step until the drag ends, so the haptic of the hold
+    /// isn't repeated when the finger moves.
+    @ObservationIgnored private var isHeld = false
+
+    /// Steps that draw no text move with a press and hold anywhere on them, on touch screens:
+    /// there's no text to select by holding (images, links, link cards and dividers).
+    static func holdsToReorder(_ step: StoryStep) -> Bool {
+        [
+            StoryType.image.number,
+            StoryType.documentLink.number,
+            StoryType.linkCard.number,
+            StoryType.divider.number,
+        ].contains(step.type.number)
+    }
 
     /// Steps report where they are, in the editor content.
     func setFrame(_ frame: CGRect, for stepId: String) {
@@ -42,13 +56,16 @@ final class ReorderCoordinator {
 
     // MARK: - Gesture
 
+    /// A press and hold on a step was recognized: the step is about to move with the finger.
+    func holdRecognized() {
+        guard !isHeld else { return }
+        isHeld = true
+        feedback()
+    }
+
     func dragChanged(stepId: String, location: CGPoint) {
         if active == nil {
-            #if canImport(UIKit)
-            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-            #else
-            NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
-            #endif
+            if !isHeld { feedback() }
             startAutoScroll()
         }
         active = ActiveDrag(stepId: stepId, location: location)
@@ -72,7 +89,16 @@ final class ReorderCoordinator {
         autoScroll?.invalidate()
         autoScroll = nil
         active = nil
+        isHeld = false
         manager?.onDragStop()
+    }
+
+    private func feedback() {
+        #if canImport(UIKit)
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        #else
+        NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
+        #endif
     }
 
     // MARK: - Target
@@ -196,6 +222,45 @@ private struct ReorderFrameReporter: ViewModifier {
                     .onDisappear { coordinator?.removeFrame(for: stepId) }
             }
         }
+    }
+}
+
+extension View {
+    /// On touch screens, a press and hold anywhere on the step starts the reorder drag, like
+    /// `isHoldDraggable` of the Kotlin SDK's `DragRowTarget`. On the Mac only the grip drags.
+    func holdToReorder(_ step: StoryStep, enabled: Bool) -> some View {
+        modifier(HoldToReorder(step: step, enabled: enabled))
+    }
+}
+
+private struct HoldToReorder: ViewModifier {
+    let step: StoryStep
+    let enabled: Bool
+    @Environment(\.reorderCoordinator) private var coordinator
+
+    func body(content: Content) -> some View {
+        #if os(iOS)
+        // High priority, or the button of a link would take the touch; a quick tap still fails
+        // the hold and reaches the button.
+        content.highPriorityGesture(
+            LongPressGesture(minimumDuration: 0.4)
+                .sequenced(before: DragGesture(minimumDistance: 0, coordinateSpace: .named(ReorderCoordinator.coordinateSpace)))
+                .onChanged { value in
+                    switch value {
+                    case .second(true, nil):
+                        coordinator?.holdRecognized()
+                    case .second(true, let drag?):
+                        coordinator?.dragChanged(stepId: step.id, location: drag.location)
+                    default:
+                        break
+                    }
+                }
+                .onEnded { _ in coordinator?.dragEnded() },
+            including: enabled ? .all : .subviews
+        )
+        #else
+        content
+        #endif
     }
 }
 
