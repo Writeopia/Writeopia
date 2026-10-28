@@ -26,6 +26,7 @@ import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.serialization.data.WorkspaceApi
 import io.writeopia.sdk.serialization.data.toModel
 import io.writeopia.sdk.serialization.request.WorkspaceRoleChangeRequest
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlin.time.ExperimentalTime
@@ -184,6 +185,8 @@ class WorkspaceApi(
         } else {
             ResultData.Error()
         }
+    } catch (e: CancellationException) {
+        throw e
     } catch (e: Exception) {
         e.printStackTrace()
         ResultData.Error(e)
@@ -208,6 +211,8 @@ class WorkspaceApi(
         } else {
             ResultData.Error()
         }
+    } catch (e: CancellationException) {
+        throw e
     } catch (e: Exception) {
         e.printStackTrace()
         ResultData.Error(e)
