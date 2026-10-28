@@ -285,7 +285,7 @@ class NoteEditorKmpViewModel(
             }
 
             delay(200)
-            val result = workspaceApi.searchUsers(workspaceId, query, pageSize = 5)
+            val result = workspaceApi.autocompleteUsers(workspaceId, query, pageSize = 5)
             when (result) {
                 is ResultData.Complete -> {
                     val users = result.data.users

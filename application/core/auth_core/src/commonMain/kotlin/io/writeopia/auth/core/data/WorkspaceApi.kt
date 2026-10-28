@@ -189,6 +189,30 @@ class WorkspaceApi(
         ResultData.Error(e)
     }
 
+    suspend fun autocompleteUsers(
+        workspaceId: String,
+        usernameQuery: String,
+        page: Int = 1,
+        pageSize: Int = 5
+    ): ResultData<PaginatedUserSearchResponse> = try {
+        val response = client.get("$baseUrl/api/workspace/$workspaceId/users/autocomplete") {
+            url {
+                parameters.append("username", usernameQuery)
+                parameters.append("page", page.toString())
+                parameters.append("pageSize", pageSize.toString())
+            }
+        }
+
+        if (response.status.isSuccess()) {
+            ResultData.Complete(response.body<PaginatedUserSearchResponse>())
+        } else {
+            ResultData.Error()
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+        ResultData.Error(e)
+    }
+
     suspend fun addUserToWorkspaceWithRole(
         workspaceId: String,
         username: String,
