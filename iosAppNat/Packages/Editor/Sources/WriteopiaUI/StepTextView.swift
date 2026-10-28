@@ -4,10 +4,36 @@ import UIKit
 import Writeopia
 import WrModels
 
-/// Editable text of a step. A `UITextView` is used instead of a SwiftUI `TextField` because
-/// the editor needs to show spans, split the step on Return and merge it on backspace at the
-/// start, none of which `TextField` exposes.
-struct StepTextView: UIViewRepresentable {
+/// Editable text of a step, with the popup of commands under its cursor.
+struct StepTextView: View {
+    let step: StoryStep
+    let manager: WriteopiaStateManager
+    @State private var width: CGFloat = 0
+
+    /// Where the popup of commands goes: under the cursor, while a "/" command is typed in this
+    /// step and some command matches it.
+    private var slashCommandRect: CGRect? {
+        guard manager.showsSlashCommands(stepId: step.id) else { return nil }
+        return manager.caretRect ?? CGRect(x: 0, y: 0, width: 0, height: TextStyles.baseFont(for: step, family: manager.fontFamily).lineHeight)
+    }
+
+    var body: some View {
+        StepTextViewRepresentable(step: step, manager: manager)
+            .background {
+                GeometryReader { geometry in
+                    Color.clear
+                        .onAppear { width = geometry.size.width }
+                        .onChange(of: geometry.size.width) { _, newWidth in width = newWidth }
+                }
+            }
+            .slashCommandPopup(at: slashCommandRect, width: width, manager: manager)
+    }
+}
+
+/// A `UITextView` is used instead of a SwiftUI `TextField` because the editor needs to show
+/// spans, split the step on Return and merge it on backspace at the start, none of which
+/// `TextField` exposes.
+struct StepTextViewRepresentable: UIViewRepresentable {
     let step: StoryStep
     let manager: WriteopiaStateManager
 
@@ -105,7 +131,7 @@ struct StepTextView: UIViewRepresentable {
     }
 
     final class Coordinator: NSObject, UITextViewDelegate {
-        var parent: StepTextView
+        var parent: StepTextViewRepresentable
         var renderedStep: StoryStep?
         var appliedRequest: UUID?
         var renderedFont: EditorFont = .system
@@ -113,7 +139,7 @@ struct StepTextView: UIViewRepresentable {
         /// reported back as user selections during a SwiftUI update.
         var isRendering = false
 
-        init(parent: StepTextView) {
+        init(parent: StepTextViewRepresentable) {
             self.parent = parent
         }
 
@@ -131,6 +157,11 @@ struct StepTextView: UIViewRepresentable {
             let text = textView.text ?? ""
             parent.manager.handleTextInput(text, cursor: textView.selectedRange.location, stepId: parent.step.id)
 
+            // The popup of commands opens under the slash just typed.
+            if parent.manager.slashCommand?.stepId == parent.step.id {
+                parent.manager.onCaretChange(stepId: parent.step.id, rect: caretRect(of: textView))
+            }
+
             // Some input paths (e.g. a hardware keyboard) put the "\n" in the text view without
             // asking `shouldChangeTextIn`. The model already split the step; bring this view back
             // to its first line right away, since SwiftUI won't update a step that didn't change.
@@ -147,8 +178,17 @@ struct StepTextView: UIViewRepresentable {
             parent.manager.onSelectionChange(
                 stepId: parent.step.id,
                 start: range.location,
-                end: range.location + range.length
+                end: range.location + range.length,
+                caret: caretRect(of: textView)
             )
+        }
+
+        /// The rectangle of the insertion point, in the coordinates of the text view.
+        private func caretRect(of textView: UITextView) -> CGRect? {
+            guard let end = textView.selectedTextRange?.end else { return nil }
+            let rect = textView.caretRect(for: end)
+            guard !rect.isNull, !rect.isInfinite, rect.height.isFinite, rect.origin.x.isFinite else { return nil }
+            return rect
         }
 
         func textViewDidBeginEditing(_ textView: UITextView) {

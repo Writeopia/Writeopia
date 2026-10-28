@@ -8,6 +8,31 @@ import WrDesign
 import WrModels
 import WrNetwork
 import WrSession
+#if canImport(UIKit)
+import UIKit
+#endif
+
+/// The size of the cards of folders and documents. The Mac and the iPad have room for large
+/// cards; phones keep the compact ones, like the adaptive grids of the Compose app (220 on
+/// desktop, 150 on phones).
+enum CardSize {
+    static var isLarge: Bool {
+        #if os(macOS)
+        true
+        #else
+        UIDevice.current.userInterfaceIdiom == .pad
+        #endif
+    }
+
+    /// Cards are at least this wide and fill the width, so wider windows get more columns.
+    static var minWidth: CGFloat { isLarge ? 280 : 150 }
+    /// Height of a card of the grid without a header.
+    static var minHeight: CGFloat { isLarge ? 200 : 150 }
+    /// Height of the colored header of a card, and of its picture header.
+    static var colorHeaderHeight: CGFloat { isLarge ? 88 : 70 }
+    static var pictureHeaderHeight: CGFloat { isLarge ? 124 : 96 }
+    static var padding: CGFloat { isLarge ? 16 : 14 }
+}
 
 @Observable
 final class FolderContentsViewModel {
@@ -694,15 +719,7 @@ struct FolderContentsView: View {
     /// Namespace of the zoom into the editor; nil where the cards don't push the editor.
     private let transitionNamespace: Namespace.ID?
 
-    /// Cards are at least this wide and fill the width, so wider windows get more columns, like
-    /// the adaptive grids of the Compose app (220 on desktop, 150 on phones and tablets).
-    private static var minCardWidth: CGFloat {
-        #if os(macOS)
-        220
-        #else
-        150
-        #endif
-    }
+    private static var minCardWidth: CGFloat { CardSize.minWidth }
 
     private static let gridSpacing: CGFloat = 12
     private let columns = [GridItem(.adaptive(minimum: FolderContentsView.minCardWidth), spacing: FolderContentsView.gridSpacing)]
@@ -1342,9 +1359,9 @@ struct ItemCard: View {
                     .font(.caption2)
                     .foregroundStyle(WrColors.textLighter)
             }
-            .padding(14)
+            .padding(CardSize.padding)
         }
-        .frame(maxWidth: .infinity, minHeight: style == .grid ? 150 : nil, alignment: .topLeading)
+        .frame(maxWidth: .infinity, minHeight: style == .grid ? CardSize.minHeight : nil, alignment: .topLeading)
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
     }
 
@@ -1354,8 +1371,12 @@ struct ItemCard: View {
                 .font(.title3)
             titleText
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, minHeight: headerImageURL == nil ? 70 : 96, alignment: .bottomLeading)
+        .padding(CardSize.padding)
+        .frame(
+            maxWidth: .infinity,
+            minHeight: headerImageURL == nil ? CardSize.colorHeaderHeight : CardSize.pictureHeaderHeight,
+            alignment: .bottomLeading
+        )
         .background(background())
         .clipped()
         .overlay(alignment: .topTrailing) {

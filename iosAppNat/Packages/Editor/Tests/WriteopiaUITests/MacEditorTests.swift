@@ -124,6 +124,61 @@ import WrModels
         #expect(manager.currentStory.sortedStories.count == 3)
     }
 
+    /// A "/" typed in a step opens the popup of commands under the cursor: the text view reports
+    /// where the cursor is, the arrows move the highlight instead of the cursor, Return runs
+    /// the highlighted command instead of breaking the line, and Escape closes the popup.
+    @Test func slashOpensTheCommandsUnderTheCursorAndTheKeyboardDrivesThem() async {
+        let (manager, window, hosting) = host()
+        await settle()
+
+        guard let textView = textViews(in: hosting).first(where: { $0.string == "Second" }) else {
+            Issue.record("text view of the step not found")
+            return
+        }
+        window.makeFirstResponder(textView)
+        textView.setSelectedRange(NSRange(location: 6, length: 0))
+        textView.insertText(" /", replacementRange: NSRange(location: 6, length: 0))
+        await settle()
+        #expect(manager.slashCommand == SlashCommandInput(stepId: "b", slashIndex: 7, filter: ""))
+        #expect(manager.showsSlashCommands(stepId: "b"))
+        // The caret sits after the slash, on the first line of the text.
+        guard let caret = manager.caretRect else {
+            Issue.record("the text view didn't report the caret")
+            return
+        }
+        #expect(caret.minX > 20)
+        #expect(caret.minY >= 0 && caret.minY < 10)
+        #expect(caret.height > 10)
+
+        textView.doCommand(by: #selector(NSResponder.moveDown(_:)))
+        #expect(manager.slashCommandHighlight == 1)
+        #expect(window.firstResponder === textView)
+        textView.doCommand(by: #selector(NSResponder.moveUp(_:)))
+        #expect(manager.slashCommandHighlight == 0)
+
+        textView.doCommand(by: #selector(NSResponder.cancelOperation(_:)))
+        #expect(manager.slashCommand == nil)
+        #expect(manager.step(withId: "b")?.text == "Second /")
+
+        // Pasted at once, "/li" is no command. Typed letter by letter at the start of the text
+        // it is, filtered to the list: Return makes the line a list item, no line break.
+        textView.insertText("/li", replacementRange: NSRange(location: 8, length: 0))
+        await settle()
+        #expect(manager.slashCommand == nil)
+        textView.setSelectedRange(NSRange(location: 0, length: 0))
+        for (offset, letter) in ["/", "l", "i"].enumerated() {
+            textView.insertText(letter, replacementRange: NSRange(location: offset, length: 0))
+        }
+        await settle()
+        #expect(manager.slashCommand == SlashCommandInput(stepId: "b", slashIndex: 0, filter: "li"))
+        #expect(manager.filteredSlashCommands.map(\.name) == ["List"])
+        textView.doCommand(by: #selector(NSResponder.insertNewline(_:)))
+        await settle()
+        #expect(manager.step(withId: "b")?.type.number == StoryType.unorderedListItem.number)
+        #expect(manager.step(withId: "b")?.text == "Second //li")
+        #expect(manager.currentStory.sortedStories.count == 3)
+    }
+
     /// Edit > Undo and Edit > Redo send `undo:` and `redo:` to the first responder: the text
     /// view answers with the document history, and validates the items by it.
     @Test func editMenuUndoAndRedoGoThroughTheDocumentHistory() async {
