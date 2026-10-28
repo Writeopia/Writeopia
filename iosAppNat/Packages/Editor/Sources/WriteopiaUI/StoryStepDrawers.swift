@@ -84,6 +84,9 @@ struct StoryStepDrawer: View {
         case StoryType.image.number:
             DraggableStep(step: step, position: draw.position, manager: manager, block: draw.block) {
                 ImageDrawer(step: step, isUploading: manager.uploadingStepIds.contains(step.id))
+                    // On touch screens a long press drags the image; the context menu would
+                    // open on the same hold. There, the image is deleted as a selected line.
+                    #if os(macOS)
                     .contextMenu {
                         if manager.isEditable {
                             Button("Delete image", systemImage: "trash", role: .destructive) {
@@ -91,6 +94,7 @@ struct StoryStepDrawer: View {
                             }
                         }
                     }
+                    #endif
             }
         case StoryType.documentLink.number:
             DraggableStep(step: step, position: draw.position, manager: manager, block: draw.block) {
@@ -154,6 +158,7 @@ struct DraggableStep<Content: View>: View {
                 // to its last (see `BlockPainter`).
                 .blockPiece(block)
         }
+        .holdToReorder(step, enabled: manager.isEditable && ReorderCoordinator.holdsToReorder(step))
         .swipeToSelect(step, manager: manager)
         .selectableByDrag(id: step.id)
         // With a pointer the grip shows on hover, like the drag handle of the Compose app.
@@ -894,6 +899,9 @@ struct LinkCardDrawer: View {
                     .padding(.trailing, 8)
             }
         }
+        // On touch screens a long press drags the card; the context menu would open on the
+        // same hold. There, the card is deleted as a selected line.
+        #if os(macOS)
         .contextMenu {
             if manager.isEditable {
                 Button("Delete link", systemImage: "trash", role: .destructive) {
@@ -901,6 +909,7 @@ struct LinkCardDrawer: View {
                 }
             }
         }
+        #endif
     }
 
     private var copyButton: some View {

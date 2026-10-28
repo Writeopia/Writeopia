@@ -45,6 +45,8 @@ fun DragCardTargetMobile(
     dragIconWidth: Dp,
     iconTintColor: Color,
     iconTintOnHover: Color,
+    onDragStart: () -> Unit,
+    onDragStop: () -> Unit,
     dragOnLongPress: Boolean,
     content: @Composable BoxScope.() -> Unit
 ) {
@@ -60,6 +62,7 @@ fun DragCardTargetMobile(
 
     // The drag starts at a point in the window, both from the icon and from a long press on the card.
     val startDrag: (Offset) -> Unit = { start ->
+        onDragStart()
         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
 
         currentState.dataToDrop = currentDataToDrop
@@ -77,6 +80,7 @@ fun DragCardTargetMobile(
         currentState.dragOffset += Offset(dragAmount.x, dragAmount.y)
     }
     val stopDrag: () -> Unit = {
+        onDragStop()
         currentState.isDragging = false
         currentState.dragOffset = Offset.Zero
         currentState.ghostPosition = null
