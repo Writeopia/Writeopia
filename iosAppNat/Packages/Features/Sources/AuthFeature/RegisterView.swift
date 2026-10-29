@@ -1,5 +1,6 @@
 import Observation
 import SwiftUI
+import WrAnalytics
 import WrData
 import WrDesign
 import WrNetwork
@@ -36,10 +37,12 @@ final class RegisterViewModel {
     private(set) var usernameAvailability = UsernameAvailability.unknown
 
     private let session: AppSession
+    private let analytics: AnalyticsTracker
     private var cooldownTask: Task<Void, Never>?
 
-    init(session: AppSession) {
+    init(session: AppSession, analytics: AnalyticsTracker = Analytics.shared) {
         self.session = session
+        self.analytics = analytics
     }
 
     var passwordValidation: PasswordValidation { PasswordValidator.validate(password) }
@@ -139,6 +142,7 @@ final class RegisterViewModel {
             switch result {
             case .loggedIn(let user):
                 self.session.loggedIn(user)
+                self.analytics.capture("user_signed_up")
             case .emailNotConfirmed(let user):
                 self.session.needsEmailConfirmation(email: user.email)
             }

@@ -8,6 +8,8 @@ import androidx.lifecycle.viewModelScope
 import io.writeopia.LocalAiRepository
 import io.writeopia.ai.AiClients
 import io.writeopia.ai.task.AiTaskManager
+import io.writeopia.analytics.Analytics
+import io.writeopia.analytics.AnalyticsTracker
 import io.writeopia.ai.task.AiTaskType
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.common.utils.DISCONNECTED_USER_ID
@@ -106,6 +108,7 @@ internal class ChooseNoteKmpViewModel(
         aiClients = aiClients,
         documentToMarkdown = documentToMarkdown,
     ),
+    private val analyticsTracker: AnalyticsTracker = Analytics,
 ) : ChooseNoteViewModel, ViewModel(), FolderController by folderController {
 
     override val currentFolderId: String get() = notesNavigation.id
@@ -796,6 +799,7 @@ internal class ChooseNoteKmpViewModel(
             }
             val workspace = authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()
             val folder = notesUseCase.createFolder(name, workspace.id, parentId, icon)
+            analyticsTracker.capture("folder_created", mapOf("folder_id" to folder.id))
             syncFolder(folder)
             hideCreateFolderDialog()
         }

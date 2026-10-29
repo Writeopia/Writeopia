@@ -1,5 +1,7 @@
 [versions]
 coilVersion = "3.5.0"
+posthogAndroid = "3.72.9"
+posthogJava = "1.2.0"
 googleGenai = "1.70.0"
 media3 = "1.11.0"
 espressoCore = "3.7.0"
@@ -55,6 +57,8 @@ androidx-junit = { module = "androidx.test.ext:junit", version.ref = "junit" }
 androidx-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "ktx" }
 androidx-material3 = { module = "androidx.compose.material3:material3" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coilVersion" }
+posthog-android = { module = "com.posthog:posthog-android", version.ref = "posthogAndroid" }
+posthog-java = { module = "com.posthog.java:posthog", version.ref = "posthogJava" }
 coil-ktor3 = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coilVersion" }
 coil-video = { module = "io.coil-kt.coil3:coil-video", version.ref = "coilVersion" }
 firebase-admin = { module = "com.google.firebase:firebase-admin", version.ref = "firebaseAdmin" }

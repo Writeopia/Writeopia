@@ -25,6 +25,7 @@ import androidx.navigation.compose.rememberNavController
 import io.github.kdroidfilter.platformtools.darkmodedetector.isSystemInDarkMode
 import io.github.kdroidfilter.platformtools.darkmodedetector.windows.setWindowsAdaptiveTitleBar
 import io.writeopia.account.ui.AccountDeletionStartedScreen
+import io.writeopia.analytics.Analytics
 import io.writeopia.auth.core.di.setupBearerTokenHandler
 import io.writeopia.auth.navigation.authNavigation
 import io.writeopia.auth.navigation.navigateToApp
@@ -65,6 +66,7 @@ private const val APP_DIRECTORY = ".writeopia"
 private const val DB_VERSION = 1
 
 fun main() = application {
+    Analytics.setup()
     App()
 }
 

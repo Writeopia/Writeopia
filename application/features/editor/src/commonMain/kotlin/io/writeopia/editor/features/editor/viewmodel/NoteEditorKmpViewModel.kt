@@ -4,6 +4,8 @@ package io.writeopia.editor.features.editor.viewmodel
 
 import io.writeopia.sdk.utils.iterables.Rank
 import androidx.compose.ui.text.buildAnnotatedString
+import io.writeopia.analytics.Analytics
+import io.writeopia.analytics.AnalyticsTracker
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.LocalAiRepository
@@ -153,6 +155,7 @@ class NoteEditorKmpViewModel(
     private val documentTagRepository: DocumentTagRepository? = null,
     /** The header pictures of the cloud; null when it can't answer right now. */
     private val resolveHeaderImages: suspend () -> HeaderImages? = { aiClients.headerImages() },
+    private val analyticsTracker: AnalyticsTracker = Analytics,
 ) : NoteEditorViewModel,
     ViewModel(),
     BackstackInform by writeopiaManager,
@@ -548,6 +551,7 @@ class NoteEditorKmpViewModel(
             val tag = DocumentTag.create(name, description, workspaceId)
 
             repository.upsertTag(tag)
+            analyticsTracker.capture("tag_created", mapOf("tag_name" to name))
             writeopiaManager.addDocumentTag(tag.id)
             hideAddTagDialog()
             sendTagToBackend(tag)
@@ -809,6 +813,7 @@ class NoteEditorKmpViewModel(
         }
 
         writeopiaManager.newDocument(documentId, title, parentFolder = parentFolderId)
+        analyticsTracker.capture("document_created", mapOf("document_id" to documentId))
 
         // Use global sync manager for syncing - continues even after ViewModel is cleared
         documentSyncManager.registerForDbSync(
@@ -845,6 +850,8 @@ class NoteEditorKmpViewModel(
      */
     override fun loadDocument(documentId: String) {
         if (writeopiaManager.isInitialized()) return
+
+        analyticsTracker.capture("document_opened", mapOf("document_id" to documentId))
 
         viewModelScope.launch(Dispatchers.Default) {
             ContentLoadActivity.track { openDocument(documentId) }
@@ -1134,10 +1141,14 @@ class NoteEditorKmpViewModel(
     }
 
     override fun createComment(text: String): CommentConversation? =
-        writeopiaManager.createComment(text)
+        writeopiaManager.createComment(text)?.also {
+            analyticsTracker.capture("comment_created", mapOf("document_id" to documentId.value))
+        }
 
     override fun createComment(text: String, target: Selection): CommentConversation? =
-        writeopiaManager.createComment(text, target)
+        writeopiaManager.createComment(text, target)?.also {
+            analyticsTracker.capture("comment_created", mapOf("document_id" to documentId.value))
+        }
 
     override fun addComment(conversationId: String, text: String): Comment? =
         writeopiaManager.addComment(conversationId, text)
@@ -1342,6 +1353,11 @@ class NoteEditorKmpViewModel(
         val docId = documentId.value
         val taskId = "editor-$docId-${GenerateId.generate()}"
 
+        analyticsTracker.capture(
+            "ai_command_used",
+            mapOf("command" to command.name, "document_id" to docId)
+        )
+
         aiTaskManager.enqueueTask(
             id = taskId,
             type = AiTaskType.TEXT_GENERATION,
@@ -1405,6 +1421,7 @@ class NoteEditorKmpViewModel(
                 println("error deleting document: ${e.message}")
                 return@launch
             }
+            analyticsTracker.capture("document_deleted", mapOf("document_id" to document.id))
 
             withContext(Dispatchers.Main) {
                 onDeleted()
@@ -1550,6 +1567,10 @@ class NoteEditorKmpViewModel(
             val newContent = document.copy(content = document.content)
             val stringDocument = infoParse(newContent)
 
+            analyticsTracker.capture(
+                "document_exported",
+                mapOf("document_id" to document.id, "format" to type)
+            )
             _documentToShareInfo.emit(ShareDocument(stringDocument, documentTitle, type))
         }
     }
@@ -1610,6 +1631,7 @@ class NoteEditorKmpViewModel(
                     val result = documentsApi.publishDocument(docId, workspaceId)
                     if (result is ResultData.Complete) {
                         _isDocumentPublished.value = true
+                        analyticsTracker.capture("document_published", mapOf("document_id" to docId))
                     }
                 }
             } finally {

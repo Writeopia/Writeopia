@@ -3,6 +3,7 @@ import Foundation
 import Observation
 import Writeopia
 import WriteopiaUI
+import WrAnalytics
 import WrData
 import WrModels
 import WrNetwork
@@ -68,6 +69,7 @@ public final class NoteEditorViewModel {
 
     let documentId: String
     private let repository: DocumentsRepository
+    private let analytics: AnalyticsTracker
     @ObservationIgnored private let aiClient: AiStreaming?
     @ObservationIgnored private let publishing: DocumentPublishing?
     @ObservationIgnored private let imageUploader: ImageUploading?
@@ -129,10 +131,12 @@ public final class NoteEditorViewModel {
         headerImages: HeaderImageServing? = nil,
         loadActivity: ContentLoadActivity? = nil,
         defaults: UserDefaults = .standard,
-        writeopiaManager: WriteopiaStateManager = WriteopiaStateManager()
+        writeopiaManager: WriteopiaStateManager = WriteopiaStateManager(),
+        analytics: AnalyticsTracker = Analytics.shared
     ) {
         self.documentId = documentId
         self.repository = repository
+        self.analytics = analytics
         self.aiClient = aiClient
         self.publishing = publishing
         self.imageUploader = imageUploader
@@ -275,6 +279,7 @@ public final class NoteEditorViewModel {
         try await repository.saveTag(tag)
         workspaceTags = (workspaceTags + [tag]).sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
         addTag(id: tag.id)
+        analytics.capture("tag_created", properties: ["tag_name": tag.name])
         return tag
     }
 
@@ -391,6 +396,7 @@ public final class NoteEditorViewModel {
         do {
             try await repository.deleteDocument(id: documentId)
             isDeleted = true
+            analytics.capture("document_deleted", properties: ["document_id": documentId])
             return true
         } catch {
             deleteError = error.userMessage
@@ -514,6 +520,7 @@ public final class NoteEditorViewModel {
         let name = Self.fileName(for: writeopiaManager.title)
         let url = FileManager.default.temporaryDirectory.appending(path: "\(name).\(format.fileExtension)")
         try content.write(to: url, atomically: true, encoding: .utf8)
+        analytics.capture("document_exported", properties: ["document_id": documentId, "format": format.rawValue])
         return url
     }
 
@@ -550,6 +557,7 @@ public final class NoteEditorViewModel {
         do {
             if published {
                 try await publishing.publish(documentId: documentId)
+                analytics.capture("document_published", properties: ["document_id": documentId])
             } else {
                 try await publishing.unpublish(documentId: documentId)
             }
@@ -571,6 +579,13 @@ public final class NoteEditorViewModel {
         }
     }
 
+    /// The `command` property of the `ai_command_used` event: the quick action's name, or
+    /// "custom" for a free command typed in the command tab (`runAiCommand`), which has no
+    /// `AiCommand` of its own.
+    static func analyticsCommandName(_ command: AiCommand?) -> String {
+        command?.rawValue ?? "custom"
+    }
+
     /// Characters of the document sent with a free command. The backend cuts it further for
     /// the judge; a rewrite sends `DocumentRewrite.markdownLimit` at most.
     static let commandContextLimit = 24_000
@@ -584,6 +599,11 @@ public final class NoteEditorViewModel {
     public func runAiCommand(_ command: String) {
         let text = command.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let aiClient, !isAiRunning, !text.isEmpty, writeopiaManager.isEditable else { return }
+
+        analytics.capture(
+            "ai_command_used",
+            properties: ["command": Self.analyticsCommandName(nil), "document_id": documentId]
+        )
 
         let manager = writeopiaManager
         let selectedLines = manager.selectedLines
@@ -707,6 +727,10 @@ public final class NoteEditorViewModel {
         }
 
         guard let input, !input.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        analytics.capture(
+            "ai_command_used",
+            properties: ["command": Self.analyticsCommandName(command), "document_id": documentId]
+        )
         streamAnswer(command, prompt: input.text, after: input.position)
     }
 
@@ -1041,6 +1065,7 @@ public final class NoteEditorViewModel {
             pushedSteps = savedSteps
             await reloadTags()
             writingAgent?.documentOpened(id: documentId)
+            analytics.capture("document_opened", properties: ["document_id": documentId])
         } catch is CancellationError {
             return
         } catch {

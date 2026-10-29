@@ -13,6 +13,7 @@
 		A10000000000000000001003 /* DocumentsFeature in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000002003 /* DocumentsFeature */; };
 		A10000000000000000001004 /* SearchFeature in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000002004 /* SearchFeature */; };
 		A10000000000000000001005 /* SettingsFeature in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000002005 /* SettingsFeature */; };
+		A10000000000000000001006 /* WrAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000002006 /* WrAnalytics */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -67,6 +68,7 @@
 				A10000000000000000001003 /* DocumentsFeature in Frameworks */,
 				A10000000000000000001004 /* SearchFeature in Frameworks */,
 				A10000000000000000001005 /* SettingsFeature in Frameworks */,
+				A10000000000000000001006 /* WrAnalytics in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -132,6 +134,7 @@
 				A10000000000000000002003 /* DocumentsFeature */,
 				A10000000000000000002004 /* SearchFeature */,
 				A10000000000000000002005 /* SettingsFeature */,
+				A10000000000000000002006 /* WrAnalytics */,
 			);
 			productName = iosAppNat;
 			productReference = 762AEF3B306878D000CD91D1 /* Writeopia.app */;
@@ -392,6 +395,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_POSTHOG_PROJECT_TOKEN = "$(POSTHOG_PROJECT_TOKEN)";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -401,6 +405,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
+				POSTHOG_PROJECT_TOKEN = "";
 				PRODUCT_BUNDLE_IDENTIFIER = io.writeopia.WriteopiaNative;
 				PRODUCT_MODULE_NAME = "$(TARGET_NAME)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -445,6 +450,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_POSTHOG_PROJECT_TOKEN = "$(POSTHOG_PROJECT_TOKEN)";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -454,6 +460,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
+				POSTHOG_PROJECT_TOKEN = "";
 				PRODUCT_BUNDLE_IDENTIFIER = io.writeopia.WriteopiaNative;
 				PRODUCT_MODULE_NAME = "$(TARGET_NAME)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -577,6 +584,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A1000000000000000000FEA7 /* XCLocalSwiftPackageReference "Packages/Features" */;
 			productName = SettingsFeature;
+		};
+		A10000000000000000002006 /* WrAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1000000000000000000C0DE /* XCLocalSwiftPackageReference "Packages/Core" */;
+			productName = WrAnalytics;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

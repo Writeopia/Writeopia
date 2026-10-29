@@ -15,6 +15,10 @@ let package = Package(
         .library(name: "WrData", targets: ["WrData"]),
         .library(name: "WrSession", targets: ["WrSession"]),
         .library(name: "WrDesign", targets: ["WrDesign"]),
+        .library(name: "WrAnalytics", targets: ["WrAnalytics"]),
+    ],
+    dependencies: [
+        .package(url: "https://github.com/PostHog/posthog-ios", from: "3.0.0"),
     ],
     targets: [
         .target(name: "WrModels"),
@@ -27,12 +31,18 @@ let package = Package(
             swiftSettings: mainActorByDefault
         ),
         .target(
+            name: "WrAnalytics",
+            dependencies: [.product(name: "PostHog", package: "posthog-ios")],
+            swiftSettings: mainActorByDefault
+        ),
+        .target(
             name: "WrSession",
-            dependencies: ["WrModels", "WrNetwork", "WrStorage", "WrData"],
+            dependencies: ["WrModels", "WrNetwork", "WrStorage", "WrData", "WrAnalytics"],
             swiftSettings: mainActorByDefault
         ),
         .target(name: "WrDesign", dependencies: ["WrModels"], swiftSettings: mainActorByDefault),
         .testTarget(name: "WrDataTests", dependencies: ["WrData", "WrModels", "WrNetwork", "WrStorage"], swiftSettings: mainActorByDefault),
         .testTarget(name: "WrNetworkTests", dependencies: ["WrNetwork", "WrModels", "WrStorage", "WrData"], swiftSettings: mainActorByDefault),
+        .testTarget(name: "WrAnalyticsTests", dependencies: ["WrAnalytics"], swiftSettings: mainActorByDefault),
     ]
 )

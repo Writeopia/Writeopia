@@ -3,6 +3,7 @@ import WriteopiaUI
 import Writeopia
 import Observation
 import SwiftUI
+import WrAnalytics
 import WrData
 import WrDesign
 import WrModels
@@ -66,6 +67,7 @@ final class FolderContentsViewModel {
     /// document favorited elsewhere, say) arrives here, or just this folder, like before.
     let syncScope: SyncScope
     private let aiClient: AiStreaming?
+    private let analytics: AnalyticsTracker
 
     init(
         folderId: String,
@@ -74,6 +76,7 @@ final class FolderContentsViewModel {
         repository: DocumentsRepository,
         aiClient: AiStreaming? = nil,
         settings: FolderDisplaySettings = FolderDisplaySettings(preferences: nil),
+        analytics: AnalyticsTracker = Analytics.shared,
         syncScope: SyncScope = .workspace
     ) {
         self.folderId = folderId
@@ -83,6 +86,7 @@ final class FolderContentsViewModel {
         self.repository = repository
         self.aiClient = aiClient
         self.settings = settings
+        self.analytics = analytics
         self.syncScope = syncScope
     }
 
@@ -362,6 +366,7 @@ final class FolderContentsViewModel {
             actionError = error.userMessage
             return
         }
+        analytics.capture("folder_created")
         // The folder exists now: a failed icon doesn't make it look like the creation failed.
         if let icon {
             var withIcon = created
@@ -379,6 +384,9 @@ final class FolderContentsViewModel {
         var created: WrDocument?
         await perform {
             created = try await self.repository.createDocument(title: "", parentId: self.folderId)
+        }
+        if created != nil {
+            analytics.capture("document_created")
         }
         return created
     }

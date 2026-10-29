@@ -6,6 +6,7 @@ import io.mockk.coVerify
 import io.mockk.just
 import io.mockk.mockk
 import io.writeopia.LocalAiRepository
+import io.writeopia.analytics.testing.FakeAnalyticsTracker
 import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.core.configuration.repository.ConfigurationRepository
@@ -23,6 +24,7 @@ import kotlinx.coroutines.test.setMain
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AuthMenuViewModelTest {
@@ -33,6 +35,7 @@ class AuthMenuViewModelTest {
     private lateinit var configRepository: ConfigurationRepository
     private lateinit var notesUseCase: NotesUseCase
     private lateinit var localAiRepository: LocalAiRepository
+    private lateinit var analyticsTracker: FakeAnalyticsTracker
 
     @BeforeTest
     fun setUp() {
@@ -42,6 +45,7 @@ class AuthMenuViewModelTest {
         configRepository = mockk(relaxed = true)
         notesUseCase = mockk(relaxed = true)
         localAiRepository = mockk(relaxed = true)
+        analyticsTracker = FakeAnalyticsTracker()
     }
 
     @AfterTest
@@ -74,7 +78,8 @@ class AuthMenuViewModelTest {
             authApi = authApi,
             configRepository = configRepository,
             notesUseCase = notesUseCase,
-            localAiRepository = localAiRepository
+            localAiRepository = localAiRepository,
+            analyticsTracker = analyticsTracker
         )
         viewModel.emailChanged("test@example.com")
         viewModel.passwordChanged("password123")
@@ -100,7 +105,8 @@ class AuthMenuViewModelTest {
             authApi = authApi,
             configRepository = configRepository,
             notesUseCase = notesUseCase,
-            localAiRepository = localAiRepository
+            localAiRepository = localAiRepository,
+            analyticsTracker = analyticsTracker
         )
         viewModel.emailChanged("test@example.com")
         viewModel.passwordChanged("wrong-password")
@@ -123,7 +129,8 @@ class AuthMenuViewModelTest {
             authApi = authApi,
             configRepository = configRepository,
             notesUseCase = notesUseCase,
-            localAiRepository = localAiRepository
+            localAiRepository = localAiRepository,
+            analyticsTracker = analyticsTracker
         )
         viewModel.emailChanged("test@example.com")
         viewModel.passwordChanged("password123")
@@ -157,7 +164,8 @@ class AuthMenuViewModelTest {
             authApi = authApi,
             configRepository = configRepository,
             notesUseCase = notesUseCase,
-            localAiRepository = localAiRepository
+            localAiRepository = localAiRepository,
+            analyticsTracker = analyticsTracker
         )
         viewModel.emailChanged("another@example.com")
         viewModel.passwordChanged("secure-pass")
@@ -193,7 +201,8 @@ class AuthMenuViewModelTest {
             authApi = authApi,
             configRepository = configRepository,
             notesUseCase = notesUseCase,
-            localAiRepository = localAiRepository
+            localAiRepository = localAiRepository,
+            analyticsTracker = analyticsTracker
         )
         viewModel.emailChanged("notoken@example.com")
         viewModel.passwordChanged("password")
@@ -229,7 +238,8 @@ class AuthMenuViewModelTest {
             authApi = authApi,
             configRepository = configRepository,
             notesUseCase = notesUseCase,
-            localAiRepository = localAiRepository
+            localAiRepository = localAiRepository,
+            analyticsTracker = analyticsTracker
         )
         viewModel.emailChanged("my_username")
         viewModel.passwordChanged("password123")
@@ -241,5 +251,103 @@ class AuthMenuViewModelTest {
         // Then - verify login was called with username and real email was saved
         coVerify { authApi.login("my_username", "password123") }
         coVerify { authRepository.savePendingConfirmationEmail("realemail@example.com") }
+    }
+
+    @Test
+    fun `onLoginRequest should track user_logged_in on successful login`() = runTest {
+        // Given
+        val testUser = WriteopiaUserApi(
+            id = "user-123",
+            name = "Test User",
+            email = "test@example.com"
+        )
+        val authResponse = AuthResponse(
+            writeopiaUser = testUser,
+            accessToken = "jwt-token",
+            refreshToken = "refresh-token"
+        )
+
+        coEvery { authApi.login(any(), any()) } returns ResultData.Complete(authResponse)
+
+        val viewModel = AuthMenuViewModel(
+            authRepository = authRepository,
+            authApi = authApi,
+            configRepository = configRepository,
+            notesUseCase = notesUseCase,
+            localAiRepository = localAiRepository,
+            analyticsTracker = analyticsTracker
+        )
+        viewModel.emailChanged("test@example.com")
+        viewModel.passwordChanged("password123")
+
+        // When
+        viewModel.onLoginRequest()
+        advanceUntilIdle()
+
+        // Then
+        assertEquals(1, analyticsTracker.capturedEvents.size)
+        assertEquals("user_logged_in", analyticsTracker.capturedEvents.single().event)
+    }
+
+    @Test
+    fun `onLoginRequest should track login_failed when login errors`() = runTest {
+        // Given
+        coEvery { authApi.login(any(), any()) } returns ResultData.Error(Exception("Login failed"))
+
+        val viewModel = AuthMenuViewModel(
+            authRepository = authRepository,
+            authApi = authApi,
+            configRepository = configRepository,
+            notesUseCase = notesUseCase,
+            localAiRepository = localAiRepository,
+            analyticsTracker = analyticsTracker
+        )
+        viewModel.emailChanged("test@example.com")
+        viewModel.passwordChanged("wrong-password")
+
+        // When
+        viewModel.onLoginRequest()
+        advanceUntilIdle()
+
+        // Then
+        assertEquals(1, analyticsTracker.capturedEvents.size)
+        assertEquals("login_failed", analyticsTracker.capturedEvents.single().event)
+    }
+
+    @Test
+    fun `onLoginRequest should not track user_logged_in when email is unconfirmed`() = runTest {
+        // Given
+        val testUser = WriteopiaUserApi(
+            id = "user-username-123",
+            name = "Username User",
+            email = "realemail@example.com"
+        )
+        val authResponse = AuthResponse(
+            writeopiaUser = testUser,
+            accessToken = null,
+            refreshToken = null,
+            enabled = false
+        )
+
+        coEvery { authApi.login(any(), any()) } returns ResultData.Complete(authResponse)
+        coEvery { authRepository.savePendingConfirmationEmail(any()) } just Runs
+
+        val viewModel = AuthMenuViewModel(
+            authRepository = authRepository,
+            authApi = authApi,
+            configRepository = configRepository,
+            notesUseCase = notesUseCase,
+            localAiRepository = localAiRepository,
+            analyticsTracker = analyticsTracker
+        )
+        viewModel.emailChanged("my_username")
+        viewModel.passwordChanged("password123")
+
+        // When
+        viewModel.onLoginRequest()
+        advanceUntilIdle()
+
+        // Then - unconfirmed email is neither a successful login nor a failure
+        assertEquals(emptyList(), analyticsTracker.capturedEvents)
     }
 }

@@ -1,6 +1,7 @@
 package io.writeopia.application
 
 import android.app.Application
+import io.writeopia.analytics.Analytics
 import io.writeopia.auth.core.di.AuthCoreInjectionNeo
 import io.writeopia.core.notifications.AiTaskNotifier
 import io.writeopia.persistence.room.DatabaseConfigAndroid
@@ -12,6 +13,8 @@ class WriteopiaApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+
+        Analytics.setup(this)
 
         // Initialize Room database first
         val database = WriteopiaApplicationDatabase.database(DatabaseConfigAndroid.roomBuilder(this))

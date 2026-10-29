@@ -48,6 +48,8 @@ jobs:
 
       - name: Build Web App (Production)
         run: ./gradlew :application:web:jsBrowserDistribution
+        env:
+          WR_POSTHOG_PROJECT_TOKEN: ${{ secrets.WR_POSTHOG_PROJECT_TOKEN }}
 
       - name: Deploy to Cloud Storage
         run: |

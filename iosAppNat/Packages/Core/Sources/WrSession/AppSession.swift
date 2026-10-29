@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import WrAnalytics
 import WrData
 import WrModels
 import WrNetwork
@@ -74,6 +75,7 @@ public final class AppSession {
     public let aiAPI: AiAPI
     public let appleIntelligence: AppleIntelligenceAi
     public let preferences: Preferences
+    public let analytics: AnalyticsTracker
     private let tokenStore: TokenStore
     @ObservationIgnored private let isAppleIntelligenceAvailable: () -> Bool
     private var localDocuments: LocalDocumentsRepository
@@ -86,12 +88,14 @@ public final class AppSession {
         transport: HTTPTransport = URLSession.shared,
         localDocuments: LocalDocumentsRepository? = nil,
         offlineSetupSteps: [OfflineSetupStep] = [],
-        isAppleIntelligenceAvailable: @escaping () -> Bool = { AppleIntelligenceAi.isAvailable }
+        isAppleIntelligenceAvailable: @escaping () -> Bool = { AppleIntelligenceAi.isAvailable },
+        analytics: AnalyticsTracker = Analytics.shared
     ) {
         self.tokenStore = tokenStore
         self.isAppleIntelligenceAvailable = isAppleIntelligenceAvailable
         self.preferences = preferences
         self.offlineSetupSteps = offlineSetupSteps
+        self.analytics = analytics
         if let localDocuments {
             self.localDocuments = localDocuments
         } else {
@@ -128,6 +132,9 @@ public final class AppSession {
 
         phase = .spaceChoice
         phase = resolvePhase()
+        // The private space promises "no telemetry"; only the open space is tracked, and only
+        // once cold start has resolved which one this is.
+        analytics.setEnabled(spaceType == .online)
 
         client.onSessionExpired = { [weak self] in
             self?.sessionExpired()
@@ -414,6 +421,7 @@ public final class AppSession {
     private func setSpace(_ space: SpaceType?) {
         spaceType = space
         preferences.set(space?.rawValue, for: .spaceType)
+        analytics.setEnabled(space == .online)
     }
 
     private func setUser(_ user: User?) {

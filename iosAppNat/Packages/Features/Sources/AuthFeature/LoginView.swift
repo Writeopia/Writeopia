@@ -1,5 +1,6 @@
 import Observation
 import SwiftUI
+import WrAnalytics
 import WrData
 import WrDesign
 import WrModels
@@ -14,9 +15,11 @@ final class LoginViewModel {
     private(set) var errorMessage: String?
 
     private let session: AppSession
+    private let analytics: AnalyticsTracker
 
-    init(session: AppSession) {
+    init(session: AppSession, analytics: AnalyticsTracker = Analytics.shared) {
         self.session = session
+        self.analytics = analytics
     }
 
     var canLogIn: Bool {
@@ -34,6 +37,7 @@ final class LoginViewModel {
             switch try await session.authAPI.login(email: email, password: password) {
             case .loggedIn(let user):
                 session.loggedIn(user)
+                analytics.capture("user_logged_in")
             case .emailNotConfirmed(let user):
                 try? await session.authAPI.resendConfirmation(email: user.email)
                 session.needsEmailConfirmation(email: user.email)

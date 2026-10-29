@@ -4,6 +4,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.writeopia.analytics.testing.FakeAnalyticsTracker
 import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.sdk.models.utils.ResultData
@@ -31,6 +32,7 @@ class RegisterViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var authRepository: AuthRepository
     private lateinit var authApi: AuthApi
+    private lateinit var analyticsTracker: FakeAnalyticsTracker
 
     private val registerResponse = RegisterResponse(
         writeopiaUser = WriteopiaUserApi(
@@ -48,6 +50,7 @@ class RegisterViewModelTest {
         Dispatchers.setMain(testDispatcher)
         authRepository = mockk(relaxed = true)
         authApi = mockk(relaxed = true)
+        analyticsTracker = FakeAnalyticsTracker()
         coEvery { authApi.isUsernameAvailable(any()) } returns ResultData.Complete(true)
     }
 
@@ -56,7 +59,7 @@ class RegisterViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun filledViewModel() = RegisterViewModel(authRepository, authApi).apply {
+    private fun filledViewModel() = RegisterViewModel(authRepository, authApi, analyticsTracker).apply {
         setVerifiedEmail("test@example.com", "123456")
         nameChanged("Test User")
         usernameChanged("testuser")
@@ -86,6 +89,31 @@ class RegisterViewModelTest {
             )
         }
         assertEquals(ResultData.Complete(true), viewModel.register.value)
+    }
+
+    @Test
+    fun `onRegister should track user_signed_up on success`() = runTest {
+        coEvery { authApi.register(any(), any(), any(), any(), any(), any()) } returns
+            ResultData.Complete(registerResponse)
+
+        val viewModel = filledViewModel()
+        viewModel.onRegister()
+        advanceUntilIdle()
+
+        assertEquals(1, analyticsTracker.capturedEvents.size)
+        assertEquals("user_signed_up", analyticsTracker.capturedEvents.single().event)
+    }
+
+    @Test
+    fun `onRegister should not track user_signed_up when registration fails`() = runTest {
+        coEvery { authApi.register(any(), any(), any(), any(), any(), any()) } returns
+            ResultData.Error(Exception("Registration failed"))
+
+        val viewModel = filledViewModel()
+        viewModel.onRegister()
+        advanceUntilIdle()
+
+        assertEquals(emptyList(), analyticsTracker.capturedEvents)
     }
 
     @Test
