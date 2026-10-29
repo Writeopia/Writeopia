@@ -12,7 +12,11 @@ actual object Analytics : AnalyticsTracker {
         if (isSetUp) return
         isSetUp = true
 
+        // Capturing starts opted out: setup() runs before a space is chosen, and PostHog's own
+        // automatic events (pageviews, autocapture) aren't gated by the isEnabled check below,
+        // only the explicit capture()/identify() calls are.
         jsPosthogInit(POSTHOG_PROJECT_TOKEN)
+        if (isEnabled) jsPosthogOptIn()
     }
 
     actual override fun capture(event: String, properties: Map<String, Any?>) {
@@ -27,11 +31,25 @@ actual object Analytics : AnalyticsTracker {
 
     actual override fun setEnabled(enabled: Boolean) {
         isEnabled = enabled
+        if (!isSetUp) return
+        if (enabled) jsPosthogOptIn() else jsPosthogOptOut()
     }
 }
 
 private fun jsPosthogInit(token: String): Unit =
-    js("posthog.init(token, { api_host: 'https://eu.i.posthog.com', person_profiles: 'identified_only' })")
+    js("""
+        posthog.init(token, {
+            api_host: 'https://eu.i.posthog.com',
+            person_profiles: 'identified_only',
+            opt_out_capturing_by_default: true
+        })
+    """)
+
+private fun jsPosthogOptIn(): Unit =
+    js("posthog.opt_in_capturing()")
+
+private fun jsPosthogOptOut(): Unit =
+    js("posthog.opt_out_capturing()")
 
 private fun jsPosthogCapture(event: String, propertiesJson: String): Unit =
     js("posthog.capture(event, JSON.parse(propertiesJson))")

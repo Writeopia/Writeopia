@@ -19,11 +19,20 @@ public final class PostHogAnalyticsTracker: AnalyticsTracker {
         guard !isSetUp, !projectToken.isEmpty else { return }
         isSetUp = true
 
+        // Capturing starts opted out, and the SDK's own automatic events (lifecycle, screen
+        // views) are disabled outright: setup() runs before AppSession resolves the space, and
+        // none of that is gated by the isEnabled check in capture()/identify() below.
         let config = PostHogConfig(
             projectToken: projectToken,
             host: "https://eu.i.posthog.com"
         )
+        config.captureApplicationLifecycleEvents = false
+        config.captureScreenViews = false
+        config.optOut = true
         PostHogSDK.shared.setup(config)
+        if isEnabled {
+            PostHogSDK.shared.optIn()
+        }
     }
 
     public func capture(_ event: String, properties: [String: Any]) {
@@ -38,6 +47,12 @@ public final class PostHogAnalyticsTracker: AnalyticsTracker {
 
     public func setEnabled(_ enabled: Bool) {
         isEnabled = enabled
+        guard isSetUp else { return }
+        if enabled {
+            PostHogSDK.shared.optIn()
+        } else {
+            PostHogSDK.shared.optOut()
+        }
     }
 }
 

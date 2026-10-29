@@ -17,11 +17,20 @@ actual object Analytics : AnalyticsTracker {
         if (isSetUp) return
         isSetUp = true
 
+        // Capturing starts opted out, and the SDK's own automatic events (lifecycle, screen
+        // views, deep links) are disabled outright: setup() runs before a space is chosen, and
+        // none of that is gated by the isEnabled check in capture()/identify() below.
         val config = PostHogAndroidConfig(
             projectToken = POSTHOG_PROJECT_TOKEN,
-            host = "https://eu.i.posthog.com"
-        )
+            host = "https://eu.i.posthog.com",
+            captureApplicationLifecycleEvents = false,
+            captureDeepLinks = false,
+            captureScreenViews = false
+        ).apply {
+            optOut = true
+        }
         PostHogAndroid.setup(context, config)
+        if (isEnabled) PostHog.optIn()
     }
 
     actual override fun capture(event: String, properties: Map<String, Any?>) {
@@ -36,6 +45,8 @@ actual object Analytics : AnalyticsTracker {
 
     actual override fun setEnabled(enabled: Boolean) {
         isEnabled = enabled
+        if (!isSetUp) return
+        if (enabled) PostHog.optIn() else PostHog.optOut()
     }
 }
 

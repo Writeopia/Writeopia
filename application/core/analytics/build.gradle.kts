@@ -10,13 +10,19 @@ plugins {
 // meant to ship inside the app), but it's still generated instead of hardcoded so it can be
 // rotated without touching source, and isn't duplicated across every platform target.
 val generatePostHogConfig by tasks.registering {
+    val tokenProvider = providers.gradleProperty("writeopia.posthog.projectToken")
+        .orElse(providers.environmentVariable("WR_POSTHOG_PROJECT_TOKEN"))
+        .orElse("")
+    // Declared as an input (not just read inside doLast) so Gradle reruns this task -
+    // and regenerates the constant for all four targets - when the token changes, instead
+    // of treating it as up-to-date because only the output directory is tracked.
+    inputs.property("posthogProjectToken", tokenProvider)
+
     val outputDir = layout.buildDirectory.dir("generated/posthog")
     outputs.dir(outputDir)
 
     doLast {
-        val token = providers.gradleProperty("writeopia.posthog.projectToken")
-            .orElse(providers.environmentVariable("WR_POSTHOG_PROJECT_TOKEN"))
-            .getOrElse("")
+        val token = tokenProvider.get()
         val file = outputDir.get().file("io/writeopia/analytics/PostHogConfig.kt").asFile
         file.parentFile.mkdirs()
         file.writeText(

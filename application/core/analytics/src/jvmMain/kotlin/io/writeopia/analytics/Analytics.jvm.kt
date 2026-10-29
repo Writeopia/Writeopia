@@ -20,6 +20,9 @@ actual object Analytics : AnalyticsTracker {
         client = PostHog.Builder(POSTHOG_PROJECT_TOKEN)
             .host("https://eu.i.posthog.com")
             .build()
+        // The Java SDK batches captures and sends them after a delay; without this, events
+        // captured right before the app closes can be lost when the process exits.
+        Runtime.getRuntime().addShutdownHook(Thread { client?.shutdown() })
     }
 
     actual override fun capture(event: String, properties: Map<String, Any?>) {
