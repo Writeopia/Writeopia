@@ -4,6 +4,11 @@ import androidx.compose.runtime.Composable
 import org.jetbrains.compose.resources.stringResource
 import writeopia.application.core.resources.generated.resources.Res
 import writeopia.application.core.resources.generated.resources.accent_color
+import writeopia.application.core.resources.generated.resources.workspace_sync_title
+import writeopia.application.core.resources.generated.resources.workspace_sync_message
+import writeopia.application.core.resources.generated.resources.workspace_sync_in_background
+import writeopia.application.core.resources.generated.resources.workspace_sync_failed
+import writeopia.application.core.resources.generated.resources.workspace_sync_continue
 import writeopia.application.core.resources.generated.resources.writing_suggestions
 import writeopia.application.core.resources.generated.resources.writing_suggestion_apply
 import writeopia.application.core.resources.generated.resources.writing_suggestion_code_block
@@ -1460,4 +1465,19 @@ object WrStrings {
 
     @Composable
     fun headerImageSaveFailed() = stringResource(Res.string.header_image_save_failed)
+
+    @Composable
+    fun workspaceSyncTitle() = stringResource(Res.string.workspace_sync_title)
+
+    @Composable
+    fun workspaceSyncMessage() = stringResource(Res.string.workspace_sync_message)
+
+    @Composable
+    fun workspaceSyncInBackground() = stringResource(Res.string.workspace_sync_in_background)
+
+    @Composable
+    fun workspaceSyncFailed() = stringResource(Res.string.workspace_sync_failed)
+
+    @Composable
+    fun workspaceSyncContinue() = stringResource(Res.string.workspace_sync_continue)
 }

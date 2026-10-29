@@ -496,6 +496,17 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
         try setMeta("workspace_contents_synced_at", String(millis))
     }
 
+    /// Where the next request for the deletions and moves made elsewhere (the backend's sync
+    /// events) starts from: the backend's time (epoch milliseconds) when it answered the last
+    /// one, like `Workspace.lastEventSync` of the Compose app; nil before the first time.
+    public func eventsSyncedAt() throws -> Int64? {
+        try meta("events_synced_at").flatMap(Int64.init)
+    }
+
+    public func setEventsSyncedAt(_ millis: Int64) throws {
+        try setMeta("events_synced_at", String(millis))
+    }
+
     // MARK: - Direct access, used by the sync
 
     /// The document with `id`, including soft deleted ones.
@@ -538,6 +549,27 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
     /// Folders directly inside `folderId`, soft deleted ones included.
     public func storedFolders(inFolder folderId: String) throws -> [Folder] {
         try db.query("\(Self.folderColumns) FROM folder WHERE parent_id = ?", [.text(folderId)], row: folder)
+    }
+
+    /// Documents deleted here that the backend hasn't confirmed yet, wherever they are.
+    public func storedDeletedDocuments() throws -> [WrDocument] {
+        try db.query("\(Self.documentColumns) FROM document WHERE deleted = 1", row: documentRow).map(withContent)
+    }
+
+    /// Folders deleted here that the backend hasn't confirmed yet, wherever they are.
+    public func storedDeletedFolders() throws -> [Folder] {
+        try db.query("\(Self.folderColumns) FROM folder WHERE deleted = 1", row: folder)
+    }
+
+    /// A move made elsewhere, received from the backend: the document goes to its new folder
+    /// as it is, with no change of its own to send, unlike `moveDocument`.
+    public func applyReceivedMove(documentId: String, toFolder folderId: String) throws {
+        try db.run("UPDATE document SET parent_document_id = ? WHERE id = ?", [.text(folderId), .text(documentId)])
+    }
+
+    /// A move made elsewhere, received from the backend, like `applyReceivedMove`.
+    public func applyReceivedMove(folderId: String, toFolder parentId: String) throws {
+        try db.run("UPDATE folder SET parent_id = ? WHERE id = ?", [.text(parentId), .text(folderId)])
     }
 
     /// Stores the whole document, replacing its steps. A step deleted here (it has a tombstone

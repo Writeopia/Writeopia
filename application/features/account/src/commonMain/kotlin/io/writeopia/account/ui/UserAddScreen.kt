@@ -43,7 +43,7 @@ import kotlinx.coroutines.flow.StateFlow
 fun UserAddScreen(
     workspaceName: String,
     userName: String,
-    userEmail: String,
+    username: String,
     selectedRole: StateFlow<Role>,
     addUserState: StateFlow<ResultData<Unit>>,
     onRoleSelect: (Role) -> Unit,
@@ -105,7 +105,7 @@ fun UserAddScreen(
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    text = userEmail,
+                    text = "@$username",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
                 )

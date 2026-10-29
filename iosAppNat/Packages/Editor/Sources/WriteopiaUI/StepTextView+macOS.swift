@@ -4,11 +4,13 @@ import SwiftUI
 import Writeopia
 import WrModels
 
-/// Editable text of a step on the Mac, with the formatting popup floating above its selection.
+/// Editable text of a step on the Mac, with the formatting popup floating above its selection
+/// and the popup of commands under its cursor.
 struct StepTextView: View {
     let step: StoryStep
     let manager: WriteopiaStateManager
     @State private var topInEditor: CGFloat = .infinity
+    @State private var width: CGFloat = 0
 
     /// Where the formatting popup goes; nil when nothing is selected in this step, or when the
     /// text can't be edited (a locked document, a slide of a presentation).
@@ -19,6 +21,13 @@ struct StepTextView: View {
         return manager.textSelectionRect
     }
 
+    /// Where the popup of commands goes: under the cursor, while a "/" command is typed in this
+    /// step and some command matches it.
+    private var slashCommandRect: CGRect? {
+        guard manager.showsSlashCommands(stepId: step.id) else { return nil }
+        return manager.caretRect ?? CGRect(x: 0, y: 0, width: 0, height: TextStyles.lineHeight(of: TextStyles.baseFont(for: step, family: manager.fontFamily)))
+    }
+
     var body: some View {
         StepTextViewRepresentable(step: step, manager: manager)
             .background {
@@ -26,10 +35,15 @@ struct StepTextView: View {
                 GeometryReader { geometry in
                     let top = geometry.frame(in: .named(ReorderCoordinator.coordinateSpace)).minY
                     Color.clear
-                        .onAppear { topInEditor = top }
+                        .onAppear {
+                            topInEditor = top
+                            width = geometry.size.width
+                        }
                         .onChange(of: top) { _, top in topInEditor = top }
+                        .onChange(of: geometry.size.width) { _, newWidth in width = newWidth }
                 }
             }
+            .slashCommandPopup(at: slashCommandRect, width: width, manager: manager)
             .overlay(alignment: .topLeading) {
                 if let rect = selectionRect {
                     let spacing: CGFloat = 8
@@ -190,6 +204,8 @@ struct StepTextViewRepresentable: NSViewRepresentable {
         func textView(_ textView: NSTextView, doCommandBy selector: Selector) -> Bool {
             switch selector {
             case #selector(NSResponder.insertNewline(_:)):
+                // Return runs the highlighted command while the popup of commands is open.
+                if manager.selectHighlightedSlashCommand(stepId: parent.step.id) { return true }
                 // Return splits the step; the model decides the new layout.
                 let range = textView.selectedRange()
                 let newText = (textView.string as NSString).replacingCharacters(in: range, with: "\n")
@@ -211,11 +227,19 @@ struct StepTextViewRepresentable: NSViewRepresentable {
                 return true
 
             case #selector(NSResponder.moveUp(_:)):
+                if manager.showsSlashCommands(stepId: parent.step.id) {
+                    manager.moveSlashCommandHighlight(by: -1)
+                    return true
+                }
                 guard lineEdges(of: textView).first else { return false }
                 manager.focusPrevious(stepId: parent.step.id, cursor: textView.selectedRange().location)
                 return true
 
             case #selector(NSResponder.moveDown(_:)):
+                if manager.showsSlashCommands(stepId: parent.step.id) {
+                    manager.moveSlashCommandHighlight(by: 1)
+                    return true
+                }
                 guard lineEdges(of: textView).last else { return false }
                 manager.focusNext(stepId: parent.step.id, cursor: textView.selectedRange().location)
                 return true
@@ -236,6 +260,10 @@ struct StepTextViewRepresentable: NSViewRepresentable {
                 return true
 
             case #selector(NSResponder.cancelOperation(_:)):
+                if manager.slashCommand?.stepId == parent.step.id {
+                    manager.dismissSlashCommands()
+                    return true
+                }
                 guard manager.hasSelectedLines else { return false }
                 manager.clearLineSelection()
                 return true
@@ -258,6 +286,12 @@ struct StepTextViewRepresentable: NSViewRepresentable {
             guard let textView = notification.object as? StepNSTextView else { return }
             let text = textView.string
             manager.handleTextInput(text, cursor: textView.selectedRange().location, stepId: parent.step.id)
+
+            // The popup of commands opens under the slash just typed; the selection notification
+            // that would place it may have come before the text changed.
+            if manager.slashCommand?.stepId == parent.step.id {
+                manager.onCaretChange(stepId: parent.step.id, rect: caretRect(of: textView, at: textView.selectedRange().location))
+            }
 
             // The model split the step if a "\n" slipped in; show this view's part right away.
             if text.contains("\n"), let step = manager.step(withId: parent.step.id) {
@@ -285,7 +319,22 @@ struct StepTextViewRepresentable: NSViewRepresentable {
                 let glyphs = layoutManager.glyphRange(forCharacterRange: range, actualCharacterRange: nil)
                 rect = layoutManager.boundingRect(forGlyphRange: glyphs, in: container)
             }
-            manager.onSelectionChange(stepId: parent.step.id, start: range.location, end: range.location + range.length, rect: rect)
+            manager.onSelectionChange(
+                stepId: parent.step.id,
+                start: range.location,
+                end: range.location + range.length,
+                rect: rect,
+                caret: caretRect(of: textView, at: range.location + range.length)
+            )
+        }
+
+        /// The rectangle of the insertion point at `location`, in the coordinates of the text
+        /// view: what the input methods get to place their candidate windows.
+        private func caretRect(of textView: NSTextView, at location: Int) -> CGRect? {
+            guard let window = textView.window else { return nil }
+            let onScreen = textView.firstRect(forCharacterRange: NSRange(location: location, length: 0), actualRange: nil)
+            guard onScreen.height > 0, onScreen.width.isFinite, onScreen.height.isFinite else { return nil }
+            return textView.convert(window.convertFromScreen(onScreen), from: nil)
         }
 
         /// Whether the cursor sits on the first and on the last line of the text.

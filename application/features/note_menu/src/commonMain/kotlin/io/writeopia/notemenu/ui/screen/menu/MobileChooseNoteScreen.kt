@@ -166,6 +166,15 @@ internal fun MobileChooseNoteScreen(
         label = "fabOffset"
     )
 
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    FolderMoveSnackbarEffect(
+        snackbarHostState = snackbarHostState,
+        lastMoveState = chooseNoteViewModel.lastMoveState,
+        undoMove = chooseNoteViewModel::undoMove,
+        dismissMove = chooseNoteViewModel::dismissMove
+    )
+
     Box(modifier = scrollModifier) {
         Scaffold(
             topBar = {
@@ -193,6 +202,16 @@ internal fun MobileChooseNoteScreen(
                         onClick = chooseNoteViewModel::showAddMenu,
                         modifier = Modifier.offset { IntOffset(0, fabOffsetY.roundToPx()) }
                     )
+                }
+            },
+            // The scaffold stacks the snackbar above the FAB and draws it over the content.
+            // It moves with the FAB, which rises over the navigation bar drawn by the parent.
+            snackbarHost = {
+                SnackbarHost(
+                    hostState = snackbarHostState,
+                    modifier = Modifier.offset { IntOffset(0, fabOffsetY.roundToPx()) }
+                ) { data ->
+                    WriteopiaSnackbar(snackbarData = data)
                 }
             },
             bottomBar = navigationBar
@@ -353,25 +372,6 @@ internal fun MobileChooseNoteScreen(
                         onMove = chooseNoteViewModel::moveSelectionTo,
                         onDismissRequest = chooseNoteViewModel::hideMoveSelection
                     )
-                }
-
-                val snackbarHostState = remember { SnackbarHostState() }
-
-                FolderMoveSnackbarEffect(
-                    snackbarHostState = snackbarHostState,
-                    lastMoveState = chooseNoteViewModel.lastMoveState,
-                    undoMove = chooseNoteViewModel::undoMove,
-                    dismissMove = chooseNoteViewModel::dismissMove
-                )
-
-                // Above the navigation bar, which is drawn over the content.
-                SnackbarHost(
-                    hostState = snackbarHostState,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = adjustedPaddingValues.calculateBottomPadding())
-                ) { data ->
-                    WriteopiaSnackbar(snackbarData = data)
                 }
             }
         }

@@ -21,6 +21,8 @@ public final class AppSession {
         case chooseWorkspace
         /// First-run setup of the private space (the Mac app): local AI, then the folder.
         case offlineSetup(OfflineSetupStep)
+        /// The workspace just chosen is brought to the device before the documents are shown.
+        case syncingWorkspace
         case ready
     }
 
@@ -359,9 +361,17 @@ public final class AppSession {
         phase = .signedOut
     }
 
+    /// The workspace of the open space is synced whole before the documents are shown, like
+    /// the Compose app does after the login; the next launch goes straight to them.
     public func select(workspace: Workspace) {
         self.workspace = workspace
         preferences.setCodable(workspace, for: .selectedWorkspace)
+        phase = spaceType == .online && workspace.id != Workspace.localId ? .syncingWorkspace : .ready
+    }
+
+    /// The sync after choosing the workspace ended, or goes on in the background.
+    public func workspaceSynced() {
+        guard phase == .syncingWorkspace else { return }
         phase = .ready
     }
 

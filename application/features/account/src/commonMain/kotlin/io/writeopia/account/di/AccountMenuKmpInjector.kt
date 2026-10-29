@@ -69,7 +69,7 @@ class AccountMenuKmpInjector private constructor(
         workspaceName: String,
         userId: String,
         userName: String,
-        userEmail: String
+        username: String
     ): UserAddViewModel =
         viewModel(key = "user_add_${workspaceId}_$userId") {
             UserAddViewModel(
@@ -77,7 +77,7 @@ class AccountMenuKmpInjector private constructor(
                 workspaceName = workspaceName,
                 userId = userId,
                 userName = userName,
-                userEmail = userEmail,
+                username = username,
                 workspaceApi = workspaceInjection.provideWorkspaceApi(),
                 authRepository = authCoreInjection.provideAuthRepository()
             )

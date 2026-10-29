@@ -529,30 +529,51 @@ struct HeaderImagesSection: View {
     }
 }
 
-/// A header picture from the CDN, cropped to fill its frame, with a quiet placeholder while it
-/// loads.
+/// A header picture from the CDN, scaled to cover the frame it is given with its proportions
+/// kept and the excess cropped away, with a quiet placeholder while it loads. The drawing of the
+/// picture is what covers the frame: the blurred bands the image model paints above and below it
+/// are cut first (`HeaderPictureLoader`).
 public struct HeaderImageView: View {
     let url: URL?
+    @State private var picture: CGImage?
+    @State private var failed = false
 
     public init(url: URL?) {
         self.url = url
     }
 
     public var body: some View {
-        AsyncImage(url: url) { phase in
-            switch phase {
-            case .success(let image):
-                image
-                    .resizable()
-                    .scaledToFill()
-            case .failure:
-                WrColors.secondaryFill
-                    .overlay(Image(systemName: "photo").foregroundStyle(.secondary))
-            default:
-                WrColors.secondaryFill
+        // The clear color takes exactly the frame the caller gives (the band of the editor, the
+        // top of a card, a tile of the picker) and the picture is drawn over it. An overlay never
+        // takes part in the layout, so the part of the picture that spills over the frame can't
+        // stretch the band or the card around it; `clipped` cuts it away.
+        Color.clear
+            .overlay {
+                if let picture {
+                    Image(decorative: picture, scale: 1)
+                        .resizable()
+                        .scaledToFill()
+                } else if failed {
+                    WrColors.secondaryFill
+                        .overlay(Image(systemName: "photo").foregroundStyle(.secondary))
+                } else {
+                    WrColors.secondaryFill
+                }
             }
-        }
-        .accessibilityLabel("Header image")
+            .clipped()
+            .accessibilityLabel("Header image")
+            .task(id: url) {
+                picture = nil
+                failed = false
+                guard let url else {
+                    failed = true
+                    return
+                }
+                let loaded = await HeaderPictureLoader.shared.picture(at: url)
+                guard !Task.isCancelled else { return }
+                picture = loaded
+                failed = loaded == nil
+            }
     }
 }
 

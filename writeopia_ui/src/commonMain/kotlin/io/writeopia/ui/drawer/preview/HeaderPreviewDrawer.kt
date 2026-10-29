@@ -17,16 +17,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
 import io.writeopia.ui.model.DrawInfo
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.ui.drawer.StoryStepDrawer
+import io.writeopia.ui.image.HeaderImage
 import io.writeopia.ui.utils.OutlinedTitle
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -62,10 +61,9 @@ class HeaderPreviewDrawer(
         ) {
             // The picture of the header fills the band, like its color does.
             if (imageUrl != null) {
-                AsyncImage(
-                    model = imageUrl,
+                HeaderImage(
+                    url = imageUrl,
                     contentDescription = null,
-                    contentScale = ContentScale.Crop,
                     modifier = Modifier.matchParentSize()
                 )
             }

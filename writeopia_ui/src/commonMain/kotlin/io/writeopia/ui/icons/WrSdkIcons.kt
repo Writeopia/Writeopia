@@ -20,6 +20,7 @@ import io.writeopia.ui.icons.all.GripVertical
 import io.writeopia.ui.icons.all.HighlightBox
 import io.writeopia.ui.icons.all.Italic
 import io.writeopia.ui.icons.all.Link
+import io.writeopia.ui.icons.all.Minus
 import io.writeopia.ui.icons.all.Pause
 import io.writeopia.ui.icons.all.Play
 import io.writeopia.ui.icons.all.Plus
@@ -86,6 +87,8 @@ object WrSdkIcons {
     val highlightBox: ImageVector = HighlightBox
 
     val square: ImageVector = Square
+
+    val divider: ImageVector = Minus
 
     val scissors: ImageVector = Scissors
 

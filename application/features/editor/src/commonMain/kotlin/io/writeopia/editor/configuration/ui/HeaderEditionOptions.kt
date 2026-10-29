@@ -42,11 +42,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
+import io.writeopia.ui.image.HeaderImage
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.editor.features.editor.viewmodel.HeaderImageGeneration
 import io.writeopia.editor.features.editor.viewmodel.HeaderImagesState
@@ -221,10 +220,9 @@ private fun ImageTile(url: String, isSelected: Boolean, onClick: () -> Unit) {
         WriteopiaTheme.colorScheme.dividerColor
     }
 
-    AsyncImage(
-        model = url,
+    HeaderImage(
+        url = url,
         contentDescription = "Header image",
-        contentScale = ContentScale.Crop,
         modifier = Modifier
             .clip(shape)
             .clickable(onClick = onClick)
@@ -256,10 +254,9 @@ private fun GenerationPanel(
         ) {
             when (generation) {
                 is HeaderImageGeneration.Candidate -> {
-                    AsyncImage(
-                        model = generation.url,
+                    HeaderImage(
+                        url = generation.url,
                         contentDescription = "Generated header image",
-                        contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
                     )
                 }
