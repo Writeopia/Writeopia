@@ -19,6 +19,8 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
       - name: Generate windows app
         run: ./gradlew packageReleaseMsi
+        env:
+          WR_POSTHOG_PROJECT_TOKEN: ${{ secrets.WR_POSTHOG_PROJECT_TOKEN }}
       - name: upload unsigned artifact
         id: upload-unsigned-artifact
         uses: actions/upload-artifact@v7
@@ -51,6 +53,8 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
       - name: Generate linux app
         run: ./gradlew packageReleaseDeb
+        env:
+          WR_POSTHOG_PROJECT_TOKEN: ${{ secrets.WR_POSTHOG_PROJECT_TOKEN }}
       - name: Upload App
         uses: actions/upload-artifact@v7
         with:
@@ -78,6 +82,7 @@ jobs:
         run: ./gradlew packageReleaseDmg
         env:
           SIGN_IDENTITY: ${{ secrets.SIGN_IDENTITY }}
+          WR_POSTHOG_PROJECT_TOKEN: ${{ secrets.WR_POSTHOG_PROJECT_TOKEN }}
       - name: Notarize
         run: xcrun  notarytool submit application/composeApp/build/compose/binaries/main-release/dmg/Writeopia-1.0.0.dmg --wait  --apple-id $APPLE_ID_NOTARIZATION --password $NOTARIZATION_PASSWORD --team-id $APPSTORE_TEAM_ID
         env:
@@ -112,6 +117,7 @@ jobs:
         run: ./gradlew packageReleaseDmg -Pcompose.desktop.macos.arch=x64
         env:
           SIGN_IDENTITY: ${{ secrets.SIGN_IDENTITY }}
+          WR_POSTHOG_PROJECT_TOKEN: ${{ secrets.WR_POSTHOG_PROJECT_TOKEN }}
       - name: Notarize
         run: xcrun notarytool submit application/composeApp/build/compose/binaries/main-release/dmg/Writeopia-1.0.0.dmg --wait --apple-id $APPLE_ID_NOTARIZATION --password $NOTARIZATION_PASSWORD --team-id $APPSTORE_TEAM_ID
         env:
