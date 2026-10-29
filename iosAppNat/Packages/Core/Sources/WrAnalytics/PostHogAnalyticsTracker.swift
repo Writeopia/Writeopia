@@ -12,13 +12,15 @@ public final class PostHogAnalyticsTracker: AnalyticsTracker {
 
     private init() {}
 
-    /// Starts the PostHog SDK. Call once, at app launch.
-    public func setup() {
-        guard !isSetUp else { return }
+    /// Starts the PostHog SDK. Call once, at app launch, with the token from Info.plist
+    /// (`POSTHOG_PROJECT_TOKEN`, generated at build time from an env var instead of hardcoded
+    /// here).
+    public func setup(projectToken: String) {
+        guard !isSetUp, !projectToken.isEmpty else { return }
         isSetUp = true
 
         let config = PostHogConfig(
-            projectToken: "phc_pTj77oub7kB8rTrmduW6CLr2pSApHzstj9fp63vRdVoE",
+            projectToken: projectToken,
             host: "https://eu.i.posthog.com"
         )
         PostHogSDK.shared.setup(config)

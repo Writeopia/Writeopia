@@ -9,7 +9,8 @@ struct WriteopiaNativeApp: App {
     @State private var session = WriteopiaNativeApp.makeSession()
 
     init() {
-        PostHogAnalyticsTracker.shared.setup()
+        let token = Bundle.main.object(forInfoDictionaryKey: "POSTHOG_PROJECT_TOKEN") as? String ?? ""
+        PostHogAnalyticsTracker.shared.setup(projectToken: token)
     }
 
     var body: some Scene {

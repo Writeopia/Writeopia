@@ -18,7 +18,7 @@ actual object Analytics : AnalyticsTracker {
         isSetUp = true
 
         val config = PostHogAndroidConfig(
-            projectToken = "phc_pTj77oub7kB8rTrmduW6CLr2pSApHzstj9fp63vRdVoE",
+            projectToken = POSTHOG_PROJECT_TOKEN,
             host = "https://eu.i.posthog.com"
         )
         PostHogAndroid.setup(context, config)

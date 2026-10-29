@@ -6,6 +6,30 @@ plugins {
     alias(libs.plugins.ktlint)
 }
 
+// The PostHog project token isn't a build secret (PostHog's client tokens are write-only and
+// meant to ship inside the app), but it's still generated instead of hardcoded so it can be
+// rotated without touching source, and isn't duplicated across every platform target.
+val generatePostHogConfig by tasks.registering {
+    val outputDir = layout.buildDirectory.dir("generated/posthog")
+    outputs.dir(outputDir)
+
+    doLast {
+        val token = providers.gradleProperty("writeopia.posthog.projectToken")
+            .orElse(providers.environmentVariable("WR_POSTHOG_PROJECT_TOKEN"))
+            .getOrElse("")
+        val file = outputDir.get().file("io/writeopia/analytics/PostHogConfig.kt").asFile
+        file.parentFile.mkdirs()
+        file.writeText(
+            """
+            package io.writeopia.analytics
+
+            internal const val POSTHOG_PROJECT_TOKEN: String = "$token"
+
+            """.trimIndent()
+        )
+    }
+}
+
 kotlin {
     jvmToolchain(21)
 
@@ -45,20 +69,26 @@ kotlin {
         val commonMain by getting
 
         val jvmMain by getting {
+            kotlin.srcDir(generatePostHogConfig)
             dependencies {
                 implementation(libs.posthog.java)
             }
         }
 
         val androidMain by getting {
+            kotlin.srcDir(generatePostHogConfig)
             dependencies {
                 implementation(libs.posthog.android)
             }
         }
 
-        val jsMain by getting
+        val jsMain by getting {
+            kotlin.srcDir(generatePostHogConfig)
+        }
 
-        val wasmJsMain by getting
+        val wasmJsMain by getting {
+            kotlin.srcDir(generatePostHogConfig)
+        }
 
         val nativeMain by creating {
             dependsOn(commonMain)

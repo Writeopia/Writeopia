@@ -1,9 +1,19 @@
 package io.writeopia.analytics
 
 actual object Analytics : AnalyticsTracker {
+    private var isSetUp = false
+
     // Off until the app confirms the user is in the open/online space: the private space
     // promises "no telemetry" in its own UI copy.
     private var isEnabled = false
+
+    /** Starts the PostHog SDK. Call once, from the webapp's entry point. */
+    fun setup() {
+        if (isSetUp) return
+        isSetUp = true
+
+        jsPosthogInit(POSTHOG_PROJECT_TOKEN)
+    }
 
     actual override fun capture(event: String, properties: Map<String, Any?>) {
         if (!isEnabled) return
@@ -19,6 +29,9 @@ actual object Analytics : AnalyticsTracker {
         isEnabled = enabled
     }
 }
+
+private fun jsPosthogInit(token: String): Unit =
+    js("posthog.init(token, { api_host: 'https://eu.i.posthog.com', person_profiles: 'identified_only' })")
 
 private fun jsPosthogCapture(event: String, propertiesJson: String): Unit =
     js("posthog.capture(event, JSON.parse(propertiesJson))")

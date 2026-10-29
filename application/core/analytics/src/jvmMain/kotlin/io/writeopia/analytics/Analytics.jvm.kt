@@ -17,7 +17,7 @@ actual object Analytics : AnalyticsTracker {
     /** Starts the PostHog SDK. Call once, from the desktop app's entry point. */
     fun setup() {
         if (client != null) return
-        client = PostHog.Builder("phc_pTj77oub7kB8rTrmduW6CLr2pSApHzstj9fp63vRdVoE")
+        client = PostHog.Builder(POSTHOG_PROJECT_TOKEN)
             .host("https://eu.i.posthog.com")
             .build()
     }
