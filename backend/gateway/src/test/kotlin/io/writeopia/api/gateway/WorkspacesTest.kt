@@ -925,4 +925,98 @@ class WorkspacesTest {
         db.deleteUserByEmail(activeEmail2)
         db.deleteUserByEmail(unconfirmedEmail)
     }
+
+    @Test
+    fun `autocomplete should search members in workspace and allow non-admin members`() = testApplication {
+        application {
+            module(db, debugMode = true, adminKey = "somekey")
+        }
+
+        val client = defaultClient()
+
+        val ownerEmail = "ac_owner_${Random.nextInt(100000)}@gmail.com"
+        val ownerUsername = "ac_owner_${Random.nextInt(100000)}"
+        val memberEmail = "ac_member_${Random.nextInt(100000)}@gmail.com"
+        val memberUsername = "ac_member_${Random.nextInt(100000)}"
+        val outsiderEmail = "ac_outsider_${Random.nextInt(100000)}@gmail.com"
+        val outsiderUsername = "ac_outsider_${Random.nextInt(100000)}"
+        val workspaceName = "ac_test_workspace"
+
+        // Register owner
+        client.post("/api/auth/register") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                db.verifiedRegisterRequest(
+                    workspaceName = workspaceName,
+                    name = "Owner User",
+                    email = ownerEmail,
+                    username = ownerUsername,
+                    password = "testpassword123&",
+                )
+            )
+        }
+        db.enableUserByEmail(ownerEmail)
+
+        val workspace = client.get("/api/workspace/user/email/$ownerEmail") {
+            contentType(ContentType.Application.Json)
+        }.body<List<WorkspaceApi>>().first()
+
+        // Register member
+        client.post("/api/auth/register") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                db.verifiedRegisterRequest(
+                    workspaceName = "another_ws",
+                    name = "Member User",
+                    email = memberEmail,
+                    username = memberUsername,
+                    password = "testpassword123&",
+                )
+            )
+        }
+        db.enableUserByEmail(memberEmail)
+
+        // Register outsider (not added to workspace)
+        client.post("/api/auth/register") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                db.verifiedRegisterRequest(
+                    workspaceName = "outsider_ws",
+                    name = "Outsider User",
+                    email = outsiderEmail,
+                    username = outsiderUsername,
+                    password = "testpassword123&",
+                )
+            )
+        }
+        db.enableUserByEmail(outsiderEmail)
+
+        // Add member to workspace as EDITOR
+        val addMemberResponse = client.post("/api/workspace/user") {
+            contentType(ContentType.Application.Json)
+            setBody(
+                AddUserToWorkspaceRequest(
+                    username = memberUsername,
+                    workspaceId = workspace.id,
+                    role = "EDITOR"
+                )
+            )
+        }
+        assertTrue(addMemberResponse.status.isSuccess())
+
+        // Autocomplete search should return member and owner, but NOT outsider
+        val autocompleteResponse = client.get("/api/workspace/${workspace.id}/users/autocomplete?username=ac_") {
+            contentType(ContentType.Application.Json)
+        }
+        assertEquals(HttpStatusCode.OK, autocompleteResponse.status)
+        val autocompleteResult = autocompleteResponse.body<PaginatedUserSearchResponse>()
+        assertTrue(autocompleteResult.users.any { it.username == memberUsername })
+        assertTrue(autocompleteResult.users.any { it.username == ownerUsername })
+        assertTrue(autocompleteResult.users.none { it.username == outsiderUsername })
+
+        // Clean up
+        db.deleteUserByEmail(ownerEmail)
+        db.deleteUserByEmail(memberEmail)
+        db.deleteUserByEmail(outsiderEmail)
+    }
 }

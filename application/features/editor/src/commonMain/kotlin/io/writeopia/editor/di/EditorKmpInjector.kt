@@ -137,6 +137,7 @@ class EditorKmpInjector private constructor(
             writingAgentApi = writingAgentInjection?.provideApi(),
             writingAgentStartsCollapsed = writingAgentStartsCollapsed,
             documentTagRepository = DocumentTagsInjector.singleton().provideDocumentTagRepository(),
+            workspaceApi = workspaceInjection.provideWorkspaceApi(),
         )
 
     @Composable

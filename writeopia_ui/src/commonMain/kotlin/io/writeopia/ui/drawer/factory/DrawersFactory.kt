@@ -4,9 +4,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontFamily
 import io.writeopia.sdk.models.files.ExternalFile
+import io.writeopia.sdk.models.user.MentionUser
 import io.writeopia.ui.drawer.StoryStepDrawer
 import io.writeopia.ui.manager.WriteopiaStateManager
 import io.writeopia.ui.model.DrawConfig
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 interface DrawersFactory {
 
@@ -24,6 +27,9 @@ interface DrawersFactory {
         onDocumentLinkClick: (String) -> Unit = {},
         linkLeadingIcon: ImageVector? = null,
         equationToImageUrl: String? = null,
-        customDrawers: Map<Int, StoryStepDrawer> = emptyMap()
+        customDrawers: Map<Int, StoryStepDrawer> = emptyMap(),
+        mentionUsersState: StateFlow<List<MentionUser>> = MutableStateFlow(emptyList()),
+        onMentionSearch: (String) -> Unit = {},
+        onMentionDismiss: () -> Unit = {}
     ): Map<Int, StoryStepDrawer>
 }

@@ -22,10 +22,12 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.story.Tag
+import io.writeopia.sdk.models.user.MentionUser
 import io.writeopia.ui.drawer.StoryStepDrawer
 import io.writeopia.ui.icons.WrSdkIcons
 import io.writeopia.ui.manager.WriteopiaStateManager
 import io.writeopia.ui.model.DrawConfig
+import kotlinx.coroutines.flow.StateFlow
 
 object DefaultDrawersJs : DrawersFactory {
 
@@ -44,7 +46,10 @@ object DefaultDrawersJs : DrawersFactory {
         onDocumentLinkClick: (String) -> Unit,
         linkLeadingIcon: ImageVector?,
         equationToImageUrl: String?,
-        customDrawers: Map<Int, StoryStepDrawer>
+        customDrawers: Map<Int, StoryStepDrawer>,
+        mentionUsersState: StateFlow<List<MentionUser>>,
+        onMentionSearch: (String) -> Unit,
+        onMentionDismiss: () -> Unit
     ): Map<Int, StoryStepDrawer> =
         CommonDrawers.create(
             manager,
@@ -59,6 +64,9 @@ object DefaultDrawersJs : DrawersFactory {
             drawConfig = drawConfig,
             eventListener = KeyEventListenerFactory.desktop(manager),
             fontFamily = fontFamily,
+            mentionUsersState = mentionUsersState,
+            onMentionSearch = onMentionSearch,
+            onMentionDismiss = onMentionDismiss,
             headerEndContent = { storyStep, drawInfo, isHovered ->
                 val isTitle = storyStep.tags.any { it.tag.isTitle() }
                 val isCollapsed by lazy { storyStep.tags.any { it.tag == Tag.COLLAPSED } }

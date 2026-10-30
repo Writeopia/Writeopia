@@ -26,6 +26,7 @@ import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.serialization.data.WorkspaceApi
 import io.writeopia.sdk.serialization.data.toModel
 import io.writeopia.sdk.serialization.request.WorkspaceRoleChangeRequest
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlin.time.ExperimentalTime
@@ -183,6 +184,34 @@ class WorkspaceApi(
         } else {
             ResultData.Error()
         }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        e.printStackTrace()
+        ResultData.Error(e)
+    }
+
+    suspend fun autocompleteUsers(
+        workspaceId: String,
+        usernameQuery: String,
+        page: Int = 1,
+        pageSize: Int = 5
+    ): ResultData<PaginatedUserSearchResponse> = try {
+        val response = client.get("$baseUrl/api/workspace/$workspaceId/users/autocomplete") {
+            url {
+                parameters.append("username", usernameQuery)
+                parameters.append("page", page.toString())
+                parameters.append("pageSize", pageSize.toString())
+            }
+        }
+
+        if (response.status.isSuccess()) {
+            ResultData.Complete(response.body<PaginatedUserSearchResponse>())
+        } else {
+            ResultData.Error()
+        }
+    } catch (e: CancellationException) {
+        throw e
     } catch (e: Exception) {
         e.printStackTrace()
         ResultData.Error(e)

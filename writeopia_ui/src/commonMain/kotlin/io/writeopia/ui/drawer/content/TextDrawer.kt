@@ -29,8 +29,12 @@ import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.TextLayoutResult
@@ -52,8 +56,10 @@ import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
 import io.writeopia.sdk.models.story.TagInfo
+import io.writeopia.sdk.models.user.MentionUser
 import io.writeopia.ui.drawer.SimpleTextDrawer
 import io.writeopia.ui.drawer.factory.EndOfText
+import io.writeopia.ui.drawer.factory.isEnterKey
 import io.writeopia.ui.extensions.toTextRange
 import io.writeopia.ui.model.DrawInfo
 import io.writeopia.ui.model.EmptyErase
@@ -92,6 +98,10 @@ class TextDrawer(
     private val textToolbox: @Composable (Boolean) -> Unit = {},
     private val slashCommands: List<SlashCommand> = defaultSlashCommands,
     private val slashCommandsEnabled: Boolean = true,
+    private val mentionsEnabled: Boolean = true,
+    private val mentionUsersState: StateFlow<List<MentionUser>> = MutableStateFlow(emptyList()),
+    private val onMentionSearch: (String) -> Unit = {},
+    private val onMentionDismiss: () -> Unit = {},
     private val spellChecker: SpellChecker? = null
 ) : SimpleTextDrawer {
 
@@ -108,13 +118,14 @@ class TextDrawer(
         }
 
         val isSuggestion = step.tags.contains(TagInfo(Tag.FIRST_AI_SUGGESTION))
+        val primaryColor = MaterialTheme.colorScheme.primary
 
         var inputText by remember {
             val text = step.text
 
             mutableStateOf(
                 TextFieldValue(
-                    Spans.createStringWithSpans(text, spans, isDarkTheme),
+                    Spans.createStringWithSpans(text, spans, isDarkTheme, primaryColor),
                     selection = drawInfo.selection?.toTextRange(text ?: "")
                         ?: TextRange.Zero
                 )
@@ -167,6 +178,65 @@ class TextDrawer(
         var showSlashCommandPopup by remember { mutableStateOf(false) }
         var slashCommandFilter by remember { mutableStateOf("") }
         var slashStartPosition by remember { mutableIntStateOf(-1) }
+
+        // User mention popup state
+        val mentionUsers by mentionUsersState.collectAsState()
+        var showMentionPopup by remember { mutableStateOf(false) }
+        var mentionFilter by remember { mutableStateOf("") }
+        var mentionStartPosition by remember { mutableIntStateOf(-1) }
+        var selectedMentionIndex by remember { mutableIntStateOf(0) }
+
+        val filteredMentionUsers = remember(mentionUsers, mentionFilter) {
+            filterMentionUsers(mentionUsers, mentionFilter)
+        }
+
+        val selectMention: (MentionUser) -> Unit = { user ->
+            val currentText = inputText.text
+            val safeStart = mentionStartPosition.coerceIn(0, currentText.length)
+            val cursorPos = inputText.selection.start.coerceIn(safeStart, currentText.length)
+            val beforeMention = currentText.take(safeStart)
+            val afterCursor = currentText.substring(cursorPos)
+            val mentionText = "@${user.username}"
+            val insertedText = "$mentionText "
+            val newText = beforeMention + insertedText + afterCursor
+            val newCursorPos = safeStart + insertedText.length
+
+            val recalculatedSpans = Spans.recalculateSpans(
+                spans = spans,
+                oldText = currentText,
+                newText = newText,
+                oldSelectionStart = safeStart,
+                oldSelectionEnd = cursorPos,
+                newSelectionStart = newCursorPos,
+            )
+            val mentionSpan = SpanInfo.create(
+                start = safeStart,
+                end = safeStart + mentionText.length,
+                span = Span.MENTION,
+                extra = user.username,
+            )
+            val updatedSpans = recalculatedSpans + mentionSpan
+            spans = updatedSpans
+
+            val updatedFieldValue = TextFieldValue(
+                annotatedString = Spans.createStringWithSpans(newText, updatedSpans, isDarkTheme, primaryColor),
+                selection = TextRange(newCursorPos),
+            )
+            inputText = updatedFieldValue
+            previousInputText = updatedFieldValue
+
+            showMentionPopup = false
+            mentionStartPosition = -1
+            mentionFilter = ""
+            selectedMentionIndex = 0
+            onMentionDismiss()
+
+            onTextEdit(
+                TextInput(newText, newCursorPos, newCursorPos, updatedSpans),
+                drawInfo.position,
+                lineBreakByContent,
+            )
+        }
 
         val selection by remember {
             derivedStateOf {
@@ -242,6 +312,51 @@ class TextDrawer(
                             }
                         }
                         .onPreviewKeyEvent { keyEvent ->
+                            if (showMentionPopup && filteredMentionUsers.isNotEmpty()) {
+                                when {
+                                    keyEvent.key == Key.DirectionDown -> {
+                                        if (keyEvent.type == KeyEventType.KeyDown) {
+                                            selectedMentionIndex =
+                                                (selectedMentionIndex + 1) % filteredMentionUsers.size
+                                        }
+                                        return@onPreviewKeyEvent true
+                                    }
+
+                                    keyEvent.key == Key.DirectionUp -> {
+                                        if (keyEvent.type == KeyEventType.KeyDown) {
+                                            selectedMentionIndex = if (selectedMentionIndex <= 0) {
+                                                filteredMentionUsers.lastIndex
+                                            } else {
+                                                selectedMentionIndex - 1
+                                            }
+                                        }
+                                        return@onPreviewKeyEvent true
+                                    }
+
+                                    keyEvent.key.isEnterKey() -> {
+                                        if (keyEvent.type == KeyEventType.KeyDown) {
+                                            val index = selectedMentionIndex.coerceIn(
+                                                0,
+                                                filteredMentionUsers.lastIndex
+                                            )
+                                            selectMention(filteredMentionUsers[index])
+                                        }
+                                        return@onPreviewKeyEvent true
+                                    }
+
+                                    keyEvent.key == Key.Escape -> {
+                                        if (keyEvent.type == KeyEventType.KeyDown) {
+                                            showMentionPopup = false
+                                            mentionStartPosition = -1
+                                            mentionFilter = ""
+                                            selectedMentionIndex = 0
+                                            onMentionDismiss()
+                                        }
+                                        return@onPreviewKeyEvent true
+                                    }
+                                }
+                            }
+
                             onKeyEvent(
                                 keyEvent,
                                 inputText,
@@ -254,6 +369,13 @@ class TextDrawer(
                         }
                         .onFocusChanged { focusState ->
                             isFocused = focusState.isFocused
+                            if (!focusState.isFocused && showMentionPopup) {
+                                showMentionPopup = false
+                                mentionStartPosition = -1
+                                mentionFilter = ""
+                                selectedMentionIndex = 0
+                                onMentionDismiss()
+                            }
                             onFocusChanged(drawInfo.position, focusState)
                         }
                         .testTag("MessageDrawer_${drawInfo.position}")
@@ -336,13 +458,39 @@ class TextDrawer(
                             }
                         }
 
+                        // Detect user mention ('@')
+                        if (mentionsEnabled && onMentionSearch != null) {
+                            val mentionResult = detectMentionState(
+                                text = value.text,
+                                cursorPos = value.selection.start,
+                                sizeDifference = sizeDifference,
+                                isPopupCurrentlyShown = showMentionPopup,
+                                currentStartPosition = mentionStartPosition,
+                            )
+                            when (mentionResult) {
+                                is MentionDetectionResult.Active -> {
+                                    showMentionPopup = true
+                                    mentionStartPosition = mentionResult.startPosition
+                                    mentionFilter = mentionResult.filter
+                                    selectedMentionIndex = 0
+                                    onMentionSearch(mentionResult.filter)
+                                }
+
+                                MentionDetectionResult.Dismissed -> {
+                                    showMentionPopup = false
+                                    mentionStartPosition = -1
+                                    mentionFilter = ""
+                                    selectedMentionIndex = 0
+                                    onMentionDismiss()
+                                }
+
+                                MentionDetectionResult.Unchanged -> Unit
+                            }
+                        }
+
                         val edit = {
                             val updatedInputText = value.copy(
-                                Spans.createStringWithSpans(
-                                    value.text.replace("\n", ""),
-                                    spans,
-                                    isDarkTheme
-                                )
+                                Spans.createStringWithSpans(value.text.replace("\n", ""), spans, isDarkTheme, primaryColor)
                             )
                             inputText = updatedInputText
                             if (previousInputText == value) {
@@ -412,6 +560,25 @@ class TextDrawer(
                     }
                 )
             }
+
+            val popupTargetIndex = when {
+                filteredMentionUsers.isEmpty() -> 0
+                else -> selectedMentionIndex.coerceIn(0, filteredMentionUsers.lastIndex)
+            }
+
+            MentionPopup(
+                expanded = showMentionPopup && filteredMentionUsers.isNotEmpty(),
+                users = filteredMentionUsers,
+                selectedIndex = popupTargetIndex,
+                onUserSelected = selectMention,
+                onDismiss = {
+                    showMentionPopup = false
+                    mentionStartPosition = -1
+                    mentionFilter = ""
+                    selectedMentionIndex = 0
+                    onMentionDismiss()
+                },
+            )
         }
     }
 }
@@ -512,6 +679,71 @@ private fun LinkHandler(link: String, modifier: Modifier = Modifier) {
             )
         }
     }
+}
+
+internal sealed interface MentionDetectionResult {
+    data object Unchanged : MentionDetectionResult
+
+    data class Active(val startPosition: Int, val filter: String) : MentionDetectionResult
+
+    data object Dismissed : MentionDetectionResult
+}
+
+internal fun detectMentionState(
+    text: String,
+    cursorPos: Int,
+    sizeDifference: Int,
+    isPopupCurrentlyShown: Boolean,
+    currentStartPosition: Int,
+): MentionDetectionResult {
+    val isCharacterAdded = sizeDifference > 0
+    val isCharacterDeleted = sizeDifference < 0
+    val hasNoRelevantTextChange = !isCharacterAdded && !isCharacterDeleted
+
+    if (hasNoRelevantTextChange) {
+        return MentionDetectionResult.Unchanged
+    }
+
+    val safeCursorPos = cursorPos.coerceIn(0, text.length)
+    val textBeforeCursor = text.take(safeCursorPos)
+    val lastAtIndex = textBeforeCursor.lastIndexOf('@')
+    val hasAtBeforeCursor = lastAtIndex >= 0
+
+    if (!hasAtBeforeCursor) {
+        return if (isPopupCurrentlyShown) {
+            MentionDetectionResult.Dismissed
+        } else {
+            MentionDetectionResult.Unchanged
+        }
+    }
+
+    val charBeforeAt = if (lastAtIndex > 0) text.getOrNull(lastAtIndex - 1) else null
+    val isAtStartOrAfterWhitespace =
+        charBeforeAt == null || charBeforeAt == ' ' || charBeforeAt == '\n'
+
+    if (!isAtStartOrAfterWhitespace) {
+        return if (isPopupCurrentlyShown) {
+            MentionDetectionResult.Dismissed
+        } else {
+            MentionDetectionResult.Unchanged
+        }
+    }
+
+    val filterText = text.substring(lastAtIndex + 1, safeCursorPos)
+    val hasWhitespaceInFilter = filterText.contains(' ') || filterText.contains('\n')
+
+    if (hasWhitespaceInFilter) {
+        return if (isPopupCurrentlyShown) {
+            MentionDetectionResult.Dismissed
+        } else {
+            MentionDetectionResult.Unchanged
+        }
+    }
+
+    return MentionDetectionResult.Active(
+        startPosition = lastAtIndex,
+        filter = filterText,
+    )
 }
 
 @Preview

@@ -106,7 +106,10 @@ internal fun TextEditor(
             equationToImageUrl = "https://latex.codecogs.com/png.latex?\\Large&space;x=",
             customDrawers = mapOf(
                 StoryTypes.DRAWING.type.number to drawingPreviewDrawer
-            )
+            ),
+            mentionUsersState = noteEditorViewModel.mentionSuggestions,
+            onMentionSearch = noteEditorViewModel::searchMention,
+            onMentionDismiss = noteEditorViewModel::clearMentionSearch
         ),
         storyState = storyState,
     )
