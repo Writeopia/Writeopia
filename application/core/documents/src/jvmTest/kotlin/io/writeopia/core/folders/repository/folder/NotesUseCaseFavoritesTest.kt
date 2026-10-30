@@ -3,6 +3,7 @@
 package io.writeopia.core.folders.repository.folder
 
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.mockk
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.core.configuration.repository.ConfigurationRepository
@@ -15,6 +16,8 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
@@ -56,6 +59,28 @@ class NotesUseCaseFavoritesTest {
             setOf("rootFavorite", "rootPlain"),
             menuItems.getValue(Folder.ROOT_PATH).map { it.id }.toSet()
         )
+    }
+
+    @Test
+    fun `a favorite changed here stamps the document, so the next sync sends it`() = runBlocking {
+        val documentRepository = InMemoryDocumentRepository()
+        val folderRepository = mockk<FolderRepository>(relaxed = true)
+        val synced = Instant.fromEpochMilliseconds(1_000)
+        documentRepository.saveDocument(
+            document("doc", Folder.ROOT_PATH, favorite = false).copy(lastUpdatedAt = synced, lastSyncedAt = synced)
+        )
+        val notesUseCase = NotesUseCase(documentRepository, mockk(relaxed = true), folderRepository)
+
+        notesUseCase.favoriteDocuments(setOf("doc"), workspaceId)
+
+        assertTrue(documentRepository.loadDocumentById("doc", workspaceId)!!.favorite)
+        assertEquals(listOf("doc"), documentRepository.loadOutdatedDocumentsForWorkspace(workspaceId).map { it.id })
+        coVerify { folderRepository.favoriteDocumentByIds(setOf("doc")) }
+
+        notesUseCase.unFavoriteDocuments(setOf("doc"), workspaceId)
+
+        assertFalse(documentRepository.loadDocumentById("doc", workspaceId)!!.favorite)
+        coVerify { folderRepository.unFavoriteDocumentByIds(setOf("doc")) }
     }
 
     private fun document(id: String, parentId: String, favorite: Boolean) = Document(

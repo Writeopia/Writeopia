@@ -248,12 +248,14 @@ class DocumentSyncService(
 
         val localSyncedAt = local.lastSyncedAt
         val localOutdated = localSyncedAt == null || local.lastUpdatedAt > localSyncedAt
+        // The favorite is per user and comes apart ([receiveFavorites]): what the listing
+        // carries is not this user's, so the local mark stays whichever copy is newer.
         val metadata = if (localOutdated) {
             // Still to be sent: it keeps looking outdated, with its own timestamps.
-            merged.copy(lastUpdatedAt = local.lastUpdatedAt, lastSyncedAt = local.lastSyncedAt)
+            merged.copy(lastUpdatedAt = local.lastUpdatedAt, lastSyncedAt = local.lastSyncedAt, favorite = local.favorite)
         } else {
             // Nothing pending here: in sync with what was just received.
-            merged.copy(lastSyncedAt = Clock.System.now())
+            merged.copy(lastSyncedAt = Clock.System.now(), favorite = local.favorite)
         }
 
         if (annotationsChanged) {
@@ -275,24 +277,53 @@ class DocumentSyncService(
     /**
      * Makes the favorites of the workspace those of the backend. They are per user and kept
      * apart from the documents there, so a document favorited elsewhere doesn't come back
-     * changed with the listing: its id is asked for apart and the local copy marked. The
-     * backend wins: a favorite set here that could not be sent is undone.
+     * changed with the listing: its id is asked for apart and the local copy marked.
+     *
+     * A favorite changed here is sent right away, but it may not be there yet: the request
+     * failed (the document itself wasn't on the backend), was cancelled with the screen, or
+     * is still on its way while this runs. The change stamps the document, so the documents
+     * changed here keep their favorite instead of losing it to the backend: [pending] (the
+     * ones outdated when the sync began, sent by now) and the ones outdated now (changed while
+     * it ran, to be sent next time). Their favorite goes to the backend from here when it
+     * disagrees; when that fails the mark stays until the next sync, which takes the
+     * backend's. The backend wins for every other document, which is how a change made on
+     * another device arrives.
      *
      * @return false when the backend could not be asked; the favorites stay as they are.
      */
-    suspend fun receiveFavorites(workspaceId: String): Boolean {
-        val response = documentsApi?.getUserFavorites(workspaceId) ?: return false
+    suspend fun receiveFavorites(workspaceId: String, pending: Set<String> = emptySet()): Boolean {
+        val api = documentsApi ?: return false
+        val response = api.getUserFavorites(workspaceId)
         val remote = (response as? ResultData.Complete)?.data?.toSet() ?: return false
         val local = documentRepository.loadFavDocumentsForWorkspace(OrderBy.UPDATE.type, workspaceId)
             .map { document -> document.id }
             .toSet()
+        val changedHere = pending +
+            documentRepository.loadOutdatedDocumentsForWorkspace(workspaceId).map { document -> document.id }
 
-        val toFavorite = remote - local
-        val toUnfavorite = local - remote
+        changedHere
+            .filter { id -> (id in local) != (id in remote) }
+            .forEach { id -> sendFavorite(api, id, favorite = id in local, workspaceId) }
+
+        val toFavorite = remote - local - changedHere
+        val toUnfavorite = local - remote - changedHere
         if (toFavorite.isNotEmpty()) documentRepository.favoriteDocumentByIds(toFavorite)
         if (toUnfavorite.isNotEmpty()) documentRepository.unFavoriteDocumentByIds(toUnfavorite)
 
         return true
+    }
+
+    /** Tells the backend about a favorite changed here. A failure is only logged: see [receiveFavorites]. */
+    private suspend fun sendFavorite(api: DocumentsApi, documentId: String, favorite: Boolean, workspaceId: String) {
+        val result = try {
+            api.favoriteDocument(documentId = documentId, favorite = favorite, workspaceId = workspaceId)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            println("Error sending the favorite of document $documentId: ${e.message}")
+            return
+        }
+        if (result !is ResultData.Complete) println("The favorite of document $documentId could not be sent")
     }
 
     /**

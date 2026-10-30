@@ -368,15 +368,28 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
         }
     }
 
-    /// Makes the favorite documents those of `ids`, as the backend has them. The timestamps
-    /// stay: nothing is to be sent because of it. Folders keep theirs, they travel whole.
-    public func applyFavorites(_ ids: Set<String>) throws {
+    /// Makes the favorite documents those of `ids`, as the backend has them, except the ones
+    /// `changedHere`: a favorite set on this device is on its way to the backend, not to be
+    /// undone by it. The timestamps stay: nothing is to be sent because of it. Folders keep
+    /// theirs, they travel whole.
+    ///
+    /// - Returns: the documents `changedHere` whose favorite the backend doesn't have yet, with
+    ///   the favorite, for the caller to send.
+    @discardableResult
+    public func applyFavorites(_ ids: Set<String>, keeping changedHere: Set<String> = []) throws -> [(id: String, favorite: Bool)] {
+        let favoriteHere = Set(try db.query("SELECT id FROM document WHERE favorite = 1") { $0.text(0) })
         try db.transaction {
-            try db.run("UPDATE document SET favorite = 0 WHERE favorite = 1")
-            for id in ids {
+            for id in favoriteHere.subtracting(ids) where !changedHere.contains(id) {
+                try db.run("UPDATE document SET favorite = 0 WHERE id = ?", [.text(id)])
+            }
+            for id in ids.subtracting(favoriteHere) where !changedHere.contains(id) {
                 try db.run("UPDATE document SET favorite = 1 WHERE id = ?", [.text(id)])
             }
         }
+        return changedHere
+            .filter { favoriteHere.contains($0) != ids.contains($0) }
+            .sorted()
+            .map { (id: $0, favorite: favoriteHere.contains($0)) }
     }
 
     /// The private space has nothing to sync, so everything is removed for good.

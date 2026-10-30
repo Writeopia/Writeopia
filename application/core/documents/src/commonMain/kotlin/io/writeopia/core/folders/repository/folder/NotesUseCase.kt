@@ -23,7 +23,7 @@ import kotlin.time.ExperimentalTime
  * UseCase responsible to perform CRUD operations in the Notes (Documents) of the app taking in to
  * consideration the configuration desired in the app.
  */
-class NotesUseCase private constructor(
+class NotesUseCase internal constructor(
     private val documentRepository: DocumentRepository,
     private val notesConfig: ConfigurationRepository,
     private val folderRepository: FolderRepository,
@@ -325,14 +325,30 @@ class NotesUseCase private constructor(
     suspend fun getSoftDeletedFolders(workspaceId: String): List<Folder> =
         folderRepository.getSoftDeletedFolders(workspaceId)
 
-    suspend fun favoriteDocuments(ids: Set<String>) {
-        documentRepository.favoriteDocumentByIds(ids)
+    /**
+     * Marks the documents and folders among [ids] as favorites. A folder's favorite is part of
+     * the folder; a document's is per user on the backend and travels apart, but the change is
+     * this device's all the same: it stamps the document, so the document is outdated until
+     * the next sync, which sends the favorite instead of undoing it with the backend's list.
+     */
+    suspend fun favoriteDocuments(ids: Set<String>, workspaceId: String) {
+        setDocumentsFavorite(ids, workspaceId, favorite = true)
         folderRepository.favoriteDocumentByIds(ids)
     }
 
-    suspend fun unFavoriteDocuments(ids: Set<String>) {
-        documentRepository.unFavoriteDocumentByIds(ids)
+    /** Unmarks the documents and folders among [ids]. See [favoriteDocuments]. */
+    suspend fun unFavoriteDocuments(ids: Set<String>, workspaceId: String) {
+        setDocumentsFavorite(ids, workspaceId, favorite = false)
         folderRepository.unFavoriteDocumentByIds(ids)
+    }
+
+    private suspend fun setDocumentsFavorite(ids: Set<String>, workspaceId: String, favorite: Boolean) {
+        val now = Clock.System.now()
+        ids.forEach { id ->
+            documentRepository.loadDocumentById(id, workspaceId)?.let { document ->
+                documentRepository.saveDocumentMetadata(document.copy(favorite = favorite, lastUpdatedAt = now))
+            }
+        }
     }
 
     private suspend fun listenForDocumentsByParentId(

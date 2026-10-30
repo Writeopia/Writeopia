@@ -584,11 +584,12 @@ internal class ChooseNoteKmpViewModel(
         val documents = selectedItems.orEmpty().filterIsInstance<Document>()
 
         viewModelScope.launch(Dispatchers.Default) {
+            val workspaceId = getWorkspaceId()
             if (allFavorites) {
-                notesUseCase.unFavoriteDocuments(selectedIds)
+                notesUseCase.unFavoriteDocuments(selectedIds, workspaceId)
                 syncFavoriteToBackend(documents, favorite = false)
             } else {
-                notesUseCase.favoriteDocuments(selectedIds)
+                notesUseCase.favoriteDocuments(selectedIds, workspaceId)
                 syncFavoriteToBackend(documents, favorite = true)
             }
         }

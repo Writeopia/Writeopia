@@ -218,6 +218,8 @@ class FolderSyncTest {
             documentSyncService.syncDocuments(listOf(edited), workspaceId)
             documentSyncService.receiveDeletedSteps(workspaceId, any())
             documentSyncService.mergeReceivedDocuments(any(), any())
+            // The documents changed here keep their favorite: a favorite set here is on its way.
+            documentSyncService.receiveFavorites(workspaceId, setOf(edited.id))
         }
         // The sync never writes a document itself: stamping is the step sync's job.
         coVerify(exactly = 0) { documentRepository.saveDocumentMetadata(any()) }

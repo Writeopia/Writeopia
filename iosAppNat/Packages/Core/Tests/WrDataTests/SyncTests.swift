@@ -826,6 +826,43 @@ final class FakeBackend: HTTPTransport {
         #expect(try repository.local.storedOutdatedDocuments().isEmpty)
     }
 
+    @Test func folderSyncKeepsAndSendsAFavoriteSetHere() async throws {
+        let backend = FakeBackend()
+        let repository = makeRepository(backend)
+        // Favorited here before the backend could be told (the document wasn't there yet, say).
+        let here = WrDocument(id: "here", title: "", workspaceId: "w", isFavorite: true, parentId: "root")
+        try repository.local.store(here)
+        backend.folderDiff = FolderContents(documents: [])
+        backend.favoriteIds = []
+
+        try await repository.syncFolder("root")
+
+        #expect(try repository.local.storedDocument(id: "here")?.isFavorite == true)
+        #expect(backend.favorites["here"] == true)
+        #expect(try repository.local.storedOutdatedDocuments().isEmpty)
+    }
+
+    @Test func receivedDocumentsDontChangeTheFavorite() async throws {
+        let backend = FakeBackend()
+        let repository = makeRepository(backend)
+        let synced = Date.nowMillis
+        let here = WrDocument(id: "here", title: "", workspaceId: "w", isFavorite: true, parentId: "root", lastSyncedAt: synced)
+        try repository.local.store(here)
+        // The listing carries the column of the document, not this user's favorite.
+        var renamed = here
+        renamed.title = "Renamed elsewhere"
+        renamed.isFavorite = false
+        renamed.lastUpdatedAt = synced + 1_000
+        backend.folderDiff = FolderContents(documents: [renamed])
+        backend.favoriteIds = nil
+
+        try await repository.syncFolder("root")
+
+        let stored = try #require(try repository.local.storedDocument(id: "here"))
+        #expect(stored.title == "Renamed elsewhere")
+        #expect(stored.isFavorite)
+    }
+
     @Test func folderSyncKeepsTheFavoritesWhenTheBackendHasNoAnswer() async throws {
         let backend = FakeBackend()
         let repository = makeRepository(backend)
@@ -918,7 +955,8 @@ final class FakeBackend: HTTPTransport {
         let backend = FakeBackend()
         backend.workspaceDiff = FolderContents(
             folders: [Folder(id: "work", parentId: "root", title: "Work", workspaceId: "w")],
-            documents: [WrDocument(id: "plan", title: "Plan", workspaceId: "w", parentId: "work", icon: IconInfo(label: "zap"))]
+            // Stamped as synced like the backend sends it: nothing changed here about it.
+            documents: [WrDocument(id: "plan", title: "Plan", workspaceId: "w", lastUpdatedAt: 10, parentId: "work", lastSyncedAt: 10, icon: IconInfo(label: "zap"))]
         )
         backend.favoriteIds = ["plan"]
         let repository = makeRepository(backend)

@@ -53,14 +53,64 @@ class DocumentSyncServiceTest {
 
     @Test
     fun `the favorites become the backend's, wherever the documents are`() = runBlocking {
-        val favoriteHere = storeDocument(step("a", 10)).copy(favorite = true).also { repository.saveDocumentMetadata(it) }
-        val favoriteElsewhere = storeDocument(step("b", 10))
+        val favoriteHere = storeDocument(step("a", 10), lastSyncedAt = 10, lastUpdatedAt = 10)
+            .copy(favorite = true).also { repository.saveDocumentMetadata(it) }
+        val favoriteElsewhere = storeDocument(step("b", 10), lastSyncedAt = 10, lastUpdatedAt = 10)
         coEvery { documentsApi.getUserFavorites(workspaceId) } returns ResultData.Complete(listOf(favoriteElsewhere.id))
 
         assertTrue(service.receiveFavorites(workspaceId))
 
         assertFalse(repository.loadDocumentById(favoriteHere.id, workspaceId)!!.favorite)
         assertTrue(repository.loadDocumentById(favoriteElsewhere.id, workspaceId)!!.favorite)
+        // Nothing changed here: nothing to tell the backend.
+        coVerify(exactly = 0) { documentsApi.favoriteDocument(any(), any(), any()) }
+    }
+
+    @Test
+    fun `a favorite changed here is kept and sent while the backend doesn't have it`() = runBlocking {
+        // Both changed here since they were last sent: the favorite set here never reached the
+        // backend (a cancelled request, a document that wasn't there yet).
+        val favoritedHere = storeDocument(step("a", 10), lastSyncedAt = 10, lastUpdatedAt = 20)
+            .copy(favorite = true).also { repository.saveDocumentMetadata(it) }
+        val unfavoritedHere = storeDocument(step("b", 10), lastSyncedAt = 10, lastUpdatedAt = 20)
+        coEvery { documentsApi.getUserFavorites(workspaceId) } returns ResultData.Complete(listOf(unfavoritedHere.id))
+        coEvery { documentsApi.favoriteDocument(any(), any(), workspaceId) } returns ResultData.Complete(Unit)
+
+        assertTrue(service.receiveFavorites(workspaceId))
+
+        assertTrue(repository.loadDocumentById(favoritedHere.id, workspaceId)!!.favorite)
+        assertFalse(repository.loadDocumentById(unfavoritedHere.id, workspaceId)!!.favorite)
+        coVerify { documentsApi.favoriteDocument(favoritedHere.id, true, workspaceId) }
+        coVerify { documentsApi.favoriteDocument(unfavoritedHere.id, false, workspaceId) }
+    }
+
+    @Test
+    fun `the documents sent in this sync keep their favorite, the others take the backend's`() = runBlocking {
+        // Stamped as sent a moment ago, in this sync: the favorite request may still be on its way.
+        val sentNow = storeDocument(step("a", 10), lastSyncedAt = 30, lastUpdatedAt = 20)
+            .copy(favorite = true).also { repository.saveDocumentMetadata(it) }
+        val inSync = storeDocument(step("b", 10), lastSyncedAt = 30, lastUpdatedAt = 20)
+            .copy(favorite = true).also { repository.saveDocumentMetadata(it) }
+        coEvery { documentsApi.getUserFavorites(workspaceId) } returns ResultData.Complete(emptyList())
+        coEvery { documentsApi.favoriteDocument(sentNow.id, true, workspaceId) } returns ResultData.Complete(Unit)
+
+        assertTrue(service.receiveFavorites(workspaceId, pending = setOf(sentNow.id)))
+
+        assertTrue(repository.loadDocumentById(sentNow.id, workspaceId)!!.favorite)
+        assertFalse(repository.loadDocumentById(inSync.id, workspaceId)!!.favorite)
+        coVerify(exactly = 1) { documentsApi.favoriteDocument(any(), any(), any()) }
+    }
+
+    @Test
+    fun `a favorite changed here that can't be sent stays until the next sync`() = runBlocking {
+        val favoritedHere = storeDocument(step("a", 10), lastSyncedAt = 10, lastUpdatedAt = 20)
+            .copy(favorite = true).also { repository.saveDocumentMetadata(it) }
+        coEvery { documentsApi.getUserFavorites(workspaceId) } returns ResultData.Complete(emptyList())
+        coEvery { documentsApi.favoriteDocument(any(), any(), workspaceId) } returns ResultData.Error()
+
+        assertTrue(service.receiveFavorites(workspaceId))
+
+        assertTrue(repository.loadDocumentById(favoritedHere.id, workspaceId)!!.favorite)
     }
 
     @Test
@@ -251,6 +301,26 @@ class DocumentSyncServiceTest {
         assertEquals("Renamed elsewhere", stored.title)
         // In sync: nothing was pending here.
         assertTrue(stored.lastSyncedAt!! >= stored.lastUpdatedAt)
+    }
+
+    @Test
+    fun `a received document doesn't change the favorite, which comes apart`() = runBlocking {
+        val favoriteHere = storeDocument(step("a", 5), lastSyncedAt = 10, lastUpdatedAt = 10)
+            .copy(favorite = true).also { repository.saveDocumentMetadata(it) }
+        val plainHere = storeDocument(step("b", 5), lastSyncedAt = 10, lastUpdatedAt = 10)
+
+        // The listing carries the column of the document, not this user's favorite.
+        service.mergeReceivedDocument(
+            favoriteHere.copy(title = "Renamed elsewhere", favorite = false, lastUpdatedAt = Instant.fromEpochMilliseconds(20))
+        )
+        service.mergeReceivedDocument(
+            plainHere.copy(title = "Renamed elsewhere", favorite = true, lastUpdatedAt = Instant.fromEpochMilliseconds(20))
+        )
+
+        val storedFavorite = repository.loadDocumentById(favoriteHere.id, workspaceId)!!
+        assertEquals("Renamed elsewhere", storedFavorite.title)
+        assertTrue(storedFavorite.favorite)
+        assertFalse(repository.loadDocumentById(plainHere.id, workspaceId)!!.favorite)
     }
 
     @Test
