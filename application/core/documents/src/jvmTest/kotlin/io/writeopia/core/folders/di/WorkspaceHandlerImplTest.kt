@@ -234,6 +234,34 @@ class WorkspaceHandlerImplTest {
     }
 
     @Test
+    fun `the first workspace is selected until the user picks another one`() = runBlocking {
+        val first = Workspace.disconnectedWorkspace().copy(id = "ws1", name = "First")
+        val second = Workspace.disconnectedWorkspace().copy(id = "ws2", name = "Second")
+        val workspaceApi = mockk<WorkspaceApi> {
+            coEvery { getAvailableWorkspaces() } returns ResultData.Complete(listOf(first, second))
+        }
+        val handler = createHandler(isLoggedIn = true, workspaceApi = workspaceApi)
+        val scope = CoroutineScope(Dispatchers.Default + Job())
+        testScope = scope
+        handler.initScope(scope)
+
+        // Nothing is selected while the workspaces are not loaded yet.
+        assertEquals(null, handler.selectedWorkspace.first())
+
+        handler.loadAvailableWorkspaces()
+        handler.availableWorkspaces.first { it is ResultData.Complete }
+
+        assertEquals(first, handler.selectedWorkspace.first())
+
+        handler.selectWorkspaceToManage("ws2")
+        assertEquals(second, handler.selectedWorkspace.first())
+
+        // Selecting the current workspace again keeps it selected instead of clearing it.
+        handler.selectWorkspaceToManage("ws2")
+        assertEquals(second, handler.selectedWorkspace.first())
+    }
+
+    @Test
     fun `onUserSearchQueryChange searches users and onUserSuggestionSelect updates query without re-searching`() = runBlocking {
         val candidate = SearchUserApi(id = "u1", name = "Alice", username = "alice")
         val workspaceApi = mockk<WorkspaceApi> {

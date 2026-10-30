@@ -705,17 +705,27 @@ private fun TeamsSection(
                     )
                 }
 
+                // The first workspace is selected until the user picks another one.
+                val selected = selectedWorkspaceState.collectAsState(null).value
+
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     items(workspaces) { workspace ->
-                        CommonButton(text = workspace.name) {
+                        val isSelected = workspace.id == selected?.id
+
+                        CommonButton(
+                            text = workspace.name,
+                            defaultColor = if (isSelected) {
+                                WriteopiaTheme.colorScheme.highlight
+                            } else {
+                                WriteopiaTheme.colorScheme.defaultButton
+                            }
+                        ) {
                             selectWorkspace(workspace.id)
                         }
                     }
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
-
-                val selected = selectedWorkspaceState.collectAsState(null).value
 
                 AnimatedVisibility(selected != null) {
                     if (selected != null) {

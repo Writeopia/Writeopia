@@ -34,9 +34,15 @@ public final class AppSession {
     public private(set) var phase: Phase
     public private(set) var spaceType: SpaceType?
     public private(set) var user: User?
-    public private(set) var workspace: Workspace?
+    public private(set) var workspace: Workspace? {
+        didSet { if oldValue?.id != workspace?.id { loadWorkspaceFolder() } }
+    }
     /// Folder the user picked for the private space; nil for the default location.
     public private(set) var privateSpaceFolder: URL?
+    /// The folder of the computer the current workspace is saved to and synced with as JSON
+    /// files, like the local folder of the Compose desktop app; nil until the user picks one.
+    /// Each workspace has its own.
+    public private(set) var workspaceFolder: URL?
     /// Bumped when the private space moves, so screens holding a repository reload.
     public private(set) var documentsVersion = 0
     /// Whether a document is opening or a folder expanding, for the spinner by the folders of the side menu.
@@ -128,6 +134,7 @@ public final class AppSession {
 
         phase = .spaceChoice
         phase = resolvePhase()
+        loadWorkspaceFolder()
 
         client.onSessionExpired = { [weak self] in
             self?.sessionExpired()
@@ -313,6 +320,65 @@ public final class AppSession {
         localDocuments = repository
         privateSpaceFolder = resolved.url
         documentsVersion += 1
+    }
+
+    // MARK: - Workspace folder
+
+    /// Saves the current workspace to its folder and syncs it with it; nil while there is no
+    /// workspace.
+    public var workspaceFolderSync: WorkspaceFolderSync? {
+        guard let workspace, let store = documents as? WorkspaceFolderStore else { return nil }
+        return WorkspaceFolderSync(store: store, workspaceId: workspace.id)
+    }
+
+    /// Keeps the files of the current workspace in `url`, a folder the user picked, or in no
+    /// folder with nil. Nothing is written until the user saves or syncs.
+    public func setWorkspaceFolder(_ url: URL?) throws {
+        guard let workspace else { return }
+        var bookmarks = workspaceFolderBookmarks
+        if let url {
+            let bookmark = try PrivateSpaceFolder.bookmark(for: url)
+            guard let resolved = PrivateSpaceFolder.resolve(bookmark) else { throw PrivateSpaceFolder.UnreadableFolder() }
+            bookmarks[workspace.id] = bookmark
+            releaseWorkspaceFolder()
+            workspaceFolder = resolved.url
+        } else {
+            bookmarks[workspace.id] = nil
+            releaseWorkspaceFolder()
+        }
+        workspaceFolderBookmarks = bookmarks
+    }
+
+    private var workspaceFolderBookmarks: [String: Data] {
+        get { preferences.codable([String: Data].self, .workspaceFolderBookmarks) ?? [:] }
+        set { preferences.setCodable(newValue.isEmpty ? nil : newValue, for: .workspaceFolderBookmarks) }
+    }
+
+    /// The folder saved for the current workspace, or none when it can't be opened anymore
+    /// (the bookmark is then forgotten, like the private space folder).
+    private func loadWorkspaceFolder() {
+        releaseWorkspaceFolder()
+        guard let workspace else { return }
+        var bookmarks = workspaceFolderBookmarks
+        guard let bookmark = bookmarks[workspace.id] else { return }
+        guard let resolved = PrivateSpaceFolder.resolve(bookmark) else {
+            bookmarks[workspace.id] = nil
+            workspaceFolderBookmarks = bookmarks
+            return
+        }
+        if resolved.isStale, let fresh = try? PrivateSpaceFolder.bookmark(for: resolved.url) {
+            bookmarks[workspace.id] = fresh
+            workspaceFolderBookmarks = bookmarks
+        }
+        workspaceFolder = resolved.url
+    }
+
+    /// Lets go of the folder's security scope, taken by `PrivateSpaceFolder.resolve`.
+    private func releaseWorkspaceFolder() {
+        #if os(macOS)
+        workspaceFolder?.stopAccessingSecurityScopedResource()
+        #endif
+        workspaceFolder = nil
     }
 
     public func chooseOnlineSpace() {

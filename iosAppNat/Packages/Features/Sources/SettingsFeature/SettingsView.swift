@@ -4,6 +4,8 @@ import WrSession
 
 enum SettingsRoute: String, Hashable, CaseIterable {
     case general
+    /// The folder of the computer the workspace is saved to and synced with (the Mac).
+    case workspace
     case teams
     case ai
     case account
@@ -11,6 +13,7 @@ enum SettingsRoute: String, Hashable, CaseIterable {
     var title: LocalizedStringKey {
         switch self {
         case .general: "General"
+        case .workspace: "Workspace"
         case .teams: "Teams"
         case .ai: "AI"
         case .account: "Account"
@@ -20,6 +23,7 @@ enum SettingsRoute: String, Hashable, CaseIterable {
     var systemImage: String {
         switch self {
         case .general: "gearshape"
+        case .workspace: "externaldrive.fill"
         case .teams: "person.3.fill"
         case .ai: "sparkles"
         case .account: "person.crop.circle"
@@ -29,6 +33,7 @@ enum SettingsRoute: String, Hashable, CaseIterable {
     var color: Color {
         switch self {
         case .general: .gray
+        case .workspace: .green
         case .teams: .blue
         case .ai: .purple
         case .account: .orange
@@ -94,6 +99,7 @@ public struct SettingsRootView: View {
     private func section(_ route: SettingsRoute) -> some View {
         switch route {
         case .general: GeneralSettingsView()
+        case .workspace: WorkspaceSettingsView(session: session)
         case .teams: TeamsSettingsView(session: session)
         case .ai: AiSettingsView(session: session)
         case .account: AccountSettingsView(session: session)
