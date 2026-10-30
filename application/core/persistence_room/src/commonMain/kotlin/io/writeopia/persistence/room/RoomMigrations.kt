@@ -238,3 +238,23 @@ val MIGRATION_37_38 = object : Migration(37, 38) {
         connection.execSQL("ALTER TABLE DOCUMENT_ENTITY_TABLE ADD COLUMN icon_tint INTEGER")
     }
 }
+
+/**
+ * The favorites changed here that the backend has not been told about yet, one row per
+ * document (PendingFavoriteEntity in the persistence plugin).
+ */
+val MIGRATION_38_39 = object : Migration(38, 39) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS PENDING_FAVORITE_TABLE (
+                document_id TEXT NOT NULL,
+                workspace_id TEXT NOT NULL,
+                favorite INTEGER NOT NULL,
+                changed_at INTEGER NOT NULL,
+                PRIMARY KEY(document_id)
+            )
+            """.trimIndent()
+        )
+    }
+}

@@ -9,8 +9,10 @@ import io.writeopia.core.configuration.repository.ConfigurationRepository
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
+import io.writeopia.sdk.models.document.PendingFavorite
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.sorting.OrderBy
+import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.repository.DocumentRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -327,9 +329,9 @@ class NotesUseCase internal constructor(
 
     /**
      * Marks the documents and folders among [ids] as favorites. A folder's favorite is part of
-     * the folder; a document's is per user on the backend and travels apart, but the change is
-     * this device's all the same: it stamps the document, so the document is outdated until
-     * the next sync, which sends the favorite instead of undoing it with the backend's list.
+     * the folder, sent with it by the next sync. A document's is per user on the backend and
+     * travels apart: the change is recorded ([PendingFavorite]) for the caller and the sync to
+     * send, and the document itself is left as it was, since a favorite is not an edit.
      */
     suspend fun favoriteDocuments(ids: Set<String>, workspaceId: String) {
         setDocumentsFavorite(ids, workspaceId, favorite = true)
@@ -343,12 +345,24 @@ class NotesUseCase internal constructor(
     }
 
     private suspend fun setDocumentsFavorite(ids: Set<String>, workspaceId: String, favorite: Boolean) {
-        val now = Clock.System.now()
-        ids.forEach { id ->
-            documentRepository.loadDocumentById(id, workspaceId)?.let { document ->
-                documentRepository.saveDocumentMetadata(document.copy(favorite = favorite, lastUpdatedAt = now))
-            }
+        // Only the documents among the ids: the folders have no record, they travel whole.
+        val documentIds = documentRepository.loadDocumentByIds(ids.toList(), workspaceId)
+            .map { document -> document.id }
+            .toSet()
+        if (documentIds.isEmpty()) return
+
+        if (favorite) {
+            documentRepository.favoriteDocumentByIds(documentIds)
+        } else {
+            documentRepository.unFavoriteDocumentByIds(documentIds)
         }
+
+        // The disconnected workspace has no backend to tell.
+        if (workspaceId == Workspace.disconnectedWorkspace().id) return
+        val now = Clock.System.now().toEpochMilliseconds()
+        documentRepository.savePendingFavorites(
+            documentIds.map { id -> PendingFavorite(id, workspaceId, favorite, now) }
+        )
     }
 
     private suspend fun listenForDocumentsByParentId(

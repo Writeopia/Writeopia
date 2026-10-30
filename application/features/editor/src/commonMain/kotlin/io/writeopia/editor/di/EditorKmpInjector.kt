@@ -130,6 +130,7 @@ class EditorKmpInjector private constructor(
                 connectionInjection.storyStepSyncApi().syncStorySteps(request)
             },
             documentsApi = workspaceInjection.provideDocumentsApi(),
+            documentSyncService = workspaceInjection.provideDocumentSyncService(),
             presentationsApi = workspaceInjection.providePresentationsApi(),
             presentationsStore = WriteopiaDbInjector.singleton()?.database?.let { db ->
                 PresentationSqlStore(db.presentationEntityQueries, db.presentationStepEntityQueries)

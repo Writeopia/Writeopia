@@ -4,6 +4,7 @@ package io.writeopia.core.folders.sync
 
 import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.document.PendingFavorite
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.sorting.OrderBy
 import io.writeopia.sdk.models.utils.ResultData
@@ -279,51 +280,77 @@ class DocumentSyncService(
      * apart from the documents there, so a document favorited elsewhere doesn't come back
      * changed with the listing: its id is asked for apart and the local copy marked.
      *
-     * A favorite changed here is sent right away, but it may not be there yet: the request
-     * failed (the document itself wasn't on the backend), was cancelled with the screen, or
-     * is still on its way while this runs. The change stamps the document, so the documents
-     * changed here keep their favorite instead of losing it to the backend: [pending] (the
-     * ones outdated when the sync began, sent by now) and the ones outdated now (changed while
-     * it ran, to be sent next time). Their favorite goes to the backend from here when it
-     * disagrees; when that fails the mark stays until the next sync, which takes the
-     * backend's. The backend wins for every other document, which is how a change made on
-     * another device arrives.
+     * A favorite changed here is recorded ([PendingFavorite]) and sent right away, but it may
+     * not be there yet: the request failed (the document itself wasn't on the backend), was
+     * cancelled with the screen, or is still on its way while this runs. The documents with a
+     * record keep their favorite instead of losing it to the backend, and the record is sent
+     * from here ([sendPendingFavorites]), to stay until the backend has it. The backend wins
+     * for every other document, which is how a change made on another device arrives; a
+     * document edited here is no exception, since an edit says nothing about the favorite.
      *
      * @return false when the backend could not be asked; the favorites stay as they are.
      */
-    suspend fun receiveFavorites(workspaceId: String, pending: Set<String> = emptySet()): Boolean {
+    suspend fun receiveFavorites(workspaceId: String): Boolean {
         val api = documentsApi ?: return false
         val response = api.getUserFavorites(workspaceId)
         val remote = (response as? ResultData.Complete)?.data?.toSet() ?: return false
         val local = documentRepository.loadFavDocumentsForWorkspace(OrderBy.UPDATE.type, workspaceId)
             .map { document -> document.id }
             .toSet()
-        val changedHere = pending +
-            documentRepository.loadOutdatedDocumentsForWorkspace(workspaceId).map { document -> document.id }
-
-        changedHere
-            .filter { id -> (id in local) != (id in remote) }
-            .forEach { id -> sendFavorite(api, id, favorite = id in local, workspaceId) }
+        val pending = documentRepository.loadPendingFavorites(workspaceId)
+        val changedHere = pending.map { change -> change.documentId }.toSet()
 
         val toFavorite = remote - local - changedHere
         val toUnfavorite = local - remote - changedHere
         if (toFavorite.isNotEmpty()) documentRepository.favoriteDocumentByIds(toFavorite)
         if (toUnfavorite.isNotEmpty()) documentRepository.unFavoriteDocumentByIds(toUnfavorite)
 
+        sendPendingFavorites(api, pending, backendHas = remote, workspaceId)
         return true
     }
 
-    /** Tells the backend about a favorite changed here. A failure is only logged: see [receiveFavorites]. */
-    private suspend fun sendFavorite(api: DocumentsApi, documentId: String, favorite: Boolean, workspaceId: String) {
+    /**
+     * Tells the backend the favorites changed here that it doesn't have yet, and forgets each
+     * record it takes. A record that can't be sent stays for the next time, and the local
+     * favorite stays with it. Nothing goes for the disconnected workspace.
+     */
+    suspend fun sendPendingFavorites(workspaceId: String) {
+        if (workspaceId == Workspace.disconnectedWorkspace().id) return
+        val api = documentsApi ?: return
+        sendPendingFavorites(api, documentRepository.loadPendingFavorites(workspaceId), backendHas = null, workspaceId)
+    }
+
+    /**
+     * @param backendHas the backend's favorites when just asked, so a record it agrees with is
+     * only forgotten; null to send every record.
+     */
+    private suspend fun sendPendingFavorites(
+        api: DocumentsApi,
+        pending: List<PendingFavorite>,
+        backendHas: Set<String>?,
+        workspaceId: String
+    ) {
+        for (change in pending) {
+            val backendAgrees = backendHas != null && (change.documentId in backendHas) == change.favorite
+            if (backendAgrees || sendFavorite(api, change, workspaceId)) {
+                // Unless the favorite changed again meanwhile: that record is newer and stays.
+                documentRepository.deletePendingFavorite(change)
+            }
+        }
+    }
+
+    /** @return true when the backend has the favorite now. A failure is only logged. */
+    private suspend fun sendFavorite(api: DocumentsApi, change: PendingFavorite, workspaceId: String): Boolean {
         val result = try {
-            api.favoriteDocument(documentId = documentId, favorite = favorite, workspaceId = workspaceId)
+            api.favoriteDocument(documentId = change.documentId, favorite = change.favorite, workspaceId = workspaceId)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            println("Error sending the favorite of document $documentId: ${e.message}")
-            return
+            println("Error sending the favorite of document ${change.documentId}: ${e.message}")
+            return false
         }
-        if (result !is ResultData.Complete) println("The favorite of document $documentId could not be sent")
+        if (result !is ResultData.Complete) println("The favorite of document ${change.documentId} could not be sent")
+        return result is ResultData.Complete
     }
 
     /**

@@ -79,7 +79,7 @@ class WorkspaceSyncTest {
             documentSyncService.receiveDeletedSteps(workspaceId, any())
             documentSyncService.mergeReceivedDocuments(match { it.size == 1 && it.first().id == received.id }, any())
             // A document favorited elsewhere is on the device by now, so marking it works.
-            documentSyncService.receiveFavorites(workspaceId, any())
+            documentSyncService.receiveFavorites(workspaceId)
         }
     }
 
@@ -134,8 +134,7 @@ class WorkspaceSyncTest {
 
         coVerify { documentSyncService.syncDocuments(listOf(edited), workspaceId) }
         coVerify { documentsApi.sendFolders(listOf(movedFolder), workspaceId) }
-        // The documents changed here keep their favorite: a favorite set here is on its way.
-        coVerify { documentSyncService.receiveFavorites(workspaceId, setOf(edited.id)) }
+        coVerify { documentSyncService.receiveFavorites(workspaceId) }
     }
 
     @Test
@@ -218,7 +217,7 @@ class WorkspaceSyncTest {
         coEvery { service.syncDocuments(any(), any()) } returns emptyList()
         coEvery { service.receiveDeletedSteps(any(), any()) } returns
             DocumentSyncService.ReceivedDeletions(emptySet(), Instant.fromEpochMilliseconds(0))
-        coEvery { service.receiveFavorites(any(), any()) } returns true
+        coEvery { service.receiveFavorites(any()) } returns true
     }
 
     private fun workspaceSync(

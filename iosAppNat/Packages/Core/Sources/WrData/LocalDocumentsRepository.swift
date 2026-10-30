@@ -369,14 +369,10 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
     }
 
     /// Makes the favorite documents those of `ids`, as the backend has them, except the ones
-    /// `changedHere`: a favorite set on this device is on its way to the backend, not to be
-    /// undone by it. The timestamps stay: nothing is to be sent because of it. Folders keep
-    /// theirs, they travel whole.
-    ///
-    /// - Returns: the documents `changedHere` whose favorite the backend doesn't have yet, with
-    ///   the favorite, for the caller to send.
-    @discardableResult
-    public func applyFavorites(_ ids: Set<String>, keeping changedHere: Set<String> = []) throws -> [(id: String, favorite: Bool)] {
+    /// `changedHere`: a favorite changed on this device is recorded and on its way to the
+    /// backend, not to be undone by it. The timestamps stay: nothing is to be sent because of
+    /// it. Folders keep theirs, they travel whole.
+    public func applyFavorites(_ ids: Set<String>, keeping changedHere: Set<String> = []) throws {
         let favoriteHere = Set(try db.query("SELECT id FROM document WHERE favorite = 1") { $0.text(0) })
         try db.transaction {
             for id in favoriteHere.subtracting(ids) where !changedHere.contains(id) {
@@ -386,10 +382,6 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
                 try db.run("UPDATE document SET favorite = 1 WHERE id = ?", [.text(id)])
             }
         }
-        return changedHere
-            .filter { favoriteHere.contains($0) != ids.contains($0) }
-            .sorted()
-            .map { (id: $0, favorite: favoriteHere.contains($0)) }
     }
 
     /// The private space has nothing to sync, so everything is removed for good.
@@ -469,6 +461,44 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
         for id in stepIds {
             try db.run("DELETE FROM story_step_tombstone WHERE step_id = ?", [.text(id)])
         }
+    }
+
+    // MARK: - Pending favorites, used by the sync
+
+    /// The favorites changed here that the backend has not been told about yet, oldest first.
+    public func storedPendingFavorites() throws -> [PendingFavorite] {
+        try db.query(
+            "SELECT document_id, workspace_id, favorite, changed_at FROM pending_favorite ORDER BY changed_at"
+        ) { row in
+            guard let documentId = row.text(0) else { return nil }
+            return PendingFavorite(
+                documentId: documentId,
+                workspaceId: row.text(1) ?? workspaceId,
+                favorite: (row.integer(2) ?? 0) != 0,
+                changedAt: row.integer(3) ?? 0
+            )
+        }
+    }
+
+    /// Records favorites changed here, one record per document: a new change replaces the older.
+    public func storePendingFavorites(_ changes: [PendingFavorite]) throws {
+        try db.transaction {
+            for change in changes {
+                try db.run(
+                    "INSERT OR REPLACE INTO pending_favorite (document_id, workspace_id, favorite, changed_at) VALUES (?, ?, ?, ?)",
+                    [.text(change.documentId), .text(change.workspaceId), .bool(change.favorite), .integer(change.changedAt)]
+                )
+            }
+        }
+    }
+
+    /// Forgets the record once the backend has the change, unless the favorite changed again
+    /// since: a newer record stays.
+    public func deletePendingFavorite(_ change: PendingFavorite) throws {
+        try db.run(
+            "DELETE FROM pending_favorite WHERE document_id = ? AND changed_at <= ?",
+            [.text(change.documentId), .integer(change.changedAt)]
+        )
     }
 
     /// Removes steps deleted elsewhere. No tombstone is kept: the backend has one already.
@@ -842,6 +872,13 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
                 document_id TEXT NOT NULL,
                 workspace_id TEXT NOT NULL,
                 deleted_at INTEGER NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS pending_favorite (
+                document_id TEXT PRIMARY KEY NOT NULL,
+                workspace_id TEXT NOT NULL,
+                favorite INTEGER NOT NULL,
+                changed_at INTEGER NOT NULL
             );
 
             CREATE TABLE IF NOT EXISTS folder (

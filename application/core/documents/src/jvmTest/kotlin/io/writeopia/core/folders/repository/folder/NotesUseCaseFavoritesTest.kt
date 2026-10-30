@@ -62,7 +62,7 @@ class NotesUseCaseFavoritesTest {
     }
 
     @Test
-    fun `a favorite changed here stamps the document, so the next sync sends it`() = runBlocking {
+    fun `a favorite changed here is recorded for the sync and leaves the document as it was`() = runBlocking {
         val documentRepository = InMemoryDocumentRepository()
         val folderRepository = mockk<FolderRepository>(relaxed = true)
         val synced = Instant.fromEpochMilliseconds(1_000)
@@ -71,15 +71,21 @@ class NotesUseCaseFavoritesTest {
         )
         val notesUseCase = NotesUseCase(documentRepository, mockk(relaxed = true), folderRepository)
 
-        notesUseCase.favoriteDocuments(setOf("doc"), workspaceId)
+        // A document and a folder: the folder travels whole, it has no record.
+        notesUseCase.favoriteDocuments(setOf("doc", "folder"), workspaceId)
 
         assertTrue(documentRepository.loadDocumentById("doc", workspaceId)!!.favorite)
-        assertEquals(listOf("doc"), documentRepository.loadOutdatedDocumentsForWorkspace(workspaceId).map { it.id })
-        coVerify { folderRepository.favoriteDocumentByIds(setOf("doc")) }
+        // Not an edit: nothing is sent again because of it.
+        assertTrue(documentRepository.loadOutdatedDocumentsForWorkspace(workspaceId).isEmpty())
+        val pending = documentRepository.loadPendingFavorites(workspaceId).single()
+        assertEquals("doc", pending.documentId)
+        assertTrue(pending.favorite)
+        coVerify { folderRepository.favoriteDocumentByIds(setOf("doc", "folder")) }
 
         notesUseCase.unFavoriteDocuments(setOf("doc"), workspaceId)
 
         assertFalse(documentRepository.loadDocumentById("doc", workspaceId)!!.favorite)
+        assertFalse(documentRepository.loadPendingFavorites(workspaceId).single().favorite)
         coVerify { folderRepository.unFavoriteDocumentByIds(setOf("doc")) }
     }
 

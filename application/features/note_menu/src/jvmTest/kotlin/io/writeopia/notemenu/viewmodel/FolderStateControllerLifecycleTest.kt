@@ -79,6 +79,7 @@ class FolderStateControllerLifecycleTest {
         notesConfig = mockk(),
         authRepository = authRepository,
         documentsApi = mockk(),
+        documentSyncService = mockk(),
         selectionState = MutableStateFlow(false),
         keyboardEventFlow = MutableStateFlow(KeyboardEvent.IDLE),
         workspaceConfigRepository = mockk(),

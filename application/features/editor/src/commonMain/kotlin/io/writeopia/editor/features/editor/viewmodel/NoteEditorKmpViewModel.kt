@@ -17,6 +17,7 @@ import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.genai.repository.GenAiRepository
 import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.sync.ContentLoadActivity
+import io.writeopia.core.folders.sync.DocumentSyncService
 import io.writeopia.core.presentations.PresentationsStore
 import io.writeopia.core.presentations.api.PresentationsApi
 import io.writeopia.editor.features.presentation.repository.CloudPresentationsSaver
@@ -49,6 +50,7 @@ import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.DocumentTag
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
+import io.writeopia.sdk.models.document.PendingFavorite
 import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.span.Span
@@ -90,6 +92,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -137,6 +140,8 @@ class NoteEditorKmpViewModel(
     private val documentLoadUseCase: DocumentLoadUseCase? = null,
     private val storyStepSyncApi: (suspend (StoryStepSyncRequest) -> StoryStepSyncResponse)? = null,
     private val documentsApi: DocumentsApi? = null,
+    /** Sends the favorites changed here; null where there is no backend. */
+    private val documentSyncService: DocumentSyncService? = null,
     private val aiTaskManager: AiTaskManager = AiTaskManager.singleton(),
     /** Picks the AI that answers, local or cloud, following the choice of the user in the settings. */
     private val aiClients: AiClients = AiClients(
@@ -1173,32 +1178,40 @@ class NoteEditorKmpViewModel(
     override fun toggleFavorite() {
         writeopiaManager.toggleFavoriteDocument()
 
-        val documentId = writeopiaManager.documentInfo.value.id
+        val info = writeopiaManager.documentInfo.value
         val previous = favoriteSyncJob
         favoriteSyncJob = viewModelScope.launch(Dispatchers.Default) {
+            // The record first, whatever happens to the screen: the sync takes it from there.
+            withContext(NonCancellable) { recordFavoriteChange(info.id, info.isFavorite) }
             // One request at a time, or two quick toggles could reach the backend in the wrong
-            // order. What goes is the state at the time of sending: the user's last word.
+            // order. The record is the user's last word either way.
             previous?.join()
-            val info = writeopiaManager.documentInfo.value
-            if (info.id == documentId) sendFavoriteToBackend(documentId, info.isFavorite)
+            sendPendingFavorites()
         }
     }
 
     /**
      * The backend keeps the favorite documents per user, behind their own endpoint: the
-     * favorite saved with the document's metadata doesn't reach it. Sent right away like the
-     * documents list does; a failure leaves the favorite here only until it is toggled again,
-     * since the next sync takes the backend's favorites.
+     * favorite saved with the document's metadata doesn't reach it. The change is recorded for
+     * the sync ([PendingFavorite]) and sent right away; what can't be sent stays recorded, and
+     * the next sync sends it instead of taking the backend's favorite for the document.
      */
-    private suspend fun sendFavoriteToBackend(documentId: String, favorite: Boolean) {
-        val api = documentsApi ?: return
+    private suspend fun recordFavoriteChange(documentId: String, favorite: Boolean) {
+        val workspace = authRepository.getWorkspace() ?: return
+        if (workspace.id == Workspace.disconnectedWorkspace().id) return
+
+        documentRepository.savePendingFavorites(
+            listOf(PendingFavorite(documentId, workspace.id, favorite, Clock.System.now().toEpochMilliseconds()))
+        )
+    }
+
+    private suspend fun sendPendingFavorites() {
+        val syncService = documentSyncService ?: return
         if (!authRepository.isLoggedIn()) return
         if (authRepository.getUser().tier != Tier.PREMIUM) return
 
         val workspace = authRepository.getWorkspace() ?: return
-        if (workspace.id == Workspace.disconnectedWorkspace().id) return
-
-        api.favoriteDocument(documentId = documentId, favorite = favorite, workspaceId = workspace.id)
+        syncService.sendPendingFavorites(workspace.id)
     }
 
     override fun changeFontFamily(font: Font) {
