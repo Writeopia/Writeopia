@@ -252,6 +252,39 @@ import WrModels
         #expect(try fileNames(in: archive) == [])
     }
 
+    @Test func syncLooksAtEveryCopyOfADeletedItem() async throws {
+        let store = makeStore()
+        let copied = try await store.createDocument(title: "Copied", parentId: Folder.rootId)
+        let gone = try await store.createDocument(title: "Gone", parentId: Folder.rootId)
+        let engine = sync(store)
+        try await engine.save(to: folder)
+        let archive = folder.appending(path: "archive", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: archive, withIntermediateDirectories: true)
+
+        // "Copied" has the file the app wrote and a copy made by hand later (a newer file).
+        let copiedURL = folder.appending(path: "Copied_\(copied.id).wrdoc.json")
+        let copiedCopyURL = archive.appending(path: "Copied_\(copied.id).wrdoc.json")
+        try FileManager.default.copyItem(at: copiedURL, to: copiedCopyURL)
+        try FileManager.default.setAttributes([.modificationDate: Date().addingTimeInterval(5)], ofItemAtPath: copiedCopyURL.path(percentEncoded: false))
+        // "Gone" has two copies, both untouched since the app wrote them.
+        let goneURL = folder.appending(path: "Gone_\(gone.id).wrdoc.json")
+        let goneCopyURL = archive.appending(path: "Gone_\(gone.id).wrdoc.json")
+        try FileManager.default.copyItem(at: goneURL, to: goneCopyURL)
+        let written = try #require(try goneURL.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate)
+        try FileManager.default.setAttributes([.modificationDate: written], ofItemAtPath: goneCopyURL.path(percentEncoded: false))
+
+        try await store.deleteDocument(id: copied.id)
+        try await store.deleteDocument(id: gone.id)
+        let result = try await engine.sync(with: folder)
+
+        // The copy changed from outside is loaded back; every untouched copy is removed.
+        #expect(result.loadedDocuments == 1)
+        #expect(try await store.document(id: copied.id).title == "Copied")
+        #expect(try store.storedDocument(id: gone.id)?.deleted ?? true)
+        #expect(try fileNames() == ["writeopia_config_file.json", "archive"])
+        #expect(try fileNames(in: archive) == ["Copied_\(copied.id).wrdoc.json"])
+    }
+
     @Test func lastSaveComesFromTheConfigFile() async throws {
         let store = makeStore()
         let engine = sync(store)

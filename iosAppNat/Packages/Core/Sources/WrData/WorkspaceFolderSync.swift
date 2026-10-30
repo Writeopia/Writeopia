@@ -98,25 +98,29 @@ public final class WorkspaceFolderSync {
         let before = try await store.allContents()
 
         let storedFolders = Dictionary(before.folders.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-        for file in newest(files.folders, id: \.folder.id, updatedAt: { $0.folder.lastUpdatedAt?.millis ?? .min }) {
-            if let stored = storedFolders[file.folder.id] {
-                guard isNewer(file.folder, than: stored) else { continue }
-            } else if wasDeletedInApp(file.url, id: file.folder.id, manifest: manifest) {
-                try? fileManager.removeItem(at: file.url)
-                continue
-            }
+        let folderFiles = filesToLoad(
+            files.folders,
+            manifest: manifest,
+            id: \.folder.id,
+            url: \.url,
+            updatedAt: { $0.folder.lastUpdatedAt?.millis ?? .min },
+            isNewerThanStored: { file in storedFolders[file.folder.id].map { isNewer(file.folder, than: $0) } }
+        )
+        for file in folderFiles {
             try await store.storeFromFile(file.folder)
             result.loadedFolders += 1
         }
 
         let storedDocuments = Dictionary(before.documents.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-        for file in newest(files.documents, id: \.document.id, updatedAt: \.document.lastUpdatedAt) {
-            if let stored = storedDocuments[file.document.id] {
-                guard isNewer(file.document, than: stored) else { continue }
-            } else if wasDeletedInApp(file.url, id: file.document.id, manifest: manifest) {
-                try? fileManager.removeItem(at: file.url)
-                continue
-            }
+        let documentFiles = filesToLoad(
+            files.documents,
+            manifest: manifest,
+            id: \.document.id,
+            url: \.url,
+            updatedAt: \.document.lastUpdatedAt,
+            isNewerThanStored: { file in storedDocuments[file.document.id].map { isNewer(file.document, than: $0) } }
+        )
+        for file in documentFiles {
             try await store.storeFromFile(file.document)
             result.loadedDocuments += 1
         }
@@ -125,23 +129,55 @@ public final class WorkspaceFolderSync {
         return result
     }
 
-    /// One file per id, in the order the first copy was found: when the folder holds copies of
-    /// the same document or folder (one moved by hand, say, and one the app wrote again), only
-    /// the copy with the newest `lastUpdatedAt` counts. The save that follows keeps one file.
-    private func newest<File>(_ files: [File], id: (File) -> String, updatedAt: (File) -> Int64) -> [File] {
-        var indexes: [String: Int] = [:]
-        var result: [File] = []
+    /// The files to load, at most one per id, in the order each id was first found. The folder
+    /// may hold copies of the same document or folder (one moved by hand, say, and one the app
+    /// wrote again), so the copies of an id are looked at together:
+    /// - An item in the workspace is loaded from its newest copy, when that copy is newer. The
+    ///   save that follows keeps one file.
+    /// - An item not in the workspace was deleted in the app or added to the folder from
+    ///   outside. Every copy the app wrote and nothing changed since is removed, and the newest
+    ///   of the copies changed from outside, if any, is loaded.
+    /// `isNewerThanStored` answers nil for an item not in the workspace.
+    private func filesToLoad<File>(
+        _ files: [File],
+        manifest: Manifest,
+        id: (File) -> String,
+        url: (File) -> URL,
+        updatedAt: (File) -> Int64,
+        isNewerThanStored: (File) -> Bool?
+    ) -> [File] {
+        var copies: [String: [File]] = [:]
+        var ids: [String] = []
         for file in files {
-            if let index = indexes[id(file)] {
-                if updatedAt(file) > updatedAt(result[index]) {
-                    result[index] = file
+            if copies[id(file)] == nil {
+                ids.append(id(file))
+            }
+            copies[id(file), default: []].append(file)
+        }
+
+        var toLoad: [File] = []
+        for id in ids {
+            let group = copies[id] ?? []
+            guard let newest = group.max(by: { updatedAt($0) < updatedAt($1) }) else { continue }
+            if let isNewer = isNewerThanStored(newest) {
+                if isNewer {
+                    toLoad.append(newest)
                 }
-            } else {
-                indexes[id(file)] = result.count
-                result.append(file)
+                continue
+            }
+            var changed: [File] = []
+            for file in group {
+                if wasDeletedInApp(url(file), id: id, manifest: manifest) {
+                    try? fileManager.removeItem(at: url(file))
+                } else {
+                    changed.append(file)
+                }
+            }
+            if let file = changed.max(by: { updatedAt($0) < updatedAt($1) }) {
+                toLoad.append(file)
             }
         }
-        return result
+        return toLoad
     }
 
     // MARK: - Manifest
