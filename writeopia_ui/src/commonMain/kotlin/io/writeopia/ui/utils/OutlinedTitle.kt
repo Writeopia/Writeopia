@@ -33,7 +33,7 @@ fun OutlinedTitle(
 ) {
     val strokeWidth = with(LocalDensity.current) {
         // Half of the stroke shows outside the glyphs, the text covers the other half.
-        if (style.fontSize.isSpecified) style.fontSize.toPx() * 0.14f else 4.dp.toPx()
+        if (style.fontSize.isSpecified) style.fontSize.toPx() * 0.08f else 2.dp.toPx()
     }
 
     Box(modifier = modifier) {
