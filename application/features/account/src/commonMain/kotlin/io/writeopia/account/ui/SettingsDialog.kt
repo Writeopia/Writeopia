@@ -48,6 +48,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -705,17 +707,28 @@ private fun TeamsSection(
                     )
                 }
 
+                // The first workspace is selected until the user picks another one.
+                val selected = selectedWorkspaceState.collectAsState(null).value
+
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     items(workspaces) { workspace ->
-                        CommonButton(text = workspace.name) {
+                        val isSelected = workspace.id == selected?.id
+
+                        CommonButton(
+                            text = workspace.name,
+                            modifier = Modifier.semantics { this.selected = isSelected },
+                            defaultColor = if (isSelected) {
+                                WriteopiaTheme.colorScheme.highlight
+                            } else {
+                                WriteopiaTheme.colorScheme.defaultButton
+                            }
+                        ) {
                             selectWorkspace(workspace.id)
                         }
                     }
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
-
-                val selected = selectedWorkspaceState.collectAsState(null).value
 
                 AnimatedVisibility(selected != null) {
                     if (selected != null) {

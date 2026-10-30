@@ -16,6 +16,8 @@ public final class Preferences {
         case privateSpaceFolderBookmark = "wr.privateSpaceFolderBookmark"
         case localAiURL = "wr.localAiUrl"
         case localAiModel = "wr.localAiModel"
+        /// Security-scoped bookmarks of the folders the workspaces are saved to, by workspace id.
+        case workspaceFolderBookmarks = "wr.workspaceFolderBookmarks"
     }
 
     private let defaults: UserDefaults

@@ -16,7 +16,8 @@ public protocol StepStore: AnyObject {
 /// kept as JSON, which carries nested steps, tags, spans and links as they are.
 public final class LocalDocumentsRepository: DocumentsRepository, StepStore, PresentationsStore {
     private let directory: URL
-    private let workspaceId: String
+    /// The workspace the documents belong to.
+    public let workspaceId: String
     private let seedsWelcome: Bool
     private let db: SQLiteDatabase
     private let encoder = JSONEncoder()
