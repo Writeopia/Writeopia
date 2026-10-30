@@ -9,8 +9,10 @@ import io.writeopia.core.configuration.repository.ConfigurationRepository
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
+import io.writeopia.sdk.models.document.PendingFavorite
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.sorting.OrderBy
+import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.repository.DocumentRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -23,7 +25,7 @@ import kotlin.time.ExperimentalTime
  * UseCase responsible to perform CRUD operations in the Notes (Documents) of the app taking in to
  * consideration the configuration desired in the app.
  */
-class NotesUseCase private constructor(
+class NotesUseCase internal constructor(
     private val documentRepository: DocumentRepository,
     private val notesConfig: ConfigurationRepository,
     private val folderRepository: FolderRepository,
@@ -325,14 +327,42 @@ class NotesUseCase private constructor(
     suspend fun getSoftDeletedFolders(workspaceId: String): List<Folder> =
         folderRepository.getSoftDeletedFolders(workspaceId)
 
-    suspend fun favoriteDocuments(ids: Set<String>) {
-        documentRepository.favoriteDocumentByIds(ids)
+    /**
+     * Marks the documents and folders among [ids] as favorites. A folder's favorite is part of
+     * the folder, sent with it by the next sync. A document's is per user on the backend and
+     * travels apart: the change is recorded ([PendingFavorite]) for the caller and the sync to
+     * send, and the document itself is left as it was, since a favorite is not an edit.
+     */
+    suspend fun favoriteDocuments(ids: Set<String>, workspaceId: String) {
+        setDocumentsFavorite(ids, workspaceId, favorite = true)
         folderRepository.favoriteDocumentByIds(ids)
     }
 
-    suspend fun unFavoriteDocuments(ids: Set<String>) {
-        documentRepository.unFavoriteDocumentByIds(ids)
+    /** Unmarks the documents and folders among [ids]. See [favoriteDocuments]. */
+    suspend fun unFavoriteDocuments(ids: Set<String>, workspaceId: String) {
+        setDocumentsFavorite(ids, workspaceId, favorite = false)
         folderRepository.unFavoriteDocumentByIds(ids)
+    }
+
+    private suspend fun setDocumentsFavorite(ids: Set<String>, workspaceId: String, favorite: Boolean) {
+        // Only the documents among the ids: the folders have no record, they travel whole.
+        val documentIds = documentRepository.loadDocumentByIds(ids.toList(), workspaceId)
+            .map { document -> document.id }
+            .toSet()
+        if (documentIds.isEmpty()) return
+
+        if (favorite) {
+            documentRepository.favoriteDocumentByIds(documentIds)
+        } else {
+            documentRepository.unFavoriteDocumentByIds(documentIds)
+        }
+
+        // The disconnected workspace has no backend to tell.
+        if (workspaceId == Workspace.disconnectedWorkspace().id) return
+        val now = Clock.System.now().toEpochMilliseconds()
+        documentRepository.savePendingFavorites(
+            documentIds.map { id -> PendingFavorite(id, workspaceId, favorite, now) }
+        )
     }
 
     private suspend fun listenForDocumentsByParentId(

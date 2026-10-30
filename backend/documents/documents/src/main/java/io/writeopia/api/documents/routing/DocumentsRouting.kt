@@ -669,6 +669,16 @@ fun Routing.documentsRoute(
                 val folders = writeopiaDb.allFoldersByWorkspaceId(workspaceDiff.workspaceId)
                 val tags = writeopiaDb.allDocumentTagsByWorkspaceId(workspaceDiff.workspaceId)
 
+                // The favorite is per user, not the column of the document (which holds
+                // whatever the last client to send it had): like the folder diff, each
+                // document carries this user's.
+                val userFavoriteIds = DocumentsService.getUserFavoriteDocumentIds(
+                    userId, workspaceId, writeopiaDb
+                ).toSet()
+                val documentsWithFavorites = documents.map { doc ->
+                    doc.copy(favorite = userFavoriteIds.contains(doc.id))
+                }
+
                 logger.info(
                     "Workspace diff - workspaceId: $workspaceId, returning ${documents.size} documents, " +
                         "${folders.size} folders and ${tags.size} tags"
@@ -678,7 +688,7 @@ fun Routing.documentsRoute(
                     status = HttpStatusCode.OK,
                     message = WorkspaceDiffResponse(
                         folders = folders.map { it.toApi() },
-                        documents = documents.map { it.toApi() },
+                        documents = documentsWithFavorites.map { it.toApi() },
                         tags = tags.map { it.toApi() },
                     )
                 )

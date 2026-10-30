@@ -42,6 +42,7 @@ class SqlDelightDocumentRepositoryTest {
         database.commentEntityQueries,
         database.documentTagLinkEntityQueries,
         database.storyStepTombstoneEntityQueries,
+        database.pendingFavoriteEntityQueries,
     )
 
     private val documentRepository = SqlDelightDocumentRepository(documentSqlDao)
@@ -348,6 +349,11 @@ class SqlDelightDocumentRepositoryTest {
     @Test
     fun stepsDeletedElsewhereGoWithoutTombstone() = runTest {
         DocumentRepositoryTests(documentRepository).stepsDeletedElsewhereGoWithoutTombstone()
+    }
+
+    @Test
+    fun aFavoriteChangedHereStaysPendingUntilTheBackendHasIt() = runTest {
+        DocumentRepositoryTests(documentRepository).aFavoriteChangedHereStaysPendingUntilTheBackendHasIt()
     }
 
     @Test

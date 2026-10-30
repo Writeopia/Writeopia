@@ -1,0 +1,8 @@
+-- The favorites changed on this device that the backend has not been told about yet
+-- (PendingFavoriteEntity.sq in the persistence plugin).
+CREATE TABLE IF NOT EXISTS pendingFavoriteEntity (
+  document_id TEXT PRIMARY KEY,
+  workspace_id TEXT NOT NULL,
+  favorite INTEGER NOT NULL,
+  changed_at INTEGER NOT NULL
+);

@@ -218,6 +218,7 @@ class FolderSyncTest {
             documentSyncService.syncDocuments(listOf(edited), workspaceId)
             documentSyncService.receiveDeletedSteps(workspaceId, any())
             documentSyncService.mergeReceivedDocuments(any(), any())
+            documentSyncService.receiveFavorites(workspaceId)
         }
         // The sync never writes a document itself: stamping is the step sync's job.
         coVerify(exactly = 0) { documentRepository.saveDocumentMetadata(any()) }

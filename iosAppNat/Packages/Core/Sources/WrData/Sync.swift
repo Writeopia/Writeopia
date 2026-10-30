@@ -544,6 +544,9 @@ public final class DocumentStepSync {
         if stepsToWrite.isEmpty, !tagsChanged, !backendIsNewer { return nil }
 
         var stored = merged
+        // The favorite is per user and comes apart (`applyFavorites`): what the listing carries
+        // is not this user's, so the local mark stays whichever copy is newer.
+        stored.isFavorite = local.isFavorite
         if local.isOutdated {
             // Still to be sent: it keeps looking outdated, with its own timestamps.
             stored.lastUpdatedAt = local.lastUpdatedAt
@@ -867,12 +870,19 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
         try? await sendAndMarkSynced(copies.documents)
     }
 
+    /// Marks the documents and folders as favorites. A folder's favorite is part of the folder,
+    /// sent with the next sync of its parent. A document's is per user on the backend and
+    /// travels apart: the change is recorded (`PendingFavorite`) and sent right away; what
+    /// can't be sent stays recorded, and the next sync sends it instead of taking the backend's
+    /// favorite for the document.
     public func setFavorite(ids: [String], favorite: Bool) async throws {
         try await local.setFavorite(ids: ids, favorite: favorite)
-        for id in ids where try local.storedDocument(id: id) != nil {
-            try? await remote.setFavorite(documentId: id, favorite: favorite)
-        }
-        // Folders are sent with the next sync of their parent (the favorite is part of them).
+        let now = Date.nowMillis
+        let changes = try ids
+            .filter { try local.storedDocument(id: $0) != nil }
+            .map { PendingFavorite(documentId: $0, workspaceId: workspaceId, favorite: favorite, changedAt: now) }
+        try local.storePendingFavorites(changes)
+        try await sendPendingFavorites(changes, backendHas: nil)
     }
 
     /// Hidden right away, deleted on the backend, and removed here once it's confirmed.
@@ -899,6 +909,53 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
     }
 
     // MARK: - DocumentSyncing
+
+    /// Makes the favorites those of the backend, like `DocumentSyncService.receiveFavorites` of
+    /// the Compose app. A favorite changed here is recorded (`PendingFavorite`) and sent as soon
+    /// as it is set, but it may not be there yet: the request failed (the document itself wasn't
+    /// on the backend), was dropped with the screen, or is still on its way. The documents with
+    /// a record keep their favorite instead of losing it to the backend, and the record is sent
+    /// from here, to stay until the backend has it. The backend wins for every other document,
+    /// which is how a change made on another device arrives; a document edited here is no
+    /// exception, since an edit says nothing about the favorite. When the backend can't be
+    /// asked, the favorites stay as they are.
+    private func receiveFavorites() async throws {
+        let favoriteIds: Set<String>
+        do {
+            favoriteIds = Set(try await api.favoriteDocumentIds())
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            return
+        }
+
+        let pending = try local.storedPendingFavorites()
+        try local.applyFavorites(favoriteIds, keeping: Set(pending.map(\.documentId)))
+        try await sendPendingFavorites(pending, backendHas: favoriteIds)
+    }
+
+    /// Tells the backend the favorites changed here that it doesn't have yet, and forgets each
+    /// record it takes; one that can't be sent stays for the next time, and the favorite with
+    /// it. `backendHas` is the backend's list when just asked, so a record it agrees with is
+    /// only forgotten; nil sends every record.
+    private func sendPendingFavorites(_ pending: [PendingFavorite], backendHas: Set<String>?) async throws {
+        for change in pending {
+            if let backendHas, backendHas.contains(change.documentId) == change.favorite {
+                try local.deletePendingFavorite(change)
+                continue
+            }
+            do {
+                try await remote.setFavorite(documentId: change.documentId, favorite: change.favorite)
+            } catch is CancellationError {
+                throw CancellationError()
+            } catch {
+                // The record stays, and the favorite with it; the next sync sends it.
+                continue
+            }
+            // Unless the favorite changed again meanwhile: that record is newer and stays.
+            try local.deletePendingFavorite(change)
+        }
+    }
 
     public func syncFolder(_ folderId: String) async throws {
         // Opening the same folder again right away doesn't need another sync.
@@ -984,19 +1041,10 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
         try local.setStepDeletionsSyncedAt(received.serverTimestamp)
 
         // The favorites of the documents don't travel with them: they come apart, and the
-        // backend wins. A favorite set here that could not be sent is undone. When the backend
-        // can't be asked they stay as they are; a cancelled sync stops here like anywhere else.
-        let favoriteIds: [String]?
-        do {
-            favoriteIds = try await api.favoriteDocumentIds()
-        } catch is CancellationError {
-            throw CancellationError()
-        } catch {
-            favoriteIds = nil
-        }
-        if let favoriteIds {
-            try local.applyFavorites(Set(favoriteIds))
-        }
+        // backend wins, except for the favorites changed here that it doesn't have yet. When
+        // the backend can't be asked they stay as they are; a cancelled sync stops here like
+        // anywhere else.
+        try await receiveFavorites()
 
         // Folders changed in other folders that couldn't be sent yet (a move while offline, for
         // one) go with this sync too, so they don't wait for their folder to be opened.
@@ -1076,17 +1124,7 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
         }
         try local.setStepDeletionsSyncedAt(received.serverTimestamp)
 
-        let favoriteIds: [String]?
-        do {
-            favoriteIds = try await api.favoriteDocumentIds()
-        } catch is CancellationError {
-            throw CancellationError()
-        } catch {
-            favoriteIds = nil
-        }
-        if let favoriteIds {
-            try local.applyFavorites(Set(favoriteIds))
-        }
+        try await receiveFavorites()
 
         try local.setWorkspaceContentsSyncedAt(startedAt)
         lastFolderSync[Self.workspaceSyncKey] = Date()

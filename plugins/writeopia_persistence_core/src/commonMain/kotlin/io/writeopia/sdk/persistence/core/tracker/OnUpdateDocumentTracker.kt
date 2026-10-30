@@ -106,6 +106,35 @@ class OnUpdateDocumentTracker(
             )
         }
 
+        /**
+         * The document as the metadata saves write it: without content, the title taken from the
+         * content, the time of this edit, and the rest of the info as it is. The favorite goes
+         * too: the row is replaced whole, so leaving it out would unmark the document (the sync
+         * would then mark it again from the backend, and it would flicker in the favorites).
+         */
+        fun metadataDocument(
+            storyState: StoryState,
+            documentInfo: DocumentInfo,
+            workspaceId: String,
+        ): Document {
+            val titleFromContent = storyState.stories.values
+                .firstOrNull { storyStep -> storyStep.type == StoryTypes.TITLE.type }
+                ?.text
+
+            return Document(
+                id = documentInfo.id,
+                title = titleFromContent ?: documentInfo.title,
+                createdAt = documentInfo.createdAt,
+                lastUpdatedAt = Clock.System.now(),
+                lastSyncedAt = documentInfo.lastSyncedAt,
+                workspaceId = workspaceId,
+                parentId = documentInfo.parentId,
+                icon = documentInfo.icon,
+                isLocked = documentInfo.isLocked,
+                favorite = documentInfo.isFavorite,
+            )
+        }
+
         combine(
             documentEditionFlow,
             workspaceIdFlow,
@@ -155,27 +184,7 @@ class OnUpdateDocumentTracker(
 
                     onStoryStepUpdate(lastEdit.storyStep, lastEdit.position)
 
-                    val stories = storyState.stories
-                    val titleFromContent = stories.values
-                        .firstOrNull { storyStep ->
-                            // Todo: Change the type of change to allow different types. The client code should decide what is a title
-                            // It is also interesting to inv
-                            storyStep.type == StoryTypes.TITLE.type
-                        }?.text
-
-                    documentUpdate.saveDocumentMetadata(
-                        Document(
-                            id = documentInfo.id,
-                            title = titleFromContent ?: documentInfo.title,
-                            createdAt = documentInfo.createdAt,
-                            lastUpdatedAt = Clock.System.now(),
-                            lastSyncedAt = documentInfo.lastSyncedAt,
-                            workspaceId = workspaceId,
-                            parentId = documentInfo.parentId,
-                            icon = documentInfo.icon,
-                            isLocked = documentInfo.isLocked,
-                        )
-                    )
+                    documentUpdate.saveDocumentMetadata(metadataDocument(storyState, documentInfo, workspaceId))
                 }
 
                 LastEdit.Nothing -> {}
@@ -193,26 +202,7 @@ class OnUpdateDocumentTracker(
                 }
 
                 is LastEdit.InfoEdition -> withContext(NonCancellable) {
-                    val stories = storyState.stories
-                    val titleFromContent = stories.values.firstOrNull { storyStep ->
-                        // Todo: Change the type of change to allow different types. The client code should decide what is a title
-                        // It is also interesting to inv
-                        storyStep.type == StoryTypes.TITLE.type
-                    }?.text
-
-                    documentUpdate.saveDocumentMetadata(
-                        Document(
-                            id = documentInfo.id,
-                            title = titleFromContent ?: documentInfo.title,
-                            createdAt = documentInfo.createdAt,
-                            lastUpdatedAt = Clock.System.now(),
-                            lastSyncedAt = documentInfo.lastSyncedAt,
-                            workspaceId = workspaceId,
-                            parentId = documentInfo.parentId,
-                            icon = documentInfo.icon,
-                            isLocked = documentInfo.isLocked
-                        ),
-                    )
+                    documentUpdate.saveDocumentMetadata(metadataDocument(storyState, documentInfo, workspaceId))
 
                     if (!lastEdit.storyStep.ephemeral) {
                         documentUpdate.saveStoryStep(
@@ -226,27 +216,7 @@ class OnUpdateDocumentTracker(
                 }
 
                 LastEdit.Metadata -> withContext(NonCancellable) {
-                    val stories = storyState.stories
-                    val titleFromContent = stories.values.firstOrNull { storyStep ->
-                        // Todo: Change the type of change to allow different types. The client code should decide what is a title
-                        // It is also interesting to inv
-                        storyStep.type == StoryTypes.TITLE.type
-                    }?.text
-
-                    documentUpdate.saveDocumentMetadata(
-                        Document(
-                            id = documentInfo.id,
-                            title = titleFromContent ?: documentInfo.title,
-                            createdAt = documentInfo.createdAt,
-                            lastUpdatedAt = Clock.System.now(),
-                            lastSyncedAt = documentInfo.lastSyncedAt,
-                            workspaceId = workspaceId,
-                            parentId = documentInfo.parentId,
-                            icon = documentInfo.icon,
-                            isLocked = documentInfo.isLocked,
-                            favorite = documentInfo.isFavorite
-                        )
-                    )
+                    documentUpdate.saveDocumentMetadata(metadataDocument(storyState, documentInfo, workspaceId))
                 }
 
                 is LastEdit.LineBreakEdition -> {
@@ -260,25 +230,7 @@ class OnUpdateDocumentTracker(
                         )
                     }
 
-                    val stories = storyState.stories
-                    val titleFromContent = stories.values
-                        .firstOrNull { storyStep ->
-                            storyStep.type == StoryTypes.TITLE.type
-                        }?.text
-
-                    documentUpdate.saveDocumentMetadata(
-                        Document(
-                            id = documentInfo.id,
-                            title = titleFromContent ?: documentInfo.title,
-                            createdAt = documentInfo.createdAt,
-                            lastUpdatedAt = Clock.System.now(),
-                            lastSyncedAt = documentInfo.lastSyncedAt,
-                            workspaceId = workspaceId,
-                            parentId = documentInfo.parentId,
-                            icon = documentInfo.icon,
-                            isLocked = documentInfo.isLocked
-                        )
-                    )
+                    documentUpdate.saveDocumentMetadata(metadataDocument(storyState, documentInfo, workspaceId))
                 }
 
                 is LastEdit.BulkEdition -> withContext(NonCancellable) {
@@ -291,25 +243,7 @@ class OnUpdateDocumentTracker(
                         )
                     }
 
-                    val stories = storyState.stories
-                    val titleFromContent = stories.values
-                        .firstOrNull { storyStep ->
-                            storyStep.type == StoryTypes.TITLE.type
-                        }?.text
-
-                    documentUpdate.saveDocumentMetadata(
-                        Document(
-                            id = documentInfo.id,
-                            title = titleFromContent ?: documentInfo.title,
-                            createdAt = documentInfo.createdAt,
-                            lastUpdatedAt = Clock.System.now(),
-                            lastSyncedAt = documentInfo.lastSyncedAt,
-                            workspaceId = workspaceId,
-                            parentId = documentInfo.parentId,
-                            icon = documentInfo.icon,
-                            isLocked = documentInfo.isLocked
-                        )
-                    )
+                    documentUpdate.saveDocumentMetadata(metadataDocument(storyState, documentInfo, workspaceId))
                 }
 
                 is LastEdit.DeleteEdition -> withContext(NonCancellable) {
@@ -318,25 +252,7 @@ class OnUpdateDocumentTracker(
                         documentId = documentInfo.id
                     )
 
-                    val stories = storyState.stories
-                    val titleFromContent = stories.values
-                        .firstOrNull { storyStep ->
-                            storyStep.type == StoryTypes.TITLE.type
-                        }?.text
-
-                    documentUpdate.saveDocumentMetadata(
-                        Document(
-                            id = documentInfo.id,
-                            title = titleFromContent ?: documentInfo.title,
-                            createdAt = documentInfo.createdAt,
-                            lastUpdatedAt = Clock.System.now(),
-                            lastSyncedAt = documentInfo.lastSyncedAt,
-                            workspaceId = workspaceId,
-                            parentId = documentInfo.parentId,
-                            icon = documentInfo.icon,
-                            isLocked = documentInfo.isLocked
-                        )
-                    )
+                    documentUpdate.saveDocumentMetadata(metadataDocument(storyState, documentInfo, workspaceId))
                 }
 
                 is LastEdit.EraseEdition -> withContext(NonCancellable) {
@@ -355,25 +271,7 @@ class OnUpdateDocumentTracker(
                         )
                     }
 
-                    val stories = storyState.stories
-                    val titleFromContent = stories.values
-                        .firstOrNull { storyStep ->
-                            storyStep.type == StoryTypes.TITLE.type
-                        }?.text
-
-                    documentUpdate.saveDocumentMetadata(
-                        Document(
-                            id = documentInfo.id,
-                            title = titleFromContent ?: documentInfo.title,
-                            createdAt = documentInfo.createdAt,
-                            lastUpdatedAt = Clock.System.now(),
-                            lastSyncedAt = documentInfo.lastSyncedAt,
-                            workspaceId = workspaceId,
-                            parentId = documentInfo.parentId,
-                            icon = documentInfo.icon,
-                            isLocked = documentInfo.isLocked
-                        )
-                    )
+                    documentUpdate.saveDocumentMetadata(metadataDocument(storyState, documentInfo, workspaceId))
                 }
 
                 is LastEdit.BulkDeleteEdition -> withContext(NonCancellable) {
@@ -394,25 +292,7 @@ class OnUpdateDocumentTracker(
                         )
                     }
 
-                    val stories = storyState.stories
-                    val titleFromContent = stories.values
-                        .firstOrNull { storyStep ->
-                            storyStep.type == StoryTypes.TITLE.type
-                        }?.text
-
-                    documentUpdate.saveDocumentMetadata(
-                        Document(
-                            id = documentInfo.id,
-                            title = titleFromContent ?: documentInfo.title,
-                            createdAt = documentInfo.createdAt,
-                            lastUpdatedAt = Clock.System.now(),
-                            lastSyncedAt = documentInfo.lastSyncedAt,
-                            workspaceId = workspaceId,
-                            parentId = documentInfo.parentId,
-                            icon = documentInfo.icon,
-                            isLocked = documentInfo.isLocked
-                        )
-                    )
+                    documentUpdate.saveDocumentMetadata(metadataDocument(storyState, documentInfo, workspaceId))
                 }
             }
         }

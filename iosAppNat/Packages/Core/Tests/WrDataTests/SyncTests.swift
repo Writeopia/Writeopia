@@ -106,6 +106,8 @@ final class FakeBackend: HTTPTransport {
     /// The user's favorite document ids, answered to `/user/favorites`; nil answers 404.
     var favoriteIds: [String]?
     var deleteFails = false
+    /// Favorites sent while this is set are refused.
+    var favoriteFails = false
     /// Documents sent while this is set are refused.
     var documentSendFails = false
     /// Step deletions and step syncs are refused while these are set.
@@ -179,8 +181,12 @@ final class FakeBackend: HTTPTransport {
                 deletedFolderIds.append(String(path.split(separator: "/").last ?? ""))
             }
         case let path where path.hasSuffix("/favorite"):
-            let id = path.split(separator: "/").dropLast().last.map(String.init) ?? ""
-            favorites[id] = body["favorite"] as? Bool
+            if favoriteFails {
+                status = 500
+            } else {
+                let id = path.split(separator: "/").dropLast().last.map(String.init) ?? ""
+                favorites[id] = body["favorite"] as? Bool
+            }
         case let path where path.hasSuffix("/user/favorites"):
             if let favoriteIds {
                 response = try JSONEncoder().encode(favoriteIds)
@@ -800,6 +806,8 @@ final class FakeBackend: HTTPTransport {
 
         try await repository.setFavorite(ids: ["d"], favorite: true)
         #expect(backend.favorites["d"] == true)
+        // The backend has it: nothing is pending.
+        #expect(try repository.local.storedPendingFavorites().isEmpty)
 
         try await repository.deleteItems(ids: ["d", "f"])
         #expect(backend.deletedIds == ["d"])
@@ -824,6 +832,72 @@ final class FakeBackend: HTTPTransport {
         #expect(try repository.local.storedDocument(id: "elsewhere")?.isFavorite == true)
         // Nothing is to be sent because of it.
         #expect(try repository.local.storedOutdatedDocuments().isEmpty)
+    }
+
+    @Test func aFavoriteTheBackendCouldNotTakeStaysRecordedAndGoesWithTheNextSync() async throws {
+        let backend = FakeBackend()
+        let repository = makeRepository(backend)
+        // In sync with the backend; the favorite is set here while the backend refuses it.
+        let synced = Date.nowMillis
+        var here = WrDocument(id: "here", title: "", workspaceId: "w", parentId: "root", lastSyncedAt: synced)
+        here.lastUpdatedAt = synced
+        try repository.local.store(here)
+        backend.favoriteFails = true
+
+        try await repository.setFavorite(ids: ["here"], favorite: true)
+
+        #expect(backend.favorites["here"] == nil)
+        #expect(try repository.local.storedPendingFavorites().map(\.documentId) == ["here"])
+
+        // The backend is back, without the favorite: the record is kept, and sent.
+        backend.favoriteFails = false
+        backend.folderDiff = FolderContents(documents: [here])
+        backend.favoriteIds = []
+
+        try await repository.syncFolder("root")
+
+        #expect(try repository.local.storedDocument(id: "here")?.isFavorite == true)
+        #expect(backend.favorites["here"] == true)
+        #expect(try repository.local.storedPendingFavorites().isEmpty)
+    }
+
+    @Test func anEditedDocumentTakesTheFavoriteOfTheBackendToo() async throws {
+        let backend = FakeBackend()
+        let repository = makeRepository(backend)
+        // Edited here since it was sent, its favorite untouched here: unfavorited on another
+        // device, it is unfavorited here too.
+        let synced = Date.nowMillis
+        var edited = WrDocument(id: "edited", title: "Edited", workspaceId: "w", isFavorite: true, parentId: "root", lastSyncedAt: synced)
+        edited.lastUpdatedAt = synced + 1_000
+        try repository.local.store(edited)
+        backend.folderDiff = FolderContents(documents: [])
+        backend.favoriteIds = []
+
+        try await repository.syncFolder("root")
+
+        #expect(try repository.local.storedDocument(id: "edited")?.isFavorite == false)
+        #expect(backend.favorites["edited"] == nil)
+    }
+
+    @Test func receivedDocumentsDontChangeTheFavorite() async throws {
+        let backend = FakeBackend()
+        let repository = makeRepository(backend)
+        let synced = Date.nowMillis
+        let here = WrDocument(id: "here", title: "", workspaceId: "w", isFavorite: true, parentId: "root", lastSyncedAt: synced)
+        try repository.local.store(here)
+        // The listing carries the column of the document, not this user's favorite.
+        var renamed = here
+        renamed.title = "Renamed elsewhere"
+        renamed.isFavorite = false
+        renamed.lastUpdatedAt = synced + 1_000
+        backend.folderDiff = FolderContents(documents: [renamed])
+        backend.favoriteIds = nil
+
+        try await repository.syncFolder("root")
+
+        let stored = try #require(try repository.local.storedDocument(id: "here"))
+        #expect(stored.title == "Renamed elsewhere")
+        #expect(stored.isFavorite)
     }
 
     @Test func folderSyncKeepsTheFavoritesWhenTheBackendHasNoAnswer() async throws {
@@ -918,7 +992,8 @@ final class FakeBackend: HTTPTransport {
         let backend = FakeBackend()
         backend.workspaceDiff = FolderContents(
             folders: [Folder(id: "work", parentId: "root", title: "Work", workspaceId: "w")],
-            documents: [WrDocument(id: "plan", title: "Plan", workspaceId: "w", parentId: "work", icon: IconInfo(label: "zap"))]
+            // Stamped as synced like the backend sends it: nothing changed here about it.
+            documents: [WrDocument(id: "plan", title: "Plan", workspaceId: "w", lastUpdatedAt: 10, parentId: "work", lastSyncedAt: 10, icon: IconInfo(label: "zap"))]
         )
         backend.favoriteIds = ["plan"]
         let repository = makeRepository(backend)

@@ -118,7 +118,9 @@ class WorkspaceSync(
                 folderRepository.setContentSyncedAt(DocumentSyncService.DELETIONS_WATERMARK_ID, workspaceId, received.serverTimestamp)
                 // The favorites of the documents don't travel with them: they come apart. The
                 // whole list comes each time, so when it can't be asked the sync still ends
-                // here and the next one brings it; the content merged above stays synced.
+                // here and the next one brings it; the content merged above stays synced. A
+                // favorite changed here that the backend doesn't have yet is recorded: it is
+                // kept, and sent from there.
                 documentSyncService.receiveFavorites(workspaceId)
 
                 // The whole workspace is now on this device. The watermark is the time taken

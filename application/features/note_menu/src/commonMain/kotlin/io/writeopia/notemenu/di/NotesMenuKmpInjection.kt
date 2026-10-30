@@ -127,6 +127,7 @@ class NotesMenuKmpInjection private constructor(
             notesConfig = notesConfig,
             authRepository = authCoreInjection.provideAuthRepository(),
             documentsApi = provideDocumentsApi(),
+            documentSyncService = WorkspaceInjection.singleton().provideDocumentSyncService(),
             localAiRepository = localAiRepository,
             selectionState = selectionState,
             notesNavigation = notesNavigation,

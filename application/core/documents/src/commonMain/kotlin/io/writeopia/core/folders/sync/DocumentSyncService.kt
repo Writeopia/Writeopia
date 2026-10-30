@@ -4,6 +4,7 @@ package io.writeopia.core.folders.sync
 
 import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.document.PendingFavorite
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.sorting.OrderBy
 import io.writeopia.sdk.models.utils.ResultData
@@ -248,12 +249,14 @@ class DocumentSyncService(
 
         val localSyncedAt = local.lastSyncedAt
         val localOutdated = localSyncedAt == null || local.lastUpdatedAt > localSyncedAt
+        // The favorite is per user and comes apart ([receiveFavorites]): what the listing
+        // carries is not this user's, so the local mark stays whichever copy is newer.
         val metadata = if (localOutdated) {
             // Still to be sent: it keeps looking outdated, with its own timestamps.
-            merged.copy(lastUpdatedAt = local.lastUpdatedAt, lastSyncedAt = local.lastSyncedAt)
+            merged.copy(lastUpdatedAt = local.lastUpdatedAt, lastSyncedAt = local.lastSyncedAt, favorite = local.favorite)
         } else {
             // Nothing pending here: in sync with what was just received.
-            merged.copy(lastSyncedAt = Clock.System.now())
+            merged.copy(lastSyncedAt = Clock.System.now(), favorite = local.favorite)
         }
 
         if (annotationsChanged) {
@@ -275,24 +278,79 @@ class DocumentSyncService(
     /**
      * Makes the favorites of the workspace those of the backend. They are per user and kept
      * apart from the documents there, so a document favorited elsewhere doesn't come back
-     * changed with the listing: its id is asked for apart and the local copy marked. The
-     * backend wins: a favorite set here that could not be sent is undone.
+     * changed with the listing: its id is asked for apart and the local copy marked.
+     *
+     * A favorite changed here is recorded ([PendingFavorite]) and sent right away, but it may
+     * not be there yet: the request failed (the document itself wasn't on the backend), was
+     * cancelled with the screen, or is still on its way while this runs. The documents with a
+     * record keep their favorite instead of losing it to the backend, and the record is sent
+     * from here ([sendPendingFavorites]), to stay until the backend has it. The backend wins
+     * for every other document, which is how a change made on another device arrives; a
+     * document edited here is no exception, since an edit says nothing about the favorite.
      *
      * @return false when the backend could not be asked; the favorites stay as they are.
      */
     suspend fun receiveFavorites(workspaceId: String): Boolean {
-        val response = documentsApi?.getUserFavorites(workspaceId) ?: return false
+        val api = documentsApi ?: return false
+        val response = api.getUserFavorites(workspaceId)
         val remote = (response as? ResultData.Complete)?.data?.toSet() ?: return false
         val local = documentRepository.loadFavDocumentsForWorkspace(OrderBy.UPDATE.type, workspaceId)
             .map { document -> document.id }
             .toSet()
+        val pending = documentRepository.loadPendingFavorites(workspaceId)
+        val changedHere = pending.map { change -> change.documentId }.toSet()
 
-        val toFavorite = remote - local
-        val toUnfavorite = local - remote
+        val toFavorite = remote - local - changedHere
+        val toUnfavorite = local - remote - changedHere
         if (toFavorite.isNotEmpty()) documentRepository.favoriteDocumentByIds(toFavorite)
         if (toUnfavorite.isNotEmpty()) documentRepository.unFavoriteDocumentByIds(toUnfavorite)
 
+        sendPendingFavorites(api, pending, backendHas = remote, workspaceId)
         return true
+    }
+
+    /**
+     * Tells the backend the favorites changed here that it doesn't have yet, and forgets each
+     * record it takes. A record that can't be sent stays for the next time, and the local
+     * favorite stays with it. Nothing goes for the disconnected workspace.
+     */
+    suspend fun sendPendingFavorites(workspaceId: String) {
+        if (workspaceId == Workspace.disconnectedWorkspace().id) return
+        val api = documentsApi ?: return
+        sendPendingFavorites(api, documentRepository.loadPendingFavorites(workspaceId), backendHas = null, workspaceId)
+    }
+
+    /**
+     * @param backendHas the backend's favorites when just asked, so a record it agrees with is
+     * only forgotten; null to send every record.
+     */
+    private suspend fun sendPendingFavorites(
+        api: DocumentsApi,
+        pending: List<PendingFavorite>,
+        backendHas: Set<String>?,
+        workspaceId: String
+    ) {
+        for (change in pending) {
+            val backendAgrees = backendHas != null && (change.documentId in backendHas) == change.favorite
+            if (backendAgrees || sendFavorite(api, change, workspaceId)) {
+                // Unless the favorite changed again meanwhile: that record is newer and stays.
+                documentRepository.deletePendingFavorite(change)
+            }
+        }
+    }
+
+    /** @return true when the backend has the favorite now. A failure is only logged. */
+    private suspend fun sendFavorite(api: DocumentsApi, change: PendingFavorite, workspaceId: String): Boolean {
+        val result = try {
+            api.favoriteDocument(documentId = change.documentId, favorite = change.favorite, workspaceId = workspaceId)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            println("Error sending the favorite of document ${change.documentId}: ${e.message}")
+            return false
+        }
+        if (result !is ResultData.Complete) println("The favorite of document ${change.documentId} could not be sent")
+        return result is ResultData.Complete
     }
 
     /**

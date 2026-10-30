@@ -20,6 +20,9 @@ import io.writeopia.sdk.persistence.dao.StoryUnitEntityDao
 import io.writeopia.sdk.models.story.StoryStepTombstone
 import io.writeopia.sdk.persistence.entity.story.StoryStepTombstoneEntity
 import io.writeopia.sdk.persistence.dao.StoryStepTombstoneDao
+import io.writeopia.sdk.persistence.dao.PendingFavoriteDao
+import io.writeopia.sdk.persistence.entity.document.PendingFavoriteEntity
+import io.writeopia.sdk.models.document.PendingFavorite
 import io.writeopia.sdk.persistence.entity.document.DocumentEntity
 import io.writeopia.sdk.persistence.entity.story.StoryStepEntity
 import io.writeopia.sdk.persistence.entity.tag.DocumentTagLinkEntity
@@ -44,6 +47,7 @@ class RoomDocumentRepository(
     private val database: RoomDatabase,
     private val documentTagLinkDao: DocumentTagLinkDao? = null,
     private val storyStepTombstoneDao: StoryStepTombstoneDao? = null,
+    private val pendingFavoriteDao: PendingFavoriteDao? = null,
 ) : DocumentRepository, DocumentSearch {
 
     private val documentsState: MutableStateFlow<Map<String, List<Document>>> =
@@ -306,6 +310,36 @@ class RoomDocumentRepository(
         stepIds.distinct().chunked(SQLITE_IDS_PER_QUERY).forEach { batch ->
             storyStepTombstoneDao?.deleteByStepIds(batch)
         }
+    }
+
+    override suspend fun loadPendingFavorites(workspaceId: String): List<PendingFavorite> =
+        pendingFavoriteDao?.loadByWorkspaceId(workspaceId)
+            ?.map { entity ->
+                PendingFavorite(
+                    documentId = entity.documentId,
+                    workspaceId = entity.workspaceId,
+                    favorite = entity.favorite,
+                    changedAt = entity.changedAt
+                )
+            }
+            ?: emptyList()
+
+    override suspend fun savePendingFavorites(changes: Collection<PendingFavorite>) {
+        if (changes.isEmpty()) return
+        pendingFavoriteDao?.insert(
+            changes.map { change ->
+                PendingFavoriteEntity(
+                    documentId = change.documentId,
+                    workspaceId = change.workspaceId,
+                    favorite = change.favorite,
+                    changedAt = change.changedAt
+                )
+            }
+        )
+    }
+
+    override suspend fun deletePendingFavorite(change: PendingFavorite) {
+        pendingFavoriteDao?.deleteUpTo(change.documentId, change.changedAt)
     }
 
     override suspend fun deleteStoryStepsByIds(stepIds: Collection<String>, workspaceId: String) {

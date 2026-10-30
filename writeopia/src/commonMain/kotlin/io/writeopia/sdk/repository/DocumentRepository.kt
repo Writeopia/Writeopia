@@ -7,6 +7,7 @@ import io.writeopia.sdk.model.document.DocumentInfo
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.sorting.OrderBy
 import io.writeopia.sdk.models.story.StoryStep
+import io.writeopia.sdk.models.document.PendingFavorite
 import io.writeopia.sdk.models.story.StoryStepTombstone
 import io.writeopia.sdk.search.DocumentSearch
 import kotlinx.coroutines.flow.Flow
@@ -83,6 +84,22 @@ interface DocumentRepository : DocumentUpdate, DocumentSearch {
 
     /** Forgets the tombstones of [stepIds], once the backend has them. */
     suspend fun deleteStoryStepTombstones(stepIds: Collection<String>) {}
+
+    /**
+     * The favorites changed on this device that the backend has not been told about yet.
+     * Written when the user changes one; while a record is here the sync keeps the local
+     * favorite of the document and sends it, instead of taking the backend's.
+     */
+    suspend fun loadPendingFavorites(workspaceId: String): List<PendingFavorite> = emptyList()
+
+    /** Records favorites changed here, one record per document: a new change replaces the older. */
+    suspend fun savePendingFavorites(changes: Collection<PendingFavorite>) {}
+
+    /**
+     * Forgets [change], once the backend has it, unless the favorite changed again since: a
+     * record newer than [PendingFavorite.changedAt] stays.
+     */
+    suspend fun deletePendingFavorite(change: PendingFavorite) {}
 
     /**
      * Removes steps deleted elsewhere. No tombstone is kept: the deletion came from the backend,

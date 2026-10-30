@@ -1528,6 +1528,14 @@ class DocumentationIntegrationTests {
             val favoritesAfter = getAfterFavorite.body<List<String>>()
             assertTrue(favoritesAfter.contains(document.id))
 
+            // The listings carry this user's favorite, not the column sent with the document.
+            val diffAfterFavorite = client.post("/api/docs/workspace/diff") {
+                contentType(ContentType.Application.Json)
+                header("X-Forwarded-Authorization", "Bearer $accessToken")
+                setBody(WorkspaceDiffRequest(workspaceId, 0L))
+            }.body<WorkspaceDiffResponse>()
+            assertTrue(diffAfterFavorite.documents.first { it.id == document.id }.isFavorite)
+
             // Unfavorite the document
             val unfavoriteResponse =
                 client.post("/api/docs/workspace/$workspaceId/document/${document.id}/favorite") {
@@ -1546,6 +1554,13 @@ class DocumentationIntegrationTests {
             assertEquals(HttpStatusCode.OK, getAfterUnfavorite.status)
             val favoritesAfterUnfavorite = getAfterUnfavorite.body<List<String>>()
             assertFalse(favoritesAfterUnfavorite.contains(document.id))
+
+            val diffAfterUnfavorite = client.post("/api/docs/workspace/diff") {
+                contentType(ContentType.Application.Json)
+                header("X-Forwarded-Authorization", "Bearer $accessToken")
+                setBody(WorkspaceDiffRequest(workspaceId, 0L))
+            }.body<WorkspaceDiffResponse>()
+            assertFalse(diffAfterUnfavorite.documents.first { it.id == document.id }.isFavorite)
 
             // Cleanup
             db.deleteUserByEmail(email)

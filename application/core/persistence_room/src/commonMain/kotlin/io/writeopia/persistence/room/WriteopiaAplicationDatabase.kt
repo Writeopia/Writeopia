@@ -24,10 +24,12 @@ import io.writeopia.sdk.persistence.converter.IdListConverter
 import io.writeopia.sdk.persistence.dao.CommentEntityDao
 import io.writeopia.sdk.persistence.dao.DocumentEntityDao
 import io.writeopia.sdk.persistence.dao.DocumentTagLinkDao
+import io.writeopia.sdk.persistence.dao.PendingFavoriteDao
 import io.writeopia.sdk.persistence.dao.StoryStepTombstoneDao
 import io.writeopia.sdk.persistence.dao.StoryUnitEntityDao
 import io.writeopia.sdk.persistence.entity.comment.CommentEntity
 import io.writeopia.sdk.persistence.entity.document.DocumentEntity
+import io.writeopia.sdk.persistence.entity.document.PendingFavoriteEntity
 import io.writeopia.sdk.persistence.entity.story.StoryStepEntity
 import io.writeopia.sdk.persistence.entity.story.StoryStepTombstoneEntity
 import io.writeopia.sdk.persistence.entity.tag.DocumentTagLinkEntity
@@ -43,6 +45,7 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<WriteopiaApplicat
         DocumentEntity::class,
         StoryStepEntity::class,
         StoryStepTombstoneEntity::class,
+        PendingFavoriteEntity::class,
         CommentEntity::class,
         DocumentTagLinkEntity::class,
         DocumentTagRoomEntity::class,
@@ -54,7 +57,7 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<WriteopiaApplicat
         TokenEntity::class,
         WorkspaceEntity::class
     ],
-    version = 38,
+    version = 39,
     exportSchema = false
 )
 @TypeConverters(IdListConverter::class)
@@ -66,6 +69,8 @@ abstract class WriteopiaApplicationDatabase : RoomDatabase() {
     abstract fun storyUnitDao(): StoryUnitEntityDao
 
     abstract fun storyStepTombstoneDao(): StoryStepTombstoneDao
+
+    abstract fun pendingFavoriteDao(): PendingFavoriteDao
 
     abstract fun commentDao(): CommentEntityDao
 
@@ -107,7 +112,8 @@ abstract class WriteopiaApplicationDatabase : RoomDatabase() {
                     MIGRATION_34_35,
                     MIGRATION_35_36,
                     MIGRATION_36_37,
-                    MIGRATION_37_38
+                    MIGRATION_37_38,
+                    MIGRATION_38_39
                 )
                 .fallbackToDestructiveMigration(dropAllTables = true)
                 .build()
