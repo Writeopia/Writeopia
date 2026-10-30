@@ -98,7 +98,7 @@ public final class WorkspaceFolderSync {
         let before = try await store.allContents()
 
         let storedFolders = Dictionary(before.folders.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-        for file in files.folders {
+        for file in newest(files.folders, id: \.folder.id, updatedAt: { $0.folder.lastUpdatedAt?.millis ?? .min }) {
             if let stored = storedFolders[file.folder.id] {
                 guard isNewer(file.folder, than: stored) else { continue }
             } else if wasDeletedInApp(file.url, id: file.folder.id, manifest: manifest) {
@@ -110,7 +110,7 @@ public final class WorkspaceFolderSync {
         }
 
         let storedDocuments = Dictionary(before.documents.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-        for file in files.documents {
+        for file in newest(files.documents, id: \.document.id, updatedAt: \.document.lastUpdatedAt) {
             if let stored = storedDocuments[file.document.id] {
                 guard isNewer(file.document, than: stored) else { continue }
             } else if wasDeletedInApp(file.url, id: file.document.id, manifest: manifest) {
@@ -122,6 +122,25 @@ public final class WorkspaceFolderSync {
         }
 
         try write(try await fullContents(), to: folder, result: &result)
+        return result
+    }
+
+    /// One file per id, in the order the first copy was found: when the folder holds copies of
+    /// the same document or folder (one moved by hand, say, and one the app wrote again), only
+    /// the copy with the newest `lastUpdatedAt` counts. The save that follows keeps one file.
+    private func newest<File>(_ files: [File], id: (File) -> String, updatedAt: (File) -> Int64) -> [File] {
+        var indexes: [String: Int] = [:]
+        var result: [File] = []
+        for file in files {
+            if let index = indexes[id(file)] {
+                if updatedAt(file) > updatedAt(result[index]) {
+                    result[index] = file
+                }
+            } else {
+                indexes[id(file)] = result.count
+                result.append(file)
+            }
+        }
         return result
     }
 

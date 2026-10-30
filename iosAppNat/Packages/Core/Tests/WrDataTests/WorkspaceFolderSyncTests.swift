@@ -218,6 +218,40 @@ import WrModels
         #expect(try fileNames() == ["Dropped_in_dropped.wrdoc.json", "Edited_after_\(deleted.id).wrdoc.json", "writeopia_config_file.json"])
     }
 
+    @Test func syncLoadsTheNewestOfTwoFilesWithTheSameId() async throws {
+        let store = makeStore()
+        let engine = sync(store)
+        let stale = Date(millis: 1_700_000_000_000)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+
+        // Two copies of a document: an old one at the root and a newer one in a subfolder.
+        let old = WrDocument(id: "twice", title: "Old copy", workspaceId: "other", createdAt: stale.millis, lastUpdatedAt: stale.millis)
+        try JSONEncoder().encode(old).write(to: folder.appending(path: "Old_copy_twice.wrdoc.json"))
+        let archive = folder.appending(path: "archive", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: archive, withIntermediateDirectories: true)
+        let new = WrDocument(id: "twice", title: "New copy", workspaceId: "other", createdAt: stale.millis, lastUpdatedAt: stale.millis + 1_000)
+        try JSONEncoder().encode(new).write(to: archive.appending(path: "New_copy_twice.wrdoc.json"))
+        // And two copies of a folder, the newer one first in path order.
+        var oldFolder = Folder(id: "f", parentId: Folder.rootId, title: "Old folder", workspaceId: "other")
+        oldFolder.lastUpdatedAt = stale
+        var newFolder = oldFolder
+        newFolder.title = "New folder"
+        newFolder.lastUpdatedAt = stale.addingTimeInterval(1)
+        try JSONEncoder().encode(newFolder.api).write(to: folder.appending(path: "New_folder_f.wrfolder.json"))
+        try JSONEncoder().encode(oldFolder.api).write(to: folder.appending(path: "Old_folder_f.wrfolder.json"))
+
+        let result = try await engine.sync(with: folder)
+
+        #expect(result.loadedDocuments == 1)
+        #expect(result.loadedFolders == 1)
+        #expect(try await store.document(id: "twice").title == "New copy")
+        #expect(try await store.folder(id: "f")?.title == "New folder")
+        // The save keeps one file per item, where the copy first in path order was (the root
+        // copy of the document, as uppercase sorts before "archive").
+        #expect(try fileNames() == ["New_copy_twice.wrdoc.json", "New_folder_f.wrfolder.json", "writeopia_config_file.json", "archive"])
+        #expect(try fileNames(in: archive) == [])
+    }
+
     @Test func lastSaveComesFromTheConfigFile() async throws {
         let store = makeStore()
         let engine = sync(store)

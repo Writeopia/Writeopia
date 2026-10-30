@@ -264,7 +264,9 @@ class WorkspaceHandlerImplTest {
     @Test
     fun `onUserSearchQueryChange searches users and onUserSuggestionSelect updates query without re-searching`() = runBlocking {
         val candidate = SearchUserApi(id = "u1", name = "Alice", username = "alice")
+        val workspace = Workspace.disconnectedWorkspace().copy(id = "ws1", name = "Team")
         val workspaceApi = mockk<WorkspaceApi> {
+            coEvery { getAvailableWorkspaces() } returns ResultData.Complete(listOf(workspace))
             coEvery {
                 searchUsers(workspaceId = "ws1", usernameQuery = "ali", pageSize = 5)
             } returns ResultData.Complete(
@@ -281,6 +283,9 @@ class WorkspaceHandlerImplTest {
         testScope = scope
         handler.initScope(scope)
 
+        // The search runs in the selected workspace, which has to be among the loaded ones.
+        handler.loadAvailableWorkspaces()
+        handler.availableWorkspaces.first { it is ResultData.Complete }
         handler.selectWorkspaceToManage("ws1")
         handler.onUserSearchQueryChange("@ali")
 
