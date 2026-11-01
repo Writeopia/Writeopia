@@ -1,6 +1,6 @@
 package io.writeopia.api.export
 
-import io.writeopia.api.export.service.ExportEmailService
+import io.writeopia.api.core.email.ExportEmailService
 import io.writeopia.databse.HikariCp
 import io.writeopia.sql.WriteopiaDbBackend
 import kotlinx.coroutines.runBlocking
