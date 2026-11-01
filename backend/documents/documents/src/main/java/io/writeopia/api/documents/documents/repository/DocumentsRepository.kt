@@ -38,6 +38,15 @@ fun WriteopiaDbBackend.saveDocument(vararg documents: Document) {
     documents.forEach(dao::insertDocumentWithContent)
 }
 
+/** Saves [document] and records a CREATE_DOCUMENT event when the row was not stored before. */
+suspend fun WriteopiaDbBackend.saveDocumentWithCreationEvent(document: Document, userId: String) {
+    val isNew = getDocumentById(document.id, document.workspaceId) == null
+    saveDocument(document)
+    if (isNew) {
+        createSyncEvent(document.workspaceId, SyncEventType.CREATE_DOCUMENT, document.id, userId)
+    }
+}
+
 /**
  * Upserts [folders], skipping any whose id is tombstoned (deleted earlier).
  *

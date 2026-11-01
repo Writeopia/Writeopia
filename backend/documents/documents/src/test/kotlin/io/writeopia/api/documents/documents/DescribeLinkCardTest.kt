@@ -24,6 +24,7 @@ class DescribeLinkCardTest {
 
     private val db = configureTestPersistence()
     private val workspaceId = "workspace-link-cards"
+    private val userId = "workspace-link-cards-user"
     private val documentId = "doc-link-cards"
 
     private fun linkCard(id: String = "card-1", url: String? = "https://writeopia.io") =
@@ -51,6 +52,7 @@ class DescribeLinkCardTest {
         val result = DocumentsService.describeLinkCard(
             documentId = documentId,
             workspaceId = workspaceId,
+            userId = userId,
             request = request(linkCard(), position = Rank.at(1), requestTimestamp = 5_000L),
             describe = { url -> "The home of $url, a text editor." },
             writeopiaDb = db
@@ -74,6 +76,7 @@ class DescribeLinkCardTest {
         DocumentsService.describeLinkCard(
             documentId = documentId,
             workspaceId = workspaceId,
+            userId = userId,
             request = request(linkCard(), requestTimestamp = 5_000L),
             describe = { "A description." },
             writeopiaDb = db
@@ -89,6 +92,7 @@ class DescribeLinkCardTest {
         val result = DocumentsService.describeLinkCard(
             documentId = documentId,
             workspaceId = workspaceId,
+            userId = userId,
             request = request(linkCard(id = "card-new"), position = Rank.at(2)),
             describe = { "Brand new." },
             writeopiaDb = db
@@ -108,6 +112,7 @@ class DescribeLinkCardTest {
         val notACard = DocumentsService.describeLinkCard(
             documentId = documentId,
             workspaceId = workspaceId,
+            userId = userId,
             request = request(StoryStep(type = StoryTypes.TEXT.type, url = "https://a.io")),
             describe = { "x" },
             writeopiaDb = db
@@ -117,6 +122,7 @@ class DescribeLinkCardTest {
         val noAddress = DocumentsService.describeLinkCard(
             documentId = documentId,
             workspaceId = workspaceId,
+            userId = userId,
             request = request(linkCard(url = "  ")),
             describe = { "x" },
             writeopiaDb = db
@@ -131,6 +137,7 @@ class DescribeLinkCardTest {
         val result = DocumentsService.describeLinkCard(
             documentId = documentId,
             workspaceId = workspaceId,
+            userId = userId,
             request = request(linkCard(url = "javascript:alert(1)")),
             describe = { asked = true; "x" },
             writeopiaDb = db
@@ -150,6 +157,7 @@ class DescribeLinkCardTest {
             val result = DocumentsService.describeLinkCard(
                 documentId = documentId,
                 workspaceId = workspaceId,
+                userId = userId,
                 request = request(linkCard(id = "card-elsewhere")),
                 describe = { asked = true; "Stolen." },
                 writeopiaDb = db
@@ -172,6 +180,7 @@ class DescribeLinkCardTest {
         val result = DocumentsService.describeLinkCard(
             documentId = documentId,
             workspaceId = workspaceId,
+            userId = userId,
             request = request(linkCard()),
             describe = { null },
             writeopiaDb = db
