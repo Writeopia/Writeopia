@@ -38,12 +38,19 @@ fun WriteopiaDbBackend.saveDocument(vararg documents: Document) {
     documents.forEach(dao::insertDocumentWithContent)
 }
 
-/** Saves [document] and records a CREATE_DOCUMENT event when the row was not stored before. */
-suspend fun WriteopiaDbBackend.saveDocumentWithCreationEvent(document: Document, userId: String) {
-    val isNew = getDocumentById(document.id, document.workspaceId) == null
-    saveDocument(document)
-    if (isNew) {
-        createSyncEvent(document.workspaceId, SyncEventType.CREATE_DOCUMENT, document.id, userId)
+/**
+ * Saves [document] and records a CREATE_DOCUMENT event when the row was not stored before.
+ *
+ * The write and the event share one transaction: an event that fails must not leave the
+ * document stored, or a retry sees it as existing and the creation is never announced.
+ */
+fun WriteopiaDbBackend.saveDocumentWithCreationEvent(document: Document, userId: String) {
+    transaction {
+        val isNew = getDocumentById(document.id, document.workspaceId) == null
+        saveDocument(document)
+        if (isNew) {
+            createSyncEvent(document.workspaceId, SyncEventType.CREATE_DOCUMENT, document.id, userId)
+        }
     }
 }
 
@@ -52,20 +59,21 @@ suspend fun WriteopiaDbBackend.saveDocumentWithCreationEvent(document: Document,
  *
  * @return the ids that were dropped because they are tombstoned.
  */
-suspend fun WriteopiaDbBackend.saveFolder(vararg folders: Folder): List<String> {
+fun WriteopiaDbBackend.saveFolder(vararg folders: Folder): List<String> {
     val dao = getDocumentDaoFn()
     return folders.filterNot { folder -> dao.insertFolder(folder) }.map { folder -> folder.id }
 }
 
 /** Saves [folder] and records a CREATE_FOLDER event when it is new and not deleted. */
-suspend fun WriteopiaDbBackend.saveFolderWithCreationEvent(folder: Folder, userId: String): Boolean {
-    val isNew = getFolderById(folder.id, folder.workspaceId) == null
-    val kept = saveFolder(folder).isEmpty()
-    if (kept && isNew && !folder.deleted) {
-        createSyncEvent(folder.workspaceId, SyncEventType.CREATE_FOLDER, folder.id, userId)
+fun WriteopiaDbBackend.saveFolderWithCreationEvent(folder: Folder, userId: String): Boolean =
+    transactionWithResult {
+        val isNew = getFolderById(folder.id, folder.workspaceId) == null
+        val kept = saveFolder(folder).isEmpty()
+        if (kept && isNew && !folder.deleted) {
+            createSyncEvent(folder.workspaceId, SyncEventType.CREATE_FOLDER, folder.id, userId)
+        }
+        kept
     }
-    return kept
-}
 
 fun WriteopiaDbBackend.isFolderTombstoned(folderId: String): Boolean =
     getDocumentDaoFn().isFolderTombstoned(folderId)
@@ -105,7 +113,7 @@ suspend fun WriteopiaDbBackend.allFoldersByWorkspaceId(workspaceId: String): Lis
 fun WriteopiaDbBackend.getDocumentsByParentId(parentId: String = "root"): List<Document> =
     getDocumentDaoFn().loadDocumentByParentId(parentId)
 
-suspend fun WriteopiaDbBackend.getDocumentById(
+fun WriteopiaDbBackend.getDocumentById(
     id: String = "test",
     workspaceId: String
 ): Document? = getDocumentDaoFn().loadDocumentById(id, workspaceId)
@@ -118,7 +126,7 @@ suspend fun WriteopiaDbBackend.getDocumentByTitle(
     title: String, workspaceId: String
 ): Document? = getDocumentDaoFn().loadDocumentWithContentByTitle(title, workspaceId)
 
-suspend fun WriteopiaDbBackend.getFolderById(id: String = "test", workspaceId: String): Folder? =
+fun WriteopiaDbBackend.getFolderById(id: String = "test", workspaceId: String): Folder? =
     getDocumentDaoFn().loadFolderById(id, workspaceId)
 
 suspend fun WriteopiaDbBackend.getIdsByParentId(parentId: String = "root"): List<String> =

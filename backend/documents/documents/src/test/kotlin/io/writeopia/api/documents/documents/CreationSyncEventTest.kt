@@ -5,6 +5,7 @@ package io.writeopia.api.documents.documents
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import io.writeopia.api.documents.documents.repository.getDocumentById
 import io.writeopia.api.documents.documents.repository.saveDocument
 import io.writeopia.api.genai.model.AiGenerateResponse
 import io.writeopia.api.genai.service.GenAiService
@@ -21,7 +22,9 @@ import kotlinx.coroutines.runBlocking
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFails
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
@@ -193,4 +196,35 @@ class CreationSyncEventTest {
         assertEquals(summary.id, event.entity_id)
         assertEquals(userId, event.user_id)
     }
+
+    @Test
+    fun `a failing creation event takes the document write down with it`() = runBlocking {
+        try {
+            sql("DROP TRIGGER IF EXISTS fail_sync_event ON sync_event")
+            sql(
+                "CREATE OR REPLACE FUNCTION fail_sync_event() RETURNS trigger AS " +
+                    "'BEGIN RAISE EXCEPTION ''sync event insert failed''; END' LANGUAGE plpgsql"
+            )
+            sql(
+                "CREATE TRIGGER fail_sync_event BEFORE INSERT ON sync_event " +
+                    "FOR EACH ROW EXECUTE FUNCTION fail_sync_event()"
+            )
+
+            assertFails {
+                DocumentsService.receiveDocuments(
+                    listOf(document("doc-7")),
+                    workspaceId,
+                    userId,
+                    db,
+                    useAi = false
+                )
+            }
+            assertNull(db.getDocumentById("doc-7", workspaceId))
+        } finally {
+            sql("DROP TRIGGER IF EXISTS fail_sync_event ON sync_event")
+            sql("DROP FUNCTION IF EXISTS fail_sync_event()")
+        }
+    }
+
+    private fun sql(statement: String) = HikariCp.driver().execute(null, statement, 0, null).value
 }

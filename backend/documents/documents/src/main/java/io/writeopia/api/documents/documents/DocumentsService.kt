@@ -87,10 +87,14 @@ object DocumentsService {
     ): Boolean {
         documents.forEach { document ->
             // Where the document was before, so a save that also moves it refreshes both folders.
-            val stored = writeopiaDb.getDocumentById(document.id, workspaceId)
-            writeopiaDb.saveDocument(document)
-            if (stored == null && !document.deleted) {
-                writeopiaDb.createSyncEvent(workspaceId, SyncEventType.CREATE_DOCUMENT, document.id, userId)
+            // The save and its creation event are one write: a failing event must not keep the row.
+            val stored = writeopiaDb.transactionWithResult {
+                val previous = writeopiaDb.getDocumentById(document.id, workspaceId)
+                writeopiaDb.saveDocument(document)
+                if (previous == null && !document.deleted) {
+                    writeopiaDb.createSyncEvent(workspaceId, SyncEventType.CREATE_DOCUMENT, document.id, userId)
+                }
+                previous
             }
             // The steps travel through the step sync, so what was sent may carry none: the
             // document is embedded as stored.
@@ -326,10 +330,13 @@ object DocumentsService {
         writeopiaDb: WriteopiaDbBackend,
         embeddingService: DocumentEmbeddingService?
     ): Document {
-        val existing = writeopiaDb.getDocumentById(document.id, workspaceId)
-        val saved = upsertDocument(document, workspaceId, writeopiaDb)
-        if (existing == null) {
-            writeopiaDb.createSyncEvent(workspaceId, SyncEventType.CREATE_DOCUMENT, document.id, userId)
+        val (saved, existing) = writeopiaDb.transactionWithResult {
+            val previous = writeopiaDb.getDocumentById(document.id, workspaceId)
+            val stored = upsertDocument(document, workspaceId, writeopiaDb)
+            if (previous == null) {
+                writeopiaDb.createSyncEvent(workspaceId, SyncEventType.CREATE_DOCUMENT, document.id, userId)
+            }
+            stored to previous
         }
         embeddingService?.onDocumentSaved(saved, existing?.parentId, writeopiaDb)
 
