@@ -1,32 +1,25 @@
 # Customize Commands
 
-Some of the `StoryStepDrawer` of Writeopia accept a `TextCommandHandler` to handle commands from text input. 
-The default `TextCommandHandler` is already provided by `DefaultDrawers.create` and if you would like to change the default commands, changing the command handler of `DefaultDrawers.create` if the way to go. 
-
-`DefaultDrawers` accepts `TextCommandHandler` in the constructor. You can provide a command handle with different commands. 
+Text commands are the short sequences the user types to turn a message into another type: `- ` into a list item,
+`# ` into an H1, and so on. They are defined in `CommandFactory` (in `writeopia-models`) and handled by
+`TextCommandHandler` (in `writeopia-ui`):
 
 ```kotlin
-val command = Command("-> ", WhereToFind.START)
-
-DefaultDrawers.create(
-    editable = true,
-    // Other configurations
-    // [...]
-    textCommandHandler = TextCommandHandler(
-        mapOf(
-            command to { _, position ->
-                writeopiaManager.changeStoryType(
-                    position,
-                    StoryType("unordered_list_item", number = 100),
-                    CommandInfo(
-                        command,
-                        CommandTrigger.WRITTEN
-                    )
-                )
-            }
-        )
-    )
-)
+object CommandFactory {
+    fun checkItem() = Command("-[]", WhereToFind.START)
+    fun unOrderedList() = Command("- ", WhereToFind.START)
+    fun h1() = Command("# ", WhereToFind.START)
+    fun codeBlock() = Command("```", WhereToFind.START)
+    fun divider() = Command("---", WhereToFind.START)
+}
 ```
 
-This will change the default unordered list item initial text to "-> " instead of "- ". 
+`WriteopiaStateManager` builds its handler once, from `TextCommandHandler.defaultCommands(this)`, and keeps it private.
+The commands a command maps to are fixed for the selected `StoryTypes`: a checkbox is `StoryTypes.CHECK_ITEM`, a list
+item is `StoryTypes.UNORDERED_LIST_ITEM`, an H1 is a `message` with the `Tag.H1` tag.
+
+The handler is not injectable in the current SDK version, so the set of commands cannot be extended from application
+code. The list of the built-in commands is in **Default Commands**.
+
+A command is only found at the start of a line, and a command ending with a space fires when that space is typed — that
+is why `#` and `##` stay plain text while `###` is being written.
