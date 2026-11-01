@@ -42,6 +42,7 @@ import io.writeopia.api.documents.documents.repository.saveDocument
 import io.writeopia.api.documents.documents.repository.saveDocumentTag
 import io.writeopia.api.documents.documents.repository.saveDocumentWithCreationEvent
 import io.writeopia.api.documents.documents.repository.saveFolder
+import io.writeopia.api.documents.documents.repository.saveFolderWithCreationEvent
 import io.writeopia.api.documents.documents.repository.setDocumentPublished
 import io.writeopia.api.documents.documents.repository.updateDocumentTitle
 import io.writeopia.api.documents.documents.repository.touchDocument
@@ -175,10 +176,13 @@ object DocumentsService {
      */
     suspend fun receiveFolders(
         folders: List<Folder>,
+        userId: String,
         writeopiaDb: WriteopiaDbBackend,
         embeddingService: DocumentEmbeddingService? = null
     ): Boolean {
-        val tombstoned = writeopiaDb.saveFolder(*folders.toTypedArray())
+        val tombstoned = folders
+            .filterNot { folder -> writeopiaDb.saveFolderWithCreationEvent(folder, userId) }
+            .map { folder -> folder.id }
 
         if (tombstoned.isNotEmpty()) {
             logger.info("Ignored ${tombstoned.size} tombstoned folder(s) sent by client: $tombstoned")
@@ -253,6 +257,7 @@ object DocumentsService {
         parentFolderId: String,
         title: String,
         workspaceId: String,
+        userId: String,
         icon: MenuItem.Icon? = null,
         writeopiaDb: WriteopiaDbBackend,
         embeddingService: DocumentEmbeddingService? = null
@@ -269,7 +274,7 @@ object DocumentsService {
             icon = icon
         )
 
-        writeopiaDb.saveFolder(folder)
+        writeopiaDb.saveFolderWithCreationEvent(folder, userId)
         embeddingService?.onFolderSaved(folder, writeopiaDb)
         return folder
     }

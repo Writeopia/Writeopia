@@ -380,6 +380,7 @@ fun Routing.documentsRoute(
                     parentFolderId = parentFolderId,
                     title = request.title,
                     workspaceId = workspaceId,
+                    userId = userId,
                     icon = request.icon?.toModel(),
                     writeopiaDb = writeopiaDb,
                     embeddingService = embeddingService
@@ -532,6 +533,7 @@ fun Routing.documentsRoute(
                 if (folderList.isNotEmpty()) {
                     val addedToHub = DocumentsService.receiveFolders(
                         folderList.map { folder -> folder.toModel() },
+                        userId,
                         writeopiaDb,
                         embeddingService,
                     )

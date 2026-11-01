@@ -57,6 +57,16 @@ suspend fun WriteopiaDbBackend.saveFolder(vararg folders: Folder): List<String> 
     return folders.filterNot { folder -> dao.insertFolder(folder) }.map { folder -> folder.id }
 }
 
+/** Saves [folder] and records a CREATE_FOLDER event when it is new and not deleted. */
+suspend fun WriteopiaDbBackend.saveFolderWithCreationEvent(folder: Folder, userId: String): Boolean {
+    val isNew = getFolderById(folder.id, folder.workspaceId) == null
+    val kept = saveFolder(folder).isEmpty()
+    if (kept && isNew && !folder.deleted) {
+        createSyncEvent(folder.workspaceId, SyncEventType.CREATE_FOLDER, folder.id, userId)
+    }
+    return kept
+}
+
 fun WriteopiaDbBackend.isFolderTombstoned(folderId: String): Boolean =
     getDocumentDaoFn().isFolderTombstoned(folderId)
 
