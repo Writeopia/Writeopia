@@ -29,6 +29,9 @@ MaterialTheme(
 }
 ```
 
+The examples use `DefaultDrawersDesktop`, which is the JVM desktop factory. On Android use `DefaultDrawersAndroid`, on iOS
+`DefaultDrawersNative` and on the web `DefaultDrawersJs`; they take the same arguments.
+
 The colour of the selection, of the divider, of the code block and of the cards are part of `DrawConfig`, which is
 passed to the drawers factory:
 
@@ -54,25 +57,29 @@ The `titleStyle` and `titlePlaceHolderStyle` fields of the same object take the 
 
 ## Padding
 
-The space between the editor and its neighbours is the `contentPadding` of `WriteopiaEditor`:
+`contentPadding` pads the scrollable content inside the editor; it does not create space between the editor and its
+neighbours. For external spacing wrap the editor in a padded parent:
 
 ```kotlin
-WriteopiaEditor(
-    contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
-    storyState = drawState,
-    drawers = drawers,
-)
+Box(modifier = Modifier.padding(24.dp)) {
+    WriteopiaEditor(
+        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
+        storyState = drawState,
+        drawers = drawers,
+    )
+}
 ```
 
 The space inside the rows is `DrawConfig`: `textDrawerStartPadding`, `textDrawerInnerStartPadding`,
 `textVerticalPadding`, `codeBlockStartPadding`, `codeBlockHorizontalInnerPadding`, `codeBlockVerticalInnerPadding`,
 `checkBoxStartPadding`, `checkBoxEndPadding`, `checkBoxItemVerticalPadding`, `listItemStartPadding`,
 `listItemEndPadding`, `listItemItemVerticalPadding`, `iaAnswerHorizontalPadding`, `linkHorizontalPadding` and
-`linkVerticalPadding`. All of them are whole dp values:
+`linkVerticalPadding`. All of them are whole dp values. `textDrawerStartPadding` moves the title drawer, while plain text
+rows take `codeBlockStartPadding`:
 
 ```kotlin
 DrawConfig(
-    textDrawerStartPadding = 0,
+    codeBlockStartPadding = 0,
     textDrawerInnerStartPadding = 0,
     textVerticalPadding = 2,
     checkBoxStartPadding = 8,

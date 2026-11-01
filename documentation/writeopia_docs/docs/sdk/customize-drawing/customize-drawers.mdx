@@ -21,8 +21,8 @@ fun Editor() {
         drawers = DefaultDrawersDesktop.create(
             manager = stateManager,
             customDrawers = mapOf(
-                // Any number that no default drawer uses.
-                100 to rememberMyDrawer(),
+                // Any number that no default drawer uses (100-103 are the drawing and spreadsheet types).
+                1000 to rememberMyDrawer(),
             ),
         ),
     )

@@ -20,11 +20,22 @@ To configure persistence you need:
 
 - a Room database that declares the SDK entities and DAOs;
 - a `RoomDocumentRepository` over that database;
-- the repository passed to `WriteopiaStateManager.create`.
+- the repository passed to `WriteopiaStateManager.create`;
+- a `UserRepository`, so saved documents keep the workspace they belong to.
 
 ### Creating a Room database for Writeopia
 
-The persistence plugin provides the entries and DAOs; your application database adds them to its own:
+The persistence plugin provides the entries and DAOs; your application database adds them to its own. The application
+module needs Room itself, since the plugin declares it as `implementation` and configures its compiler only for its own
+module:
+
+```kotlin
+// Android: Room for the application's own database
+implementation("androidx.room:room-runtime:2.8.4")
+ksp("androidx.room:room-compiler:2.8.4")
+```
+
+Apply the `com.google.devtools.ksp` plugin to the module too.
 
 ```kotlin
 @Database(
@@ -84,9 +95,14 @@ val stateManager = remember {
         writeopiaManager = WriteopiaManager(),
         dispatcher = Dispatchers.IO,
         documentRepository = repository,
+        userRepository = userRepository,
     )
 }
 ```
+
+`userRepository` supplies the workspace ID that `saveOnStoryChanges` writes with each document. Without it the tracker
+saves the disconnected workspace, so an online document leaves its workspace as soon as it is edited: omit it only for
+documents that never leave the device.
 
 With a repository in place the editor can load documents and create linked documents.
 
