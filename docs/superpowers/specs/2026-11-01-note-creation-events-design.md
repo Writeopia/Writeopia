@@ -25,11 +25,12 @@ event types.
 
 | Entry point | When an event is written |
 |---|---|
-| `DocumentsService.receiveDocuments` | per document whose row did not exist before the save |
+| `DocumentsService.receiveDocuments` | per document whose row did not exist before the save and is not marked deleted |
 | `DocumentsService.upsertDocument` (suspend overload) | when the row did not exist before the save |
 | `DocumentsService.cloneDocuments` | once per clone (a clone is always new) |
 | `DocumentsService.syncStorySteps` | when the sync auto-creates the missing document |
 | `DocumentsService.describeLinkCard` | when the describe auto-creates the missing document |
+| `DocumentsService.generateSummaryDocument` | the summary note it stores |
 | `DocumentsService.createFolder` | always (the route creates a new folder) |
 | `DocumentsService.receiveFolders` | per folder that was new, not deleted, and not tombstoned |
 

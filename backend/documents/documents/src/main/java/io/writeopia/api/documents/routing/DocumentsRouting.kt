@@ -894,6 +894,7 @@ fun Routing.documentsRoute(
                     documents = request.documents,
                     targetFolderId = request.targetFolderId,
                     workspaceId = workspaceId,
+                    userId = userId,
                     summaryTitle = request.summaryTitle,
                     model = request.model,
                     ignoreSyncCheck = request.ignoreSyncCheck,

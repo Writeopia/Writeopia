@@ -2,12 +2,18 @@
 
 package io.writeopia.api.documents.documents
 
+import io.mockk.coEvery
+import io.mockk.every
+import io.mockk.mockk
 import io.writeopia.api.documents.documents.repository.saveDocument
+import io.writeopia.api.genai.model.AiGenerateResponse
+import io.writeopia.api.genai.service.GenAiService
 import io.writeopia.databse.HikariCp
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.serialization.extensions.toApi
+import io.writeopia.sdk.serialization.request.DocumentSyncInfo
 import io.writeopia.sdk.serialization.request.LinkCardDescriptionRequest
 import io.writeopia.sdk.serialization.request.StoryStepSyncRequest
 import io.writeopia.sdk.utils.iterables.Rank
@@ -15,6 +21,8 @@ import kotlinx.coroutines.runBlocking
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
+import kotlin.test.assertTrue
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
@@ -66,6 +74,19 @@ class CreationSyncEventTest {
         DocumentsService.receiveDocuments(listOf(document("doc-1")), workspaceId, userId, db, useAi = false)
 
         assertEquals(1, events().size)
+    }
+
+    @Test
+    fun `an upload of a deleted document writes no creation event`() = runBlocking {
+        DocumentsService.receiveDocuments(
+            listOf(document("doc-6").copy(deleted = true)),
+            workspaceId,
+            userId,
+            db,
+            useAi = false
+        )
+
+        assertTrue(events().none { event -> event.entity_id == "doc-6" })
     }
 
     @Test
@@ -138,5 +159,38 @@ class CreationSyncEventTest {
         val event = events().single()
         assertEquals("CREATE_DOCUMENT", event.event_type)
         assertEquals("doc-5", event.entity_id)
+    }
+
+    @Test
+    fun `a generated summary document writes a creation event`() = runBlocking {
+        db.saveDocument(
+            document("doc-6").copy(
+                content = mapOf(
+                    Rank.at(0) to StoryStep(id = "text-6", type = StoryTypes.TEXT.type, text = "Some text.")
+                )
+            )
+        )
+        val genAi = mockk<GenAiService> {
+            every { isAvailable() } returns true
+            coEvery { generateSummary(any(), any()) } returns AiGenerateResponse(response = "A summary.")
+        }
+
+        val result = DocumentsService.generateSummaryDocument(
+            documents = listOf(DocumentSyncInfo(documentId = "doc-6", lastSyncedAt = null)),
+            targetFolderId = "root",
+            workspaceId = workspaceId,
+            userId = userId,
+            summaryTitle = null,
+            model = null,
+            ignoreSyncCheck = true,
+            genAiService = genAi,
+            writeopiaDb = db
+        )
+
+        val summary = assertIs<DocumentsService.GenerateSummaryResult.Success>(result).document
+        val event = events().single()
+        assertEquals("CREATE_DOCUMENT", event.event_type)
+        assertEquals(summary.id, event.entity_id)
+        assertEquals(userId, event.user_id)
     }
 }

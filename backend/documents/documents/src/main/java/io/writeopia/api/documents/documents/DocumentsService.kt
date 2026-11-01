@@ -89,7 +89,7 @@ object DocumentsService {
             // Where the document was before, so a save that also moves it refreshes both folders.
             val stored = writeopiaDb.getDocumentById(document.id, workspaceId)
             writeopiaDb.saveDocument(document)
-            if (stored == null) {
+            if (stored == null && !document.deleted) {
                 writeopiaDb.createSyncEvent(workspaceId, SyncEventType.CREATE_DOCUMENT, document.id, userId)
             }
             // The steps travel through the step sync, so what was sent may carry none: the
@@ -977,6 +977,7 @@ object DocumentsService {
         documents: List<DocumentSyncInfo>,
         targetFolderId: String,
         workspaceId: String,
+        userId: String,
         summaryTitle: String?,
         model: String?,
         ignoreSyncCheck: Boolean,
@@ -1100,7 +1101,7 @@ object DocumentsService {
         )
 
         // Save the document
-        writeopiaDb.saveDocument(summaryDocument)
+        writeopiaDb.saveDocumentWithCreationEvent(summaryDocument, userId)
 
         return GenerateSummaryResult.Success(summaryDocument)
     }
