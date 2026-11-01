@@ -1,4 +1,4 @@
-package io.writeopia.api.core.auth.dto
+package io.writeopia.pubsub
 
 import kotlinx.serialization.Serializable
 

@@ -1,4 +1,4 @@
-package io.writeopia.api.core.auth.models
+package io.writeopia.pubsub
 
 /** Pub/Sub topic ids for the account-deletion saga. Must match pubsub.tf in the infra repo. */
 object AccountDeletionTopics {

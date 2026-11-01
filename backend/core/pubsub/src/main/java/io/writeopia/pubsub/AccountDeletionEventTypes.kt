@@ -1,4 +1,4 @@
-package io.writeopia.api.core.auth.models
+package io.writeopia.pubsub
 
 /** Outbox event type names for the account-deletion saga's Debezium-guarded transitions. */
 object AccountDeletionEventTypes {

@@ -2,11 +2,11 @@
 
 package io.writeopia.api.core.auth.service
 
-import io.writeopia.api.core.auth.dto.AccountDeletionEventPayload
-import io.writeopia.api.core.auth.models.ACCOUNT_DELETION_AGGREGATE_TYPE
+import io.writeopia.pubsub.AccountDeletionEventPayload
+import io.writeopia.pubsub.ACCOUNT_DELETION_AGGREGATE_TYPE
 import io.writeopia.api.core.auth.models.AccountDeletion
-import io.writeopia.api.core.auth.models.AccountDeletionEventTypes
-import io.writeopia.api.core.auth.models.AccountDeletionTopics
+import io.writeopia.pubsub.AccountDeletionEventTypes
+import io.writeopia.pubsub.AccountDeletionTopics
 import io.writeopia.api.core.auth.repository.getAccountDeletionByUserId
 import io.writeopia.api.core.auth.repository.getUserById
 import io.writeopia.api.core.auth.repository.insertAccountDeletion

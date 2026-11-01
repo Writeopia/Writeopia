@@ -6,7 +6,7 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.RoutingContext
 import io.ktor.server.routing.post
-import io.writeopia.api.core.auth.dto.AccountDeletionEventPayload
+import io.writeopia.pubsub.AccountDeletionEventPayload
 import io.writeopia.api.core.auth.repository.getAccountDeletionByUserId
 import io.writeopia.api.core.auth.service.AccountDeletionService
 import io.writeopia.api.core.auth.service.EmailService
