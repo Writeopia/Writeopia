@@ -78,4 +78,14 @@ class FolderCreationSyncEventTest {
 
         assertTrue(events().none { event -> event.entity_id == "folder-2" })
     }
+
+    @Test
+    fun `re-uploading a deleted folder writes no second creation event`() = runBlocking {
+        val created = DocumentsService.createFolder("root", "Folder", workspaceId, userId, writeopiaDb = db)
+        DocumentsService.deleteFolder(created.id, workspaceId, userId, db)
+
+        DocumentsService.receiveFolders(listOf(folder(created.id)), userId, db)
+
+        assertEquals(1, events().count { event -> event.event_type == "CREATE_FOLDER" && event.entity_id == created.id })
+    }
 }
