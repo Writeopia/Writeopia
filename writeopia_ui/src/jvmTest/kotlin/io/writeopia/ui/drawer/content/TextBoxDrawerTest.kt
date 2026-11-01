@@ -25,7 +25,6 @@ import io.writeopia.ui.model.DrawConfig
 import io.writeopia.ui.model.DrawState
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
@@ -121,11 +120,11 @@ class TextBoxDrawerTest {
             }
         }
 
-        onNodeWithTag("MessageDrawer_${Rank.at(1)}").performTextInput(" more")
+        onNodeWithTag("MessageDrawer_${Rank.at(1)}").performTextInput("new ")
         waitForIdle()
 
-        val text = manager.getDocument().content[Rank.at(1)]?.text.orEmpty()
-        assertTrue(text.contains("more"), "text was \"$text\"")
+        val text = manager.getDocument().content[Rank.at(1)]?.text
+        assertEquals("new box", text)
     }
 
     @Test

@@ -44,7 +44,7 @@ fun textBoxDrawer(
     messageDrawer = messageDrawer,
 )
 
-class TextBoxDrawer(
+internal class TextBoxDrawer(
     private val modifier: Modifier = Modifier,
     private val isDesktop: Boolean,
     private val onSelected: (Boolean, String) -> Unit,
