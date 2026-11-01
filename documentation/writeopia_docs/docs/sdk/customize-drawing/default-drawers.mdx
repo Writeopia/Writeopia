@@ -9,7 +9,7 @@ The SDK comes with a drawer for almost every default type. `DefaultDrawersAndroi
 | `message_box` | `DesktopTextItemDrawer` with the colour of `StoryStep.decoration` | Editable text on a background |
 | `check_item` | `DesktopTextItemDrawer` with a checkbox | Editable text with a checkbox |
 | `unordered_list_item` | `DesktopTextItemDrawer` with a dash | Editable text with a bullet |
-| `title` | `HeaderDrawer` | The document title; also draws the H1–H4 tags |
+| `title` | `HeaderDrawer` | The document title |
 | `code_block` | `CodeBlockDrawer` | Monospaced text on a coloured background |
 | `divider` | `DividerDrawer` | A horizontal line |
 | `image` | `ImageDrawer` | A single image |
@@ -30,3 +30,6 @@ The SDK comes with a drawer for almost every default type. `DefaultDrawersAndroi
 
 `SimpleTextDrawer` is the interface behind the text drawers. `TextDrawer` is its editable implementation; the preview
 drawers under `io.writeopia.ui.drawer.preview` are read-only implementations of the same interface.
+
+H1, H2, H3 and H4 are not types: they are `Tag`s on a `message` step, and the message `TextDrawer` styles them. Only
+the document title (type 11) goes through `HeaderDrawer`.

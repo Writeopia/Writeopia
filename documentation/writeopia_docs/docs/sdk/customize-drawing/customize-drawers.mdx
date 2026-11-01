@@ -13,35 +13,46 @@ Every step is drawn by the `StoryStepDrawer` registered under its type number in
 `customDrawers` map, which is merged over the default drawers:
 
 ```kotlin
-WriteopiaEditor(
-    modifier = Modifier.fillMaxSize(),
-    storyState = drawState,
-    drawers = DefaultDrawersDesktop.create(
-        manager = stateManager,
-        customDrawers = mapOf(
-            // Any number that no default drawer uses.
-            100 to MyDrawer(),
+@Composable
+fun Editor() {
+    WriteopiaEditor(
+        modifier = Modifier.fillMaxSize(),
+        storyState = drawState,
+        drawers = DefaultDrawersDesktop.create(
+            manager = stateManager,
+            customDrawers = mapOf(
+                // Any number that no default drawer uses.
+                100 to rememberMyDrawer(),
+            ),
         ),
-    ),
-)
+    )
+}
 ```
 
-`StoryStepDrawer` is a single-method interface, so a drawer can be a lambda:
+`StoryStepDrawer` is a single-method interface with a `@Composable` method, so a drawer can be a lambda — and the
+lambda has to sit in a composable context:
 
 ```kotlin
-val myDrawer = StoryStepDrawer { step: StoryStep, drawInfo: DrawInfo ->
+@Composable
+fun rememberMyDrawer(): StoryStepDrawer = StoryStepDrawer { step, _ ->
     Text(text = step.text.orEmpty())
 }
 ```
 
 ## Replacing a default drawer
 
-The map returned by the factory is a normal map. Copy it and replace the entry of an existing type:
+The map returned by the factory is a normal map. Copy it inside a composable scope and replace the entry of an existing
+type:
 
 ```kotlin
-val drawers = DefaultDrawersDesktop.create(manager = stateManager).toMutableMap()
+@Composable
+fun editorDrawers(): Map<Int, StoryStepDrawer> {
+    val drawers = DefaultDrawersDesktop.create(manager = stateManager).toMutableMap()
 
-drawers[StoryTypes.CHECK_ITEM.type.number] = MyCheckItemDrawer()
+    drawers[StoryTypes.CHECK_ITEM.type.number] = MyCheckItemDrawer()
+
+    return drawers
+}
 ```
 
 ## Drawers with editing, swipe and drag

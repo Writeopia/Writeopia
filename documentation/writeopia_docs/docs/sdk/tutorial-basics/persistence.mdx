@@ -5,9 +5,9 @@
 The persistence plugin saves documents locally. Add the plugin for your platform:
 
 ```kotlin
-// Android
+// Android: the application uses Room
 implementation("io.writeopia:writeopia-persistence-room:[version]")
-// Desktop, iOS, Web
+// Desktop, iOS, Web: SQLDelight
 implementation("io.writeopia:writeopia-persistence-sqldelight:[version]")
 ```
 
@@ -54,9 +54,15 @@ abstract class WriteopiaApplicationDatabase : RoomDatabase() {
 
 ### Building the repository
 
-`RoomDocumentRepository` takes the DAOs plus the database itself:
+Build the database first, then pass its DAOs and the database itself to `RoomDocumentRepository`:
 
 ```kotlin
+val database = Room.databaseBuilder(
+    context,
+    WriteopiaApplicationDatabase::class.java,
+    "writeopia.db",
+).build()
+
 val repository = RoomDocumentRepository(
     documentEntityDao = database.documentDao(),
     storyUnitEntityDao = database.storyUnitDao(),
