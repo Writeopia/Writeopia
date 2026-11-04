@@ -293,11 +293,11 @@ import writeopia.application.core.resources.generated.resources.create_workspace
 import writeopia.application.core.resources.generated.resources.create
 import writeopia.application.core.resources.generated.resources.create_workspace_failed
 import writeopia.application.core.resources.generated.resources.add_user_to_workspace
-import writeopia.application.core.resources.generated.resources.search_by_email
+import writeopia.application.core.resources.generated.resources.search_by_username
 import writeopia.application.core.resources.generated.resources.enter_at_least_2_chars
 import writeopia.application.core.resources.generated.resources.no_users_found
 import writeopia.application.core.resources.generated.resources.failed_to_search_users
-import writeopia.application.core.resources.generated.resources.enter_email_to_search
+import writeopia.application.core.resources.generated.resources.enter_username_to_search
 import writeopia.application.core.resources.generated.resources.select_role
 import writeopia.application.core.resources.generated.resources.role_editor_description
 import writeopia.application.core.resources.generated.resources.role_admin_description
@@ -954,7 +954,7 @@ object WrStrings {
     fun addUserToWorkspace(workspaceName: String) = stringResource(Res.string.add_user_to_workspace, workspaceName)
 
     @Composable
-    fun searchByEmail() = stringResource(Res.string.search_by_email)
+    fun searchByUsername() = stringResource(Res.string.search_by_username)
 
     @Composable
     fun enterAtLeast2Chars() = stringResource(Res.string.enter_at_least_2_chars)
@@ -966,7 +966,7 @@ object WrStrings {
     fun failedToSearchUsers() = stringResource(Res.string.failed_to_search_users)
 
     @Composable
-    fun enterEmailToSearch() = stringResource(Res.string.enter_email_to_search)
+    fun enterUsernameToSearch() = stringResource(Res.string.enter_username_to_search)
 
     @Composable
     fun selectRole() = stringResource(Res.string.select_role)
