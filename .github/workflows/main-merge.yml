@@ -84,8 +84,8 @@ jobs:
       - name: Decode keystore
         run: |
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > upload-keystore.jks
-      - name: Build release APK
-        run: ./gradlew :application:androidApp:assembleRelease
+      - name: Build release AAB
+        run: ./gradlew :application:androidApp:bundleRelease
         env:
           WR_ANDROID_SIGNING_STORE_PASSWORD: ${{ secrets.WR_ANDROID_SIGNING_STORE_PASSWORD }}
           WR_ANDROID_SIGNING_KEY_ALIAS: ${{ secrets.WR_ANDROID_SIGNING_KEY_ALIAS }}
@@ -96,7 +96,7 @@ jobs:
           appId: ${{ secrets.FIREBASE_APP_ID }}
           serviceCredentialsFileContent: ${{ secrets.FIREBASE_APP_DISTRIBUTION_SERVICE_ACCOUNT }}
           groups: testers
-          file: application/androidApp/build/outputs/apk/release/androidApp-release.apk
+          file: application/androidApp/build/outputs/bundle/release/androidApp-release.aab
           releaseNotes: |
             Automated build from commit ${{ github.sha }}
             Branch: ${{ github.ref_name }}
