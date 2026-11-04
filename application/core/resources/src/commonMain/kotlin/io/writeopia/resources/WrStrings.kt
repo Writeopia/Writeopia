@@ -297,7 +297,7 @@ import writeopia.application.core.resources.generated.resources.search_by_userna
 import writeopia.application.core.resources.generated.resources.enter_at_least_2_chars
 import writeopia.application.core.resources.generated.resources.no_users_found
 import writeopia.application.core.resources.generated.resources.failed_to_search_users
-import writeopia.application.core.resources.generated.resources.enter_email_to_search
+import writeopia.application.core.resources.generated.resources.enter_username_to_search
 import writeopia.application.core.resources.generated.resources.select_role
 import writeopia.application.core.resources.generated.resources.role_editor_description
 import writeopia.application.core.resources.generated.resources.role_admin_description
@@ -966,7 +966,7 @@ object WrStrings {
     fun failedToSearchUsers() = stringResource(Res.string.failed_to_search_users)
 
     @Composable
-    fun enterEmailToSearch() = stringResource(Res.string.enter_email_to_search)
+    fun enterUsernameToSearch() = stringResource(Res.string.enter_username_to_search)
 
     @Composable
     fun selectRole() = stringResource(Res.string.select_role)

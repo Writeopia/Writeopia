@@ -137,7 +137,7 @@ fun UserSearchScreen(
                 // Initial state, show hint
                 if (query.isEmpty()) {
                     Text(
-                        text = WrStrings.enterEmailToSearch(),
+                        text = WrStrings.enterUsernameToSearch(),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
                     )

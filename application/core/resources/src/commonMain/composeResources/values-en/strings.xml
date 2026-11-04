@@ -198,7 +198,7 @@
   <string name="enter_at_least_2_chars">Enter at least 2 characters to search</string>
   <string name="no_users_found">No users found</string>
   <string name="failed_to_search_users">Failed to search users. Please try again.</string>
-  <string name="enter_email_to_search">Enter an email address to search for users</string>
+  <string name="enter_username_to_search">Enter a username to search for users</string>
   <string name="select_role">Select role</string>
   <string name="role_editor_description">Can view and edit documents</string>
   <string name="role_admin_description">Can manage workspace and users</string>
