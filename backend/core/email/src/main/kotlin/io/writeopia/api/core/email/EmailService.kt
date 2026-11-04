@@ -1,30 +1,13 @@
 @file:OptIn(ExperimentalTime::class)
 
-package io.writeopia.api.core.auth.service
+package io.writeopia.api.core.email
 
-import io.ktor.client.HttpClient
-import io.ktor.client.request.forms.submitForm
-import io.ktor.client.request.header
-import io.ktor.http.HttpStatusCode
-import io.ktor.http.Parameters
-import io.writeopia.connection.logger
 import kotlin.random.Random
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.ExperimentalTime
 
 object EmailService {
-    private val client = HttpClient()
-
-    private val mailgunApiKey: String?
-        get() = System.getenv("MAILGUN_API_KEY")
-
-    private val mailgunDomain: String?
-        get() = System.getenv("MAILGUN_DOMAIN")
-
-    private val mailgunFromEmail: String
-        get() = System.getenv("MAILGUN_FROM_EMAIL") ?: "noreply@writeopia.io"
-
     fun generateConfirmationCode(): String {
         return Random.nextInt(100000, 999999).toString()
     }
@@ -37,43 +20,13 @@ object EmailService {
         toEmail: String,
         code: String,
         userName: String
-    ): Boolean {
-        val apiKey = mailgunApiKey
-        val domain = mailgunDomain
-
-        if (apiKey == null || domain == null) {
-            logger.warn("Mailgun not configured. MAILGUN_API_KEY or MAILGUN_DOMAIN missing.")
-            logger.info("Confirmation code for $toEmail: $code")
-            return true
-        }
-
-        return try {
-            val response = client.submitForm(
-                url = "https://api.eu.mailgun.net/v3/$domain/messages",
-                formParameters = Parameters.build {
-                    append("from", "Writeopia <$mailgunFromEmail>")
-                    append("to", toEmail)
-                    append("subject", "Confirm your Writeopia email")
-                    append("text", buildEmailText(userName, code))
-                    append("html", buildEmailHtml(userName, code))
-                }
-            ) {
-                header("Authorization", "Basic ${java.util.Base64.getEncoder().encodeToString("api:$apiKey".toByteArray())}")
-            }
-
-            if (response.status == HttpStatusCode.OK) {
-                logger.info("Confirmation email sent to $toEmail")
-                true
-            } else {
-                logger.error("Failed to send confirmation email to $toEmail: ${response.status}")
-                false
-            }
-        } catch (e: Exception) {
-            logger.error("Error sending confirmation email to $toEmail: ${e.message}")
-            e.printStackTrace()
-            false
-        }
-    }
+    ): Boolean =
+        mailgunSender.send(
+            toEmail = toEmail,
+            subject = "Confirm your Writeopia email",
+            text = buildEmailText(userName, code),
+            html = buildEmailHtml(userName, code),
+        )
 
     private fun buildEmailText(userName: String, code: String): String {
         return """
@@ -124,43 +77,13 @@ object EmailService {
      * Sent before an account exists, to prove the person signing up owns [toEmail]. There is no
      * name to greet yet, since the account details are only collected after verification.
      */
-    suspend fun sendRegistrationCodeEmail(toEmail: String, code: String): Boolean {
-        val apiKey = mailgunApiKey
-        val domain = mailgunDomain
-
-        if (apiKey == null || domain == null) {
-            logger.warn("Mailgun not configured. MAILGUN_API_KEY or MAILGUN_DOMAIN missing.")
-            logger.info("Registration code for $toEmail: $code")
-            return true
-        }
-
-        return try {
-            val response = client.submitForm(
-                url = "https://api.eu.mailgun.net/v3/$domain/messages",
-                formParameters = Parameters.build {
-                    append("from", "Writeopia <$mailgunFromEmail>")
-                    append("to", toEmail)
-                    append("subject", "Your Writeopia verification code")
-                    append("text", buildRegistrationCodeEmailText(code))
-                    append("html", buildRegistrationCodeEmailHtml(code))
-                }
-            ) {
-                header("Authorization", "Basic ${java.util.Base64.getEncoder().encodeToString("api:$apiKey".toByteArray())}")
-            }
-
-            if (response.status == HttpStatusCode.OK) {
-                logger.info("Registration code email sent to $toEmail")
-                true
-            } else {
-                logger.error("Failed to send registration code email to $toEmail: ${response.status}")
-                false
-            }
-        } catch (e: Exception) {
-            logger.error("Error sending registration code email to $toEmail: ${e.message}")
-            e.printStackTrace()
-            false
-        }
-    }
+    suspend fun sendRegistrationCodeEmail(toEmail: String, code: String): Boolean =
+        mailgunSender.send(
+            toEmail = toEmail,
+            subject = "Your Writeopia verification code",
+            text = buildRegistrationCodeEmailText(code),
+            html = buildRegistrationCodeEmailHtml(code),
+        )
 
     private fun buildRegistrationCodeEmailText(code: String): String {
         return """
@@ -210,43 +133,13 @@ object EmailService {
         toEmail: String,
         code: String,
         userName: String
-    ): Boolean {
-        val apiKey = mailgunApiKey
-        val domain = mailgunDomain
-
-        if (apiKey == null || domain == null) {
-            logger.warn("Mailgun not configured. MAILGUN_API_KEY or MAILGUN_DOMAIN missing.")
-            logger.info("Password reset code for $toEmail: $code")
-            return true
-        }
-
-        return try {
-            val response = client.submitForm(
-                url = "https://api.eu.mailgun.net/v3/$domain/messages",
-                formParameters = Parameters.build {
-                    append("from", "Writeopia <$mailgunFromEmail>")
-                    append("to", toEmail)
-                    append("subject", "Reset your Writeopia password")
-                    append("text", buildPasswordResetEmailText(userName, code))
-                    append("html", buildPasswordResetEmailHtml(userName, code))
-                }
-            ) {
-                header("Authorization", "Basic ${java.util.Base64.getEncoder().encodeToString("api:$apiKey".toByteArray())}")
-            }
-
-            if (response.status == HttpStatusCode.OK) {
-                logger.info("Password reset email sent to $toEmail")
-                true
-            } else {
-                logger.error("Failed to send password reset email to $toEmail: ${response.status}")
-                false
-            }
-        } catch (e: Exception) {
-            logger.error("Error sending password reset email to $toEmail: ${e.message}")
-            e.printStackTrace()
-            false
-        }
-    }
+    ): Boolean =
+        mailgunSender.send(
+            toEmail = toEmail,
+            subject = "Reset your Writeopia password",
+            text = buildPasswordResetEmailText(userName, code),
+            html = buildPasswordResetEmailHtml(userName, code),
+        )
 
     private fun buildPasswordResetEmailText(userName: String, code: String): String {
         return """
@@ -304,43 +197,13 @@ object EmailService {
     suspend fun sendAccountDeletionCompleteEmail(
         toEmail: String,
         userName: String
-    ): Boolean {
-        val apiKey = mailgunApiKey
-        val domain = mailgunDomain
-
-        if (apiKey == null || domain == null) {
-            logger.warn("Mailgun not configured. MAILGUN_API_KEY or MAILGUN_DOMAIN missing.")
-            logger.info("Account deletion complete for $toEmail")
-            return true
-        }
-
-        return try {
-            val response = client.submitForm(
-                url = "https://api.eu.mailgun.net/v3/$domain/messages",
-                formParameters = Parameters.build {
-                    append("from", "Writeopia <$mailgunFromEmail>")
-                    append("to", toEmail)
-                    append("subject", "Your Writeopia account has been deleted")
-                    append("text", buildAccountDeletionEmailText(userName))
-                    append("html", buildAccountDeletionEmailHtml(userName))
-                }
-            ) {
-                header("Authorization", "Basic ${java.util.Base64.getEncoder().encodeToString("api:$apiKey".toByteArray())}")
-            }
-
-            if (response.status == HttpStatusCode.OK) {
-                logger.info("Account deletion confirmation email sent to $toEmail")
-                true
-            } else {
-                logger.error("Failed to send account deletion email to $toEmail: ${response.status}")
-                false
-            }
-        } catch (e: Exception) {
-            logger.error("Error sending account deletion email to $toEmail: ${e.message}")
-            e.printStackTrace()
-            false
-        }
-    }
+    ): Boolean =
+        mailgunSender.send(
+            toEmail = toEmail,
+            subject = "Your Writeopia account has been deleted",
+            text = buildAccountDeletionEmailText(userName),
+            html = buildAccountDeletionEmailHtml(userName),
+        )
 
     private fun buildAccountDeletionEmailText(userName: String): String {
         return """

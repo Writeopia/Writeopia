@@ -11,9 +11,9 @@ import io.writeopia.api.core.auth.repository.confirmEmailIfNotPendingDeletion
 import io.writeopia.api.core.auth.repository.getUserByEmail
 import io.writeopia.api.core.auth.repository.isCodeValid
 import io.writeopia.api.core.auth.repository.updateConfirmationCode
-import io.writeopia.api.core.auth.service.EmailService
 import io.writeopia.api.core.auth.service.EmailVerificationService
 import io.writeopia.api.core.auth.service.RefreshTokenService
+import io.writeopia.api.core.email.EmailService
 import io.writeopia.connection.logger
 import io.writeopia.sdk.serialization.data.auth.AuthResponse
 import io.writeopia.sdk.serialization.data.auth.EmailConfirmRequest

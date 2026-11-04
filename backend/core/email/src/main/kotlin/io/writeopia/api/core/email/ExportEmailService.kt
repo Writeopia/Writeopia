@@ -1,71 +1,18 @@
-package io.writeopia.api.export.service
-
-import io.ktor.client.HttpClient
-import io.ktor.client.request.forms.submitForm
-import io.ktor.client.request.header
-import io.ktor.http.HttpStatusCode
-import io.ktor.http.Parameters
-import org.slf4j.LoggerFactory
+package io.writeopia.api.core.email
 
 object ExportEmailService {
-    private val logger = LoggerFactory.getLogger(ExportEmailService::class.java)
-    private val client = HttpClient()
-
-    private val mailgunApiKey: String?
-        get() = System.getenv("MAILGUN_API_KEY")
-
-    private val mailgunDomain: String?
-        get() = System.getenv("MAILGUN_DOMAIN")
-
-    private val mailgunFromEmail: String
-        get() = System.getenv("MAILGUN_FROM_EMAIL") ?: "noreply@writeopia.io"
-
     suspend fun sendExportReadyEmail(
         toEmail: String,
         userName: String,
         downloadUrl: String,
         documentCount: Int,
         folderCount: Int
-    ): Boolean {
-        val apiKey = mailgunApiKey
-        val domain = mailgunDomain
-
-        if (apiKey == null || domain == null) {
-            logger.warn("Mailgun not configured. MAILGUN_API_KEY or MAILGUN_DOMAIN missing.")
-            logger.info("Export ready for $toEmail. Download URL: $downloadUrl")
-            return true
-        }
-
-        return try {
-            val response = client.submitForm(
-                url = "https://api.eu.mailgun.net/v3/$domain/messages",
-                formParameters = Parameters.build {
-                    append("from", "Writeopia <$mailgunFromEmail>")
-                    append("to", toEmail)
-                    append("subject", "Your Writeopia workspace export is ready")
-                    append("text", buildEmailText(userName, downloadUrl, documentCount, folderCount))
-                    append("html", buildEmailHtml(userName, downloadUrl, documentCount, folderCount))
-                }
-            ) {
-                header(
-                    "Authorization",
-                    "Basic ${java.util.Base64.getEncoder().encodeToString("api:$apiKey".toByteArray())}"
-                )
-            }
-
-            if (response.status == HttpStatusCode.OK) {
-                logger.info("Export ready email sent to $toEmail")
-                true
-            } else {
-                logger.error("Failed to send export ready email to $toEmail: ${response.status}")
-                false
-            }
-        } catch (e: Exception) {
-            logger.error("Error sending export ready email to $toEmail: ${e.message}")
-            e.printStackTrace()
-            false
-        }
-    }
+    ): Boolean = mailgunSender.send(
+        toEmail = toEmail,
+        subject = "Your Writeopia workspace export is ready",
+        text = buildEmailText(userName, downloadUrl, documentCount, folderCount),
+        html = buildEmailHtml(userName, downloadUrl, documentCount, folderCount),
+    )
 
     private fun buildEmailText(
         userName: String,

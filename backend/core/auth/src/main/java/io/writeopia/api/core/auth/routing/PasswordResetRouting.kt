@@ -11,7 +11,7 @@ import io.writeopia.api.core.auth.repository.getUserByEmail
 import io.writeopia.api.core.auth.repository.isCodeValid
 import io.writeopia.api.core.auth.repository.updateConfirmationCode
 import io.writeopia.api.core.auth.service.AuthService
-import io.writeopia.api.core.auth.service.EmailService
+import io.writeopia.api.core.email.EmailService
 import io.writeopia.connection.logger
 import io.writeopia.sdk.serialization.data.auth.ForgotPasswordRequest
 import io.writeopia.sdk.serialization.data.auth.ForgotPasswordResponse
