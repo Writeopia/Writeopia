@@ -1,6 +1,6 @@
 package io.writeopia.api.documents.documents.service
 
-import io.writeopia.api.core.auth.models.AccountDeletionTopics
+import io.writeopia.pubsub.AccountDeletionTopics
 import io.writeopia.api.core.auth.models.UserStatus
 import io.writeopia.api.core.auth.repository.insertUser
 import io.writeopia.api.documents.documents.configureTestPersistence

@@ -5,7 +5,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockkObject
 import io.mockk.unmockkObject
-import io.writeopia.api.core.auth.models.AccountDeletionTopics
+import io.writeopia.pubsub.AccountDeletionTopics
 import io.writeopia.buckets.BucketConfig
 import io.writeopia.buckets.GcpBucketImageStorageService
 import io.writeopia.pubsub.PubsubPublisher

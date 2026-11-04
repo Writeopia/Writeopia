@@ -1,7 +1,7 @@
 package io.writeopia.api.media.service
 
-import io.writeopia.api.core.auth.dto.AccountDeletionEventPayload
-import io.writeopia.api.core.auth.models.AccountDeletionTopics
+import io.writeopia.pubsub.AccountDeletionEventPayload
+import io.writeopia.pubsub.AccountDeletionTopics
 import io.writeopia.buckets.BucketConfig
 import io.writeopia.buckets.GcpBucketImageStorageService
 import io.writeopia.connection.logger
