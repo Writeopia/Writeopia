@@ -76,10 +76,10 @@ fun UserSearchScreen(
         OutlinedTextField(
             value = query,
             onValueChange = onSearchQueryChange,
-            label = { Text(WrStrings.searchByEmail()) },
+            label = { Text(WrStrings.searchByUsername()) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Email,
+                keyboardType = KeyboardType.Text,
                 imeAction = ImeAction.Search
             ),
             modifier = Modifier.fillMaxWidth()

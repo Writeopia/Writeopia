@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(FlowPreview::class)
 class UserSearchViewModel(
@@ -42,12 +43,10 @@ class UserSearchViewModel(
     init {
         viewModelScope.launch {
             _searchQuery
-                .debounce(300)
+                .debounce(300.milliseconds)
                 .distinctUntilChanged()
                 .filter { it.length >= 2 }
-                .collect { query ->
-                    searchUsers(query)
-                }
+                .collect(::searchUsers)
         }
     }
 
