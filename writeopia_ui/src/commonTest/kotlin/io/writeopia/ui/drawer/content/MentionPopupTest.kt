@@ -1,46 +1,11 @@
 package io.writeopia.ui.drawer.content
 
-import io.writeopia.sdk.models.user.MentionUser
 import io.writeopia.ui.drawer.content.MentionDetectionResult
 import io.writeopia.ui.drawer.content.detectMentionState
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class MentionPopupTest {
-    private val sampleUsers = listOf(
-        MentionUser(id = "1", username = "alice", name = "Alice Wonderland"),
-        MentionUser(id = "2", username = "bob", name = "Bob Builder"),
-        MentionUser(id = "3", username = "charlie", name = "Charlie Brown"),
-    )
-
-    @Test
-    fun `blank filter returns all users`() {
-        val result = filterMentionUsers(sampleUsers, "")
-
-        assertEquals(sampleUsers, result)
-    }
-
-    @Test
-    fun `filter matches username case insensitively`() {
-        val result = filterMentionUsers(sampleUsers, "AL")
-
-        assertEquals(listOf(sampleUsers[0]), result)
-    }
-
-    @Test
-    fun `filter matches display name case insensitively`() {
-        val result = filterMentionUsers(sampleUsers, "builder")
-
-        assertEquals(listOf(sampleUsers[1]), result)
-    }
-
-    @Test
-    fun `filter returns empty list when no users match`() {
-        val result = filterMentionUsers(sampleUsers, "xyz")
-
-        assertEquals(emptyList(), result)
-    }
-
     @Test
     fun `detectMentionState activates when at symbol typed at start of line`() {
         val result = detectMentionState(

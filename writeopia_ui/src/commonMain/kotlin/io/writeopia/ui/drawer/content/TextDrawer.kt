@@ -190,10 +190,6 @@ class TextDrawer(
         var mentionStartPosition by remember { mutableIntStateOf(-1) }
         var selectedMentionIndex by remember { mutableIntStateOf(0) }
 
-        val filteredMentionUsers = remember(mentionUsers, mentionFilter) {
-            filterMentionUsers(mentionUsers, mentionFilter)
-        }
-
         val selectMention: (MentionUser) -> Unit = { user ->
             val currentText = inputText.text
             val safeStart = mentionStartPosition.coerceIn(0, currentText.length)
@@ -316,20 +312,20 @@ class TextDrawer(
                             }
                         }
                         .onPreviewKeyEvent { keyEvent ->
-                            if (showMentionPopup && (isMentionLoading || filteredMentionUsers.isNotEmpty())) {
+                            if (showMentionPopup && (isMentionLoading || mentionUsers.isNotEmpty())) {
                                 when {
-                                    keyEvent.key == Key.DirectionDown && filteredMentionUsers.isNotEmpty() -> {
+                                    keyEvent.key == Key.DirectionDown && mentionUsers.isNotEmpty() -> {
                                         if (keyEvent.type == KeyEventType.KeyDown) {
                                             selectedMentionIndex =
-                                                (selectedMentionIndex + 1) % filteredMentionUsers.size
+                                                (selectedMentionIndex + 1) % mentionUsers.size
                                         }
                                         return@onPreviewKeyEvent true
                                     }
 
-                                    keyEvent.key == Key.DirectionUp && filteredMentionUsers.isNotEmpty() -> {
+                                    keyEvent.key == Key.DirectionUp && mentionUsers.isNotEmpty() -> {
                                         if (keyEvent.type == KeyEventType.KeyDown) {
                                             selectedMentionIndex = if (selectedMentionIndex <= 0) {
-                                                filteredMentionUsers.lastIndex
+                                                mentionUsers.lastIndex
                                             } else {
                                                 selectedMentionIndex - 1
                                             }
@@ -337,13 +333,13 @@ class TextDrawer(
                                         return@onPreviewKeyEvent true
                                     }
 
-                                    keyEvent.key.isEnterKey() && filteredMentionUsers.isNotEmpty() -> {
+                                    keyEvent.key.isEnterKey() && mentionUsers.isNotEmpty() -> {
                                         if (keyEvent.type == KeyEventType.KeyDown) {
                                             val index = selectedMentionIndex.coerceIn(
                                                 0,
-                                                filteredMentionUsers.lastIndex
+                                                mentionUsers.lastIndex
                                             )
-                                            selectMention(filteredMentionUsers[index])
+                                            selectMention(mentionUsers[index])
                                         }
                                         return@onPreviewKeyEvent true
                                     }
@@ -566,14 +562,14 @@ class TextDrawer(
             }
 
             val popupTargetIndex = when {
-                filteredMentionUsers.isEmpty() -> 0
-                else -> selectedMentionIndex.coerceIn(0, filteredMentionUsers.lastIndex)
+                mentionUsers.isEmpty() -> 0
+                else -> selectedMentionIndex.coerceIn(0, mentionUsers.lastIndex)
             }
 
             MentionPopup(
-                expanded = showMentionPopup && (isMentionLoading || filteredMentionUsers.isNotEmpty()),
+                expanded = showMentionPopup && (isMentionLoading || mentionUsers.isNotEmpty()),
                 isLoading = isMentionLoading,
-                users = filteredMentionUsers,
+                users = mentionUsers,
                 selectedIndex = popupTargetIndex,
                 onUserSelected = selectMention,
                 onDismiss = {

@@ -24,17 +24,6 @@ import io.writeopia.sdk.models.user.MentionUser
 
 private val MIN_MENTION_DROPDOWN_WIDTH = 112.dp
 
-fun filterMentionUsers(
-    users: List<MentionUser>,
-    filter: String,
-): List<MentionUser> {
-    if (filter.isEmpty()) return users
-    return users.filter { user ->
-        user.username.contains(filter, ignoreCase = true) ||
-            user.name.contains(filter, ignoreCase = true)
-    }
-}
-
 @Composable
 fun MentionPopup(
     expanded: Boolean,
