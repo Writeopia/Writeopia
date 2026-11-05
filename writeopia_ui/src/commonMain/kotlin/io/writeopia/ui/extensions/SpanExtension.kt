@@ -31,17 +31,10 @@ fun Span.toSpanStyle(isDarkTheme: Boolean): SpanStyle =
             SpanStyle(background = Color(0xFFEF9A9A))
         }
 
-        Span.MENTION -> if (isDarkTheme) {
-            SpanStyle(
-                color = Color(0xFFE987D0),
-                fontWeight = FontWeight.Medium,
-            )
-        } else {
-            SpanStyle(
-                color = Color(0xFFB7409A),
-                fontWeight = FontWeight.Medium,
-            )
-        }
+        Span.MENTION -> SpanStyle(
+            color = if (isDarkTheme) Color(0xFFE987D0) else Color(0xFFB7409A),
+            fontWeight = FontWeight.Medium,
+        )
 
         Span.NONE -> SpanStyle()
         Span.LINK -> SpanStyle()
