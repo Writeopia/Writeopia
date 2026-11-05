@@ -57,6 +57,7 @@ import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
 import io.writeopia.sdk.models.story.TagInfo
 import io.writeopia.sdk.models.user.MentionUser
+import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.ui.drawer.SimpleTextDrawer
 import io.writeopia.ui.drawer.factory.EndOfText
 import io.writeopia.ui.drawer.factory.isEnterKey
@@ -99,7 +100,7 @@ class TextDrawer(
     private val slashCommands: List<SlashCommand> = defaultSlashCommands,
     private val slashCommandsEnabled: Boolean = true,
     private val mentionsEnabled: Boolean = true,
-    private val mentionUsersState: StateFlow<List<MentionUser>> = MutableStateFlow(emptyList()),
+    private val mentionUsersState: StateFlow<ResultData<List<MentionUser>>> = MutableStateFlow(ResultData.Idle()),
     private val onMentionSearch: (String) -> Unit = {},
     private val onMentionDismiss: () -> Unit = {},
     private val spellChecker: SpellChecker? = null
@@ -180,7 +181,10 @@ class TextDrawer(
         var slashStartPosition by remember { mutableIntStateOf(-1) }
 
         // User mention popup state
-        val mentionUsers by mentionUsersState.collectAsState()
+        val mentionResultState by mentionUsersState.collectAsState()
+        val isMentionLoading =
+            mentionResultState is ResultData.Loading || mentionResultState is ResultData.InProgress
+        val mentionUsers = (mentionResultState as? ResultData.Complete)?.data ?: emptyList()
         var showMentionPopup by remember { mutableStateOf(false) }
         var mentionFilter by remember { mutableStateOf("") }
         var mentionStartPosition by remember { mutableIntStateOf(-1) }
@@ -312,9 +316,9 @@ class TextDrawer(
                             }
                         }
                         .onPreviewKeyEvent { keyEvent ->
-                            if (showMentionPopup && filteredMentionUsers.isNotEmpty()) {
+                            if (showMentionPopup && (isMentionLoading || filteredMentionUsers.isNotEmpty())) {
                                 when {
-                                    keyEvent.key == Key.DirectionDown -> {
+                                    keyEvent.key == Key.DirectionDown && filteredMentionUsers.isNotEmpty() -> {
                                         if (keyEvent.type == KeyEventType.KeyDown) {
                                             selectedMentionIndex =
                                                 (selectedMentionIndex + 1) % filteredMentionUsers.size
@@ -322,7 +326,7 @@ class TextDrawer(
                                         return@onPreviewKeyEvent true
                                     }
 
-                                    keyEvent.key == Key.DirectionUp -> {
+                                    keyEvent.key == Key.DirectionUp && filteredMentionUsers.isNotEmpty() -> {
                                         if (keyEvent.type == KeyEventType.KeyDown) {
                                             selectedMentionIndex = if (selectedMentionIndex <= 0) {
                                                 filteredMentionUsers.lastIndex
@@ -333,7 +337,7 @@ class TextDrawer(
                                         return@onPreviewKeyEvent true
                                     }
 
-                                    keyEvent.key.isEnterKey() -> {
+                                    keyEvent.key.isEnterKey() && filteredMentionUsers.isNotEmpty() -> {
                                         if (keyEvent.type == KeyEventType.KeyDown) {
                                             val index = selectedMentionIndex.coerceIn(
                                                 0,
@@ -567,7 +571,8 @@ class TextDrawer(
             }
 
             MentionPopup(
-                expanded = showMentionPopup && filteredMentionUsers.isNotEmpty(),
+                expanded = showMentionPopup && (isMentionLoading || filteredMentionUsers.isNotEmpty()),
+                isLoading = isMentionLoading,
                 users = filteredMentionUsers,
                 selectedIndex = popupTargetIndex,
                 onUserSelected = selectMention,

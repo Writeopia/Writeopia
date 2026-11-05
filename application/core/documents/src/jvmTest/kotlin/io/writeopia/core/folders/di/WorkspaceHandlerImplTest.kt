@@ -3,7 +3,6 @@ package io.writeopia.core.folders.di
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
-import io.writeopia.app.dto.PaginatedUserSearchResponse
 import io.writeopia.app.dto.SearchUserApi
 import io.writeopia.auth.core.data.WorkspaceApi
 import io.writeopia.auth.core.manager.AuthRepository
@@ -238,15 +237,8 @@ class WorkspaceHandlerImplTest {
         val candidate = SearchUserApi(id = "u1", name = "Alice", username = "alice")
         val workspaceApi = mockk<WorkspaceApi> {
             coEvery {
-                searchUsers(workspaceId = "ws1", usernameQuery = "ali", pageSize = 5)
-            } returns ResultData.Complete(
-                PaginatedUserSearchResponse(
-                    users = listOf(candidate),
-                    page = 1,
-                    pageSize = 5,
-                    hasNextPage = false,
-                )
-            )
+                searchUsers(workspaceId = "ws1", usernameQuery = "ali")
+            } returns ResultData.Complete(listOf(candidate))
         }
         val handler = createHandler(isLoggedIn = true, workspaceApi = workspaceApi)
         val scope = CoroutineScope(Dispatchers.Default + Job())
@@ -265,7 +257,7 @@ class WorkspaceHandlerImplTest {
         assertTrue(handler.userSearchResults.value is ResultData.Idle)
 
         delay(400)
-        coVerify(exactly = 1) { workspaceApi.searchUsers(any(), any(), any(), any()) }
+        coVerify(exactly = 1) { workspaceApi.searchUsers(any(), any()) }
     }
 
     private fun createHandler(

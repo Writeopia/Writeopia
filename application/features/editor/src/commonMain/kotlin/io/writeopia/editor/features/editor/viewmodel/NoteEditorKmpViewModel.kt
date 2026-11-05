@@ -262,15 +262,15 @@ class NoteEditorKmpViewModel(
         }
     }
 
-    private val _mentionSuggestions = MutableStateFlow<List<MentionUser>>(emptyList())
-    override val mentionSuggestions: StateFlow<List<MentionUser>> = _mentionSuggestions.asStateFlow()
+    private val _mentionSuggestions = MutableStateFlow<ResultData<List<MentionUser>>>(ResultData.Idle())
+    override val mentionSuggestions: StateFlow<ResultData<List<MentionUser>>> = _mentionSuggestions.asStateFlow()
 
     private var mentionSearchJob: Job? = null
 
     override fun searchMention(query: String) {
         mentionSearchJob?.cancel()
         if (workspaceApi == null || query.length < 2) {
-            _mentionSuggestions.value = emptyList()
+            _mentionSuggestions.value = ResultData.Idle()
             return
         }
 
@@ -280,15 +280,16 @@ class NoteEditorKmpViewModel(
                 workspaceId == Workspace.disconnectedWorkspace().id ||
                 !authRepository.isLoggedIn()
             ) {
-                _mentionSuggestions.value = emptyList()
+                _mentionSuggestions.value = ResultData.Idle()
                 return@launch
             }
 
             delay(200)
-            val result = workspaceApi.autocompleteUsers(workspaceId, query, pageSize = 5)
+            _mentionSuggestions.value = ResultData.Loading()
+            val result = workspaceApi.autocompleteUsers(workspaceId, query)
             when (result) {
                 is ResultData.Complete -> {
-                    val users = result.data.users
+                    val users = result.data
                         .filter { it.username.isNotBlank() }
                         .map { user ->
                             MentionUser(
@@ -297,11 +298,11 @@ class NoteEditorKmpViewModel(
                                 username = user.username,
                             )
                         }
-                    _mentionSuggestions.value = users
+                    _mentionSuggestions.value = ResultData.Complete(users)
                 }
 
                 else -> {
-                    _mentionSuggestions.value = emptyList()
+                    _mentionSuggestions.value = ResultData.Idle()
                 }
             }
         }
@@ -309,7 +310,7 @@ class NoteEditorKmpViewModel(
 
     override fun clearMentionSearch() {
         mentionSearchJob?.cancel()
-        _mentionSuggestions.value = emptyList()
+        _mentionSuggestions.value = ResultData.Idle()
     }
 
     init {

@@ -1,13 +1,19 @@
 package io.writeopia.ui.drawer.content
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidthIn
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -32,6 +38,7 @@ fun filterMentionUsers(
 @Composable
 fun MentionPopup(
     expanded: Boolean,
+    isLoading: Boolean = false,
     users: List<MentionUser>,
     selectedIndex: Int = 0,
     onUserSelected: (MentionUser) -> Unit,
@@ -39,7 +46,7 @@ fun MentionPopup(
     modifier: Modifier = Modifier,
 ) {
     DropdownMenu(
-        expanded = expanded && users.isNotEmpty(),
+        expanded = expanded && (isLoading || users.isNotEmpty()),
         onDismissRequest = onDismiss,
         modifier = modifier.requiredWidthIn(
             min = MIN_MENTION_DROPDOWN_WIDTH,
@@ -47,20 +54,35 @@ fun MentionPopup(
         ),
         properties = PopupProperties(focusable = false),
     ) {
-        users.forEachIndexed { index, user ->
-            DropdownMenuItem(
+        if (isLoading) {
+            Box(
                 modifier = Modifier
                     .requiredWidthIn(min = MIN_MENTION_DROPDOWN_WIDTH, max = Dp.Unspecified)
-                    .background(
-                        if (index == selectedIndex) {
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                        } else {
-                            Color.Transparent
-                        },
-                    ),
-                text = { MentionUserItem(user) },
-                onClick = { onUserSelected(user) },
-            )
+                    .fillMaxWidth()
+                    .padding(vertical = 12.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp,
+                )
+            }
+        } else {
+            users.forEachIndexed { index, user ->
+                DropdownMenuItem(
+                    modifier = Modifier
+                        .requiredWidthIn(min = MIN_MENTION_DROPDOWN_WIDTH, max = Dp.Unspecified)
+                        .background(
+                            if (index == selectedIndex) {
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                            } else {
+                                Color.Transparent
+                            },
+                        ),
+                    text = { MentionUserItem(user) },
+                    onClick = { onUserSelected(user) },
+                )
+            }
         }
     }
 }

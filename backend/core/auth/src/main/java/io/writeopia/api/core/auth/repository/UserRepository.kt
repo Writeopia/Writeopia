@@ -196,14 +196,12 @@ fun WriteopiaDbBackend.searchUsersByUsernameNotInWorkspace(
     workspaceId: String,
     usernameQuery: String,
     limit: Long,
-    offset: Long,
 ): List<UsernameSearchResult> =
     this.userEntityQueries
         .searchUsersByUsernameNotInWorkspace(
             workspaceId,
             escapeLikeWildcards(usernameQuery),
-            limit,
-            offset
+            limit
         )
         .executeAsList()
         .map { result ->
@@ -218,14 +216,12 @@ fun WriteopiaDbBackend.searchUsersByUsernameInWorkspace(
     workspaceId: String,
     usernameQuery: String,
     limit: Long,
-    offset: Long,
 ): List<UsernameSearchResult> =
     this.userEntityQueries
         .searchUsersByUsernameInWorkspace(
             workspaceId,
             escapeLikeWildcards(usernameQuery),
-            limit,
-            offset
+            limit
         )
         .executeAsList()
         .map { result ->

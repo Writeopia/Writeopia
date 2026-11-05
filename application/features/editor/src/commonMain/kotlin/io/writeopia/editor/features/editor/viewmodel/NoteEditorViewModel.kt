@@ -13,6 +13,7 @@ import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.story.Tag
 import io.writeopia.sdk.models.user.MentionUser
+import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.ui.backstack.BackstackHandler
 import io.writeopia.ui.backstack.BackstackInform
 import io.writeopia.ui.manager.WriteopiaStateManager
@@ -277,7 +278,7 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 
     fun onAddSpreadsheetClick(columnCount: Int)
 
-    val mentionSuggestions: StateFlow<List<MentionUser>>
+    val mentionSuggestions: StateFlow<ResultData<List<MentionUser>>>
 
     fun searchMention(query: String)
 

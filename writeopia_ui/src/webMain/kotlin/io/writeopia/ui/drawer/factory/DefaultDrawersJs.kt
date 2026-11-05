@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.story.Tag
 import io.writeopia.sdk.models.user.MentionUser
+import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.ui.drawer.StoryStepDrawer
 import io.writeopia.ui.icons.WrSdkIcons
 import io.writeopia.ui.manager.WriteopiaStateManager
@@ -47,7 +48,7 @@ object DefaultDrawersJs : DrawersFactory {
         linkLeadingIcon: ImageVector?,
         equationToImageUrl: String?,
         customDrawers: Map<Int, StoryStepDrawer>,
-        mentionUsersState: StateFlow<List<MentionUser>>,
+        mentionUsersState: StateFlow<ResultData<List<MentionUser>>>,
         onMentionSearch: (String) -> Unit,
         onMentionDismiss: () -> Unit
     ): Map<Int, StoryStepDrawer> =

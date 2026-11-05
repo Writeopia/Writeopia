@@ -29,16 +29,6 @@ class UserSearchViewModel(
     private val _searchResults = MutableStateFlow<ResultData<List<SearchUserApi>>>(ResultData.Idle())
     val searchResults: StateFlow<ResultData<List<SearchUserApi>>> = _searchResults.asStateFlow()
 
-    private val _isLoadingMore = MutableStateFlow(false)
-    val isLoadingMore: StateFlow<Boolean> = _isLoadingMore.asStateFlow()
-
-    private val _hasMorePages = MutableStateFlow(false)
-    val hasMorePages: StateFlow<Boolean> = _hasMorePages.asStateFlow()
-
-    private var currentPage = 1
-    private val pageSize = 20
-    private val loadedUsers = mutableListOf<SearchUserApi>()
-
     init {
         viewModelScope.launch {
             _searchQuery
@@ -57,66 +47,25 @@ class UserSearchViewModel(
         _searchQuery.value = query
         if (query.length < 2) {
             _searchResults.value = ResultData.Idle()
-            loadedUsers.clear()
-            currentPage = 1
-            _hasMorePages.value = false
         }
     }
 
     private suspend fun searchUsers(query: String) {
         _searchResults.value = ResultData.Loading()
-        currentPage = 1
-        loadedUsers.clear()
 
         val result = workspaceApi.searchUsers(
             workspaceId = workspaceId,
             usernameQuery = query,
-            page = currentPage,
-            pageSize = pageSize
         )
 
         when (result) {
             is ResultData.Complete -> {
-                loadedUsers.addAll(result.data.users)
-                _searchResults.value = ResultData.Complete(loadedUsers.toList())
-                _hasMorePages.value = result.data.hasNextPage
+                _searchResults.value = ResultData.Complete(result.data)
             }
             is ResultData.Error -> {
                 _searchResults.value = ResultData.Error(result.exception)
             }
             else -> {}
-        }
-    }
-
-    fun loadMoreResults() {
-        if (_isLoadingMore.value || !_hasMorePages.value) return
-        val query = _searchQuery.value
-        if (query.length < 2) return
-
-        viewModelScope.launch {
-            _isLoadingMore.value = true
-            currentPage++
-
-            val result = workspaceApi.searchUsers(
-                workspaceId = workspaceId,
-                usernameQuery = query,
-                page = currentPage,
-                pageSize = pageSize
-            )
-
-            when (result) {
-                is ResultData.Complete -> {
-                    loadedUsers.addAll(result.data.users)
-                    _searchResults.value = ResultData.Complete(loadedUsers.toList())
-                    _hasMorePages.value = result.data.hasNextPage
-                }
-                is ResultData.Error -> {
-                    currentPage-- // Revert page on error
-                }
-                else -> {}
-            }
-
-            _isLoadingMore.value = false
         }
     }
 }

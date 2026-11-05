@@ -129,7 +129,7 @@ object Spans {
 
             if (edit.start <= span.start) return setOf(span.move(edit.insertedSize))
             if (edit.start >= span.end) return setOf(span)
-            
+
             if (span.span == Span.MENTION) return emptySet()
 
             if (span.expandable()) {
@@ -160,14 +160,10 @@ object Spans {
         if (span.span == Span.MENTION) return emptySet()
 
         val coversEdit = span.start <= edit.start && span.end >= edit.end
-        if (coversEdit && span.span == Span.MENTION) {
-            return emptySet()
-        }
         if (coversEdit && (edit.insertedSize == 0 || span.expandable())) {
             val resized = span.copy(end = span.end + delta)
             return if (resized.end > resized.start) setOf(resized) else emptySet()
         }
-
 
         val fragments = mutableSetOf<SpanInfo>()
 

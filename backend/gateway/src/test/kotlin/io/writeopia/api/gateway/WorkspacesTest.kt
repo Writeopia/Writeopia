@@ -16,8 +16,8 @@ import io.writeopia.api.core.auth.repository.enableUserByEmail
 import io.writeopia.api.documents.documents.repository.deleteDocumentById
 import io.writeopia.api.geteway.configurePersistence
 import io.writeopia.api.geteway.module
-import io.writeopia.app.dto.PaginatedUserSearchResponse
 import io.writeopia.app.dto.PaginatedWorkspaceUsersResponse
+import io.writeopia.app.dto.SearchUserApi
 import io.writeopia.app.dto.WorkspaceUserApi
 import io.writeopia.app.requests.AddUserToWorkspaceRequest
 import io.writeopia.sdk.serialization.data.DocumentApi
@@ -704,8 +704,8 @@ class WorkspacesTest {
             contentType(ContentType.Application.Json)
         }
         assertEquals(HttpStatusCode.OK, searchResponse.status)
-        val searchResults = searchResponse.body<PaginatedUserSearchResponse>()
-        assertTrue(searchResults.users.any { it.username == targetUsername })
+        val searchResults = searchResponse.body<List<SearchUserApi>>()
+        assertTrue(searchResults.any { it.username == targetUsername })
 
         // 2. Add candidate to workspace using username
         val addResponse = client.post("/api/workspace/user") {
@@ -729,8 +729,8 @@ class WorkspacesTest {
         // 4. Searching again should exclude candidate since they are already a member
         val searchAgainResponse = client.get("/api/workspace/${workspace.id}/users/search?username=target_member") {
             contentType(ContentType.Application.Json)
-        }.body<PaginatedUserSearchResponse>()
-        assertTrue(searchAgainResponse.users.none { it.username == targetUsername })
+        }.body<List<SearchUserApi>>()
+        assertTrue(searchAgainResponse.none { it.username == targetUsername })
 
         // 5. Adding the candidate again should return 409 Conflict
         val addAgainResponse = client.post("/api/workspace/user") {
@@ -751,7 +751,7 @@ class WorkspacesTest {
     }
 
     @Test
-    fun `it should validate and clamp page and pageSize bounds in search and paginated endpoints`() = testApplication {
+    fun `it should validate and clamp page and pageSize bounds in paginated endpoints`() = testApplication {
         application {
             module(db, debugMode = true, adminKey = "somekey")
         }
@@ -781,33 +781,7 @@ class WorkspacesTest {
             contentType(ContentType.Application.Json)
         }.body<List<WorkspaceApi>>().first()
 
-        // 1. Search with pageSize = 1000000 should be clamped to 100 and succeed (not 500 or unbounded)
-        val searchHuge = client.get("/api/workspace/${workspace.id}/users/search?username=bounds&pageSize=1000000") {
-            contentType(ContentType.Application.Json)
-        }
-        assertEquals(HttpStatusCode.OK, searchHuge.status)
-        val searchHugeResult = searchHuge.body<PaginatedUserSearchResponse>()
-        assertEquals(100, searchHugeResult.pageSize)
-
-        // 2. Search with page = 0 and pageSize = 0 should be clamped to 1 and succeed (not PostgreSQL 500)
-        val searchZero = client.get("/api/workspace/${workspace.id}/users/search?username=bounds&page=0&pageSize=0") {
-            contentType(ContentType.Application.Json)
-        }
-        assertEquals(HttpStatusCode.OK, searchZero.status)
-        val searchZeroResult = searchZero.body<PaginatedUserSearchResponse>()
-        assertEquals(1, searchZeroResult.page)
-        assertEquals(1, searchZeroResult.pageSize)
-
-        // 3. Search with negative page and pageSize should be clamped to 1 and succeed
-        val searchNegative = client.get("/api/workspace/${workspace.id}/users/search?username=bounds&page=-5&pageSize=-20") {
-            contentType(ContentType.Application.Json)
-        }
-        assertEquals(HttpStatusCode.OK, searchNegative.status)
-        val searchNegativeResult = searchNegative.body<PaginatedUserSearchResponse>()
-        assertEquals(1, searchNegativeResult.page)
-        assertEquals(1, searchNegativeResult.pageSize)
-
-        // 4. Paginated users with page = -1 and pageSize = 1000000 should clamp to page 1 and pageSize 100
+        // Paginated users with page = -1 and pageSize = 1000000 should clamp to page 1 and pageSize 100
         val paginatedResponse = client.get("/api/workspace/${workspace.id}/users/paginated?page=-1&pageSize=1000000") {
             contentType(ContentType.Application.Json)
         }
@@ -907,17 +881,17 @@ class WorkspacesTest {
             contentType(ContentType.Application.Json)
         }
         assertEquals(HttpStatusCode.OK, underscoreSearch.status)
-        val underscoreResults = underscoreSearch.body<PaginatedUserSearchResponse>()
-        assertTrue(underscoreResults.users.any { it.username == activeUsername })
-        assertTrue(underscoreResults.users.none { it.username == activeUsername2 })
+        val underscoreResults = underscoreSearch.body<List<SearchUserApi>>()
+        assertTrue(underscoreResults.any { it.username == activeUsername })
+        assertTrue(underscoreResults.none { it.username == activeUsername2 })
 
         // 2. Unconfirmed user should NOT be returned
         val unconfirmedSearch = client.get("/api/workspace/${workspace.id}/users/search?username=sec_unconf") {
             contentType(ContentType.Application.Json)
         }
         assertEquals(HttpStatusCode.OK, unconfirmedSearch.status)
-        val unconfirmedResults = unconfirmedSearch.body<PaginatedUserSearchResponse>()
-        assertTrue(unconfirmedResults.users.none { it.username == unconfirmedUsername })
+        val unconfirmedResults = unconfirmedSearch.body<List<SearchUserApi>>()
+        assertTrue(unconfirmedResults.none { it.username == unconfirmedUsername })
 
         // Clean up
         db.deleteUserByEmail(ownerEmail)
@@ -1009,10 +983,10 @@ class WorkspacesTest {
             contentType(ContentType.Application.Json)
         }
         assertEquals(HttpStatusCode.OK, autocompleteResponse.status)
-        val autocompleteResult = autocompleteResponse.body<PaginatedUserSearchResponse>()
-        assertTrue(autocompleteResult.users.any { it.username == memberUsername })
-        assertTrue(autocompleteResult.users.any { it.username == ownerUsername })
-        assertTrue(autocompleteResult.users.none { it.username == outsiderUsername })
+        val autocompleteResult = autocompleteResponse.body<List<SearchUserApi>>()
+        assertTrue(autocompleteResult.any { it.username == memberUsername })
+        assertTrue(autocompleteResult.any { it.username == ownerUsername })
+        assertTrue(autocompleteResult.none { it.username == outsiderUsername })
 
         // Clean up
         db.deleteUserByEmail(ownerEmail)

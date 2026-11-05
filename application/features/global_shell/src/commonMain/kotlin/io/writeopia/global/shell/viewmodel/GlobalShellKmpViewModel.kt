@@ -867,6 +867,10 @@ class GlobalShellKmpViewModel(
         workspaceHandler.onUserSuggestionSelect(user)
     }
 
+    override fun dismissUserSearch() {
+        workspaceHandler.dismissUserSearch()
+    }
+
     override fun selectWorkspaceToManage(workspaceId: String) {
         workspaceHandler.selectWorkspaceToManage(workspaceId)
     }

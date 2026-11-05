@@ -15,8 +15,8 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
-import io.writeopia.app.dto.PaginatedUserSearchResponse
 import io.writeopia.app.dto.PaginatedWorkspaceUsersResponse
+import io.writeopia.app.dto.SearchUserApi
 import io.writeopia.app.dto.WorkspaceUserApi
 import io.writeopia.app.requests.AddUserToWorkspaceRequest
 import io.writeopia.app.requests.CreateWorkspaceRequest
@@ -169,19 +169,15 @@ class WorkspaceApi(
     suspend fun searchUsers(
         workspaceId: String,
         usernameQuery: String,
-        page: Int = 1,
-        pageSize: Int = 5
-    ): ResultData<PaginatedUserSearchResponse> = try {
+    ): ResultData<List<SearchUserApi>> = try {
         val response = client.get("$baseUrl/api/workspace/$workspaceId/users/search") {
             url {
                 parameters.append("username", usernameQuery)
-                parameters.append("page", page.toString())
-                parameters.append("pageSize", pageSize.toString())
             }
         }
 
         if (response.status.isSuccess()) {
-            ResultData.Complete(response.body<PaginatedUserSearchResponse>())
+            ResultData.Complete(response.body<List<SearchUserApi>>())
         } else {
             ResultData.Error()
         }
@@ -195,19 +191,15 @@ class WorkspaceApi(
     suspend fun autocompleteUsers(
         workspaceId: String,
         usernameQuery: String,
-        page: Int = 1,
-        pageSize: Int = 5
-    ): ResultData<PaginatedUserSearchResponse> = try {
+    ): ResultData<List<SearchUserApi>> = try {
         val response = client.get("$baseUrl/api/workspace/$workspaceId/users/autocomplete") {
             url {
                 parameters.append("username", usernameQuery)
-                parameters.append("page", page.toString())
-                parameters.append("pageSize", pageSize.toString())
             }
         }
 
         if (response.status.isSuccess()) {
-            ResultData.Complete(response.body<PaginatedUserSearchResponse>())
+            ResultData.Complete(response.body<List<SearchUserApi>>())
         } else {
             ResultData.Error()
         }

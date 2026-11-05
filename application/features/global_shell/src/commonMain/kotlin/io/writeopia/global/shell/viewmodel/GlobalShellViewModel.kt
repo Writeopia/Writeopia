@@ -133,6 +133,8 @@ interface GlobalShellViewModel : FolderController, LocalAiConfigController {
 
     fun onUserSuggestionSelect(user: SearchUserApi)
 
+    fun dismissUserSearch()
+
     fun selectWorkspaceToManage(workspaceId: String)
 
     fun exportWorkspace(workspaceId: String)

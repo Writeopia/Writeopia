@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.CircularProgressIndicator
@@ -22,12 +21,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,25 +35,18 @@ import io.writeopia.resources.WrStrings
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.theme.WriteopiaTheme
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filter
 
 @Composable
 fun UserSearchScreen(
     workspaceName: String,
     searchQuery: StateFlow<String>,
     searchResults: StateFlow<ResultData<List<SearchUserApi>>>,
-    isLoadingMore: StateFlow<Boolean>,
-    hasMorePages: StateFlow<Boolean>,
     onSearchQueryChange: (String) -> Unit,
-    onLoadMore: () -> Unit,
     onUserClick: (SearchUserApi) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val query by searchQuery.collectAsState()
     val results by searchResults.collectAsState()
-    val isLoadingMoreResults by isLoadingMore.collectAsState()
-    val hasMore by hasMorePages.collectAsState()
 
     Column(
         modifier = modifier.fillMaxSize()
@@ -108,9 +96,6 @@ fun UserSearchScreen(
                 } else {
                     SearchResultsList(
                         users = currentResults.data,
-                        isLoadingMore = isLoadingMoreResults,
-                        hasMore = hasMore,
-                        onLoadMore = onLoadMore,
                         onUserClick = onUserClick
                     )
                 }
@@ -150,33 +135,9 @@ fun UserSearchScreen(
 @Composable
 private fun SearchResultsList(
     users: List<SearchUserApi>,
-    isLoadingMore: Boolean,
-    hasMore: Boolean,
-    onLoadMore: () -> Unit,
     onUserClick: (SearchUserApi) -> Unit
 ) {
-    val listState = rememberLazyListState()
-
-    // Detect when scrolled near the end
-    val shouldLoadMore by remember {
-        derivedStateOf {
-            val lastVisibleItem = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
-            val totalItems = listState.layoutInfo.totalItemsCount
-            lastVisibleItem >= totalItems - 3 && hasMore && !isLoadingMore
-        }
-    }
-
-    LaunchedEffect(listState) {
-        snapshotFlow { shouldLoadMore }
-            .distinctUntilChanged()
-            .filter { it }
-            .collect {
-                onLoadMore()
-            }
-    }
-
     LazyColumn(
-        state = listState,
         modifier = Modifier.fillMaxSize()
     ) {
         items(users, key = { it.id }) { user ->
@@ -184,19 +145,6 @@ private fun SearchResultsList(
                 user = user,
                 onClick = { onUserClick(user) }
             )
-        }
-
-        if (isLoadingMore) {
-            item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                }
-            }
         }
     }
 }

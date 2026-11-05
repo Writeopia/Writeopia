@@ -20,6 +20,7 @@ import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.user.MentionUser
+import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.ui.drawer.SimpleTextDrawer
 import io.writeopia.ui.drawer.StoryStepDrawer
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -85,7 +86,7 @@ object CommonDrawers {
         ),
         slashCommandsEnabled: Boolean = true,
         spellChecker: SpellChecker? = null,
-        mentionUsersState: StateFlow<List<MentionUser>> = MutableStateFlow(emptyList()),
+        mentionUsersState: StateFlow<ResultData<List<MentionUser>>> = MutableStateFlow(ResultData.Idle()),
         onMentionSearch: (String) -> Unit = {},
         onMentionDismiss: () -> Unit = {}
     ): Map<Int, StoryStepDrawer> {
@@ -416,7 +417,7 @@ private fun RowScope.messageDrawer(
     slashCommands: List<SlashCommand> = defaultSlashCommands,
     slashCommandsEnabled: Boolean = true,
     spellChecker: SpellChecker? = null,
-    mentionUsersState: StateFlow<List<MentionUser>> = MutableStateFlow(emptyList()),
+    mentionUsersState: StateFlow<ResultData<List<MentionUser>>> = MutableStateFlow(ResultData.Idle()),
     onMentionSearch: (String) -> Unit = {},
     onMentionDismiss: () -> Unit = {}
 ): TextDrawer =
