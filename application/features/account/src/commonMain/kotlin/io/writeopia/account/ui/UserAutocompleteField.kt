@@ -3,6 +3,8 @@ package io.writeopia.account.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidthIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicText
@@ -17,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
@@ -43,19 +46,20 @@ internal fun UserAutocompleteField(
     suggestions: ResultData<List<SearchUserApi>>,
     onValueChange: (String) -> Unit,
     onSuggestionSelect: (SearchUserApi) -> Unit,
+    onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val items = (suggestions as? ResultData.Complete)?.data ?: emptyList()
     val isSearching = suggestions is ResultData.Loading || suggestions is ResultData.InProgress
+    val isExpanded = isSearching || items.isNotEmpty()
 
-    var isExpanded by remember(suggestions) { mutableStateOf(items.isNotEmpty()) }
     var selectedIndex by remember(suggestions) { mutableStateOf(-1) }
     val density = LocalDensity.current
     var fieldWidth by remember { mutableStateOf(0.dp) }
 
     fun closePopup() {
-        isExpanded = false
         selectedIndex = -1
+        onDismiss()
     }
 
     fun select(item: SearchUserApi) {
@@ -130,6 +134,7 @@ internal fun UserAutocompleteField(
 
         UserSuggestionsDropdown(
             expanded = isExpanded,
+            isLoading = isSearching,
             suggestions = items,
             selectedIndex = selectedIndex,
             minWidth = fieldWidth,
@@ -142,6 +147,7 @@ internal fun UserAutocompleteField(
 @Composable
 private fun UserSuggestionsDropdown(
     expanded: Boolean,
+    isLoading: Boolean,
     suggestions: List<SearchUserApi>,
     selectedIndex: Int,
     onSelect: (SearchUserApi) -> Unit,
@@ -149,7 +155,7 @@ private fun UserSuggestionsDropdown(
     minWidth: Dp = MIN_DROPDOWN_WIDTH,
 ) {
     DropdownMenu(
-        expanded = expanded && suggestions.isNotEmpty(),
+        expanded = expanded && (isLoading || suggestions.isNotEmpty()),
         onDismissRequest = onDismiss,
         modifier = Modifier.requiredWidthIn(
             min = if (minWidth > 0.dp) minWidth else MIN_DROPDOWN_WIDTH,
@@ -157,20 +163,34 @@ private fun UserSuggestionsDropdown(
         ),
         properties = PopupProperties(focusable = false)
     ) {
-        suggestions.forEachIndexed { index, user ->
-            DropdownMenuItem(
+        if (isLoading) {
+            Box(
                 modifier = Modifier
-                    .requiredWidthIn(min = MIN_DROPDOWN_WIDTH, max = Dp.Unspecified)
-                    .background(
-                        if (index == selectedIndex) {
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                        } else {
-                            Color.Transparent
-                        }
-                    ),
-                text = { UserSuggestionItem(user) },
-                onClick = { onSelect(user) }
-            )
+                    .fillMaxWidth()
+                    .padding(vertical = 12.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp,
+                )
+            }
+        } else {
+            suggestions.forEachIndexed { index, user ->
+                DropdownMenuItem(
+                    modifier = Modifier
+                        .requiredWidthIn(min = MIN_DROPDOWN_WIDTH, max = Dp.Unspecified)
+                        .background(
+                            if (index == selectedIndex) {
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                            } else {
+                                Color.Transparent
+                            }
+                        ),
+                    text = { UserSuggestionItem(user) },
+                    onClick = { onSelect(user) }
+                )
+            }
         }
     }
 }

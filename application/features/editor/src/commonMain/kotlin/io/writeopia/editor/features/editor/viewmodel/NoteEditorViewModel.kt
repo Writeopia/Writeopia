@@ -12,6 +12,8 @@ import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.sdk.models.story.Tag
+import io.writeopia.sdk.models.user.MentionUser
+import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.ui.backstack.BackstackHandler
 import io.writeopia.ui.backstack.BackstackInform
 import io.writeopia.ui.manager.WriteopiaStateManager
@@ -275,6 +277,12 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
     fun copyPublishLink()
 
     fun onAddSpreadsheetClick(columnCount: Int)
+
+    val mentionSuggestions: StateFlow<ResultData<List<MentionUser>>>
+
+    fun searchMention(query: String)
+
+    fun clearMentionSearch()
 }
 
 data class ShareDocument(val content: String, val title: String, val type: String)

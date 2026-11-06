@@ -12,6 +12,7 @@ import io.writeopia.api.core.auth.repository.getUserByUsernameOrEmail
 import io.writeopia.api.core.workspaces.models.AddUserResult
 import io.writeopia.api.core.workspaces.repository.countUsersInWorkspace
 import io.writeopia.api.core.workspaces.repository.getUserInWorkspace
+import io.writeopia.api.core.workspaces.repository.getUserRoleInWorkspace
 import io.writeopia.api.core.workspaces.repository.getUsersInWorkspace
 import io.writeopia.api.core.workspaces.repository.getUsersInWorkspacePaginated
 import io.writeopia.api.core.workspaces.repository.getWorkspaceById
@@ -150,20 +151,20 @@ object WorkspaceService {
             // Note: This check is handled by runIfAdmin in the routing layer
         }
 
-        // Check if user already exists in the workspace
-        val existingUser = writeopiaDb.getUserInWorkspace(workspaceId, username)
-        if (existingUser != null) {
-            println("User with username $username is already in this workspace")
+        val user = writeopiaDb.getUserByUsernameOrEmail(username) ?: run {
+            println("User with identifier $username doesn't exist")
+            return AddUserResult.USER_NOT_FOUND
+        }
+
+        // Check if user already exists in the workspace by userId
+        val existingRole = writeopiaDb.getUserRoleInWorkspace(workspaceId, user.id)
+        if (existingRole != null) {
+            println("User with id ${user.id} ($username) is already in workspace $workspaceId")
             return AddUserResult.USER_ALREADY_IN_WORKSPACE
         }
 
-        return writeopiaDb.getUserByUsernameOrEmail(username)?.id?.let { userId ->
-            writeopiaDb.insertUserInWorkspace(workspaceId, userId, role)
-            AddUserResult.SUCCESS
-        } ?: run {
-            println("User with username $username doesn't exist")
-            AddUserResult.USER_NOT_FOUND
-        }
+        writeopiaDb.insertUserInWorkspace(workspaceId, user.id, role)
+        return AddUserResult.SUCCESS
     }
 
     suspend fun removeUserFromWorkspaceSecure(

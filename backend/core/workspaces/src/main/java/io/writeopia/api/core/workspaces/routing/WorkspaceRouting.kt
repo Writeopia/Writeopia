@@ -8,6 +8,7 @@ import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.put
+import io.writeopia.api.core.auth.repository.searchUsersByUsernameInWorkspace
 import io.writeopia.api.core.auth.repository.searchUsersByUsernameNotInWorkspace
 import io.writeopia.api.core.auth.routing.adminUserFn
 import io.writeopia.api.core.auth.utils.getUserIdFromApiGateway
@@ -20,7 +21,6 @@ import io.writeopia.api.core.workspaces.repository.listWorkspaces
 import io.writeopia.api.core.workspaces.service.WorkspaceService
 import io.writeopia.api.core.workspaces.utils.runIfAdmin
 import io.writeopia.api.core.workspaces.utils.runIfMember
-import io.writeopia.app.dto.PaginatedUserSearchResponse
 import io.writeopia.app.dto.PaginatedWorkspaceUsersResponse
 import io.writeopia.app.dto.SearchUserApi
 import io.writeopia.app.mapping.toApi
@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger("WorkspaceRouting")
 private const val DEFAULT_PAGE_SIZE = 20
-private const val DEFAULT_SEARCH_PAGE_SIZE = 5
+private const val SEARCH_USERS_LIMIT = 5L
 private const val MAX_PAGE_SIZE = 100
 
 fun Routing.workspaceRoute(
@@ -212,9 +212,6 @@ fun Routing.workspaceRoute(
             ?: call.request.queryParameters["query"]
             ?: call.request.queryParameters["email"]
             ?: ""
-        val page = (call.request.queryParameters["page"]?.toIntOrNull() ?: 1).coerceAtLeast(1)
-        val pageSize = (call.request.queryParameters["pageSize"]?.toIntOrNull() ?: DEFAULT_SEARCH_PAGE_SIZE)
-            .coerceIn(1, MAX_PAGE_SIZE)
 
         if (usernameQuery.length < 2) {
             call.respond(HttpStatusCode.BadRequest, ServerResponse("Username query must be at least 2 characters"))
@@ -222,13 +219,11 @@ fun Routing.workspaceRoute(
         }
 
         runIfAdmin(currentUserId, workspaceId, writeopiaDb, debugMode) {
-            val offset = ((page - 1) * pageSize).toLong()
-            val limit = (pageSize + 1).toLong() // Request one extra to check if there's a next page
-
-            val results = writeopiaDb.searchUsersByUsernameNotInWorkspace(workspaceId, usernameQuery, limit, offset)
-
-            val hasNextPage = results.size > pageSize
-            val users = results.take(pageSize).map { user ->
+            val users = writeopiaDb.searchUsersByUsernameNotInWorkspace(
+                workspaceId,
+                usernameQuery,
+                SEARCH_USERS_LIMIT
+            ).map { user ->
                 SearchUserApi(
                     id = user.id,
                     name = user.name,
@@ -236,14 +231,40 @@ fun Routing.workspaceRoute(
                 )
             }
 
-            val response = PaginatedUserSearchResponse(
-                users = users,
-                page = page,
-                pageSize = pageSize,
-                hasNextPage = hasNextPage
-            )
+            call.respond(HttpStatusCode.OK, users)
+        }
+    }
 
-            call.respond(HttpStatusCode.OK, response)
+    get("/api/workspace/{workspaceId}/users/autocomplete") {
+        val currentUserId = call.getUserIdFromApiGateway(debugMode) ?: run {
+            call.respond(HttpStatusCode.Unauthorized, ServerResponse("Authentication required"))
+            return@get
+        }
+        val workspaceId = call.pathParameters["workspaceId"]
+            ?: throw IllegalArgumentException("Workspace id is required")
+        val usernameQuery = call.request.queryParameters["username"]
+            ?: call.request.queryParameters["query"]
+            ?: ""
+
+        if (usernameQuery.length < 2) {
+            call.respond(HttpStatusCode.BadRequest, ServerResponse("Username query must be at least 2 characters"))
+            return@get
+        }
+
+        runIfMember(currentUserId, workspaceId, writeopiaDb, debugMode) {
+            val users = writeopiaDb.searchUsersByUsernameInWorkspace(
+                workspaceId,
+                usernameQuery,
+                SEARCH_USERS_LIMIT
+            ).map { user ->
+                SearchUserApi(
+                    id = user.id,
+                    name = user.name,
+                    username = user.username,
+                )
+            }
+
+            call.respond(HttpStatusCode.OK, users)
         }
     }
 

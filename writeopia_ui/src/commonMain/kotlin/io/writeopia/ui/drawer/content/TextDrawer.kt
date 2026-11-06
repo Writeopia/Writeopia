@@ -31,6 +31,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.TextLayoutResult
@@ -52,6 +53,8 @@ import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
 import io.writeopia.sdk.models.story.TagInfo
+import io.writeopia.sdk.models.user.MentionUser
+import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.ui.drawer.SimpleTextDrawer
 import io.writeopia.ui.drawer.factory.EndOfText
 import io.writeopia.ui.extensions.toTextRange
@@ -92,6 +95,10 @@ class TextDrawer(
     private val textToolbox: @Composable (Boolean) -> Unit = {},
     private val slashCommands: List<SlashCommand> = defaultSlashCommands,
     private val slashCommandsEnabled: Boolean = true,
+    private val mentionsEnabled: Boolean = true,
+    private val mentionUsersState: StateFlow<ResultData<List<MentionUser>>> = MutableStateFlow(ResultData.Idle()),
+    private val onMentionSearch: (String) -> Unit = {},
+    private val onMentionDismiss: () -> Unit = {},
     private val spellChecker: SpellChecker? = null
 ) : SimpleTextDrawer {
 
@@ -108,13 +115,14 @@ class TextDrawer(
         }
 
         val isSuggestion = step.tags.contains(TagInfo(Tag.FIRST_AI_SUGGESTION))
+        val primaryColor = MaterialTheme.colorScheme.primary
 
         var inputText by remember {
             val text = step.text
 
             mutableStateOf(
                 TextFieldValue(
-                    Spans.createStringWithSpans(text, spans, isDarkTheme),
+                    Spans.createStringWithSpans(text, spans, isDarkTheme, primaryColor),
                     selection = drawInfo.selection?.toTextRange(text ?: "")
                         ?: TextRange.Zero
                 )
@@ -167,6 +175,33 @@ class TextDrawer(
         var showSlashCommandPopup by remember { mutableStateOf(false) }
         var slashCommandFilter by remember { mutableStateOf("") }
         var slashStartPosition by remember { mutableIntStateOf(-1) }
+
+        // User mention popup state
+        val mentionHandler = rememberMentionHandler(
+            mentionsEnabled = mentionsEnabled,
+            mentionUsersState = mentionUsersState,
+            onMentionSearch = onMentionSearch,
+            onMentionDismiss = onMentionDismiss,
+            inputText = inputText,
+            spans = spans,
+            isDarkTheme = isDarkTheme,
+            primaryColor = primaryColor,
+            onApplyMention = { updatedFieldValue, updatedSpans ->
+                spans = updatedSpans
+                inputText = updatedFieldValue
+                previousInputText = updatedFieldValue
+                onTextEdit(
+                    TextInput(
+                        updatedFieldValue.text,
+                        updatedFieldValue.selection.start,
+                        updatedFieldValue.selection.end,
+                        updatedSpans,
+                    ),
+                    drawInfo.position,
+                    lineBreakByContent,
+                )
+            },
+        )
 
         val selection by remember {
             derivedStateOf {
@@ -242,6 +277,10 @@ class TextDrawer(
                             }
                         }
                         .onPreviewKeyEvent { keyEvent ->
+                            if (mentionHandler.onKeyEvent(keyEvent)) {
+                                return@onPreviewKeyEvent true
+                            }
+
                             onKeyEvent(
                                 keyEvent,
                                 inputText,
@@ -254,6 +293,9 @@ class TextDrawer(
                         }
                         .onFocusChanged { focusState ->
                             isFocused = focusState.isFocused
+                            if (!focusState.isFocused && mentionHandler.isPopupShown) {
+                                mentionHandler.onDismiss()
+                            }
                             onFocusChanged(drawInfo.position, focusState)
                         }
                         .testTag("MessageDrawer_${drawInfo.position}")
@@ -336,13 +378,12 @@ class TextDrawer(
                             }
                         }
 
+                        // Detect user mention ('@')
+                        mentionHandler.onTextChange(value.text, value.selection.start, sizeDifference)
+
                         val edit = {
                             val updatedInputText = value.copy(
-                                Spans.createStringWithSpans(
-                                    value.text.replace("\n", ""),
-                                    spans,
-                                    isDarkTheme
-                                )
+                                Spans.createStringWithSpans(value.text.replace("\n", ""), spans, isDarkTheme, primaryColor)
                             )
                             inputText = updatedInputText
                             if (previousInputText == value) {
@@ -412,6 +453,15 @@ class TextDrawer(
                     }
                 )
             }
+
+            MentionPopup(
+                expanded = mentionHandler.isPopupShown && (mentionHandler.isLoading || mentionHandler.users.isNotEmpty()),
+                isLoading = mentionHandler.isLoading,
+                users = mentionHandler.users,
+                selectedIndex = mentionHandler.selectedIndex,
+                onUserSelected = mentionHandler.onSelectUser,
+                onDismiss = mentionHandler.onDismiss,
+            )
         }
     }
 }

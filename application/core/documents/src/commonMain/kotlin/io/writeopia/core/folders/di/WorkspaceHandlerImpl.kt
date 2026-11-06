@@ -10,7 +10,6 @@ import io.writeopia.core.folders.sync.ConfigFileWatcher
 import io.writeopia.core.folders.sync.WorkspaceSync
 import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
 import io.writeopia.sdk.models.utils.ResultData
-import io.writeopia.sdk.models.utils.map
 import io.writeopia.sdk.models.workspace.Workspace
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -79,8 +78,7 @@ class WorkspaceHandlerImpl(
                 _userSearchResults.value = workspaceApi.searchUsers(
                     workspaceId = workspaceId,
                     usernameQuery = query,
-                    pageSize = 5
-                ).map { it.users }
+                )
             }
         }
     }
@@ -218,6 +216,10 @@ class WorkspaceHandlerImpl(
     override fun onUserSuggestionSelect(user: SearchUserApi) {
         shouldSearchUsers = false
         _userSearchQuery.value = user.username
+        _userSearchResults.value = ResultData.Idle()
+    }
+
+    override fun dismissUserSearch() {
         _userSearchResults.value = ResultData.Idle()
     }
 
