@@ -54,6 +54,7 @@ import io.writeopia.navigation.Navigation
 import io.writeopia.navigation.notes.navigateToFolder
 import io.writeopia.navigation.notes.navigateToNoteMobile
 import io.writeopia.navigation.notes.navigateToNoteWithPresentation
+import io.writeopia.navigation.notes.navigateToNoteWithSearch
 import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
 import io.writeopia.notemenu.di.NotesMenuInjection
 import io.writeopia.notemenu.di.NotesMenuKmpInjection
@@ -139,6 +140,7 @@ fun DesktopApp(
 
     coroutineScope.launch {
         navigationController.currentBackStackEntryFlow.collect { navEntry ->
+            globalShellViewModel.onDestinationChanged(navEntry.destination.route)
             val navigationType = navEntry.savedStateHandle.get<String?>(NAVIGATION_TYPE)
             val navigationPath = navEntry.savedStateHandle.get<String?>(NAVIGATION_PATH)
             if (navigationType != null && navigationPath != null) {
@@ -351,7 +353,8 @@ fun DesktopApp(
                                     onDismissRequest = globalShellViewModel::hideSearch,
                                     documentClick = navigationController::navigateToNoteMobile,
                                     onFolderClick = navigationController::navigateToFolder,
-                                    presentationClick = navigationController::navigateToNoteWithPresentation
+                                    presentationClick = navigationController::navigateToNoteWithPresentation,
+                                    documentContentClick = navigationController::navigateToNoteWithSearch
                                 )
                             }
 

@@ -43,11 +43,17 @@ fun NavGraphBuilder.editorNavigation(
 ) {
     sharedTransitionScope.run {
         composable(
-            route = "${Destinations.EDITOR.id}/{noteId}/{noteTitle}?presentationId={presentationId}",
+            route = "${Destinations.EDITOR.id}/{noteId}/{noteTitle}?presentationId={presentationId}&searchQuery={searchQuery}",
             arguments = listOf(
                 navArgument("noteId") { type = NavType.StringType },
                 // A presentation of the document to play once it opens, e.g. picked in the search.
                 navArgument("presentationId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                },
+                // Words to find in the document once it opens: the global search found it by them.
+                navArgument("searchQuery") {
                     type = NavType.StringType
                     nullable = true
                     defaultValue = null
@@ -84,6 +90,16 @@ fun NavGraphBuilder.editorNavigation(
                         // Consumed, so coming back to the document doesn't open it again.
                         backStackEntry.savedStateHandle["presentationId"] = null
                         noteDetailsViewModel.presentations?.openPresentation(presentationId)
+                    }
+                }
+
+                val searchQuery = backStackEntry.savedStateHandle.get<String?>("searchQuery")
+                LaunchedEffect(searchQuery) {
+                    if (searchQuery != null) {
+                        // Consumed, so coming back to the document doesn't search it again.
+                        backStackEntry.savedStateHandle["searchQuery"] = null
+                        noteDetailsViewModel.showSearch()
+                        noteDetailsViewModel.searchInDocument(searchQuery.decodeFromNavigation())
                     }
                 }
 

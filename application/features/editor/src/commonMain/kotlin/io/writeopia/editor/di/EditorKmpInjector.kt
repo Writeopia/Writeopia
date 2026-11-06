@@ -10,7 +10,6 @@ import io.writeopia.core.configuration.di.AppConfigurationInjector
 import io.writeopia.core.configuration.di.UiConfigurationCoreInjector
 import io.writeopia.core.folders.di.DocumentTagsInjector
 import io.writeopia.core.folders.di.FoldersInjector
-import io.writeopia.core.folders.di.InDocumentSearchInjection
 import io.writeopia.core.folders.di.WorkspaceInjection
 import io.writeopia.di.LocalAiInjection
 import io.writeopia.genai.di.GenAiInjection
@@ -66,8 +65,6 @@ class EditorKmpInjector private constructor(
         AppConfigurationInjector.singleton(),
     private val localAiInjection: LocalAiInjection? = null,
     private val genAiInjection: GenAiInjection? = null,
-    private val inDocumentSearchInjection: InDocumentSearchInjection =
-        InDocumentSearchInjection.singleton(),
     private val workspaceInjection: WorkspaceInjection =
         WorkspaceInjection.singleton(),
     private val imageUploader: ImageUploader? = null,
@@ -123,7 +120,6 @@ class EditorKmpInjector private constructor(
             copyManager = copyManager,
             workspaceConfigRepository = appConfigurationInjector.provideWorkspaceConfigRepository(),
             authRepository = authCoreInjection.provideAuthRepository(),
-            inDocumentSearchRepository = inDocumentSearchInjection.provideInDocumentSearchRepo(),
             drawingSaveEvents = drawingSaveEvents,
             documentLoadUseCase = workspaceInjection.provideDocumentLoadUseCase(),
             storyStepSyncApi = { request ->

@@ -3,6 +3,7 @@ package io.writeopia.features.search.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.features.search.repository.SearchRepository
+import io.writeopia.features.search.repository.mergeSearchItems
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,7 +32,7 @@ class SearchKmpViewModel(
             .flatMapLatest(searchRepository::searchNotesAndFoldersRemotely)
 
         combine(localFlow, remoteFlow) { local, remote ->
-            (local + remote).distinctBy { it.id }
+            mergeSearchItems(local, remote)
         }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
     }
 

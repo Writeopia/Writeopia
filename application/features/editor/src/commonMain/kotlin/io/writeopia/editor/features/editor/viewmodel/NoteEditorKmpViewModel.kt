@@ -28,7 +28,6 @@ import io.writeopia.common.utils.file.SaveImage
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.common.utils.toList
 import io.writeopia.core.folders.repository.folder.DocumentLoadUseCase
-import io.writeopia.core.folders.repository.InDocumentSearchRepository
 import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.core.folders.repository.tag.DocumentTagRepository
 import io.writeopia.editor.features.editor.copy.CopyManager
@@ -134,7 +133,6 @@ class NoteEditorKmpViewModel(
     private val keyboardEventFlow: Flow<KeyboardEvent>,
     private val copyManager: CopyManager,
     private val authRepository: AuthRepository,
-    private val inDocumentSearchRepository: InDocumentSearchRepository,
     private val drawingSaveEvents: SharedFlow<DrawingSaveEvent>? = null,
     private val documentSyncManager: DocumentSyncManager = DocumentSyncManager.singleton(),
     private val documentLoadUseCase: DocumentLoadUseCase? = null,
@@ -389,11 +387,23 @@ class NoteEditorKmpViewModel(
 
 //    val selectionOfText = writeopiaManager.
 
+    /**
+     * The positions of the steps holding the words of the search, read from what is drawn: the
+     * text as it is now, saved or not, on every platform. The full-text index of the steps is
+     * for the global search; here a document is at most a few hundred steps.
+     */
     private val findsOfSearch: Flow<Set<String>> =
-        combine(writeopiaManager.documentInfo, searchText) { info, query ->
-            info.id to query
-        }.map { (documentId, query) ->
-            inDocumentSearchRepository.searchInDocument(query, documentId)
+        combine(writeopiaManager.toDraw, searchText) { drawState, query ->
+            if (query.isBlank()) {
+                emptySet()
+            } else {
+                drawState.stories
+                    .filter { drawStory ->
+                        val text = drawStory.storyStep.text
+                        !text.isNullOrEmpty() && FindInText.findInText(text, query).isNotEmpty()
+                    }
+                    .mapTo(mutableSetOf()) { drawStory -> drawStory.position }
+            }
         }
 
     /**
@@ -649,13 +659,15 @@ class NoteEditorKmpViewModel(
             searchText,
             showSearch,
             _currentSearchIndexState
-        ) { drawState, finds, query, showSearch, currentSearchIndex ->
-            if (finds.isEmpty() && showSearch) return@combine drawState.copy(focus = null)
-            if (finds.isEmpty()) return@combine drawState
+        ) { drawState, findsSet, query, showSearch, currentSearchIndex ->
+            if (findsSet.isEmpty() && showSearch) return@combine drawState.copy(focus = null)
+            if (findsSet.isEmpty()) return@combine drawState
 
+            // Sorted, the way searchInDocument counts them, so the active match is the same one.
+            val finds = findsSet.sorted()
             val mutableStories = drawState.stories.toMutableList()
             val activeFindPosition =
-                if (finds.size > currentSearchIndex) finds.elementAt(currentSearchIndex) else null
+                if (finds.size > currentSearchIndex) finds[currentSearchIndex] else null
             _totalSearchResultsState.value = finds.size
 
             if (activeFindPosition != null) {
@@ -920,22 +932,7 @@ class NoteEditorKmpViewModel(
             workspaceIdFlow = writeopiaManager.workspaceIdFlow,
             commentConversationsFlow = writeopiaManager.commentConversations,
             documentTagIdsFlow = writeopiaManager.documentTagIds,
-            documentTracker = OnUpdateDocumentTracker(
-                documentRepository,
-                onStoryStepUpdate = { storyStep, position ->
-                    inDocumentSearchRepository.insertForFts(storyStep, documentId, position)
-                },
-                onDocumentUpdate = { doc ->
-                    doc.content
-                        .forEach { (position, storyStep) ->
-                            inDocumentSearchRepository.insertForFts(
-                                storyStep,
-                                documentId,
-                                position
-                            )
-                        }
-                }
-            )
+            documentTracker = OnUpdateDocumentTracker(documentRepository)
         )
 
         // Also register for backend sync if the API is available and the workspace is connected

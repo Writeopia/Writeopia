@@ -28,6 +28,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -48,6 +49,9 @@ fun SearchDialog(
     documentClick: (String, String) -> Unit,
     onFolderClick: (NotesNavigation) -> Unit,
     presentationClick: (documentId: String, presentationId: String, title: String) -> Unit,
+    documentContentClick: (documentId: String, title: String, query: String) -> Unit = { id, title, _ ->
+        documentClick(id, title)
+    },
 ) {
     val search by searchState.collectAsState()
 
@@ -70,6 +74,10 @@ fun SearchDialog(
                     presentationClick(documentId, presentationId, title)
                     onDismissRequest()
                 },
+                documentContentClick = { documentId, title, query ->
+                    documentContentClick(documentId, title, query)
+                    onDismissRequest()
+                },
                 search = search,
                 searchInput = {
                     SearchInput(search, onSearchType)
@@ -88,7 +96,11 @@ fun SearchScreen(
     documentClick: (String, String) -> Unit,
     onFolderClick: (NotesNavigation) -> Unit,
     presentationClick: (documentId: String, presentationId: String, title: String) -> Unit,
-    searchInput: @Composable () -> Unit
+    searchInput: @Composable () -> Unit,
+    /** A document found by the words inside it: opened with the search for [search] active. */
+    documentContentClick: (documentId: String, title: String, query: String) -> Unit = { id, title, _ ->
+        documentClick(id, title)
+    },
 ) {
     Column(modifier = modifier) {
         searchInput()
@@ -118,13 +130,18 @@ fun SearchScreen(
         results.forEach { item ->
             when (item) {
                 is SearchItem.DocumentInfo -> {
+                    val snippet = item.snippet
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
                             .padding(horizontal = horizontalPadding)
                             .clip(MaterialTheme.shapes.medium)
                             .clickable {
-                                documentClick(item.id, item.label)
+                                if (snippet != null) {
+                                    documentContentClick(item.id, item.label, search)
+                                } else {
+                                    documentClick(item.id, item.label)
+                                }
                             }
                             .padding(
                                 horizontal = innerHorizontalPadding,
@@ -140,10 +157,27 @@ fun SearchScreen(
 
                         Spacer(modifier = Modifier.width(spaceWidth))
 
-                        Text(
-                            item.label,
-                            color = iconTint
-                        )
+                        Column {
+                            Text(
+                                item.label,
+                                color = iconTint
+                            )
+
+                            if (snippet != null) {
+                                // The step the words were found in, the words marked.
+                                Text(
+                                    highlightedSnippet(
+                                        text = SearchSnippet.window(snippet, search),
+                                        query = search,
+                                        highlight = MaterialTheme.colorScheme.onBackground
+                                    ),
+                                    color = WriteopiaTheme.colorScheme.textLighter,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
                     }
                 }
 

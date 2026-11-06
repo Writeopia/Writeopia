@@ -111,6 +111,13 @@ interface GlobalShellViewModel : FolderController, LocalAiConfigController {
 
     fun hideSearch()
 
+    /**
+     * The route the navigation is showing, so the search shortcut (Cmd/Ctrl+F) opens the global
+     * search only on the documents menu: elsewhere the shortcut belongs to the screen (the editor
+     * searches inside the document).
+     */
+    fun onDestinationChanged(route: String?)
+
     fun changeWorkspaceLocalPath(path: String)
 
     fun logout(onSuccessSideEffect: () -> Unit)
