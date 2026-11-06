@@ -14,7 +14,7 @@ const sidebars : SidebarsConfig = {
     {
       type: 'category',
       label: 'Customize Drawing',
-      items: ['sdk/customize-drawing/customize-drawers', 'sdk/customize-drawing/default-drawers', 'sdk/customize-drawing/default-types'],
+      items: ['sdk/customize-drawing/customize-ui', 'sdk/customize-drawing/customize-drawers', 'sdk/customize-drawing/default-drawers', 'sdk/customize-drawing/default-types'],
     },
     {
       type: 'doc',

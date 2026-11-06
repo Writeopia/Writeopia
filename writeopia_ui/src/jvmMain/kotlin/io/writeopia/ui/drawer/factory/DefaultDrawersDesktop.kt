@@ -40,18 +40,18 @@ object DefaultDrawersDesktop : DrawersFactory {
     @Composable
     override fun create(
         manager: WriteopiaStateManager,
-        editable: Boolean,
-        aiExplanation: String,
-        isDarkTheme: Boolean,
-        onHeaderClick: () -> Unit,
-        drawConfig: DrawConfig,
-        fontFamily: FontFamily?,
-        generateSection: (String) -> Unit,
-        receiveExternalFile: (List<ExternalFile>, String) -> Unit,
-        onDocumentLinkClick: (String) -> Unit,
-        linkLeadingIcon: ImageVector?,
-        equationToImageUrl: String?,
-        customDrawers: Map<Int, StoryStepDrawer>
+        editable: Boolean = true,
+        aiExplanation: String = "AI Generated",
+        isDarkTheme: Boolean = false,
+        onHeaderClick: () -> Unit = {},
+        drawConfig: DrawConfig = DrawConfig(),
+        fontFamily: FontFamily? = null,
+        generateSection: (String) -> Unit = {},
+        receiveExternalFile: (List<ExternalFile>, String) -> Unit = { _, _ -> },
+        onDocumentLinkClick: (String) -> Unit = {},
+        linkLeadingIcon: ImageVector? = null,
+        equationToImageUrl: String? = null,
+        customDrawers: Map<Int, StoryStepDrawer> = emptyMap()
     ): Map<Int, StoryStepDrawer> {
         val textToolbox: @Composable (Boolean) -> Unit = @Composable { hasSelection ->
             TextToolbox(

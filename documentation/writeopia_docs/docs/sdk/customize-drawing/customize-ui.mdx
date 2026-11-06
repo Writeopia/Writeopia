@@ -1,0 +1,109 @@
+# Customize the Editor UI
+
+`WriteopiaEditor` draws only the steps; the page around it, its background and its width belong to the app that hosts
+it. This page lists every knob the SDK exposes, so you know which changes need code and which do not.
+
+## Colours
+
+The drawers read their colours from the Compose `MaterialTheme`. The editor does not paint a background, so the surface
+behind it — and the colour of the text, drawn with `colorScheme.onBackground` — come from the theme you wrap it in:
+
+```kotlin
+MaterialTheme(
+    colorScheme = darkColorScheme(
+        background = Color(0xFF101418),
+        onBackground = Color(0xFFE6E6E6),
+        primary = Color(0xFF6C8CFF),
+    )
+) {
+    Surface(color = MaterialTheme.colorScheme.background) {
+        WriteopiaEditor(
+            modifier = Modifier.fillMaxSize(),
+            storyState = drawState,
+            drawers = DefaultDrawersDesktop.create(
+                manager = stateManager,
+                isDarkTheme = true,
+            ),
+        )
+    }
+}
+```
+
+The examples use `DefaultDrawersDesktop`, which is the JVM desktop factory. On Android use `DefaultDrawersAndroid`, on iOS
+`DefaultDrawersNative` and on the web `DefaultDrawersJs`; they take the same arguments.
+
+The colour of the selection, of the divider, of the code block and of the cards are part of `DrawConfig`, which is
+passed to the drawers factory:
+
+```kotlin
+val drawConfig = DrawConfig(
+    selectedColor = { Color(0xFF6C8CFF) },
+    selectedBorderColor = { Color(0xFFFFB020) },
+    dividerColor = { Color(0xFF30363D) },
+    codeBlockBackgroundColor = { Color(0xFF161B22) },
+    cardHighlightBackgroundColor = { Color(0xFF1F242B) },
+    cardHighlightBorderColor = { Color(0xFF30363D) },
+    cardAccentLineColor = { Color(0xFF6C8CFF) },
+)
+
+val drawers = DefaultDrawersDesktop.create(
+    manager = stateManager,
+    drawConfig = drawConfig,
+    isDarkTheme = true,
+)
+```
+
+The `titleStyle` and `titlePlaceHolderStyle` fields of the same object take the text styles of the document title.
+
+## Padding
+
+`contentPadding` pads the scrollable content inside the editor; it does not create space between the editor and its
+neighbours. For external spacing wrap the editor in a padded parent:
+
+```kotlin
+Box(modifier = Modifier.padding(24.dp)) {
+    WriteopiaEditor(
+        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
+        storyState = drawState,
+        drawers = drawers,
+    )
+}
+```
+
+The space inside the rows is `DrawConfig`: `textDrawerStartPadding`, `textDrawerInnerStartPadding`,
+`textVerticalPadding`, `codeBlockStartPadding`, `codeBlockHorizontalInnerPadding`, `codeBlockVerticalInnerPadding`,
+`checkBoxStartPadding`, `checkBoxEndPadding`, `checkBoxItemVerticalPadding`, `listItemStartPadding`,
+`listItemEndPadding`, `listItemItemVerticalPadding`, `iaAnswerHorizontalPadding`, `linkHorizontalPadding` and
+`linkVerticalPadding`. All of them are whole dp values. `textDrawerStartPadding` moves the title drawer, while plain text
+rows take `codeBlockStartPadding`:
+
+```kotlin
+DrawConfig(
+    codeBlockStartPadding = 0,
+    textDrawerInnerStartPadding = 0,
+    textVerticalPadding = 2,
+    checkBoxStartPadding = 8,
+    listItemStartPadding = 8,
+)
+```
+
+## Width
+
+A wide window gives very long lines; constrain the editor with a `Modifier` and centre it:
+
+```kotlin
+Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+    WriteopiaEditor(
+        modifier = Modifier
+            .fillMaxHeight()
+            .widthIn(max = 850.dp),
+        storyState = drawState,
+        drawers = drawers,
+    )
+}
+```
+
+:::note
+A few paddings are fixed in the drawers, not in `DrawConfig`: the text field's own padding, the add button, the image
+row and the space rows. Changing them means passing your own drawer, as described in **Editing Drawers**.
+:::

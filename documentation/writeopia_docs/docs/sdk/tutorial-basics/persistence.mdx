@@ -1,93 +1,124 @@
 # Persistence
 
-![Maven Central](https://img.shields.io/maven-central/v/io.writeopia/writeopia-persistence-core-jvm)
+![Maven Central](https://img.shields.io/maven-central/v/io.writeopia/writeopia-persistence-core)
 
-The SDK has a persistence plugin. First add the plugin:
+The persistence plugin saves documents locally. Add the plugin for your platform:
 
 ```kotlin
-implementation("io.writeopia:writeopia-persistence:[version]")
+// Android: the application uses Room
+implementation("io.writeopia:writeopia-persistence-room:[version]")
+// Desktop, iOS, Web: SQLDelight
+implementation("io.writeopia:writeopia-persistence-sqldelight:[version]")
 ```
 
-## Configuration
-To configure the persistence, it is necessary to configure a Room database instance. It is necessary to:
+Both platforms share the contracts in `io.writeopia:writeopia-persistence-core:[version]`, which is pulled in
+transitively. The examples below use the Room implementation.
 
-- Create the Room database
-- Add a repository to WriteopiaManager
+## Configuration
+
+To configure persistence you need:
+
+- a Room database that declares the SDK entities and DAOs;
+- a `RoomDocumentRepository` over that database;
+- the repository passed to `WriteopiaStateManager.create`;
+- a `UserRepository`, so saved documents keep the workspace they belong to.
 
 ### Creating a Room database for Writeopia
-The persistence plugin provides some Daos and entities that can be added in a Room database. You can check more about all entities and 
-Daos in section of this documentation dedicated to persistence.
 
-You can add the Entities and Daos as the following code:
+The persistence plugin provides the entries and DAOs; your application database adds them to its own. The application
+module needs Room itself, since the plugin declares it as `implementation` and configures its compiler only for its own
+module:
+
+```kotlin
+// Android: Room for the application's own database
+implementation("androidx.room:room-runtime:2.8.4")
+ksp("androidx.room:room-compiler:2.8.4")
+```
+
+Apply the `com.google.devtools.ksp` plugin to the module too.
 
 ```kotlin
 @Database(
     entities = [
         DocumentEntity::class,
         StoryStepEntity::class,
-        // Other entities here
+        StoryStepTombstoneEntity::class,
+        PendingFavoriteEntity::class,
+        CommentEntity::class,
+        DocumentTagLinkEntity::class,
+        // Your own entities here
     ],
-    version = 3,
+    version = 1,
     exportSchema = false
 )
-@TypeConverters(IdListConverter::class, InstantConverter::class)
+@TypeConverters(IdListConverter::class)
 abstract class WriteopiaApplicationDatabase : RoomDatabase() {
 
-    abstract fun documentDao(): DocumentDao
-    abstract fun storyUnitDao(): StoryUnitDao
-    //Other Daos here.
-
-    companion object {
-        private var instance: WriteopiaApplicationDatabase? = null
-
-        private fun createDatabase(context: Context, databaseName: String) =
-            Room.databaseBuilder(
-                context.applicationContext,
-                WriteopiaApplicationDatabase::class.java,
-                databaseName
-            ).build()
-                .also { database ->
-                    instance = database
-                }
-    }
+    abstract fun documentDao(): DocumentEntityDao
+    abstract fun storyUnitDao(): StoryUnitEntityDao
+    abstract fun storyStepTombstoneDao(): StoryStepTombstoneDao
+    abstract fun pendingFavoriteDao(): PendingFavoriteDao
+    abstract fun commentDao(): CommentEntityDao
+    abstract fun documentTagLinkDao(): DocumentTagLinkDao
 }
-``` 
+```
 
+### Building the repository
 
-## Adding persistence
-
-`WriteopiaManager` save the state of the document as the user types. To enable this feature, first provide 
-a `DocumentTracker` to `WriteopiaManager` constructor.
-
+Build the database first, then pass its DAOs and the database itself to `RoomDocumentRepository`:
 
 ```kotlin
-private fun persistenceSample(context: Context) {
-    val database = WriteopiaApplicationDatabase.database(context)
+val database = Room.databaseBuilder(
+    context,
+    WriteopiaApplicationDatabase::class.java,
+    "writeopia.db",
+).build()
 
-    val documentRepository = DocumentRepositoryImpl(
-        database.documentDao(),
-        database.storyUnitDao()
+val repository = RoomDocumentRepository(
+    documentEntityDao = database.documentDao(),
+    storyUnitEntityDao = database.storyUnitDao(),
+    commentEntityDao = database.commentDao(),
+    database = database,
+    documentTagLinkDao = database.documentTagLinkDao(),
+    storyStepTombstoneDao = database.storyStepTombstoneDao(),
+    pendingFavoriteDao = database.pendingFavoriteDao(),
+)
+```
+
+## Reading and saving documents
+
+Pass the repository to `WriteopiaStateManager.create`:
+
+```kotlin
+val stateManager = remember {
+    WriteopiaStateManager.create(
+        writeopiaManager = WriteopiaManager(),
+        dispatcher = Dispatchers.IO,
+        documentRepository = repository,
+        userRepository = userRepository,
     )
-
-    val documentTracker = OnUpdateDocumentTracker(documentRepository)
 }
 ```
 
-Once the documentTracker is provided, you can call `WriteopiaManager.saveOnStoryChanges`. The whole should be this:
+`userRepository` supplies the workspace ID that `saveOnStoryChanges` writes with each document. Without it the tracker
+saves the disconnected workspace, so an online document leaves its workspace as soon as it is edited: omit it only for
+documents that never leave the device.
+
+With a repository in place the editor can load documents and create linked documents.
+
+## Saving as the user types
+
+`WriteopiaStateManager.saveOnStoryChanges` starts an endless collector that writes every edit through a
+`DocumentTracker`. `RoomDocumentRepository` implements `DocumentUpdate`, so `OnUpdateDocumentTracker` can persist to
+the database directly:
 
 ```kotlin
-val database = WriteopiaApplicationDatabase.database(context)
-
-val documentRepository = DocumentRepositoryImpl(
-    database.documentDao(),
-    database.storyUnitDao()
-)
-
-val documentTracker = OnUpdateDocumentTracker(documentRepository)
-
-val writeopiaManager = WriteopiaManager(
-    userId = { "provide your user id" }
-)
-
-writeopiaManager.saveOnStoryChanges(documentTracker)
+LaunchedEffect(Unit) {
+    stateManager.saveOnStoryChanges(
+        OnUpdateDocumentTracker(documentUpdate = repository)
+    )
+}
 ```
+
+The tracker also accepts `onStoryStepUpdate` and `onDocumentUpdate` callbacks, which the application uses to feed a
+full-text search index.

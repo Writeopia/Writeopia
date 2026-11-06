@@ -42,6 +42,7 @@ import io.writeopia.ui.drawer.content.defaultSlashCommands
 import io.writeopia.ui.drawer.content.createTypeCommands
 import io.writeopia.ui.drawer.content.headerDrawer
 import io.writeopia.ui.drawer.content.swipeTextDrawer
+import io.writeopia.ui.drawer.content.textBoxDrawer
 import io.writeopia.ui.drawer.content.unOrderedListItemDrawer
 import io.writeopia.ui.drawer.content.SpreadsheetDrawer
 import io.writeopia.ui.manager.WriteopiaStateManager
@@ -247,6 +248,17 @@ object CommonDrawers {
                 innerMessageDrawer(commonTextModifier, EmptyErase.CHANGE_TYPE)
             }
 
+        val textBoxItemDrawer = textBoxDrawer(
+            manager = manager,
+            isDesktop = isDesktop,
+            enabled = editable,
+            dragIconWidth = dragIconWidth,
+            config = drawConfig,
+            receiveExternalFile = receiveExternalFile,
+        ) {
+            innerMessageDrawer(commonTextModifier, EmptyErase.DELETE)
+        }
+
         val headerDrawer = headerDrawer(
             manager = manager,
             enabled = editable,
@@ -328,6 +340,7 @@ object CommonDrawers {
                 )
             )
             put(StoryTypes.CHECK_ITEM.type.number, checkItemDrawer)
+            put(StoryTypes.TEXT_BOX.type.number, textBoxItemDrawer)
             put(StoryTypes.UNORDERED_LIST_ITEM.type.number, unOrderedListItemDrawer)
             put(StoryTypes.TITLE.type.number, headerDrawer)
             put(StoryTypes.CODE_BLOCK.type.number, codeBlockDrawer)

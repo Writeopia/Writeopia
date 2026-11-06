@@ -1,12 +1,21 @@
 # Default Commands
 
-When the user types some reserved words, it triggers a command in the text editor. This can be used to create custom units of content like checkboxes, H1, H2, H3, H4 and many other options. The current supported commands are:
+When the user types a reserved sequence at the start of a line, the message is transformed. `TextCommandHandler`
+handles the following commands:
 
-| Comand    | Action   | Position |
-| --------- | -------- | -------- |
-| "-[] "    | Check item  | At the start of line |
-| "- "      | Unordered list item     | At the start of line |
-| "# "      | H1 text     | At the start of line |
-| "## "     | H2 text     | At the start of line |
-| "### "    | H3 text     | At the start of line |
-| "#### "   | H4 text     | At the start of line |
+| Command | Action | Position |
+| ------- | ------ | -------- |
+| `-[]` | Check item | Start of line |
+| `[]` | Check item | Start of line |
+| `- ` | Unordered list item | Start of line |
+| `# ` | H1 text | Start of line |
+| `## ` | H2 text | Start of line |
+| `### ` | H3 text | Start of line |
+| `#### ` | H4 text | Start of line |
+| ```` ``` ```` | Code block | Start of line |
+| `---` | Divider | Start of line |
+| `/box` | Highlight block (`Tag.HIGH_LIGHT_BLOCK`) | Start of line |
+| `/card` | Card block (`Tag.CARD_BLOCK`) | Start of line |
+
+A command whose text ends with a space fires when the space is typed. Commands are not recognised inside a document
+title.
