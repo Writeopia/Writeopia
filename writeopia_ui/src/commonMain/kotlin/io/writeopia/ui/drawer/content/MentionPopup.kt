@@ -151,10 +151,11 @@ internal fun rememberMentionHandler(
         val currentText = inputText.text
         val safeStart = mentionStartPosition.coerceIn(0, currentText.length)
         val cursorPos = inputText.selection.start.coerceIn(safeStart, currentText.length)
-        val beforeMention = inputText.text.take(safeStart)
+        val beforeMention = currentText.take(safeStart)
         val afterCursor = currentText.substring(cursorPos)
-        val newText = beforeMention + "@${user.username}" + afterCursor
-        val newCursorPos = safeStart + insertedText.length
+        val mentionText = "@${user.username}"
+        val newText = beforeMention + mentionText + afterCursor
+        val newCursorPos = safeStart + mentionText.length
 
         val recalculatedSpans = Spans.recalculateSpans(
             spans = spans,
