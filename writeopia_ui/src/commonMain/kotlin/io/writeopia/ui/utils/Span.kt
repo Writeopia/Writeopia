@@ -24,12 +24,7 @@ object Spans {
 
             spans.filter { spanInfo -> spanInfo.span != Span.LINK }
                 .forEach { spanInfo ->
-                    val baseStyle = spanInfo.span.toSpanStyle(isDarkTheme)
-                    val style = if (spanInfo.span == Span.MENTION && mentionColor != Color.Unspecified) {
-                        baseStyle.copy(color = mentionColor)
-                    } else {
-                        baseStyle
-                    }
+                    val style = spanInfo.span.toSpanStyle(isDarkTheme, mentionColor)
                     addStyle(
                         style,
                         min(lastPosition, spanInfo.start),

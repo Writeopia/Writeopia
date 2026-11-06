@@ -58,7 +58,7 @@ internal fun detectMentionState(
     isPopupCurrentlyShown: Boolean,
     currentStartPosition: Int,
 ): MentionDetectionResult {
-    val hasNoRelevantTextChange =  sizeDifference ==0
+    val hasNoRelevantTextChange = sizeDifference == 0
 
     if (hasNoRelevantTextChange) {
         return MentionDetectionResult.Unchanged

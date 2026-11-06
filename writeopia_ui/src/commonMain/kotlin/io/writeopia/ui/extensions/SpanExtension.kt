@@ -8,7 +8,10 @@ import androidx.compose.ui.text.style.TextDecoration
 import io.writeopia.sdk.models.span.Span
 import io.writeopia.ui.model.SelectionMetadata
 
-fun Span.toSpanStyle(isDarkTheme: Boolean): SpanStyle =
+fun Span.toSpanStyle(
+    isDarkTheme: Boolean,
+    mentionColor: Color = Color.Unspecified,
+): SpanStyle =
     when (this) {
         Span.BOLD -> SpanStyle(fontWeight = FontWeight.Bold)
         Span.ITALIC -> SpanStyle(fontStyle = FontStyle.Italic)
@@ -32,7 +35,11 @@ fun Span.toSpanStyle(isDarkTheme: Boolean): SpanStyle =
         }
 
         Span.MENTION -> SpanStyle(
-            color = if (isDarkTheme) Color(0xFFE987D0) else Color(0xFFB7409A),
+            color = when {
+                mentionColor != Color.Unspecified -> mentionColor
+                isDarkTheme -> Color(0xFFE987D0)
+                else -> Color(0xFFB7409A)
+            },
             fontWeight = FontWeight.Medium,
         )
 
