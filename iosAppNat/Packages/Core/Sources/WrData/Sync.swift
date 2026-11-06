@@ -737,8 +737,8 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
     /// The presentations of the local AI, never synced, come from this device. When one side
     /// fails, the other answers alone; the error surfaces only when both fail.
     public func searchAll(query: String) async throws -> SearchResults {
-        async let remoteSearch = Result { try await remote.searchAll(query: query) }
-        async let localSearch = Result { try await local.searchAll(query: query) }
+        async let remoteSearch = Self.outcome { [remote] in try await remote.searchAll(query: query) }
+        async let localSearch = Self.outcome { [local] in try await local.searchAll(query: query) }
         let (fromBackend, onDevice) = await (remoteSearch, localSearch)
 
         switch (onDevice, fromBackend) {
@@ -750,6 +750,16 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
             return there
         case (.failure(let error), .failure):
             throw error
+        }
+    }
+
+    /// What `body` gives, or the error it throws. (The async `Result(catching:)` of newer
+    /// toolchains, which the CI compiler doesn't have.)
+    private static func outcome<T>(_ body: () async throws -> T) async -> Result<T, Error> {
+        do {
+            return .success(try await body())
+        } catch {
+            return .failure(error)
         }
     }
 
