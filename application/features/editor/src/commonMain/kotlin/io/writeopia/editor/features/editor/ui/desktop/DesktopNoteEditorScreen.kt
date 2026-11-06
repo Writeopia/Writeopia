@@ -105,7 +105,8 @@ fun DesktopNoteEditorScreen(
             mutableStateOf(false)
         }
 
-        InDocumentSearchBar(noteEditorViewModel)
+        // Below the status icons (lock, favorite, published) drawn at the top-left corner.
+        InDocumentSearchBar(noteEditorViewModel, modifier = Modifier.padding(top = 32.dp))
 
         SideEditorOptions(
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 40.dp),
