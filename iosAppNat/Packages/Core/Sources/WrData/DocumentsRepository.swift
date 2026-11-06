@@ -84,6 +84,43 @@ public struct SearchResults: Decodable, Sendable {
         documents = try container.decodeIfPresent([WrDocument].self, forKey: .documents) ?? []
         presentations = try container.decodeIfPresent([Presentation].self, forKey: .presentations) ?? []
     }
+
+    /// `first` then `second` without repeating an id, like `mergeSearchItems` of the Compose app.
+    /// For a document in both, the copy holding a step with the words of `query` wins wherever it
+    /// came from: a document found by its title here and by its words on the backend shows the
+    /// words it was found by. Presentations keep the first copy.
+    public static func merged(_ first: SearchResults, _ second: SearchResults, query: String) -> SearchResults {
+        let terms = SearchTerms(query)
+        // The steps that hold prose: message, check item, list item, code block. The title is
+        // not a snippet (the searches match it on its own).
+        let proseTypes: Set<Int> = [
+            StoryType.text.number, StoryType.checkItem.number, StoryType.unorderedListItem.number, StoryType.codeBlock.number,
+        ]
+        func holdsTheWords(_ document: WrDocument) -> Bool {
+            document.content.contains { step in proseTypes.contains(step.type.number) && step.text.map(terms.matches) == true }
+        }
+
+        var documents: [WrDocument] = []
+        var indexById: [String: Int] = [:]
+        for document in first.documents + second.documents {
+            if let index = indexById[document.id] {
+                if !holdsTheWords(documents[index]) && holdsTheWords(document) {
+                    documents[index] = document
+                }
+            } else {
+                indexById[document.id] = documents.count
+                documents.append(document)
+            }
+        }
+
+        var presentations: [Presentation] = []
+        var known = Set<String>()
+        for presentation in first.presentations + second.presentations where known.insert(presentation.id).inserted {
+            presentations.append(presentation)
+        }
+
+        return SearchResults(documents: documents, presentations: presentations)
+    }
 }
 
 extension DocumentsRepository {

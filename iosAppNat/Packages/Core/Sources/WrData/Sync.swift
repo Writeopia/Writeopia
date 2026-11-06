@@ -727,26 +727,29 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
         return synced
     }
 
-    /// The backend searches every document of the workspace; offline, the local cache is used.
     public func search(query: String) async throws -> [WrDocument] {
-        do {
-            return try await remote.search(query: query)
-        } catch {
-            return try await local.search(query: query)
-        }
+        try await searchAll(query: query).documents
     }
 
-    /// The backend finds the documents and its presentations in one request; the presentations of
-    /// the local AI, never synced, come from this device. Offline, everything comes from here.
+    /// Searches here and on the backend at once and merges what both find, like the Compose
+    /// app: the documents on this device first (the ones not synced yet are only here), then the
+    /// backend's additions, the copy with the words inside it winning (`SearchResults.merged`).
+    /// The presentations of the local AI, never synced, come from this device. When one side
+    /// fails, the other answers alone; the error surfaces only when both fail.
     public func searchAll(query: String) async throws -> SearchResults {
-        do {
-            var results = try await remote.searchAll(query: query)
-            let onDevice = (try? await local.searchPresentations(query: query)) ?? []
-            let known = Set(results.presentations.map(\.id))
-            results.presentations += onDevice.filter { !known.contains($0.id) }
-            return results
-        } catch {
-            return try await local.searchAll(query: query)
+        async let remoteSearch = Result { try await remote.searchAll(query: query) }
+        async let localSearch = Result { try await local.searchAll(query: query) }
+        let (fromBackend, onDevice) = await (remoteSearch, localSearch)
+
+        switch (onDevice, fromBackend) {
+        case (.success(let here), .success(let there)):
+            return SearchResults.merged(here, there, query: query)
+        case (.success(let here), .failure):
+            return here
+        case (.failure, .success(let there)):
+            return there
+        case (.failure(let error), .failure):
+            throw error
         }
     }
 
