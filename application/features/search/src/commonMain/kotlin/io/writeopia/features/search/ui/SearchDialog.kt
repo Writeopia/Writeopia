@@ -20,11 +20,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -80,7 +84,8 @@ fun SearchDialog(
                 },
                 search = search,
                 searchInput = {
-                    SearchInput(search, onSearchType)
+                    // Opened by Cmd/Ctrl+F or the side menu: the words go straight in.
+                    SearchInput(search, onSearchType, requestFocus = true)
                     HorizontalDivider(modifier = Modifier.fillMaxWidth())
                 }
             )
@@ -248,7 +253,18 @@ fun SearchScreen(
 }
 
 @Composable
-fun SearchInput(search: String, onSearchType: (String) -> Unit, modifier: Modifier = Modifier) {
+fun SearchInput(
+    search: String,
+    onSearchType: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    /** Puts the cursor in the field as it shows. */
+    requestFocus: Boolean = false,
+) {
+    val focusRequester = remember { FocusRequester() }
+    if (requestFocus) {
+        LaunchedEffect(Unit) { focusRequester.requestFocus() }
+    }
+
     Row(
         modifier = modifier.padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -263,7 +279,7 @@ fun SearchInput(search: String, onSearchType: (String) -> Unit, modifier: Modifi
 
         Box(modifier = Modifier.weight(1F)) {
             BasicTextField(
-                modifier = Modifier.fillMaxWidth().align(Alignment.Center),
+                modifier = Modifier.fillMaxWidth().align(Alignment.Center).focusRequester(focusRequester),
                 value = search,
                 onValueChange = onSearchType,
                 singleLine = true,

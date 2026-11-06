@@ -82,6 +82,12 @@ final class SearchViewModel {
     }
 }
 
+public extension EnvironmentValues {
+    /// Grows every time the search shortcut (Cmd+F) asks for the search: the field takes the
+    /// cursor, so the words go straight in.
+    @Entry var searchFocusRequest = 0
+}
+
 public struct SearchRootView: View {
     @Environment(AppSession.self) private var session
 
@@ -120,6 +126,8 @@ struct SearchView: View {
     /// The presentation shown full screen (the phones; the Mac opens a window).
     @State private var presentationShown: Presentation?
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.searchFocusRequest) private var searchFocusRequest
+    @FocusState private var isSearchFocused: Bool
 
     init(
         repository: DocumentsRepository,
@@ -173,7 +181,15 @@ struct SearchView: View {
             .overlay { overlay }
             .navigationTitle("Search")
             .searchable(text: $viewModel.query, prompt: "Search documents")
+            .searchFieldFocused($isSearchFocused)
             .autocorrectionDisabled()
+            // The shortcut brought the search up: the cursor goes in the field. On the Mac the
+            // screen itself is the search, so showing it does the same (a turn later, once the
+            // field is in the toolbar).
+            .onChange(of: searchFocusRequest) { _, _ in focusField() }
+            #if os(macOS)
+            .onAppear { focusField() }
+            #endif
             .task(id: viewModel.trimmedQuery) {
                 await viewModel.search()
             }
@@ -243,6 +259,10 @@ struct SearchView: View {
         }
     }
 
+    private func focusField() {
+        DispatchQueue.main.async { isSearchFocused = true }
+    }
+
     /// A presentation opens in its own window on the Mac, and over the whole screen on the phones,
     /// like from the editor. The search only has its title, so the slides are loaded first.
     private func openPresentation(_ presentation: Presentation) {
@@ -269,6 +289,19 @@ struct SearchView: View {
             ContentUnavailableView("Search failed", systemImage: "exclamationmark.triangle", description: Text(errorMessage))
         } else if !viewModel.hasResults && viewModel.lastSearchedQuery == viewModel.trimmedQuery {
             ContentUnavailableView.search(text: viewModel.trimmedQuery)
+        }
+    }
+}
+
+private extension View {
+    /// `searchFocused`, where the system has it (iOS 18, macOS 15); older systems keep the
+    /// field as it is.
+    @ViewBuilder
+    func searchFieldFocused(_ binding: FocusState<Bool>.Binding) -> some View {
+        if #available(iOS 18, macOS 15, *) {
+            searchFocused(binding)
+        } else {
+            self
         }
     }
 }
