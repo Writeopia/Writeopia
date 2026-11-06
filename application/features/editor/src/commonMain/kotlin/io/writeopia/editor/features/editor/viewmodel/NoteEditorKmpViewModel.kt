@@ -301,6 +301,10 @@ class NoteEditorKmpViewModel(
                     _mentionSuggestions.value = ResultData.Complete(users)
                 }
 
+                is ResultData.Error -> {
+                    _mentionSuggestions.value = ResultData.Error(result.exception)
+                }
+
                 else -> {
                     _mentionSuggestions.value = ResultData.Idle()
                 }
