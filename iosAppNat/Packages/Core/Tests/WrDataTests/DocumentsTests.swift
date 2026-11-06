@@ -60,8 +60,13 @@ import WrStorage
         _ = try await repository.createDocument(title: "Groceries", parentId: Folder.rootId)
 
         #expect(try await repository.search(query: "grocer").map(\.title) == ["Groceries"])
+        #expect(try await repository.search(query: "GROCER").map(\.title) == ["Groceries"])
         #expect(try await repository.search(query: "free place").map(\.title) == ["Welcome!"])
+        // Every word is needed, in the same step; a word inside another doesn't count.
+        #expect(try await repository.search(query: "free missing").isEmpty)
+        #expect(try await repository.search(query: "rocer").isEmpty)
         #expect(try await repository.search(query: "  ").isEmpty)
+        #expect(try await repository.search(query: "!!!").isEmpty)
     }
 }
 

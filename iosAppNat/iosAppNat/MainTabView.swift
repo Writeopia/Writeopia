@@ -78,6 +78,20 @@ private struct MainLayout: View {
         }
         .environment(\.openEditors, openEditors)
         .onChange(of: selection) { _, tab in route(to: tab) }
+        .background { searchShortcut }
+    }
+
+    /// Cmd+F on a keyboard opens the search from the documents only, like the Compose app: in
+    /// the editor the shortcut finds inside the document, and the other screens have no search.
+    @ViewBuilder
+    private var searchShortcut: some View {
+        if selection == .folders || selection == .favorites, !openEditors.isAnyOpen {
+            Button("Search") { selection = .search }
+                .keyboardShortcut("f", modifiers: .command)
+                .opacity(0)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
     }
 
     /// The documents of the workspace. The folders and the favorites are the same navigation;

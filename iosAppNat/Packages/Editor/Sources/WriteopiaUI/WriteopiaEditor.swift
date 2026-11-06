@@ -159,6 +159,14 @@ public struct WriteopiaEditor: View {
                     proxy.scrollTo(request.stepId)
                 }
             }
+            // A match of the search comes into view, the keyboard staying where it is.
+            .onChange(of: manager.scrollRequest) { _, request in
+                guard let request else { return }
+                withAnimation(.easeOut(duration: 0.2)) {
+                    proxy.scrollTo(request.stepId, anchor: .center)
+                }
+                manager.scrollRequestHandled(request)
+            }
         }
     }
 }

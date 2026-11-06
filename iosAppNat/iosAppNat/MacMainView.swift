@@ -29,6 +29,20 @@ struct MacMainView: View {
         }
         .environment(\.openEditors, openEditors)
         .environment(\.isWideLayout, true)
+        .background { searchShortcut }
+    }
+
+    /// Cmd+F opens the search from the documents menu only, like the Compose desktop app: in
+    /// the editor the shortcut finds inside the document, and the other screens have no search.
+    @ViewBuilder
+    private var searchShortcut: some View {
+        if selection == .documents, !openEditors.isAnyOpen {
+            Button("Search") { selection = .search }
+                .keyboardShortcut("f", modifiers: .command)
+                .opacity(0)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
     }
 }
 #endif
