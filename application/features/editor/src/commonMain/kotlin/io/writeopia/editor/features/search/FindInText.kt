@@ -2,12 +2,13 @@ package io.writeopia.editor.features.search
 
 object FindInText {
 
-    private val whitespace = Regex("\\s+")
+    private val separators = Regex("[^\\p{L}\\p{N}]+")
 
     /**
      * Finds the start and end indices of all occurrences of the words of a query within a given
-     * text. Each whitespace-separated word of the query is searched on its own, ignoring case,
-     * the way the full-text searches match: a step holding the words apart is still a match.
+     * text. The words are the ones the searches match (`FtsQuery`, `TsQuery`): runs of letters
+     * and digits, ignoring case, at most [MAX_WORDS] of them. Every word must occur somewhere in
+     * the text, inside another word too; then every occurrence of each is returned.
      *
      * @param text The string to search within.
      * @param query The words to search for.
@@ -15,13 +16,23 @@ object FindInText {
      * The end index is exclusive, meaning it is the index of the character immediately following the match.
      */
     fun findInText(text: String, query: String): List<Pair<Int, Int>> {
-        val words = query.split(whitespace).filter { word -> word.isNotEmpty() }
+        val words = words(query)
         if (words.isEmpty() || text.isEmpty()) return emptyList()
 
-        return words.flatMap { word -> occurrences(text, word) }
+        val occurrences = words.map { word -> occurrences(text, word) }
+        if (occurrences.any { found -> found.isEmpty() }) return emptyList()
+
+        return occurrences.flatten()
             .distinct()
             .sortedWith(compareBy({ (start, _) -> start }, { (_, end) -> end }))
     }
+
+    /** The words of [query]: letters and digits only, in order, at most [MAX_WORDS] of them. */
+    fun words(query: String): List<String> =
+        query.split(separators)
+            .filter { word -> word.isNotEmpty() }
+            .map { word -> word.take(MAX_WORD_LENGTH) }
+            .take(MAX_WORDS)
 
     private fun occurrences(text: String, word: String): List<Pair<Int, Int>> {
         val results = mutableListOf<Pair<Int, Int>>()
@@ -34,4 +45,7 @@ object FindInText {
         }
         return results
     }
+
+    const val MAX_WORDS = 8
+    const val MAX_WORD_LENGTH = 64
 }

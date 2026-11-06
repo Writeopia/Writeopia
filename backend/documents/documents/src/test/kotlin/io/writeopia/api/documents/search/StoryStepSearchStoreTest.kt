@@ -101,6 +101,24 @@ class StoryStepSearchStoreTest {
         assertEquals(5, db.storyStepSearch().search(workspaceId, "pear:* & 'number\"").size)
     }
 
+    @Test
+    fun `the words are split the way the index splits them`() = runBlocking {
+        storeDocument("doc-mail", "A", step("m", "write to ana@example.com today"))
+        storeDocument("doc-pi", "B", step("p", "pi is 3.14 more or less"))
+        storeDocument("doc-path", "C", step("f", "see /usr/local/bin/tool"))
+        storeDocument("doc-accent", "D", step("x", "Ótimo resultado"))
+
+        val store = db.storyStepSearch()
+        assertEquals(listOf("ana@example.com", "today"), store.lexemes("ana@example.com today"))
+        assertEquals(setOf("doc-mail"), ids(store.search(workspaceId, "ana@example.com")))
+        // The parser keeps an email whole: a piece of one is two words, which the index doesn't hold.
+        assertTrue(store.search(workspaceId, "ana@exam").isEmpty())
+        assertEquals(setOf("doc-pi"), ids(store.search(workspaceId, "3.14")))
+        assertEquals(setOf("doc-path"), ids(store.search(workspaceId, "/usr/local/bin/tool")))
+        assertEquals(setOf("doc-accent"), ids(store.search(workspaceId, "ótimo")))
+        assertTrue(store.search(workspaceId, "it's \\ 'quoted'").isEmpty())
+    }
+
     private fun ids(matches: List<StoryStepSearchStore.ContentMatch>) =
         matches.map { match -> match.documentId }.toSet()
 

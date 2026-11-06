@@ -33,7 +33,7 @@ class StoryStepSearchStore(private val driver: SqlDriver) {
      * search. Deleted documents are left out.
      */
     fun search(workspaceId: String, rawQuery: String, limit: Int = DEFAULT_LIMIT): List<ContentMatch> {
-        val tsQuery = TsQuery.build(rawQuery) ?: return emptyList()
+        val tsQuery = TsQuery.build(lexemes(rawQuery)) ?: return emptyList()
 
         return query(
             SEARCH_SQL,
@@ -52,6 +52,20 @@ class StoryStepSearchStore(private val driver: SqlDriver) {
                 position = cursor.getString(4)!!,
             )
         }
+    }
+
+    /**
+     * The lexemes of [text] as the index holds them: what `to_tsvector('simple', ...)` makes of
+     * it, in the order they appear. The parser keeps an email, a decimal, a version or a path
+     * as one lexeme and drops the punctuation, so a search splits the way the steps were indexed.
+     */
+    fun lexemes(text: String): List<String> {
+        if (text.isBlank()) return emptyList()
+        return query(
+            "SELECT lexeme FROM unnest(to_tsvector('simple', ?)) ORDER BY positions[1]",
+            1,
+            { bindString(0, text) }
+        ) { cursor -> cursor.getString(0) ?: "" }
     }
 
     private fun <T> query(

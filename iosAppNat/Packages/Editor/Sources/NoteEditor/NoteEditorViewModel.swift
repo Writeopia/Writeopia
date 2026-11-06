@@ -875,7 +875,7 @@ public final class NoteEditorViewModel {
 
     public var searchResultCount: Int { writeopiaManager.searchMatches.count }
 
-    public var searchResultIndex: Int { writeopiaManager.searchIndex }
+    public var searchResultIndex: Int { writeopiaManager.currentSearchIndex }
 
     /// Opens the find bar, searching `query` right away when given (the words the global search
     /// found the document by); otherwise with what was typed before, if anything.

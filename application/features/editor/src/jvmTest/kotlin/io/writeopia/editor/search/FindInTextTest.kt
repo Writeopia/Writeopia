@@ -92,4 +92,15 @@ class FindInTextTest {
     fun testWhitespaceOnlyQuery() {
         assertEquals(emptyList(), FindInText.findInText("some text", "   "))
     }
+
+    @Test
+    fun testEveryWordIsNeeded() {
+        assertEquals(emptyList(), FindInText.findInText("the quick brown fox", "fox missing"))
+    }
+
+    @Test
+    fun testPunctuationSeparatesTheWords() {
+        // "hello—world" asks for both words; the dash is not part of them.
+        assertEquals(listOf(Pair(0, 5), Pair(6, 11)), FindInText.findInText("hello world", "hello\u2014world"))
+    }
 }

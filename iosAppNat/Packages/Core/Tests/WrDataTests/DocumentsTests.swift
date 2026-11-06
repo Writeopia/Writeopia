@@ -68,6 +68,19 @@ import WrStorage
         #expect(try await repository.search(query: "  ").isEmpty)
         #expect(try await repository.search(query: "!!!").isEmpty)
     }
+
+    @Test func foldsTheCaseOfAccentedLetters() async throws {
+        let repository = LocalDocumentsRepository(directory: directory)
+        _ = try await repository.createDocument(title: "Ótimas ideias", parentId: Folder.rootId)
+        let note = try await repository.createDocument(title: "Notas", parentId: Folder.rootId)
+        var edited = note
+        edited.content = [StoryStep(type: .text, text: "Reunião Às nove", position: Rank.first)]
+        try await repository.save(edited)
+
+        #expect(try await repository.search(query: "ótimas").map(\.title) == ["Ótimas ideias"])
+        #expect(try await repository.search(query: "REUNIÃO às").map(\.title) == ["Notas"])
+        #expect(try await repository.search(query: "ótimas notas").isEmpty)
+    }
 }
 
 @Suite struct MoveTests {

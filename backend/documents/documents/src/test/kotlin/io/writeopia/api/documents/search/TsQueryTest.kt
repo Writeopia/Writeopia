@@ -8,32 +8,25 @@ import kotlin.test.assertNull
 class TsQueryTest {
 
     @Test
-    fun `every word is required and matched by prefix`() {
-        assertEquals("'hello':* & 'world':*", TsQuery.build("hello world"))
+    fun `every lexeme is required and matched by prefix`() {
+        assertEquals("'hello':* & 'world':*", TsQuery.build(listOf("hello", "world")))
     }
 
     @Test
-    fun `operators and quotes are dropped, so the query can't break`() {
-        assertEquals("'foo':* & 'bar':*", TsQuery.build("foo:*&|!() 'bar\""))
-        assertEquals("'a':* & 'b':* & 'com':*", TsQuery.build("a@b.com"))
+    fun `quotes and backslashes inside a lexeme are escaped, so the query can't break`() {
+        assertEquals("'it''s':* & 'a\\\\b':*", TsQuery.build(listOf("it's", "a\\b")))
     }
 
     @Test
-    fun `letters and digits of any alphabet are kept`() {
-        assertEquals("'café':* & 'über':* & '日本':* & '42':*", TsQuery.build("café über 日本 42"))
+    fun `nothing to search without lexemes`() {
+        assertNull(TsQuery.build(emptyList()))
+        assertNull(TsQuery.build(listOf("", "")))
     }
 
     @Test
-    fun `nothing to search when there is no letter or digit`() {
-        assertNull(TsQuery.build(""))
-        assertNull(TsQuery.build("   "))
-        assertNull(TsQuery.build("!!! --- ***"))
-    }
-
-    @Test
-    fun `the number and the length of the tokens are capped`() {
-        val many = (1..20).joinToString(" ") { "w$it" }
-        assertEquals(TsQuery.MAX_TOKENS, TsQuery.tokens(many).size)
-        assertEquals(TsQuery.MAX_TOKEN_LENGTH, TsQuery.tokens("a".repeat(500)).single().length)
+    fun `the number and the length of the lexemes are capped`() {
+        val many = (1..20).map { "w$it" }
+        assertEquals(TsQuery.MAX_TOKENS, TsQuery.build(many)!!.split(" & ").size)
+        assertEquals("'${"a".repeat(TsQuery.MAX_TOKEN_LENGTH)}':*", TsQuery.build(listOf("a".repeat(500))))
     }
 }

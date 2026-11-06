@@ -660,20 +660,22 @@ class NoteEditorKmpViewModel(
             showSearch,
             _currentSearchIndexState
         ) { drawState, findsSet, query, showSearch, currentSearchIndex ->
-            if (findsSet.isEmpty() && showSearch) return@combine drawState.copy(focus = null)
-            if (findsSet.isEmpty()) return@combine drawState
+            if (findsSet.isEmpty()) {
+                _totalSearchResultsState.value = 0
+                return@combine if (showSearch) drawState.copy(focus = null) else drawState
+            }
 
             // Sorted, the way searchInDocument counts them, so the active match is the same one.
             val finds = findsSet.sorted()
             val mutableStories = drawState.stories.toMutableList()
-            val activeFindPosition =
-                if (finds.size > currentSearchIndex) finds[currentSearchIndex] else null
+            // An edit can take matches away: the active one stays within the ones left.
+            val activeIndex = currentSearchIndex.coerceIn(0, finds.lastIndex)
+            if (activeIndex != currentSearchIndex) _currentSearchIndexState.value = activeIndex
+            val activeFindPosition = finds[activeIndex]
             _totalSearchResultsState.value = finds.size
 
-            if (activeFindPosition != null) {
-                val index = mutableStories.indexOfFirst { it.position == activeFindPosition }
-                if (index != -1) writeopiaManager.scrollToPosition(index)
-            }
+            val activeIndexInDraw = mutableStories.indexOfFirst { it.position == activeFindPosition }
+            if (activeIndexInDraw != -1) writeopiaManager.scrollToPosition(activeIndexInDraw)
 
             finds.forEach { position ->
                 val realPosition = mutableStories.indexOfFirst { it.position == position }

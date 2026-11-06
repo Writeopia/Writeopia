@@ -4,6 +4,9 @@ import WrDesign
 /// The search inside the open document: the words, which match is active out of how many,
 /// previous and next, and a close button. Mirrors `InDocumentSearchBar` of the Compose app.
 struct InDocumentSearchBar: View {
+    /// About how tall the bar is with its paddings, for what has to stay clear of it.
+    static let height: CGFloat = 48
+
     @Bindable var viewModel: NoteEditorViewModel
     @FocusState private var isFocused: Bool
 

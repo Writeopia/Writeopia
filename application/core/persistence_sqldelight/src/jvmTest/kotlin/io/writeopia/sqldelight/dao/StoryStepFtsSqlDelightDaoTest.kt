@@ -72,6 +72,21 @@ class StoryStepFtsSqlDelightDaoTest {
         assertTrue(dao.searchContent("!!!", workspaceId).isEmpty())
     }
 
+    @Test
+    fun `letters of any alphabet fold their case, and any sign separates the words`() = runTest {
+        val database = createDatabase(DriverFactory(), JdbcSqliteDriver.IN_MEMORY)
+        val repository = SqlDelightDaoInjector(database).provideDocumentRepository()
+        val dao = StoryStepFtsSqlDelightDao(database)
+
+        repository.saveDocument(document("doc-a", "Notas", "a1" to "Ótimo resultado da reunião", "a2" to "hello\u2014world"))
+
+        assertEquals(listOf("doc-a"), dao.searchContent("ótimo", workspaceId).map { match -> match.documentId })
+        assertEquals(listOf("doc-a"), dao.searchContent("REUNIÃO", workspaceId).map { match -> match.documentId })
+        assertEquals(listOf("doc-a"), dao.searchContent("world", workspaceId).map { match -> match.documentId })
+        // The id of a step is not a word of its text.
+        assertTrue(dao.searchContent("a1", workspaceId).isEmpty())
+    }
+
     private fun document(id: String, title: String, vararg steps: Pair<String, String>): Document {
         val content = listOf(StoryStep(id = "$id-title", type = StoryTypes.TITLE.type, text = title)) +
             steps.map { (stepId, text) -> StoryStep(id = stepId, type = StoryTypes.TEXT.type, text = text) }

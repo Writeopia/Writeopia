@@ -133,10 +133,17 @@ public final class WriteopiaStateManager {
             .map(\.id)
     }
 
+    /// `searchIndex` within the matches there are now: an edit, an undo or a redo can take
+    /// matches away under it. Zero without matches.
+    public var currentSearchIndex: Int {
+        let count = searchMatches.count
+        return count == 0 ? 0 : min(searchIndex, count - 1)
+    }
+
     /// The step of the active match, when there is one.
     public var activeSearchStepId: String? {
         let matches = searchMatches
-        return matches.indices.contains(searchIndex) ? matches[searchIndex] : nil
+        return matches.isEmpty ? nil : matches[currentSearchIndex]
     }
 
     /// Searches `query` in the document. The active match is the first one at or after the
@@ -151,7 +158,7 @@ public final class WriteopiaStateManager {
         }
 
         let cursorPosition = textSelection.flatMap { find($0.stepId)?.0 } ?? ""
-        let positions = Dictionary(uniqueKeysWithValues: currentStory.stories.map { ($0.value.id, $0.key) })
+        let positions = Dictionary(currentStory.stories.map { ($0.value.id, $0.key) }, uniquingKeysWith: { first, _ in first })
         searchIndex = matches.firstIndex { id in (positions[id] ?? "") >= cursorPosition } ?? 0
         scrollToActiveMatch()
     }
@@ -159,14 +166,14 @@ public final class WriteopiaStateManager {
     public func nextSearchResult() {
         let total = searchMatches.count
         guard total > 0 else { return }
-        searchIndex = (searchIndex + 1) % total
+        searchIndex = (currentSearchIndex + 1) % total
         scrollToActiveMatch()
     }
 
     public func previousSearchResult() {
         let total = searchMatches.count
         guard total > 0 else { return }
-        searchIndex = (searchIndex - 1 + total) % total
+        searchIndex = (currentSearchIndex - 1 + total) % total
         scrollToActiveMatch()
     }
 

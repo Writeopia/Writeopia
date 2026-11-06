@@ -72,7 +72,6 @@ import io.writeopia.ui.keyboard.KeyboardEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
 
 @Composable
 fun DesktopApp(
@@ -138,7 +137,8 @@ fun DesktopApp(
         globalShellViewModel.init()
     }
 
-    coroutineScope.launch {
+    // Scoped to the composition: one collector, cancelled when the app leaves the screen.
+    LaunchedEffect(navigationController, globalShellViewModel) {
         navigationController.currentBackStackEntryFlow.collect { navEntry ->
             globalShellViewModel.onDestinationChanged(navEntry.destination.route)
             val navigationType = navEntry.savedStateHandle.get<String?>(NAVIGATION_TYPE)

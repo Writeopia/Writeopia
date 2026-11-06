@@ -82,9 +82,9 @@ fun InDocumentSearchBar(noteEditorViewModel: NoteEditorViewModel, modifier: Modi
                             ) {
                                 noteEditorViewModel.nextSearchResult()
                                 true
+                            } else {
+                                false
                             }
-
-                            false
                         },
                     singleLine = true,
                     textStyle = MaterialTheme.typography.bodySmall.copy(

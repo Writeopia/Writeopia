@@ -436,19 +436,22 @@ public struct NoteEditorView: View {
         }
     }
 
-    /// The chip that says the AI, or the writing agent, is working.
+    /// The chip that says the AI, or the writing agent, is working. Under the find bar while
+    /// that one is open, so neither hides the other.
     @ViewBuilder
     private var aiRunningChip: some View {
         if viewModel.isAiRunning {
             AiRunningChip { viewModel.cancelAi() }
-                .padding(.top, 8)
+                .padding(.top, chipTopPadding)
                 .transition(.move(edge: .top).combined(with: .opacity))
         } else if let activity = viewModel.writingAgent?.executor.activity {
             AiRunningChip(label: activity) { viewModel.writingAgent?.executor.cancel() }
-                .padding(.top, 8)
+                .padding(.top, chipTopPadding)
                 .transition(.move(edge: .top).combined(with: .opacity))
         }
     }
+
+    private var chipTopPadding: CGFloat { viewModel.isSearchVisible ? InDocumentSearchBar.height + 8 : 8 }
 
     /// The dialogs and the error of the writing agent, and the image picker it opens.
     private func writingAgentDialogs(_ content: some View) -> some View {

@@ -93,6 +93,23 @@ import WrModels
         #expect(manager.activeSearchStepId == "x")
     }
 
+    @Test func theActiveMatchStaysWithinTheMatchesLeftAfterAnEdit() {
+        let manager = WriteopiaStateManager()
+        manager.loadDocument(document)
+        manager.search("banana")
+        manager.nextSearchResult()
+        #expect(manager.activeSearchStepId == "c")
+
+        // The last match goes away: the active one is the last left, and next wraps from it.
+        manager.removeStep(stepId: "c")
+
+        #expect(manager.currentSearchIndex == 0)
+        #expect(manager.activeSearchStepId == "a")
+        #expect(spans(manager, of: "a") == [Span.highlightGreen.rawValue])
+        manager.nextSearchResult()
+        #expect(manager.activeSearchStepId == "a")
+    }
+
     @Test func aHandledScrollRequestIsCleared() {
         let manager = WriteopiaStateManager()
         manager.loadDocument(document)
