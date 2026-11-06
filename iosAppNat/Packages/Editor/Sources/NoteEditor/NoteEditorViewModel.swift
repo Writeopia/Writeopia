@@ -112,6 +112,12 @@ public final class NoteEditorViewModel {
     /// every edit, like the Compose app.
     public var pushDelay: Duration = .seconds(2)
 
+    // Search inside the document (Compose `showSearch`/`searchInDocument`).
+    /// Whether the find bar shows. The matches stay highlighted while it does.
+    public private(set) var isSearchVisible = false
+    /// The words the global search found the document by, searched once it is loaded.
+    @ObservationIgnored private var pendingSearchQuery: String?
+
     static let fontKey = "wr.editor.font"
 
     /// `aiClient` and `publishing` are nil in the private space, where there's no backend.
@@ -128,11 +134,13 @@ public final class NoteEditorViewModel {
         imageGenerator: AiImageGenerating? = nil,
         headerImages: HeaderImageServing? = nil,
         loadActivity: ContentLoadActivity? = nil,
+        searchQuery: String? = nil,
         defaults: UserDefaults = .standard,
         writeopiaManager: WriteopiaStateManager = WriteopiaStateManager()
     ) {
         self.documentId = documentId
         self.repository = repository
+        self.pendingSearchQuery = searchQuery.flatMap { $0.isEmpty ? nil : $0 }
         self.aiClient = aiClient
         self.publishing = publishing
         self.imageUploader = imageUploader
@@ -857,6 +865,35 @@ public final class NoteEditorViewModel {
         writeopiaManager.documentIcon = icon
     }
 
+    // MARK: - Search in the document
+
+    /// The words typed in the find bar; the matches follow every change.
+    public var searchText: String {
+        get { writeopiaManager.searchQuery }
+        set { writeopiaManager.search(newValue) }
+    }
+
+    public var searchResultCount: Int { writeopiaManager.searchMatches.count }
+
+    public var searchResultIndex: Int { writeopiaManager.currentSearchIndex }
+
+    /// Opens the find bar, searching `query` right away when given (the words the global search
+    /// found the document by); otherwise with what was typed before, if anything.
+    public func showSearch(query: String? = nil) {
+        isSearchVisible = true
+        if let query { writeopiaManager.search(query) }
+    }
+
+    /// Closes the find bar and removes the highlights.
+    public func hideSearch() {
+        isSearchVisible = false
+        writeopiaManager.clearSearch()
+    }
+
+    public func nextSearchResult() { writeopiaManager.nextSearchResult() }
+
+    public func previousSearchResult() { writeopiaManager.previousSearchResult() }
+
     // MARK: - Persistence and sync
 
     private func show(_ document: WrDocument) {
@@ -1039,6 +1076,10 @@ public final class NoteEditorViewModel {
             errorMessage = nil
             lastSyncTimestamp = document.lastSyncedAt ?? 0
             pushedSteps = savedSteps
+            if let query = pendingSearchQuery {
+                pendingSearchQuery = nil
+                showSearch(query: query)
+            }
             await reloadTags()
             writingAgent?.documentOpened(id: documentId)
         } catch is CancellationError {

@@ -71,11 +71,36 @@ class FindInTextTest {
     }
 
     @Test
-    fun testCaseSensitivity() {
+    fun testIgnoresCase() {
         val text = "Hello World"
-        val query = "hello" // Case mismatch
-        val expected = emptyList<Pair<Int, Int>>()
+        val query = "hello"
+        val expected = listOf(Pair(0, 5))
         val actual = FindInText.findInText(text, query)
         assertEquals(expected, actual)
+    }
+
+    @Test
+    fun testEachWordOfTheQueryIsFoundOnItsOwn() {
+        val text = "the quick brown fox jumps over the lazy dog"
+        val query = "fox the"
+        val expected = listOf(Pair(0, 3), Pair(16, 19), Pair(31, 34))
+        val actual = FindInText.findInText(text, query)
+        assertEquals(expected, actual)
+    }
+
+    @Test
+    fun testWhitespaceOnlyQuery() {
+        assertEquals(emptyList(), FindInText.findInText("some text", "   "))
+    }
+
+    @Test
+    fun testEveryWordIsNeeded() {
+        assertEquals(emptyList(), FindInText.findInText("the quick brown fox", "fox missing"))
+    }
+
+    @Test
+    fun testPunctuationSeparatesTheWords() {
+        // "hello—world" asks for both words; the dash is not part of them.
+        assertEquals(listOf(Pair(0, 5), Pair(6, 11)), FindInText.findInText("hello world", "hello\u2014world"))
     }
 }

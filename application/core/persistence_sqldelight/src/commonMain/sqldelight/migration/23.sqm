@@ -1,0 +1,26 @@
+-- The full-text index of the story steps (storyStepEntityFts) is now kept by triggers on
+-- storyStepEntity, so every step written by any code path (editor, sync, import) is indexed
+-- and a step edited or deleted leaves no stale row. Until now only the editor fed it, so the
+-- steps received from the backend were missing: the index is rebuilt from the steps.
+DELETE FROM storyStepEntityFts;
+INSERT INTO storyStepEntityFts (text, id, document_id, position)
+SELECT text, id, document_id, position FROM storyStepEntity WHERE text IS NOT NULL;
+
+CREATE TRIGGER IF NOT EXISTS storyStepEntity_fts_insert AFTER INSERT ON storyStepEntity
+BEGIN
+  DELETE FROM storyStepEntityFts WHERE id = new.id;
+  INSERT INTO storyStepEntityFts (text, id, document_id, position)
+  SELECT new.text, new.id, new.document_id, new.position WHERE new.text IS NOT NULL;
+END;
+
+CREATE TRIGGER IF NOT EXISTS storyStepEntity_fts_update AFTER UPDATE ON storyStepEntity
+BEGIN
+  DELETE FROM storyStepEntityFts WHERE id = old.id;
+  INSERT INTO storyStepEntityFts (text, id, document_id, position)
+  SELECT new.text, new.id, new.document_id, new.position WHERE new.text IS NOT NULL;
+END;
+
+CREATE TRIGGER IF NOT EXISTS storyStepEntity_fts_delete AFTER DELETE ON storyStepEntity
+BEGIN
+  DELETE FROM storyStepEntityFts WHERE id = old.id;
+END;

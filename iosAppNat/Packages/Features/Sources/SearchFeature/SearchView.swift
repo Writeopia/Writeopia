@@ -27,6 +27,25 @@ final class SearchViewModel {
 
     var trimmedQuery: String { query.trimmingCharacters(in: .whitespacesAndNewlines) }
 
+    /// The words of the search shown, to mark them in the snippets.
+    var terms: SearchTerms { SearchTerms(lastSearchedQuery) }
+
+    /// The text of the step the words were found in, when the document was found by its
+    /// content: the backend sends that step as the document's only content, and the device
+    /// answers with the whole document. Nil for a document found by its title alone.
+    func snippet(of document: WrDocument) -> String? {
+        let terms = terms
+        guard !terms.isEmpty else { return nil }
+        return document.bodySteps
+            .first { step in Self.proseTypes.contains(step.type.number) && step.text.map(terms.matches) == true }
+            .flatMap(\.text)
+    }
+
+    /// Message, check item, list item, code block: the steps the searches look into.
+    private static let proseTypes: Set<Int> = [
+        StoryType.text.number, StoryType.checkItem.number, StoryType.unorderedListItem.number, StoryType.codeBlock.number,
+    ]
+
     /// Waits for the user to stop typing before hitting the repository. Cancelled by SwiftUI
     /// when the query changes again.
     func search(debounce: Duration = .milliseconds(300)) async {
@@ -61,6 +80,12 @@ final class SearchViewModel {
             errorMessage = error.userMessage
         }
     }
+}
+
+public extension EnvironmentValues {
+    /// Grows every time the search shortcut (Cmd+F) asks for the search: the field takes the
+    /// cursor, so the words go straight in.
+    @Entry var searchFocusRequest = 0
 }
 
 public struct SearchRootView: View {
@@ -101,6 +126,8 @@ struct SearchView: View {
     /// The presentation shown full screen (the phones; the Mac opens a window).
     @State private var presentationShown: Presentation?
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.searchFocusRequest) private var searchFocusRequest
+    @FocusState private var isSearchFocused: Bool
 
     init(
         repository: DocumentsRepository,
@@ -154,13 +181,21 @@ struct SearchView: View {
             .overlay { overlay }
             .navigationTitle("Search")
             .searchable(text: $viewModel.query, prompt: "Search documents")
+            .searchFieldFocused($isSearchFocused)
             .autocorrectionDisabled()
+            // The shortcut brought the search up: the cursor goes in the field. On the Mac the
+            // screen itself is the search, so showing it does the same (a turn later, once the
+            // field is in the toolbar).
+            .onChange(of: searchFocusRequest) { _, _ in focusField() }
+            #if os(macOS)
+            .onAppear { focusField() }
+            #endif
             .task(id: viewModel.trimmedQuery) {
                 await viewModel.search()
             }
             .navigationDestination(for: DocumentsRoute.self) { route in
                 switch route {
-                case .document(let id, let title):
+                case .document(let id, let title, let searchQuery):
                     NoteEditorView(
                         documentId: id,
                         title: title,
@@ -173,7 +208,8 @@ struct SearchView: View {
                         writingAgent: writingAgent,
                         imageGenerator: writingAgent,
                         headerImages: headerImages,
-                        loadActivity: loadActivity
+                        loadActivity: loadActivity,
+                        searchQuery: searchQuery
                     ) { link in
                         path.append(.document(id: link.id, title: link.title ?? "Untitled"))
                     }
@@ -204,13 +240,27 @@ struct SearchView: View {
         #endif
     }
 
+    /// A document found by its words opens with those words highlighted; one found by its
+    /// title opens as usual.
     @ViewBuilder
     private var documentRows: some View {
         ForEach(viewModel.results) { document in
-            NavigationLink(value: DocumentsRoute.document(id: document.id, title: document.displayTitle)) {
-                DocumentRow(document: document)
+            let snippet = viewModel.snippet(of: document)
+            NavigationLink(
+                value: DocumentsRoute.document(
+                    id: document.id,
+                    title: document.displayTitle,
+                    searchQuery: snippet == nil ? nil : viewModel.lastSearchedQuery
+                )
+            ) {
+                SearchDocumentRow(document: document, snippet: snippet, terms: viewModel.terms)
             }
+            .accessibilityIdentifier("search.document.\(document.id)")
         }
+    }
+
+    private func focusField() {
+        DispatchQueue.main.async { isSearchFocused = true }
     }
 
     /// A presentation opens in its own window on the Mac, and over the whole screen on the phones,
@@ -240,6 +290,77 @@ struct SearchView: View {
         } else if !viewModel.hasResults && viewModel.lastSearchedQuery == viewModel.trimmedQuery {
             ContentUnavailableView.search(text: viewModel.trimmedQuery)
         }
+    }
+}
+
+private extension View {
+    /// `searchFocused`, where the system has it (iOS 18, macOS 15); older systems keep the
+    /// field as it is.
+    @ViewBuilder
+    func searchFieldFocused(_ binding: FocusState<Bool>.Binding) -> some View {
+        if #available(iOS 18, macOS 15, *) {
+            searchFocused(binding)
+        } else {
+            self
+        }
+    }
+}
+
+/// A document found by the search: its title, then the line the words were found in with the
+/// words in bold, or the preview of the document when it was found by its title.
+struct SearchDocumentRow: View {
+    let document: WrDocument
+    let snippet: String?
+    let terms: SearchTerms
+
+    var body: some View {
+        Label {
+            VStack(alignment: .leading, spacing: 3) {
+                HStack {
+                    Text(document.displayTitle)
+                        .font(.body.weight(.medium))
+                        .foregroundStyle(WrColors.textLight)
+                        .lineLimit(1)
+                    if document.isFavorite {
+                        Image(systemName: "star.fill")
+                            .font(.caption)
+                            .foregroundStyle(.yellow)
+                    }
+                }
+
+                if let snippet {
+                    Text(highlighted(terms.snippet(of: snippet)))
+                        .font(.subheadline)
+                        .foregroundStyle(WrColors.textLighter)
+                        .lineLimit(1)
+                } else if !document.preview.isEmpty {
+                    Text(document.preview)
+                        .font(.subheadline)
+                        .foregroundStyle(WrColors.textLighter)
+                        .lineLimit(2)
+                }
+
+                if document.lastUpdatedAt > 0 {
+                    Text(document.lastUpdatedDate, format: .relative(presentation: .named))
+                        .font(.caption)
+                        .foregroundStyle(WrColors.textLighter)
+                }
+            }
+        } icon: {
+            Image(systemName: "doc.text")
+                .foregroundStyle(WrColors.textLighter)
+        }
+    }
+
+    /// `text` with the words of the search in bold and the main text color.
+    private func highlighted(_ text: String) -> AttributedString {
+        var attributed = AttributedString(text)
+        for range in terms.ranges(in: text) {
+            guard let bounds = Range(range, in: attributed) else { continue }
+            attributed[bounds].font = .subheadline.weight(.bold)
+            attributed[bounds].foregroundColor = WrColors.textLight
+        }
+        return attributed
     }
 }
 

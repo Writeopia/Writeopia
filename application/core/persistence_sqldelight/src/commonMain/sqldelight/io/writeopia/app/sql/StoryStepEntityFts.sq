@@ -1,15 +1,59 @@
+-- The full-text index of the text of the story steps, for the in-app searches. Kept complete
+-- by the triggers below (migration 23 rebuilt it and added them): whatever writes a step
+-- (editor, sync, import) indexes it, and an edited or deleted step leaves no stale row.
+-- The insert trigger also drops the old row, because an upsert that replaces a row fires
+-- no delete trigger. Only the text is indexed (`notindexed=`, the FTS4 spelling: `UNINDEXED`
+-- is FTS5's and FTS4 ignores it); unicode61 folds the case of letters of any alphabet and
+-- takes any punctuation as a separator, as FtsQuery splits the words. The id is there to
+-- find the row of a step.
 CREATE VIRTUAL TABLE storyStepEntityFts USING fts4(
   text TEXT,
   id TEXT,
-  document_id TEXT UNINDEXED,
-  position TEXT UNINDEXED
+  document_id TEXT,
+  position TEXT,
+  notindexed=id,
+  notindexed=document_id,
+  notindexed=position,
+  tokenize=unicode61
 );
 
+CREATE TRIGGER storyStepEntity_fts_insert AFTER INSERT ON storyStepEntity
+BEGIN
+  DELETE FROM storyStepEntityFts WHERE id = new.id;
+  INSERT INTO storyStepEntityFts (text, id, document_id, position)
+  SELECT new.text, new.id, new.document_id, new.position WHERE new.text IS NOT NULL;
+END;
+
+CREATE TRIGGER storyStepEntity_fts_update AFTER UPDATE ON storyStepEntity
+WHEN new.text IS NOT old.text OR new.position IS NOT old.position OR new.document_id IS NOT old.document_id
+BEGIN
+  DELETE FROM storyStepEntityFts WHERE id = old.id;
+  INSERT INTO storyStepEntityFts (text, id, document_id, position)
+  SELECT new.text, new.id, new.document_id, new.position WHERE new.text IS NOT NULL;
+END;
+
+CREATE TRIGGER storyStepEntity_fts_delete AFTER DELETE ON storyStepEntity
+BEGIN
+  DELETE FROM storyStepEntityFts WHERE id = old.id;
+END;
+
+-- :match is a MATCH expression built by FtsQuery (tokens by prefix), never raw user text.
 searchFts:
 SELECT position, document_id
 FROM storyStepEntityFts
-WHERE storyStepEntityFts MATCH :query || '*';
+WHERE storyStepEntityFts MATCH :match;
 
-insertFts:
-INSERT INTO storyStepEntityFts(text, id, document_id, position)
-VALUES (?, ?, ?, ?);
+-- The steps of a workspace whose text matches, for the global search: joined with the live
+-- steps (the FTS rows are only ever added, so stale ones are skipped) and their documents,
+-- deleted documents left out. Only the steps that hold prose: message, check item, list item,
+-- code block. The title is matched by the title search.
+searchContent:
+SELECT d.id AS document_id, d.title, s.text, s.position
+FROM storyStepEntityFts
+JOIN storyStepEntity s ON s.id = storyStepEntityFts.id
+JOIN documentEntity d ON d.id = s.document_id
+WHERE storyStepEntityFts MATCH :match
+  AND d.workspace_id = :workspaceId
+  AND d.deleted = 0
+  AND s.type IN (0, 10, 16, 23)
+ORDER BY d.id, s.position;

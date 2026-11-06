@@ -161,32 +161,45 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
         return document
     }
 
+    /// The documents with every word of `query` in their title or inside one of their steps, by
+    /// prefix and ignoring case, like the full-text search of the backend (`SearchTerms`). The
+    /// SQL narrows the rows; the words are checked again on the text itself, since the JSON of a
+    /// step also holds its keys. `LIKE` only folds the case of ASCII, so a word with other
+    /// letters ("ótimo", which must find "Ótimo") skips the narrowing and every document is
+    /// checked: the database of a workspace is small.
     public func search(query: String) async throws -> [WrDocument] {
-        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return [] }
+        let terms = SearchTerms(query)
+        guard !terms.isEmpty else { return [] }
         try seedIfNeeded()
 
-        let pattern = "%\(trimmed)%"
-        let byTitle = try db.query(
-            "SELECT id FROM document WHERE deleted = 0 AND title LIKE ?",
-            [.text(pattern)],
-            row: { $0.text(0) }
-        )
-        // The JSON also matches keys, so the steps found are checked again below.
-        let byContent = try db.query(
-            "SELECT DISTINCT document_id FROM story_step WHERE content LIKE ?",
-            [.text(pattern)],
-            row: { $0.text(0) }
-        )
+        let candidates: [String]
+        if terms.tokens.allSatisfy({ token in token.allSatisfy(\.isASCII) }) {
+            let patterns = terms.tokens.map { token in "%\(token)%" }
+            let titleClause = patterns.map { _ in "title LIKE ?" }.joined(separator: " AND ")
+            let contentClause = patterns.map { _ in "content LIKE ?" }.joined(separator: " AND ")
+            let byTitle = try db.query(
+                "SELECT id FROM document WHERE deleted = 0 AND \(titleClause)",
+                patterns.map { .text($0) },
+                row: { $0.text(0) }
+            )
+            let byContent = try db.query(
+                "SELECT DISTINCT document_id FROM story_step WHERE \(contentClause)",
+                patterns.map { .text($0) },
+                row: { $0.text(0) }
+            )
+            candidates = byTitle + byContent
+        } else {
+            candidates = try db.query("SELECT id FROM document WHERE deleted = 0", row: { $0.text(0) })
+        }
 
-        return try Set(byTitle + byContent)
+        return try Set(candidates)
             .compactMap(storedDocument)
             .filter { !$0.deleted }
             .filter { document in
-                document.title.localizedCaseInsensitiveContains(trimmed) ||
+                terms.matches(document.title) ||
                     document.content.contains { step in
                         step.type.number != StoryType.drawing.number &&
-                            step.text?.localizedCaseInsensitiveContains(trimmed) == true
+                            step.text.map(terms.matches) == true
                     }
             }
             .sorted { $0.lastUpdatedAt > $1.lastUpdatedAt }

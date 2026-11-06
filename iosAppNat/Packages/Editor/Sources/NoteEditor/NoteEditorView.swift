@@ -80,6 +80,7 @@ public struct NoteEditorView: View {
         imageGenerator: AiImageGenerating? = nil,
         headerImages: HeaderImagesAPI? = nil,
         loadActivity: ContentLoadActivity? = nil,
+        searchQuery: String? = nil,
         rootTitle: String = String(localized: "Documents"),
         openDocumentLink: @escaping (DocumentLink) -> Void = { _ in }
     ) {
@@ -94,7 +95,8 @@ public struct NoteEditorView: View {
             writingAgent: writingAgent,
             imageGenerator: imageGenerator,
             headerImages: headerImages.map(HeaderImagesService.init(api:)),
-            loadActivity: loadActivity
+            loadActivity: loadActivity,
+            searchQuery: searchQuery
         ))
         fallbackTitle = title
         self.rootTitle = rootTitle
@@ -198,12 +200,21 @@ public struct NoteEditorView: View {
             .disabled(!viewModel.hasLoaded || !viewModel.isAiAvailable || viewModel.isLocked || viewModel.isAiRunning)
 
             Button("Stop AI") {
+                if viewModel.isSearchVisible {
+                    withAnimation(.snappy) { viewModel.hideSearch() }
+                    return
+                }
                 viewModel.cancelAi()
                 viewModel.dismissAiSuggestions()
                 withAnimation(.snappy) { manager.clearLineSelection() }
             }
             .keyboardShortcut(.escape, modifiers: [])
-            .disabled(!viewModel.isAiRunning && !manager.hasAiSuggestions && !manager.hasSelectedLines)
+            .disabled(!viewModel.isSearchVisible && !viewModel.isAiRunning && !manager.hasAiSuggestions && !manager.hasSelectedLines)
+
+            // Cmd+F here finds inside the document; the global search takes it on the documents menu.
+            Button("Find") { withAnimation(.snappy) { viewModel.showSearch() } }
+                .keyboardShortcut("f", modifiers: .command)
+                .disabled(!viewModel.hasLoaded)
 
             Button("Bold") { manager.toggleSpan(.bold) }
                 .keyboardShortcut("b", modifiers: .command)
@@ -335,6 +346,7 @@ public struct NoteEditorView: View {
                 .overlay(alignment: .bottomTrailing) { writingSuggestions }
                 .overlay(alignment: .bottom) { aiCommandField }
                 .safeAreaInset(edge: .bottom, spacing: 0) { bottomMenu }
+                .safeAreaInset(edge: .top, spacing: 0) { searchBar }
                 .overlay(alignment: .trailing) { sideOptions }
         } else if let errorMessage = viewModel.errorMessage {
             ContentUnavailableView {
@@ -413,19 +425,33 @@ public struct NoteEditorView: View {
         }
     }
 
-    /// The chip that says the AI, or the writing agent, is working.
+    /// The search inside the document, while it is open (Cmd+F, or a document the global search
+    /// found by its words). Above the text, so no match hides under it.
+    @ViewBuilder
+    private var searchBar: some View {
+        if viewModel.isSearchVisible {
+            InDocumentSearchBar(viewModel: viewModel)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .transition(.move(edge: .top).combined(with: .opacity))
+        }
+    }
+
+    /// The chip that says the AI, or the writing agent, is working. Under the find bar while
+    /// that one is open, so neither hides the other.
     @ViewBuilder
     private var aiRunningChip: some View {
         if viewModel.isAiRunning {
             AiRunningChip { viewModel.cancelAi() }
-                .padding(.top, 8)
+                .padding(.top, chipTopPadding)
                 .transition(.move(edge: .top).combined(with: .opacity))
         } else if let activity = viewModel.writingAgent?.executor.activity {
             AiRunningChip(label: activity) { viewModel.writingAgent?.executor.cancel() }
-                .padding(.top, 8)
+                .padding(.top, chipTopPadding)
                 .transition(.move(edge: .top).combined(with: .opacity))
         }
     }
+
+    private var chipTopPadding: CGFloat { viewModel.isSearchVisible ? InDocumentSearchBar.height + 8 : 8 }
 
     /// The dialogs and the error of the writing agent, and the image picker it opens.
     private func writingAgentDialogs(_ content: some View) -> some View {

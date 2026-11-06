@@ -57,6 +57,7 @@ import io.writeopia.navigation.notes.navigateToFolder
 import io.writeopia.navigation.notes.navigateToNewNote
 import io.writeopia.navigation.notes.navigateToNote
 import io.writeopia.navigation.notes.navigateToNoteWithPresentation
+import io.writeopia.navigation.notes.navigateToNoteWithSearch
 import io.writeopia.navigation.presentation.navigateToPresentation
 import io.writeopia.navigation.search.navigateToSearch
 import io.writeopia.notemenu.di.NotesMenuInjection
@@ -271,6 +272,7 @@ fun Navigation(
                     navigateToDocument = navController::navigateToNote,
                     navigateToFolder = navController::navigateToFolder,
                     navigateToPresentation = navController::navigateToNoteWithPresentation,
+                    navigateToDocumentWithSearch = navController::navigateToNoteWithSearch,
                     navigationClick = navController::navigateUp,
                     nestedScrollConnection = nestedScrollConnection,
                     isToolbarVisible = isToolbarVisible,

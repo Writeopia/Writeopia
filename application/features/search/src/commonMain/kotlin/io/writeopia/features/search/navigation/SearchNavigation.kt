@@ -49,6 +49,7 @@ fun NavGraphBuilder.searchNavigation(
     navigateToDocument: (String, String) -> Unit,
     navigateToFolder: (NotesNavigation) -> Unit,
     navigateToPresentation: (documentId: String, presentationId: String, title: String) -> Unit,
+    navigateToDocumentWithSearch: (documentId: String, title: String, query: String) -> Unit,
     navigationClick: () -> Unit,
     nestedScrollConnection: NestedScrollConnection? = null,
     isToolbarVisible: Boolean = true,
@@ -68,6 +69,7 @@ fun NavGraphBuilder.searchNavigation(
                 documentClick = navigateToDocument,
                 onFolderClick = navigateToFolder,
                 presentationClick = navigateToPresentation,
+                documentContentClick = navigateToDocumentWithSearch,
             )
         }
 
