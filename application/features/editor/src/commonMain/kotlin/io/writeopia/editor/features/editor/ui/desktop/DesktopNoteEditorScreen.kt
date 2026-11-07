@@ -140,6 +140,7 @@ fun DesktopNoteEditorScreen(
                 showDeleteConfirmation = true
             },
             toggleFavorite = noteEditorViewModel::toggleFavorite,
+            onSearchClick = noteEditorViewModel::showSearch,
             aiSummary = noteEditorViewModel::aiSummary,
             aiActionPoints = noteEditorViewModel::aiActionPoints,
             aiFaq = noteEditorViewModel::aiFaq,

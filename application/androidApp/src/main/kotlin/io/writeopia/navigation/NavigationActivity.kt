@@ -28,6 +28,7 @@ import io.writeopia.common.utils.di.SharedPreferencesInjector
 import io.writeopia.core.folders.di.WorkspaceInjection
 import io.writeopia.editor.di.EditorKmpInjector
 import io.writeopia.features.search.di.MobileSearchInjection
+import io.writeopia.features.search.repository.DocumentContentRoomSearch
 import io.writeopia.mobile.AppMobile
 import io.writeopia.model.isDarkTheme
 import io.writeopia.notemenu.di.NotesMenuKmpInjection
@@ -107,6 +108,7 @@ fun NavigationGraph(
     val searchInjector = remember {
         MobileSearchInjection(
             appRoomDaosInjection = appDaosInjection,
+            documentContentSearch = DocumentContentRoomSearch(database.storyStepFtsDao()),
         )
     }
 

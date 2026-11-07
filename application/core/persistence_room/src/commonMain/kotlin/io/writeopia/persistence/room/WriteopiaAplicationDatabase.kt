@@ -4,6 +4,8 @@ import androidx.room.ConstructedBy
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.RoomDatabaseConstructor
+import androidx.sqlite.SQLiteConnection
+import androidx.sqlite.execSQL
 import androidx.room.TypeConverters
 import io.writeopia.persistence.room.data.daos.DocumentTagRoomDao
 import io.writeopia.persistence.room.data.daos.FolderRoomDao
@@ -25,12 +27,15 @@ import io.writeopia.sdk.persistence.dao.CommentEntityDao
 import io.writeopia.sdk.persistence.dao.DocumentEntityDao
 import io.writeopia.sdk.persistence.dao.DocumentTagLinkDao
 import io.writeopia.sdk.persistence.dao.PendingFavoriteDao
+import io.writeopia.sdk.persistence.dao.StoryStepFtsDao
 import io.writeopia.sdk.persistence.dao.StoryStepTombstoneDao
 import io.writeopia.sdk.persistence.dao.StoryUnitEntityDao
 import io.writeopia.sdk.persistence.entity.comment.CommentEntity
 import io.writeopia.sdk.persistence.entity.document.DocumentEntity
 import io.writeopia.sdk.persistence.entity.document.PendingFavoriteEntity
 import io.writeopia.sdk.persistence.entity.story.StoryStepEntity
+import io.writeopia.sdk.persistence.entity.story.StoryStepFtsEntity
+import io.writeopia.sdk.persistence.entity.story.StoryStepFtsTriggers
 import io.writeopia.sdk.persistence.entity.story.StoryStepTombstoneEntity
 import io.writeopia.sdk.persistence.entity.tag.DocumentTagLinkEntity
 
@@ -44,6 +49,7 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<WriteopiaApplicat
     entities = [
         DocumentEntity::class,
         StoryStepEntity::class,
+        StoryStepFtsEntity::class,
         StoryStepTombstoneEntity::class,
         PendingFavoriteEntity::class,
         CommentEntity::class,
@@ -57,7 +63,7 @@ expect object AppDatabaseConstructor : RoomDatabaseConstructor<WriteopiaApplicat
         TokenEntity::class,
         WorkspaceEntity::class
     ],
-    version = 39,
+    version = 40,
     exportSchema = false
 )
 @TypeConverters(IdListConverter::class)
@@ -67,6 +73,8 @@ abstract class WriteopiaApplicationDatabase : RoomDatabase() {
     abstract fun documentDao(): DocumentEntityDao
 
     abstract fun storyUnitDao(): StoryUnitEntityDao
+
+    abstract fun storyStepFtsDao(): StoryStepFtsDao
 
     abstract fun storyStepTombstoneDao(): StoryStepTombstoneDao
 
@@ -113,12 +121,25 @@ abstract class WriteopiaApplicationDatabase : RoomDatabase() {
                     MIGRATION_35_36,
                     MIGRATION_36_37,
                     MIGRATION_37_38,
-                    MIGRATION_38_39
+                    MIGRATION_38_39,
+                    MIGRATION_39_40
                 )
+                .addCallback(FtsTriggersCallback)
                 .fallbackToDestructiveMigration(dropAllTables = true)
                 .build()
                 .also { database ->
                     instance = database
                 }
+    }
+}
+
+/**
+ * The triggers that keep the full-text index of the steps complete. Room creates the tables
+ * but not these, so they are made on every open (`IF NOT EXISTS`): a fresh install gets them
+ * with its first open, and a database that fell back to being recreated gets them back.
+ */
+private object FtsTriggersCallback : RoomDatabase.Callback() {
+    override fun onOpen(connection: SQLiteConnection) {
+        StoryStepFtsTriggers.create().forEach(connection::execSQL)
     }
 }

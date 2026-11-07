@@ -369,6 +369,11 @@ internal fun NoteEditorScreen(
                     onAddTagClick = noteEditorViewModel::showAddTagDialog,
                     onRemoveTagClick = noteEditorViewModel::removeTagFromDocument,
                     onIconClick = { showIconSheet = true },
+                    onSearchClick = {
+                        // The menu covers the editor: it closes, and the find bar takes its place.
+                        noteEditorViewModel.onMoreOptionsClick()
+                        noteEditorViewModel.showSearch()
+                    },
                 )
             }
 
