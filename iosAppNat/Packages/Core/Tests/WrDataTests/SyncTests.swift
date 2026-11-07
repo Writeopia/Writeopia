@@ -652,7 +652,8 @@ final class FakeBackend: HTTPTransport {
 
         #expect(backend.searchRequests == 1)
         #expect(found.documents.map(\.id) == ["doc"])
-        #expect(found.presentations.map(\.id) == ["cloud", "device"])
+        // The ones on this device first, then the backend's, like the Compose app.
+        #expect(found.presentations.map(\.id) == ["device", "cloud"])
         #expect(found.presentations.allSatisfy { $0.slides.isEmpty })
     }
 
@@ -664,6 +665,77 @@ final class FakeBackend: HTTPTransport {
         let found = try await repository.searchAll(query: "sky")
 
         #expect(found.presentations.map(\.id) == ["device"])
+    }
+
+    @Test func theDeviceAndTheBackendAreSearchedAndMerged() async throws {
+        let backend = FakeBackend()
+        // The backend knows "doc" by the words inside it (it sends the matching step as the
+        // content) and "cloud", not on this device yet.
+        let docSnippet = WrDocument(id: "doc", title: "Sky notes", workspaceId: "w", content: [
+            StoryStep(id: "s", type: .text, text: "The sky was clear", position: Rank.at(1)),
+        ], parentId: "root")
+        let cloudOnly = WrDocument(id: "cloud", title: "Elsewhere", workspaceId: "w", content: [
+            StoryStep(id: "c", type: .text, text: "Sky again", position: Rank.at(1)),
+        ], parentId: "root")
+        let encoded = try [docSnippet, cloudOnly].map { String(decoding: try JSONEncoder().encode($0), as: UTF8.self) }
+        backend.searchResponse = """
+            {"documents":[\(encoded.joined(separator: ","))],"presentations":[]}
+            """
+        let repository = makeRepository(backend)
+        // The device holds "doc" whole, found by its title alone, and "local", not synced yet.
+        try repository.local.store(WrDocument(id: "doc", title: "Sky notes", workspaceId: "w", content: [
+            StoryStep(id: "t", type: .title, text: "Sky notes", position: Rank.at(0)),
+            StoryStep(id: "s", type: .text, text: "The weather was clear", position: Rank.at(1)),
+        ], lastUpdatedAt: 20, parentId: "root"))
+        try repository.local.store(WrDocument(id: "local", title: "Draft", workspaceId: "w", content: [
+            StoryStep(id: "t2", type: .title, text: "Draft", position: Rank.at(0)),
+            StoryStep(id: "l", type: .text, text: "Under the sky", position: Rank.at(1)),
+        ], lastUpdatedAt: 10, parentId: "root"))
+
+        let found = try await repository.searchAll(query: "sky")
+
+        #expect(backend.searchRequests == 1)
+        // The device's documents first, then the backend's additions.
+        #expect(found.documents.map(\.id) == ["doc", "local", "cloud"])
+        // "doc" shows the step the backend found the words in, not the device's whole copy.
+        #expect(found.documents[0].content.map(\.text) == ["The sky was clear"])
+        #expect(found.documents[1].content.count == 2)
+    }
+
+    @Test func whenTheBackendFailsTheDeviceStillAnswers() async throws {
+        let backend = FakeBackend()
+        let repository = makeRepository(backend)
+        try repository.local.store(WrDocument(id: "local", title: "Sky draft", workspaceId: "w", parentId: "root"))
+
+        let found = try await repository.searchAll(query: "sky")
+
+        #expect(found.documents.map(\.id) == ["local"])
+    }
+}
+
+@Suite struct SearchResultsMergeTests {
+    private func document(_ id: String, text: String? = nil) -> WrDocument {
+        WrDocument(id: id, title: id, workspaceId: "w", content: text.map { [StoryStep(id: "\(id)-s", type: .text, text: $0, position: Rank.at(1))] } ?? [])
+    }
+
+    @Test func idsComeOnceInOrderAndTheCopyWithTheWordsWins() {
+        let first = SearchResults(documents: [document("a"), document("b", text: "sky here")])
+        let second = SearchResults(documents: [document("a", text: "the sky"), document("b"), document("c")])
+
+        let merged = SearchResults.merged(first, second, query: "sky")
+
+        #expect(merged.documents.map(\.id) == ["a", "b", "c"])
+        #expect(merged.documents[0].content.first?.text == "the sky")
+        #expect(merged.documents[1].content.first?.text == "sky here")
+    }
+
+    @Test func presentationsKeepTheFirstCopy() {
+        let first = SearchResults(presentations: [Presentation(id: "p", documentId: "a", title: "Here", createdAt: 1, slides: [])])
+        let second = SearchResults(presentations: [Presentation(id: "p", documentId: "a", title: "There", createdAt: 2, slides: []), Presentation(id: "q", documentId: "b", title: "Q", createdAt: 3, slides: [])])
+
+        let merged = SearchResults.merged(first, second, query: "x")
+
+        #expect(merged.presentations.map(\.title) == ["Here", "Q"])
     }
 }
 

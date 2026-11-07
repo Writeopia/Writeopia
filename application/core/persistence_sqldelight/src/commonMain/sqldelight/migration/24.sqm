@@ -1,0 +1,28 @@
+-- The full-text index of the story steps, rebuilt: the words are split and folded by
+-- unicode61 (the default tokenizer only folds the case of ASCII, so "Ótimo" didn't match
+-- "ótimo", and treats any non-ASCII sign as part of a word), and only the text is indexed
+-- (`UNINDEXED` is FTS5's spelling, which FTS4 ignored: the id, document id and position were
+-- indexed too), so a word can't match the id of a step. The update trigger now fires only
+-- when what the index holds changes.
+DROP TABLE storyStepEntityFts;
+CREATE VIRTUAL TABLE storyStepEntityFts USING fts4(
+  text TEXT,
+  id TEXT,
+  document_id TEXT,
+  position TEXT,
+  notindexed=id,
+  notindexed=document_id,
+  notindexed=position,
+  tokenize=unicode61
+);
+INSERT INTO storyStepEntityFts (text, id, document_id, position)
+SELECT text, id, document_id, position FROM storyStepEntity WHERE text IS NOT NULL;
+
+DROP TRIGGER IF EXISTS storyStepEntity_fts_update;
+CREATE TRIGGER storyStepEntity_fts_update AFTER UPDATE ON storyStepEntity
+WHEN new.text IS NOT old.text OR new.position IS NOT old.position OR new.document_id IS NOT old.document_id
+BEGIN
+  DELETE FROM storyStepEntityFts WHERE id = old.id;
+  INSERT INTO storyStepEntityFts (text, id, document_id, position)
+  SELECT new.text, new.id, new.document_id, new.position WHERE new.text IS NOT NULL;
+END;

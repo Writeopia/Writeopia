@@ -34,6 +34,8 @@ private struct MainLayout: View {
     /// Set while the folder tree moves the selection to the Folders tab: the tree has routed
     /// the documents itself, so that change mustn't reset them.
     @State private var isOpeningFromTree = false
+    /// Grows with every Cmd+F, so the search field takes the cursor (`searchFocusRequest`).
+    @State private var searchFocusRequests = 0
 
     var body: some View {
         TabView(selection: $selection) {
@@ -77,7 +79,25 @@ private struct MainLayout: View {
             .environment(session)
         }
         .environment(\.openEditors, openEditors)
+        .environment(\.searchFocusRequest, searchFocusRequests)
         .onChange(of: selection) { _, tab in route(to: tab) }
+        .background { searchShortcut }
+    }
+
+    /// Cmd+F on a keyboard opens the search from the documents only, like the Compose app: in
+    /// the editor the shortcut finds inside the document, and the other screens have no search.
+    @ViewBuilder
+    private var searchShortcut: some View {
+        if selection == .folders || selection == .favorites, !openEditors.isAnyOpen {
+            Button("Search") {
+                selection = .search
+                searchFocusRequests += 1
+            }
+            .keyboardShortcut("f", modifiers: .command)
+            .opacity(0)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+        }
     }
 
     /// The documents of the workspace. The folders and the favorites are the same navigation;

@@ -40,6 +40,17 @@ fun NavController.navigateToNoteWithPresentation(documentId: String, presentatio
     navigate("${Destinations.EDITOR.id}/$documentId/${title.encodeForNavigation()}?presentationId=$presentationId")
 }
 
+/**
+ * Opens a document found by the words inside it, with the in-document search active on [query]:
+ * the matches highlighted and the first one scrolled to. Navigates even when the document is
+ * already open, so the search applies.
+ */
+fun NavController.navigateToNoteWithSearch(documentId: String, title: String, query: String) {
+    navigate(
+        "${Destinations.EDITOR.id}/$documentId/${title.encodeForNavigation()}?searchQuery=${query.encodeForNavigation()}"
+    )
+}
+
 fun NavController.navigateToAccount(builder: NavOptionsBuilder.() -> Unit = {}) {
     navigate(Destinations.ACCOUNT.id, builder)
 }

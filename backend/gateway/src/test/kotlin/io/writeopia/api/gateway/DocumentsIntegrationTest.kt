@@ -1976,6 +1976,119 @@ class DocumentationIntegrationTests {
     }
 
     @Test
+    fun `search finds documents by the words inside them, with the matching step as a snippet`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val workspaceId = Random.nextInt().toString()
+        val suffix = Random.nextInt()
+
+        val byContent = DocumentApi(
+            id = "searchContentDoc_$suffix",
+            title = "Weekly Notes",
+            workspaceId = workspaceId,
+            parentId = "root",
+            isLocked = false,
+            createdAt = 1000L,
+            lastUpdatedAt = 2000L,
+            lastSyncedAt = 0L,
+            content = listOf(
+                StoryStep(id = "intro_$suffix", type = StoryTypes.TEXT.type, text = "Plain introduction").toApi(Rank.at(1)),
+                StoryStep(id = "hit_$suffix", type = StoryTypes.TEXT.type, text = "Remember the zebrafish samples").toApi(Rank.at(2)),
+            )
+        )
+        val byTitle = DocumentApi(
+            id = "searchTitleDoc_$suffix",
+            title = "Zebrafish lab",
+            workspaceId = workspaceId,
+            parentId = "root",
+            isLocked = false,
+            createdAt = 1000L,
+            lastUpdatedAt = 2000L,
+            lastSyncedAt = 0L,
+            content = listOf(
+                StoryStep(id = "other_$suffix", type = StoryTypes.TEXT.type, text = "Nothing to see").toApi(Rank.at(1)),
+            )
+        )
+        val unrelated = byTitle.copy(id = "searchUnrelatedDoc_$suffix", title = "Unrelated", content = emptyList())
+
+        val createResponse = client.post("/api/docs/workspace/document") {
+            contentType(ContentType.Application.Json)
+            setBody(SendDocumentsRequest(listOf(byContent, byTitle, unrelated), workspaceId))
+        }
+        assertEquals(HttpStatusCode.OK, createResponse.status)
+
+        val response = client.get("/api/docs/workspace/$workspaceId/document/search?q=zebra")
+        assertEquals(HttpStatusCode.OK, response.status)
+        val results = response.body<SearchResponse>().documents
+
+        assertEquals(setOf(byContent.id, byTitle.id), results.map { it.id }.toSet())
+        // The document found by its words carries the matching step, and only it.
+        val contentHit = results.first { it.id == byContent.id }
+        assertEquals(listOf("Remember the zebrafish samples"), contentHit.content.map { it.text })
+        assertEquals(Rank.at(2), contentHit.content.single().position)
+        // The one found by its title alone carries no content.
+        assertTrue(results.first { it.id == byTitle.id }.content.isEmpty())
+
+        // "Weekly Notes" has no "notes" in its body: found by title only, so no snippet.
+        val titleOnly = client.get("/api/docs/workspace/$workspaceId/document/search?q=notes")
+        val titleOnlyResults = titleOnly.body<SearchResponse>().documents
+        assertEquals(listOf(byContent.id), titleOnlyResults.map { it.id })
+        assertTrue(titleOnlyResults.single().content.isEmpty())
+
+        // Symbols only: nothing to search inside the documents, the title search still answers.
+        val symbols = client.get("/api/docs/workspace/$workspaceId/document/search?q=%26%26%26")
+        assertEquals(HttpStatusCode.OK, symbols.status)
+        assertTrue(symbols.body<SearchResponse>().documents.isEmpty())
+
+        // Clean up
+        db.deleteDocumentById(byContent.id, byTitle.id, unrelated.id)
+    }
+
+    @Test
+    fun `a document matched by its title and its words is returned once, with the snippet`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+        val workspaceId = Random.nextInt().toString()
+        val suffix = Random.nextInt()
+
+        val document = DocumentApi(
+            id = "searchBothDoc_$suffix",
+            title = "Marathon training",
+            workspaceId = workspaceId,
+            parentId = "root",
+            isLocked = false,
+            createdAt = 1000L,
+            lastUpdatedAt = 2000L,
+            lastSyncedAt = 0L,
+            content = listOf(
+                StoryStep(id = "plan_$suffix", type = StoryTypes.TEXT.type, text = "Marathon in October").toApi(Rank.at(1)),
+            )
+        )
+
+        val createResponse = client.post("/api/docs/workspace/document") {
+            contentType(ContentType.Application.Json)
+            setBody(SendDocumentsRequest(listOf(document), workspaceId))
+        }
+        assertEquals(HttpStatusCode.OK, createResponse.status)
+
+        val response = client.get("/api/docs/workspace/$workspaceId/document/search?q=marathon")
+        assertEquals(HttpStatusCode.OK, response.status)
+        val results = response.body<SearchResponse>().documents
+
+        assertEquals(listOf(document.id), results.map { it.id })
+        assertEquals(listOf("Marathon in October"), results.single().content.map { it.text })
+
+        // Clean up
+        db.deleteDocumentById(document.id)
+    }
+
+    @Test
     fun `search should not return deleted documents`() = testApplication {
         application {
             module(db, debugMode = true)

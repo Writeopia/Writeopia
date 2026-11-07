@@ -3,6 +3,7 @@ package io.writeopia.persistence.room
 import androidx.room.migration.Migration
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.execSQL
+import io.writeopia.sdk.persistence.entity.story.StoryStepFtsTriggers
 
 val MIGRATION_29_30 = object : Migration(29, 30) {
     override fun migrate(connection: SQLiteConnection) {
@@ -258,3 +259,20 @@ val MIGRATION_38_39 = object : Migration(38, 39) {
         )
     }
 }
+
+/**
+ * The full-text index of the story steps (StoryStepFtsEntity in the persistence plugin), for
+ * the global search to find words inside the documents, like the SQLDelight database. Created
+ * as Room creates it, then filled from the steps; the triggers keep it complete from then on.
+ */
+val MIGRATION_39_40 = object : Migration(39, 40) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL(STORY_STEP_FTS_CREATE)
+        StoryStepFtsTriggers.rebuild().forEach(connection::execSQL)
+        StoryStepFtsTriggers.create().forEach(connection::execSQL)
+    }
+}
+
+/** What Room generates for StoryStepFtsEntity (`createAllTables`), word for word, so the schema check passes. */
+private const val STORY_STEP_FTS_CREATE =
+    "CREATE VIRTUAL TABLE IF NOT EXISTS `STORY_STEP_FTS_TABLE` USING FTS4(`text` TEXT NOT NULL, `id` TEXT NOT NULL, `document_id` TEXT NOT NULL, `position` TEXT NOT NULL, tokenize=unicode61, notindexed=`id`, notindexed=`document_id`, notindexed=`position`)"

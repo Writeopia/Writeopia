@@ -11,11 +11,14 @@ fun writeopiaSerializersModule(): SerializersModule = SerializersModule {
     contextual(InstantSerializer)
 }
 
+// Unknown keys are ignored so a client keeps decoding what a newer backend adds to a response.
 val writeopiaJson: Json = Json {
     serializersModule = writeopiaSerializersModule()
+    ignoreUnknownKeys = true
 }
 
 val writeopiaJsonPretty: Json = Json {
     serializersModule = writeopiaSerializersModule()
+    ignoreUnknownKeys = true
     prettyPrint = true
 }

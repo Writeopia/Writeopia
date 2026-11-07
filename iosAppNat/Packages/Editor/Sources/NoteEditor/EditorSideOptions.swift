@@ -219,6 +219,7 @@ private struct SidePagePanel: View {
                 showsTags = true
             } label: {
                 Label(viewModel.documentTags.isEmpty ? "Add tag" : "View tags", systemImage: "tag")
+                    .panelButtonLabel()
             }
             .accessibilityIdentifier("side.tags")
             .sheet(isPresented: $showsTags) {
@@ -249,6 +250,7 @@ private struct SidePagePanel: View {
                 } icon: {
                     DocumentIconImage(icon: viewModel.documentIcon, defaultColor: .secondary)
                 }
+                .panelButtonLabel()
             }
             .accessibilityIdentifier("side.icon")
             .popover(isPresented: $showsIcons) {
@@ -261,6 +263,7 @@ private struct SidePagePanel: View {
                 showsMove = true
             } label: {
                 Label("Move to…", systemImage: "arrow.forward.folder")
+                    .panelButtonLabel()
             }
             .accessibilityIdentifier("side.move")
             .sheet(isPresented: $showsMove) {
@@ -274,6 +277,14 @@ private struct SidePagePanel: View {
                 }
                 .wrSheetSize(width: 440, height: 520)
             }
+
+            Button {
+                withAnimation(.snappy) { viewModel.showSearch() }
+            } label: {
+                Label("Find in document", systemImage: "magnifyingglass")
+                    .panelButtonLabel()
+            }
+            .accessibilityIdentifier("side.search")
         }
 
         PanelSection("Font") {
@@ -290,6 +301,7 @@ private struct SidePagePanel: View {
             confirmsDelete = true
         } label: {
             Label("Delete document", systemImage: "trash")
+                .panelButtonLabel()
         }
         .accessibilityIdentifier("side.delete")
         .confirmationDialog("Delete this document?", isPresented: $confirmsDelete, titleVisibility: .visible) {
@@ -524,6 +536,12 @@ private struct PanelSection<Content: View>: View {
 }
 
 private extension View {
+    /// The label of a button of the panel: every button as wide as the panel, the text at the
+    /// start, so they line up whatever they say.
+    func panelButtonLabel() -> some View {
+        frame(maxWidth: .infinity, alignment: .leading)
+    }
+
     @ViewBuilder
     func glassPanel() -> some View {
         let shape = RoundedRectangle(cornerRadius: 22, style: .continuous)

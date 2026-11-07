@@ -239,6 +239,10 @@ CREATE INDEX idx_document_tag_workspace_id ON document_tag_entity(workspace_id);
 CREATE INDEX idx_document_tag_link_document_id ON document_tag_link(document_id);
 CREATE UNIQUE INDEX idx_workspace_header_image_workspace_url ON workspace_header_image_entity(workspace_id, url);
 CREATE INDEX idx_story_step_document_id ON story_step_entity(document_id);
+-- Full-text search over the text of the story steps (global search). Expression index: the
+-- query in backend/core/database/.../search/StoryStepSearchStore.kt uses the same expression
+-- word for word. Mirrored in WriteopiaScripts2/db-migrations/story_step_search/ (production).
+CREATE INDEX IF NOT EXISTS idx_story_step_text_fts ON story_step_entity USING GIN (to_tsvector('simple', coalesce(text, '')));
 CREATE INDEX idx_workspace_to_user_user_id ON workspace_to_user(user_id);
 CREATE INDEX idx_sync_event_workspace_id ON sync_event(workspace_id);
 CREATE INDEX idx_ai_usage_user_id ON ai_usage(user_id);

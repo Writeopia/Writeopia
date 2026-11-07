@@ -37,6 +37,7 @@ import io.writeopia.editor.features.editor.ui.desktop.edit.menu.FavoriteButton
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.FontOptions
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.LockButton
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.MoveToButton
+import io.writeopia.editor.features.editor.ui.desktop.edit.menu.SearchButton
 import io.writeopia.editor.features.editor.ui.tags.DocumentTagChipsRow
 import io.writeopia.model.Font
 import io.writeopia.resources.WrStrings
@@ -68,6 +69,8 @@ internal fun NoteGlobalActionsMenu(
     onAddTagClick: () -> Unit = {},
     onRemoveTagClick: (String) -> Unit = {},
     onIconClick: () -> Unit = {},
+    /** Opens the search inside the document. */
+    onSearchClick: () -> Unit = {},
 ) {
     Box(
         modifier = Modifier
@@ -110,7 +113,7 @@ internal fun NoteGlobalActionsMenu(
 
                 Spacer(modifier = Modifier.width(4.dp))
 
-                Spacer(modifier = Modifier.weight(1F))
+                SearchButton(onSearchClick, modifier = Modifier.weight(1F))
             }
 
             Spacer(modifier = Modifier.height(16.dp))

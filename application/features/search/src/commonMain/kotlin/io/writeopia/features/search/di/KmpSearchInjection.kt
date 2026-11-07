@@ -3,6 +3,8 @@ package io.writeopia.features.search.di
 import io.writeopia.auth.core.di.AuthCoreInjectionNeo
 import io.writeopia.di.AppConnectionInjection
 import io.writeopia.features.search.api.SearchApi
+import io.writeopia.features.search.repository.DocumentContentSearch
+import io.writeopia.features.search.repository.DocumentContentSqlSearch
 import io.writeopia.features.search.repository.PresentationSqlSearch
 import io.writeopia.features.search.repository.SearchRepository
 import io.writeopia.features.search.ui.SearchKmpViewModel
@@ -12,6 +14,7 @@ import io.writeopia.sdk.persistence.sqldelight.dao.DocumentSqlDao
 import io.writeopia.sdk.search.DocumentSearch
 import io.writeopia.sql.WriteopiaDb
 import io.writeopia.sqldelight.dao.FolderSqlDelightDao
+import io.writeopia.sqldelight.dao.StoryStepFtsSqlDelightDao
 import io.writeopia.sqldelight.di.WriteopiaDbInjector
 
 class KmpSearchInjection private constructor(
@@ -38,13 +41,16 @@ class KmpSearchInjection private constructor(
 
     fun provideRepository(
         folderDao: FolderSearch = provideFolderSqlDelightDao(),
-        documentDao: DocumentSearch = provideDocumentSqlDao()
+        documentDao: DocumentSearch = provideDocumentSqlDao(),
+        /** The words inside the documents; the SQLDelight index here, Room's on Android. */
+        documentContentSearch: DocumentContentSearch = DocumentContentSqlSearch(writeopiaDb?.let(::StoryStepFtsSqlDelightDao)),
     ): SearchRepository = SearchRepository(
         this.folderDao ?: folderDao.also { this.folderDao = folderDao },
         this.documentDao ?: documentDao.also { this.documentDao = documentDao },
         provideSearchApi(),
         AuthCoreInjectionNeo.singleton().provideAuthRepository(),
-        PresentationSqlSearch(writeopiaDb?.presentationEntityQueries)
+        PresentationSqlSearch(writeopiaDb?.presentationEntityQueries),
+        documentContentSearch
     )
 
     override fun provideViewModel(): SearchKmpViewModel =
