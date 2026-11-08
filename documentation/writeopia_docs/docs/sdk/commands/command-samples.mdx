@@ -1,30 +1,48 @@
 # Command Samples
-Writeopia handles many text commands that create new content from what the user types. In this section you will learn the built-in commands, to change and add more commands. 
+
+Writeopia handles many text commands that create new content from what the user types. The built-in commands are
+listed in **Default Commands**; this page shows what they produce.
 
 ## Checkbox
-Typing the command  `-[] ` creates a checkbox in the place of current message. 
+
+Typing `-[]` creates a checkbox in place of the current message.
 
 ![checkbox sample](../../../static/img/checkbox_sample.gif)
 
-It triggers [Writeopia.changeStoryType](https://kdocs.writeopia.io/writeopia/io.writeopia.sdk.manager/-writeopia-manager/change-story-type.html) with [StoryType](https://kdocs.writeopia.io/writeopia_models/io.writeopia.sdk.models.story/-story-type/index.html) of a checkbox item. 
+It changes the type of the step to `StoryTypes.CHECK_ITEM` through
+[WriteopiaManager.changeStoryType](https://javadoc.io/doc/io.writeopia/writeopia-core/latest/writeopia/io.writeopia.sdk.manager/-writeopia-manager/change-story-type.html).
 
 ## List item
-Typing the command  `- ` creates a list item in the place of current message. 
+
+Typing a hyphen followed by a space (`- `) creates a list item in place of the current message.
 
 ![list item sample](../../../static/img/list_item_sample.gif)
 
-It triggers [Writeopia.changeStoryType](https://kdocs.writeopia.io/writeopia/io.writeopia.sdk.manager/-writeopia-manager/change-story-type.html) with [StoryType](https://kdocs.writeopia.io/writeopia_models/io.writeopia.sdk.models.story/-story-type/index.html) of a list item. 
+It changes the type to `StoryTypes.UNORDERED_LIST_ITEM`.
 
 ## H1, H2, H3, H4
-Writeopia also has commands to create H1, H2, H3 and H4.
 
-| Command | Result  |
-| ------- | ------- | 
-| `#`     | H1      |
-| `##`    | H2      |
-| `###`   | H3      |
-| `####`  | H4      |
+Headers are `message` steps with a tag, not types of their own.
 
-H3 sample: 
+| Command | Result |
+| ------- | ------ |
+| `# ` | H1 |
+| `## ` | H2 |
+| `### ` | H3 |
+| `#### ` | H4 |
 
-![checkbox sample](../../../static/img/h3_sample.gif)
+H3 sample:
+
+![h3 sample](../../../static/img/h3_sample.gif)
+
+## Code block and divider
+
+| Command | Result |
+| ------- | ------ |
+| ```` ``` ```` | `StoryTypes.CODE_BLOCK` |
+| `---` | `StoryTypes.DIVIDER` |
+
+## Highlight and card blocks
+
+`/box` turns the message into a highlighted block and `/card` into a card block. Both are `Tag`s on a `message`, so the
+type of the step does not change.

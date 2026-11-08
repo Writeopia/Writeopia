@@ -1,31 +1,97 @@
 # Editing Drawers
 
-The basic unit of content of Writeopia is StoryStep. The only mandatory field of `StoryStep` is the `StoryType`. The type defines how the information should be draw in the screen. 
+The basic unit of content of Writeopia is a `StoryStep`. The only mandatory field is its `StoryType`, and the type
+decides how the step is drawn: `DrawInfo` carries the cursor, focus and position, and the `StoryStep` itself carries the
+text, the url, the checked state and the decoration.
 
-Each type should fill data that is relevant to that type. A "message" should have text, "image" should have an `url` if it is available in the backend or a `path` if it is just a local image, a checkbox should have a `checked` value, etc.
+Every step is drawn by the `StoryStepDrawer` registered under its type number in the `drawers` map passed to
+`WriteopiaEditor`. A type without an entry draws nothing, so a custom type needs both a `StoryStep` and a drawer.
 
-Each StoryStep is mapped to a [StoryStepDrawer](https://kdocs.writeopia.io/writeopia/io.writeopia.sdk.drawer/-story-step-drawer/index.html) and provided to the `WriteopiaEditor`. 
+## Adding a drawer
+
+`DefaultDrawersAndroid`, `DefaultDrawersDesktop`, `DefaultDrawersJs` and `DefaultDrawersNative` accept a
+`customDrawers` map, which is merged over the default drawers:
 
 ```kotlin
-val mudableDrawers = DefaultDrawers.create(
-    writeopiaManager,
-).toMutableMap()
-
-// Use a number for a custom number that you would like to support.
-mudableDrawers.toMutableMap()[100] = SwipeMessageDrawer()
-// Use the existing numbers to substitute an existing drawer from `DefaultDrawers.create`
-mudableDrawers.toMutableMap()[StoryTypes.CHECK_ITEM.type.number] = SwipeMessageDrawer()
-
-WriteopiaEditor(
-    modifier = Modifier
-        .fillMaxWidth()
-        .weight(1F),
-    drawers = mudableDrawers
-)
+@Composable
+fun Editor() {
+    WriteopiaEditor(
+        modifier = Modifier.fillMaxSize(),
+        storyState = drawState,
+        drawers = DefaultDrawersDesktop.create(
+            manager = stateManager,
+            customDrawers = mapOf(
+                // Any number that no default drawer uses (100-103 are the drawing and spreadsheet types).
+                1000 to rememberMyDrawer(),
+            ),
+        ),
+    )
+}
 ```
 
+`StoryStepDrawer` is a single-method interface with a `@Composable` method, so a drawer can be a lambda — and the
+lambda has to sit in a composable context:
+
+```kotlin
+@Composable
+fun rememberMyDrawer(): StoryStepDrawer = StoryStepDrawer { step, _ ->
+    Text(text = step.text.orEmpty())
+}
+```
+
+## Replacing a default drawer
+
+The map returned by the factory is a normal map. Copy it inside a composable scope and replace the entry of an existing
+type:
+
+```kotlin
+@Composable
+fun editorDrawers(): Map<Int, StoryStepDrawer> {
+    val drawers = DefaultDrawersDesktop.create(manager = stateManager).toMutableMap()
+
+    drawers[StoryTypes.CHECK_ITEM.type.number] = MyCheckItemDrawer()
+
+    return drawers
+}
+```
+
+## Drawers with editing, swipe and drag
+
+Drawing plain text is not enough for an editable step. `DesktopTextItemDrawer` provides the shared shell — swipe to
+select, drag icon, drop target, external file drop and focus handling — around a `SimpleTextDrawer` such as
+`TextDrawer`. The default checkbox and list drawers are built with it:
+
+```kotlin
+fun myTextBoxDrawer(
+    manager: WriteopiaStateManager,
+    config: DrawConfig,
+    messageDrawer: @Composable RowScope.() -> SimpleTextDrawer,
+): StoryStepDrawer =
+    DesktopTextItemDrawer(
+        modifier = Modifier,
+        customBackgroundColor = Color.Transparent,
+        clickable = true,
+        onSelected = manager::onSelected,
+        dragIconWidth = 16.dp,
+        config = config,
+        onDragHover = manager::onDragHover,
+        onDragStart = manager::onDragStart,
+        onDragStop = manager::onDragStop,
+        moveRequest = manager::moveRequest,
+        startContent = null,
+        isDesktop = true,
+        enabled = true,
+        receiveExternalFile = { _, _ -> },
+        messageDrawer = messageDrawer,
+    )
+```
+
+The `message_box` type (`StoryTypes.TEXT_BOX`) is the built-in example: its drawer is the same shell with the
+background taken from `StoryStep.decoration.backgroundColor`.
+
 :::tip
-When supporting a new type, remember to also adding a command to create this type. This is explained in the **Commands** section
+When supporting a new type, remember to also add a command that creates it. This is explained in the **Commands**
+section.
 :::
 
-The next sections explain in more details about the default types and drawer provided by Writeopia.
+The next sections describe the default types and the drawers provided by Writeopia.

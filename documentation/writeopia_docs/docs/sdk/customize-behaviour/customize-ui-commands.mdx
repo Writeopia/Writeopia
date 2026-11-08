@@ -1,26 +1,52 @@
 # UI Commands
 
-The base class for behaviour controlling in Writeopia is [WriteopiaManager](https://kdocs.writeopia.io/writeopia/io.writeopia.sdk.manager/-writeopia-manager/index.html) and this is the entry point for all logic customization, with some exceptions. 
+The entry point for the editor's state and behaviour is `WriteopiaStateManager`. It owns the story, the cursor, the
+selection and the back stack, and it is what you pass around instead of the `WriteopiaManager` underneath it.
+`WriteopiaManager` stays the logic layer: it transforms `StoryState` and knows nothing about Compose.
 
-In this section you will learn the default behaviour of Writeopia and how to customize it to fit your needs.
+In this section you will learn the behaviour the default drawers provide and how to reuse it in your own drawers.
 
 ## Swipe to Edit
-One way to edit messages, checkbox, images, etc, is to to horizontally swipe to select the content. 
+
+One way to edit messages, checkboxes, images and the other types is to swipe horizontally to select the content.
 
 ![swipe to edit sample](../../../static/img/swipe_to_edit.gif)
 
-This behaviour is provided by the default implementations [StoryStepDrawer](https://kdocs.writeopia.io/writeopia/io.writeopia.sdk.drawer/-story-step-drawer/index.html). To provide this behavior to a custom drawer, use [SwipeBox](https://kdocs.writeopia.io/writeopia/io.writeopia.sdk.uicomponents/-swipe-box.html) in your drawers.
+`SwipeBox` implements it: it colours the row, draws the selection border and calls `swipeListener` with the new
+selected state.
+
+```kotlin
+SwipeBox(
+    modifier = Modifier.fillMaxWidth(),
+    isOnEditState = drawInfo.selectMode,
+    activeColor = MaterialTheme.colorScheme.surfaceVariant,
+    swipeListener = { selected -> manager.onSelected(selected, drawInfo.position) },
+) {
+    Text(step.text.orEmpty())
+}
+```
 
 ## Drag and Drop
-The way to move content is to use the drag icon on the right side of it. Draging the icon will trigger the drag and drop action.
 
-![drag and drop sample](../../../static/img/drag_and_drop.gif)
+Content is moved with the drag icon on the right side of a step. The default drawers wrap the row in `DragRowTarget`
+(`DragCardTarget` for card-shaped content), both of which come from `io.writeopia.ui.draganddrop.target`.
 
-This behaviour is provided by the default implementations [StoryStepDrawer](https://kdocs.writeopia.io/writeopia/io.writeopia.sdk.drawer/-story-step-drawer/index.html). To provide this behavior to a custom drawer, use [DragTargetWithDragItem](https://kdocs.writeopia.io/writeopia/io.writeopia.sdk.draganddrop.target/-drag-target-with-drag-item.html) in your drawers.
+`DesktopTextItemDrawer` already wires the drag icon, the drop target, external file drops and the swipe box around a
+`SimpleTextDrawer`. Use it instead of reimplementing the behaviour; see **Editing Drawers**.
 
 ## Backstack
-Writeopia comes with a default implementation of Backstack that allows the user to undo and redo actions. You can call `WriteopiaManager.undo()` and `WriteopiaManager.redo()` to revert go to a previous stage or move to a forward stage, if there are stages available in the back stack. 
+
+Writeopia comes with a default implementation of the back stack, `SnapshotBackstackManager`, which allows the user to
+undo and redo. `WriteopiaStateManager` implements `BackstackHandler` and `BackstackInform`, so you call
+`stateManager.undo()` and `stateManager.redo()` and read `canUndo` / `canRedo` from it.
 
 ![backstack sample](../../../static/img/backstack_sample.gif)
 
-You can edit the default behaviour by injecting your own implementation of [BackstackManager](https://kdocs.writeopia.io/writeopia/io.writeopia.sdk.backstack/-backstack-manager/index.html) in [WriteopiaManager](https://kdocs.writeopia.io/writeopia/io.writeopia.sdk.manager/-writeopia-manager/index.html)
+To change the behaviour, pass your own manager to `WriteopiaStateManager.create`:
+
+```kotlin
+WriteopiaStateManager.create(
+    writeopiaManager = WriteopiaManager(),
+    backStackManager = SnapshotBackstackManager(textEditLimit = 20),
+)
+```
