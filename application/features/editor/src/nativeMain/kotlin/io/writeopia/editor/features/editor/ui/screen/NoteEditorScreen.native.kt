@@ -48,7 +48,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.writeopia.common.utils.icons.WrIcons
-import io.writeopia.editor.features.editor.ui.search.InDocumentSearchBar
+import io.writeopia.editor.features.editor.ui.search.MobileInDocumentSearchBar
 import io.writeopia.commonui.dialogs.confirmation.DeleteConfirmationDialog
 import io.writeopia.commonui.folders.MoveSelectionSheet
 import io.writeopia.editor.configuration.ui.DocumentIconSheet
@@ -164,7 +164,7 @@ internal fun NoteEditorScreen(
                     .background(MaterialTheme.colorScheme.background),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                InDocumentSearchBar(noteEditorViewModel)
+                MobileInDocumentSearchBar(noteEditorViewModel)
 
                 TextEditor(
                     isDarkTheme,
