@@ -124,7 +124,9 @@ class ImageDrawer(
                         ) {
                             DragTarget(
                                 modifier = imageModifier,
-                                dataToDrop = DropInfo(step, drawInfo.position)
+                                dataToDrop = DropInfo(step, drawInfo.position),
+                                onDragStart = onDragStart,
+                                onDragStop = onDragStop
                             ) {
                                 Box {
                                     SubcomposeAsyncImage(
