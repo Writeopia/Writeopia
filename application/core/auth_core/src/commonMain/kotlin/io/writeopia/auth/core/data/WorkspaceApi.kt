@@ -15,8 +15,8 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
-import io.writeopia.app.dto.PaginatedUserSearchResponse
 import io.writeopia.app.dto.PaginatedWorkspaceUsersResponse
+import io.writeopia.app.dto.SearchUserApi
 import io.writeopia.app.dto.WorkspaceUserApi
 import io.writeopia.app.requests.AddUserToWorkspaceRequest
 import io.writeopia.app.requests.CreateWorkspaceRequest
@@ -26,6 +26,7 @@ import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.serialization.data.WorkspaceApi
 import io.writeopia.sdk.serialization.data.toModel
 import io.writeopia.sdk.serialization.request.WorkspaceRoleChangeRequest
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlin.time.ExperimentalTime
@@ -167,22 +168,42 @@ class WorkspaceApi(
     suspend fun searchUsers(
         workspaceId: String,
         usernameQuery: String,
-        page: Int = 1,
-        pageSize: Int = 5
-    ): ResultData<PaginatedUserSearchResponse> = try {
+    ): ResultData<List<SearchUserApi>> = try {
         val response = client.get("$baseUrl/api/workspace/$workspaceId/users/search") {
             url {
                 parameters.append("username", usernameQuery)
-                parameters.append("page", page.toString())
-                parameters.append("pageSize", pageSize.toString())
             }
         }
 
         if (response.status.isSuccess()) {
-            ResultData.Complete(response.body<PaginatedUserSearchResponse>())
+            ResultData.Complete(response.body<List<SearchUserApi>>())
         } else {
             ResultData.Error()
         }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        e.printStackTrace()
+        ResultData.Error(e)
+    }
+
+    suspend fun autocompleteUsers(
+        workspaceId: String,
+        usernameQuery: String,
+    ): ResultData<List<SearchUserApi>> = try {
+        val response = client.get("$baseUrl/api/workspace/$workspaceId/users/autocomplete") {
+            url {
+                parameters.append("username", usernameQuery)
+            }
+        }
+
+        if (response.status.isSuccess()) {
+            ResultData.Complete(response.body<List<SearchUserApi>>())
+        } else {
+            ResultData.Error()
+        }
+    } catch (e: CancellationException) {
+        throw e
     } catch (e: Exception) {
         e.printStackTrace()
         ResultData.Error(e)

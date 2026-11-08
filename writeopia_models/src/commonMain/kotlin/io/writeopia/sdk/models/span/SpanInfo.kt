@@ -49,7 +49,7 @@ data class SpanInfo private constructor(
 
     fun expandable() =
         when (this.span) {
-            Span.LINK -> false
+            Span.LINK, Span.MENTION -> false
             else -> true
         }
 
@@ -146,6 +146,7 @@ enum class Span(val label: String) {
     HIGHLIGHT_RED("HIGHLIGHT_RED"),
     LINK("LINK"),
     COMMENT("COMMENT"),
+    MENTION("MENTION"),
     NONE("");
 
     fun toText() = this.label

@@ -15,6 +15,7 @@ object Spans {
         text: String?,
         spans: Iterable<SpanInfo>,
         isDarkTheme: Boolean,
+        mentionColor: Color = Color.Unspecified,
     ): AnnotatedString {
         val lastPosition = text?.length ?: 0
 
@@ -23,8 +24,9 @@ object Spans {
 
             spans.filter { spanInfo -> spanInfo.span != Span.LINK }
                 .forEach { spanInfo ->
+                    val style = spanInfo.span.toSpanStyle(isDarkTheme, mentionColor)
                     addStyle(
-                        spanInfo.span.toSpanStyle(isDarkTheme),
+                        style,
                         min(lastPosition, spanInfo.start),
                         min(lastPosition, spanInfo.end)
                     )
@@ -123,6 +125,8 @@ object Spans {
             if (edit.start <= span.start) return setOf(span.move(edit.insertedSize))
             if (edit.start >= span.end) return setOf(span)
 
+            if (span.span == Span.MENTION) return emptySet()
+
             if (span.expandable()) {
                 return setOf(span.copy(end = span.end + edit.insertedSize))
             }
@@ -147,6 +151,8 @@ object Spans {
 
         if (span.end <= edit.start) return setOf(span)
         if (span.start >= edit.end) return setOf(span.move(delta))
+
+        if (span.span == Span.MENTION) return emptySet()
 
         val coversEdit = span.start <= edit.start && span.end >= edit.end
         if (coversEdit && (edit.insertedSize == 0 || span.expandable())) {

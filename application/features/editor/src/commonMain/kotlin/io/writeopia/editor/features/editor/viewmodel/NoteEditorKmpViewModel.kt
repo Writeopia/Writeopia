@@ -13,6 +13,7 @@ import io.writeopia.ai.HeaderImages
 import io.writeopia.ai.UiConfigurationAiProviderStore
 import io.writeopia.ai.task.AiTaskManager
 import io.writeopia.ai.task.AiTaskType
+import io.writeopia.auth.core.data.WorkspaceApi
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.genai.repository.GenAiRepository
 import io.writeopia.core.folders.api.DocumentsApi
@@ -57,6 +58,7 @@ import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.Tag
+import io.writeopia.sdk.models.user.MentionUser
 import io.writeopia.sdk.models.user.Tier
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
@@ -156,6 +158,7 @@ class NoteEditorKmpViewModel(
     private val documentTagRepository: DocumentTagRepository? = null,
     /** The header pictures of the cloud; null when it can't answer right now. */
     private val resolveHeaderImages: suspend () -> HeaderImages? = { aiClients.headerImages() },
+    private val workspaceApi: WorkspaceApi? = null,
 ) : NoteEditorViewModel,
     ViewModel(),
     BackstackInform by writeopiaManager,
@@ -262,7 +265,68 @@ class NoteEditorKmpViewModel(
         }
     }
 
+    private val _mentionSuggestions = MutableStateFlow<ResultData<List<MentionUser>>>(ResultData.Idle())
+    override val mentionSuggestions: StateFlow<ResultData<List<MentionUser>>> = _mentionSuggestions.asStateFlow()
+
+    private var mentionSearchJob: Job? = null
+
+    override fun searchMention(query: String) {
+        mentionSearchJob?.cancel()
+        if (workspaceApi == null || query.length < 2) {
+            _mentionSuggestions.value = ResultData.Idle()
+            return
+        }
+
+        mentionSearchJob = viewModelScope.launch(Dispatchers.Default) {
+            val workspaceId = (authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()).id
+            if (workspaceId.isBlank() ||
+                workspaceId == Workspace.disconnectedWorkspace().id ||
+                !authRepository.isLoggedIn()
+            ) {
+                _mentionSuggestions.value = ResultData.Idle()
+                return@launch
+            }
+
+            delay(200)
+            _mentionSuggestions.value = ResultData.Loading()
+            val result = workspaceApi.autocompleteUsers(workspaceId, query)
+            when (result) {
+                is ResultData.Complete -> {
+                    val users = result.data
+                        .filter { it.username.isNotBlank() }
+                        .map { user ->
+                            MentionUser(
+                                id = user.id,
+                                name = user.name,
+                                username = user.username,
+                            )
+                        }
+                    _mentionSuggestions.value = ResultData.Complete(users)
+                }
+
+                is ResultData.Error -> {
+                    _mentionSuggestions.value = ResultData.Error(result.exception)
+                }
+
+                else -> {
+                    _mentionSuggestions.value = ResultData.Idle()
+                }
+            }
+        }
+    }
+
+    override fun clearMentionSearch() {
+        mentionSearchJob?.cancel()
+        _mentionSuggestions.value = ResultData.Idle()
+    }
+
     init {
+        viewModelScope.launch(Dispatchers.Default) {
+            writeopiaManager.workspaceIdFlow.collect {
+                clearMentionSearch()
+            }
+        }
+
         viewModelScope.launch(Dispatchers.Default) {
             writeopiaManager.linkCardCreated.collect { creation ->
                 launch { describeLinkCard(creation) }
@@ -1110,6 +1174,7 @@ class NoteEditorKmpViewModel(
         }
         aiJob?.cancel()
         writingAgent?.stop()
+        clearMentionSearch()
         writeopiaManager.onClear()
     }
 

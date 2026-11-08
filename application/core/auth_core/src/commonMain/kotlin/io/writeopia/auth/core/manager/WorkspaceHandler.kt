@@ -45,6 +45,8 @@ interface WorkspaceHandler {
 
     fun onUserSuggestionSelect(user: SearchUserApi)
 
+    fun dismissUserSearch()
+
     fun changeWorkspaceLocalPath(path: String)
 
     fun initWorkspacePath()

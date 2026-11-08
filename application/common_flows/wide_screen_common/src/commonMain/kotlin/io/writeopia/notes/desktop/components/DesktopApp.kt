@@ -333,6 +333,7 @@ fun DesktopApp(
                                     userSearchQuery = globalShellViewModel.userSearchQuery,
                                     userSearchResults = globalShellViewModel.userSearchResults,
                                     onUserSearchQueryChange = globalShellViewModel::onUserSearchQueryChange,
+                                    onUserSearchDismiss = globalShellViewModel::dismissUserSearch,
                                     onUserSuggestionSelect = globalShellViewModel::onUserSuggestionSelect,
                                 )
                             }

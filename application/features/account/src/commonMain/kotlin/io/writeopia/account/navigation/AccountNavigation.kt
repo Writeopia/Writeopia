@@ -393,10 +393,7 @@ fun NavGraphBuilder.accountMenuNavigation(
                 workspaceName = viewModel.getWorkspaceName(),
                 searchQuery = viewModel.searchQuery,
                 searchResults = viewModel.searchResults,
-                isLoadingMore = viewModel.isLoadingMore,
-                hasMorePages = viewModel.hasMorePages,
                 onSearchQueryChange = viewModel::updateSearchQuery,
-                onLoadMore = viewModel::loadMoreResults,
                 onUserClick = { user ->
                     navigateToUserAdd(workspaceId, workspaceName, user.id, user.name, user.username)
                 }

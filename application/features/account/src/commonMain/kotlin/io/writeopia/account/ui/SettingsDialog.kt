@@ -118,6 +118,7 @@ fun SettingsDialog(
     userSearchResults: StateFlow<ResultData<List<SearchUserApi>>>,
     onUserSearchQueryChange: (String) -> Unit,
     onUserSuggestionSelect: (SearchUserApi) -> Unit,
+    onUserSearchDismiss: () -> Unit,
 ) {
     Dialog(
         onDismissRequest = onDismissRequest,
@@ -198,6 +199,7 @@ fun SettingsDialog(
                         userSearchResults = userSearchResults,
                         onUserSearchQueryChange = onUserSearchQueryChange,
                         onUserSuggestionSelect = onUserSuggestionSelect,
+                        onUserSearchDismiss = onUserSearchDismiss,
                     )
                 }
             )
@@ -685,6 +687,7 @@ private fun TeamsSection(
     userSearchResults: StateFlow<ResultData<List<SearchUserApi>>>,
     onUserSearchQueryChange: (String) -> Unit,
     onUserSuggestionSelect: (SearchUserApi) -> Unit,
+    onUserSearchDismiss: () -> Unit,
 ) {
     Column {
         val titleStyle = MaterialTheme.typography.titleLarge
@@ -741,6 +744,7 @@ private fun TeamsSection(
                                 userSearchResults = userSearchResults,
                                 onUserSearchQueryChange = onUserSearchQueryChange,
                                 onUserSuggestionSelect = onUserSuggestionSelect,
+                                onUserSearchDismiss = onUserSearchDismiss,
                             )
                         }
                     }
@@ -771,6 +775,7 @@ private fun AddUserToWorkspace(
     userSearchResults: StateFlow<ResultData<List<SearchUserApi>>>,
     onUserSearchQueryChange: (String) -> Unit,
     onUserSuggestionSelect: (SearchUserApi) -> Unit,
+    onUserSearchDismiss: () -> Unit,
 ) {
     if (selected.role != "ADMIN") {
         BasicText(
@@ -802,6 +807,7 @@ private fun AddUserToWorkspace(
             suggestions = searchResults,
             onValueChange = onUserSearchQueryChange,
             onSuggestionSelect = onUserSuggestionSelect,
+            onDismiss = onUserSearchDismiss,
         )
 
         Spacer(modifier = Modifier.width(8.dp))
