@@ -266,6 +266,10 @@
   <string name="error_loading_usage">Error loading usage data</string>
   <string name="no_usage_data">No usage data available</string>
   <string name="tokens_used">tokens used (renews every month)</string>
+  <string name="storage">Storage</string>
+  <string name="loading_storage">Loading storage usage…</string>
+  <string name="storage_used_description">Pictures you upload and the ones the AI draws for you count here. Deleting a picture from a document gives its space back.</string>
+  <string name="storage_full">Your storage is full. Delete some pictures to make room.</string>
   <string name="monthly_quota">Monthly quota</string>
   <string name="manual_configuration">Manual Configuration</string>
   <string name="detecting_local_ai">Detecting Local AI</string>

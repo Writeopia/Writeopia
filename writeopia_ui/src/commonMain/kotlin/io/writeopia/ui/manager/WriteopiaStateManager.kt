@@ -1085,7 +1085,26 @@ class WriteopiaStateManager(
             )?.let { newState ->
                 _currentStory.value = newState
                 cleanupOrphanCommentConversations()
+                releaseRemovedImages(listOf(deleteStory.storyStep))
             }
+        }
+    }
+
+    /**
+     * Tells the [imageUploader] about the pictures among [removed] it stored, so the backend
+     * frees their space. Best effort: a failure leaves the picture counted, nothing else.
+     */
+    private fun releaseRemovedImages(removed: Collection<StoryStep>) {
+        val uploader = imageUploader ?: return
+        val urls = removed
+            .filter { step -> step.type == StoryTypes.IMAGE.type && step.path == null }
+            .mapNotNull { step -> step.url }
+
+        if (urls.isEmpty()) return
+
+        coroutineScope.launch(dispatcher) {
+            if (!uploader.isAuthenticated()) return@launch
+            urls.forEach { url -> uploader.deleteImage(url) }
         }
     }
 
@@ -1115,6 +1134,7 @@ class WriteopiaStateManager(
             backStackManager.addState(_currentStory.value)
             _currentStory.value = state
             cleanupOrphanCommentConversations()
+            releaseRemovedImages(listOf(eraseStory.storyStep))
         }
     }
 
@@ -1147,6 +1167,7 @@ class WriteopiaStateManager(
             )
             _currentStory.value = state
             cleanupOrphanCommentConversations()
+            releaseRemovedImages(toDeleteStories.values)
         }
     }
 
@@ -1543,9 +1564,10 @@ class WriteopiaStateManager(
 
                 // Check if we should upload to cloud
                 coroutineScope.launch(dispatcher) {
-                    val shouldUpload = imageUploader?.isAuthenticated() == true
+                    val uploader = imageUploader
+                    val shouldUpload = uploader?.isAuthenticated() == true
 
-                    if (shouldUpload) {
+                    if (uploader != null && shouldUpload) {
                         // Insert image with loading state immediately
                         val loadingStep = StoryStep(
                             type = StoryTypes.IMAGE.type,
@@ -1554,8 +1576,9 @@ class WriteopiaStateManager(
                             loading = true
                         )
 
-                        val imagePosition = if (useInsertMode || position != null) {
+                        val imageStepId = if (useInsertMode || position != null) {
                             addAtPosition(loadingStep, targetPosition)
+                            loadingStep.id
                         } else {
                             changeStoryStateAndTrackIt(
                                 Action.StoryStateChange(
@@ -1568,15 +1591,25 @@ class WriteopiaStateManager(
                                     targetPosition
                                 )
                             )
-                            targetPosition
+                            story.id
                         }
 
                         // Upload in background
-                        val result = imageUploader.uploadImage(imagePath)
+                        val result = uploader.uploadImage(imagePath)
 
-                        // Replace with final image
-                        val currentStory = getStory(imagePosition)
-                        if (currentStory != null) {
+                        // Replace with final image. The step is found by id: it may have moved,
+                        // or have been removed while the upload ran.
+                        val current = _currentStory.value.stories.entries
+                            .firstOrNull { (_, step) -> step.id == imageStepId }
+                        val imagePosition = current?.key
+                        val currentStory = current?.value
+                        if (currentStory == null) {
+                            // The picture left the document before it arrived: it must not stay
+                            // in the user's storage.
+                            if (result is io.writeopia.sdk.models.utils.ResultData.Complete) {
+                                uploader.deleteImage(result.data)
+                            }
+                        } else if (imagePosition != null) {
                             val finalStep = when (result) {
                                 is io.writeopia.sdk.models.utils.ResultData.Complete -> currentStory.copy(
                                     url = result.data,

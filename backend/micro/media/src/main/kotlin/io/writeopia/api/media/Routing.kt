@@ -7,8 +7,10 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import io.writeopia.api.media.routing.accountDeletionEventsRoute
 import io.writeopia.api.media.routing.mediaRoute
+import io.writeopia.sql.WriteopiaDbBackend
+import io.writeopia.storage.StorageUsageService
 
-fun Application.configureRouting(debugMode: Boolean = false) {
+fun Application.configureRouting(debugMode: Boolean = false, writeopiaDb: WriteopiaDbBackend) {
     routing {
         // Health check for Cloud Run
         get("/health") {
@@ -20,7 +22,7 @@ fun Application.configureRouting(debugMode: Boolean = false) {
             call.respondText("OK", status = HttpStatusCode.OK)
         }
 
-        mediaRoute(debugMode)
+        mediaRoute(debugMode, storageUsage = StorageUsageService(writeopiaDb))
 
         // Account-deletion saga: internal Pub/Sub-push endpoint.
         accountDeletionEventsRoute(debugMode)

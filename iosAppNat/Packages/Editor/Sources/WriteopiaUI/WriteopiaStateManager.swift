@@ -73,6 +73,9 @@ public final class WriteopiaStateManager {
     /// Called with a link card just made from a pasted address, so the app can ask the backend
     /// for a description of the page.
     @ObservationIgnored public var onLinkCardCreated: ((StoryStep) -> Void)?
+    /// Called with the uploaded pictures the user just removed from the document (image steps
+    /// with a URL and no local file), so the app can free their space on the backend.
+    @ObservationIgnored public var onImagesRemoved: (([StoryStep]) -> Void)?
     /// Link cards whose description is being written; their drawer says so.
     public private(set) var describingLinkStepIds: Set<String> = []
     @ObservationIgnored let writeopiaManager: WriteopiaManager
@@ -521,7 +524,26 @@ public final class WriteopiaStateManager {
     public func onErase(stepId: String) {
         dismissAiSuggestions()
         guard isEditable, let (position, step) = find(stepId) else { return }
+        // Backspace removes the step above when it has no text (an image, a divider), so the
+        // pictures that left are read from the states, not from the step passed in.
+        let before = currentStory
         apply(writeopiaManager.onErase(Action.EraseStory(storyStep: step, position: position), state: currentStory))
+        notifyImagesRemoved(since: before)
+    }
+
+    /// Hands the uploaded pictures of `before` that are no longer in the document to
+    /// `onImagesRemoved`.
+    private func notifyImagesRemoved(since before: StoryState) {
+        let remaining = Set(currentStory.stories.values.map(\.id))
+        let images = before.stories.values.filter { step in
+            !remaining.contains(step.id) && Self.isUploadedImage(step)
+        }
+        guard !images.isEmpty else { return }
+        onImagesRemoved?(images.sorted { $0.position < $1.position })
+    }
+
+    private static func isUploadedImage(_ step: StoryStep) -> Bool {
+        step.type == .image && step.url != nil && step.path == nil
     }
 
     public func onFocusChange(stepId: String, hasFocus: Bool) {
@@ -780,9 +802,11 @@ public final class WriteopiaStateManager {
     /// Deletes the selected lines and clears the selection, like `deleteSelection` of the SDK.
     public func deleteSelectedLines() {
         guard isEditable else { return }
+        let before = currentStory
         let newState = writeopiaManager.deleteSteps(selectedPositions, state: currentStory)
         selectedStepIds.removeAll()
         commit(newState)
+        notifyImagesRemoved(since: before)
     }
 
     /// Adds a link to another document right after the last selected line.
@@ -1007,7 +1031,13 @@ public final class WriteopiaStateManager {
     /// With a nil `url` (upload failed) the image keeps its local path, like the SDK.
     public func imageUploadFinished(stepId: String, url: String?) {
         uploadingStepIds.remove(stepId)
-        guard let url, var step = step(withId: stepId) else { return }
+        guard let url else { return }
+        guard var step = step(withId: stepId) else {
+            // The picture left the document while it was uploading: it must not stay in the
+            // user's storage either.
+            onImagesRemoved?([StoryStep(id: stepId, type: .image, url: url, position: Rank.first)])
+            return
+        }
         step.url = url
         step.path = nil
         currentStory = writeopiaManager.replaceStep(step, state: currentStory)
@@ -1031,8 +1061,10 @@ public final class WriteopiaStateManager {
 
     public func removeStep(stepId: String) {
         aiAnswerFinished(stepId: stepId)
+        let before = currentStory
         currentStory = writeopiaManager.removeStep(id: stepId, state: currentStory)
         changeCount += 1
+        notifyImagesRemoved(since: before)
     }
 
     // MARK: - Drag and drop

@@ -31,6 +31,7 @@ import io.writeopia.api.documents.documents.repository.getSyncEventsAfterTime
 import io.writeopia.api.documents.embeddings.DocumentEmbeddingService
 import io.writeopia.api.genai.service.GenAiService
 import io.writeopia.backend.models.ImageStorageService
+import io.writeopia.backend.models.readImageFile
 import io.writeopia.buckets.GcpBucketImageStorageService
 import io.writeopia.connection.ResultData
 import io.writeopia.connection.logger
@@ -66,9 +67,13 @@ import io.writeopia.sdk.serialization.response.GenerateSummaryResponse
 import io.writeopia.sdk.serialization.response.LinkCardDescriptionResponse
 import io.writeopia.sdk.serialization.response.PresentationsResponse
 import io.writeopia.sdk.serialization.response.SearchResponse
+import io.writeopia.sdk.serialization.response.StorageUsageResponse
 import io.writeopia.sdk.serialization.response.SyncEventApi
 import io.writeopia.sdk.serialization.response.WorkspaceDiffResponse
 import io.writeopia.sql.WriteopiaDbBackend
+import io.writeopia.storage.MediaStore
+import io.writeopia.storage.MediaStoreResult
+import io.writeopia.storage.StorageUsageService
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
@@ -82,8 +87,12 @@ fun Routing.documentsRoute(
     debug: Boolean = false,
     imageStorageService: ImageStorageService = GcpBucketImageStorageService,
     genAiService: GenAiService? = null,
-    embeddingService: DocumentEmbeddingService? = null
+    embeddingService: DocumentEmbeddingService? = null,
+    storageUsage: StorageUsageService = StorageUsageService(writeopiaDb)
 ) {
+    // Uploads count in the user's storage; a full space refuses them (507).
+    val mediaStore = MediaStore(imageStorageService, storageUsage, debug)
+
     // Public site endpoint - no authentication required
     get("/api/site/{documentId}") {
         val documentId = call.pathParameters["documentId"] ?: ""
@@ -707,14 +716,18 @@ fun Routing.documentsRoute(
         val workspaceId = call.pathParameters["workspaceId"] ?: ""
 
         runIfMember(userId, workspaceId, writeopiaDb, debug) {
-            val multipart = call.receiveMultipart()
+            val image = call.receiveMultipart().readImageFile()
 
-            val imageUrl = imageStorageService.uploadImage(multipart, userId, debug)
-
-            if (imageUrl != null) {
-                call.respond(HttpStatusCode.Created, ImageUploadRequest(imageUrl))
-            } else {
+            if (image == null) {
                 call.respond(HttpStatusCode.BadRequest, "No image found in request")
+                return@runIfMember
+            }
+
+            when (val stored = mediaStore.store(image, userId)) {
+                is MediaStoreResult.Stored -> call.respond(HttpStatusCode.Created, ImageUploadRequest(stored.url))
+                is MediaStoreResult.QuotaExceeded -> call.respond(HttpStatusCode.InsufficientStorage, stored.usage.toApi())
+                is MediaStoreResult.Busy -> call.respond(HttpStatusCode.ServiceUnavailable, "Storage busy, try again")
+                is MediaStoreResult.Failed -> call.respond(HttpStatusCode.ServiceUnavailable, "The image could not be stored")
             }
         }
     }
@@ -1361,13 +1374,27 @@ fun Routing.documentsRoute(
         val documentId = call.pathParameters["documentId"] ?: ""
 
         runIfMember(userId, workspaceId, writeopiaDb, debug) {
-            val multipart = call.receiveMultipart()
+            val image = call.receiveMultipart().readImageFile()
 
-            val imageUrl = imageStorageService.uploadImage(multipart, userId, debug)
-
-            if (imageUrl == null) {
+            if (image == null) {
                 call.respond(HttpStatusCode.BadRequest, "No image found in request")
                 return@runIfMember
+            }
+
+            val imageUrl = when (val stored = mediaStore.store(image, userId)) {
+                is MediaStoreResult.Stored -> stored.url
+                is MediaStoreResult.QuotaExceeded -> {
+                    call.respond(HttpStatusCode.InsufficientStorage, stored.usage.toApi())
+                    return@runIfMember
+                }
+                is MediaStoreResult.Busy -> {
+                    call.respond(HttpStatusCode.ServiceUnavailable, "Storage busy, try again")
+                    return@runIfMember
+                }
+                is MediaStoreResult.Failed -> {
+                    call.respond(HttpStatusCode.ServiceUnavailable, "The image could not be stored")
+                    return@runIfMember
+                }
             }
 
             val now = System.currentTimeMillis()
@@ -1487,6 +1514,9 @@ fun Routing.documentsRoute(
         }
     }
 }
+
+/** The usage as the media service answers it on a full storage (507). */
+private fun io.writeopia.storage.StorageUsage.toApi() = StorageUsageResponse(usedBytes, quotaBytes, version)
 
 /** Story steps per document in the folder contents preview, unless the request asks otherwise. */
 private const val DEFAULT_PREVIEW_STEPS = 7

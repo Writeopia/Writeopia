@@ -1,0 +1,32 @@
+-- How many bytes of media each user keeps in the bucket (uploads and the pictures the AI drew
+-- for them). One row per user, changed under an optimistic lock: a reader takes the row with its
+-- version and the write only lands when the version is still the one it read
+-- (StorageUsageService in backend/core/storage retries otherwise).
+CREATE TABLE user_storage_usage (
+  user_id TEXT PRIMARY KEY,
+  used_bytes BIGINT NOT NULL,
+  version BIGINT NOT NULL,
+  updated_at BIGINT NOT NULL
+);
+
+selectByUserId:
+SELECT used_bytes, version
+FROM user_storage_usage
+WHERE user_id = ?;
+
+-- The first row of a user, with nothing used. Loses quietly to a row that already exists.
+insertIfAbsent:
+INSERT INTO user_storage_usage(user_id, used_bytes, version, updated_at)
+VALUES (?, 0, 0, ?)
+ON CONFLICT (user_id) DO NOTHING;
+
+-- Writes the new total only when the row still has the version the caller read. Zero rows
+-- changed means someone else wrote first: read again and retry.
+updateIfVersion:
+UPDATE user_storage_usage
+SET used_bytes = ?, version = version + 1, updated_at = ?
+WHERE user_id = ? AND version = ?;
+
+deleteByUser:
+DELETE FROM user_storage_usage
+WHERE user_id = ?;

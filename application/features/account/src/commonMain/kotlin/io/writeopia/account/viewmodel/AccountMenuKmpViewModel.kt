@@ -2,12 +2,15 @@ package io.writeopia.account.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.writeopia.account.ui.StorageUsageState
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.auth.core.manager.WorkspaceHandler
+import io.writeopia.core.folders.api.MediaApi
 import io.writeopia.sdk.models.utils.toBoolean
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -21,6 +24,8 @@ import kotlinx.coroutines.withContext
 internal class AccountMenuKmpViewModel(
     private val authRepository: AuthRepository,
     private val workspaceHandler: WorkspaceHandler,
+    /** The media service, for the storage usage. Null without a backend. */
+    private val mediaApi: MediaApi? = null,
 ) : AccountMenuViewModel, ViewModel() {
 
     override val lastWorkspaceSync: StateFlow<ResultData<String>> = workspaceHandler.lastWorkspaceSync
@@ -44,6 +49,35 @@ internal class AccountMenuKmpViewModel(
 
     private val _logoutInProgress = MutableStateFlow(false)
     override val logoutInProgress: StateFlow<Boolean> = _logoutInProgress.asStateFlow()
+
+    private val _storageUsageState = MutableStateFlow<StorageUsageState>(StorageUsageState.Loading)
+    override val storageUsageState: StateFlow<StorageUsageState> = _storageUsageState.asStateFlow()
+
+    /** The request in flight; a new load cancels it so an older answer never lands last. */
+    private var storageUsageJob: Job? = null
+
+    override fun loadStorageUsage() {
+        val api = mediaApi ?: run {
+            _storageUsageState.value = StorageUsageState.Error("Storage is not configured")
+            return
+        }
+
+        storageUsageJob?.cancel()
+        storageUsageJob = viewModelScope.launch {
+            // The web signs in with a cookie and has no token, so the session is what counts.
+            if (!authRepository.isLoggedIn()) {
+                _storageUsageState.value = StorageUsageState.Error("Sign in to see your storage")
+                return@launch
+            }
+
+            _storageUsageState.value = StorageUsageState.Loading
+
+            _storageUsageState.value = when (val result = api.getUsage()) {
+                is ResultData.Complete -> StorageUsageState.Success(result.data)
+                else -> StorageUsageState.Error("Error loading the storage usage")
+            }
+        }
+    }
 
     init {
         workspaceHandler.initScope(viewModelScope)

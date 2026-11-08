@@ -291,6 +291,7 @@ fun DesktopApp(
                                     isCloudAiAvailable = globalShellViewModel.isCloudAiAvailable,
                                     selectAiProvider = globalShellViewModel::selectAiProvider,
                                     cloudAiUsageState = globalShellViewModel.cloudAiUsageState,
+                                    storageUsageState = globalShellViewModel.storageUsageState,
                                     userOnlineState = globalShellViewModel.userState,
                                     showDeleteConfirmation = globalShellViewModel.showDeleteConfirmation,
                                     workspaceToEdit = globalShellViewModel.workspaceToEdit,
@@ -303,6 +304,7 @@ fun DesktopApp(
                                     workspaces = globalShellViewModel.availableWorkspaces,
                                     selectWorkplacePath = globalShellViewModel::changeWorkspaceLocalPath,
                                     loadCloudAiUsage = globalShellViewModel::loadCloudAiUsage,
+                                    loadStorageUsage = globalShellViewModel::loadStorageUsage,
                                     signIn = navigateToRegister,
                                     switchSpace = navigateToSpaceChoice,
                                     changeWorkspace = {

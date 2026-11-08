@@ -10,6 +10,8 @@ import io.writeopia.ai.AiClients
 import io.writeopia.ai.UiConfigurationAiProviderStore
 import io.writeopia.model.AiProvider
 import io.writeopia.account.ui.CloudAiUsageState
+import io.writeopia.account.ui.StorageUsageState
+import io.writeopia.core.folders.api.MediaApi
 import io.writeopia.app.dto.SearchUserApi
 import io.writeopia.api.LocalAiAutoConfigApi
 import io.writeopia.auth.core.data.AuthApi
@@ -60,6 +62,7 @@ import io.writeopia.common.utils.Destinations
 import io.writeopia.ui.keyboard.KeyboardEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -94,6 +97,8 @@ class GlobalShellKmpViewModel(
     private val keyboardEventFlow: Flow<KeyboardEvent>?,
     private val writeopiaJsonParser: WriteopiaJsonParser = WriteopiaJsonParser(),
     private val genAiApi: GenAiApi? = null,
+    /** The media service, for the storage usage of the settings. Null without a backend. */
+    private val mediaApi: MediaApi? = null,
     /** Where the folders and documents of the side menu come from. */
     private val sideMenuSource: SideMenuSource = LocalSideMenuSource(
         notesUseCase = notesUseCase,
@@ -189,6 +194,12 @@ class GlobalShellKmpViewModel(
 
     private val _cloudAiUsageState = MutableStateFlow<CloudAiUsageState>(CloudAiUsageState.Loading)
     override val cloudAiUsageState: StateFlow<CloudAiUsageState> = _cloudAiUsageState.asStateFlow()
+
+    private val _storageUsageState = MutableStateFlow<StorageUsageState>(StorageUsageState.Loading)
+    override val storageUsageState: StateFlow<StorageUsageState> = _storageUsageState.asStateFlow()
+
+    /** The request in flight; a new load cancels it so an older answer never lands last. */
+    private var storageUsageJob: Job? = null
 
     private val _aiProviderState = MutableStateFlow(aiClients.defaultProvider)
     override val aiProviderState: StateFlow<AiProvider> = _aiProviderState.asStateFlow()
@@ -410,6 +421,30 @@ class GlobalShellKmpViewModel(
 
     override fun init() {
         workspaceHandler.initWorkspacePath()
+    }
+
+    override fun loadStorageUsage() {
+        val api = mediaApi ?: run {
+            _storageUsageState.value = StorageUsageState.Error("Storage is not configured")
+            return
+        }
+
+        storageUsageJob?.cancel()
+        storageUsageJob = viewModelScope.launch {
+            // Offline there is no session, so the backend can't answer for the user. The web
+            // signs in with a cookie and has no token, so the session is what counts.
+            if (!authRepository.isLoggedIn()) {
+                _storageUsageState.value = StorageUsageState.Error("Sign in to see your storage")
+                return@launch
+            }
+
+            _storageUsageState.value = StorageUsageState.Loading
+
+            _storageUsageState.value = when (val result = api.getUsage()) {
+                is ResultData.Complete -> StorageUsageState.Success(result.data)
+                else -> StorageUsageState.Error("Error loading the storage usage")
+            }
+        }
     }
 
     override fun loadCloudAiUsage() {

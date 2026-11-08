@@ -684,6 +684,8 @@ fun NavGraphBuilder.accountMenuNavigation(
                 isLoggedInState = accountMenuViewModel.isLoggedIn,
                 workspacesState = accountMenuViewModel.availableWorkspaces,
                 exportWorkspaceState = accountMenuViewModel.exportWorkspaceState,
+                storageUsageState = accountMenuViewModel.storageUsageState,
+                loadStorageUsage = accountMenuViewModel::loadStorageUsage,
                 goToRegister = navigateToAuthMenu,
                 switchSpace = navigateToSpaceChoice,
                 changeWorkspace = {

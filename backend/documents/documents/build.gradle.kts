@@ -38,6 +38,7 @@ dependencies {
     implementation(project(":backend:core:workspaces"))
     implementation(project(":backend:core:models"))
     implementation(project(":backend:core:buckets"))
+    implementation(project(":backend:core:storage"))
     implementation(project(":backend:core:genai_service"))
     implementation(project(":backend:core:pubsub"))
 

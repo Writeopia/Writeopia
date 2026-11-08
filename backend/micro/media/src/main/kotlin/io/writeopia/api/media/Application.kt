@@ -9,6 +9,7 @@ import io.ktor.server.engine.embeddedServer
 import io.ktor.server.plugins.cors.routing.CORS
 import io.writeopia.api.core.auth.utils.installAuth
 import io.writeopia.connection.logger
+import io.writeopia.sql.WriteopiaDbBackend
 
 fun main() {
     // Cloud Run injects PORT env var
@@ -23,12 +24,13 @@ fun main() {
 }
 
 fun Application.module(
-    debugMode: Boolean = System.getenv("WRITEOPIA_DEBUG_MODE")?.toBoolean() ?: false
+    debugMode: Boolean = System.getenv("WRITEOPIA_DEBUG_MODE")?.toBoolean() ?: false,
+    writeopiaDb: WriteopiaDbBackend = configurePersistence(debugMode)
 ) {
     logger.info("Media microservice starting - debug: $debugMode")
     installCORS()
     installAuth()
-    configureRouting(debugMode)
+    configureRouting(debugMode, writeopiaDb)
     configureSerialization()
 }
 
