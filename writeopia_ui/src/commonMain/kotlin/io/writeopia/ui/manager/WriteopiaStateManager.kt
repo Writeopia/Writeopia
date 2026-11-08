@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalTime::class)
-
 package io.writeopia.ui.manager
 
 import io.writeopia.sdk.utils.iterables.Rank
@@ -85,7 +83,6 @@ import kotlin.time.Instant
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.time.ExperimentalTime
 
 /**
  * This is the entry class of the framework. It follows the Controller pattern, redirecting all the
@@ -174,7 +171,7 @@ class WriteopiaStateManager(
                                 // Add method that changes based on type and changes either the current
                                 // position or the selected ones
                                 getCurrentStory()?.let { story ->
-                                    val position = currentPosition() ?: return@let
+                                    val position = currentPosition()
 
                                     changeStoryState(
                                         Action.StoryStateChange(
@@ -376,7 +373,7 @@ class WriteopiaStateManager(
                 }
             }
 
-            if (!onEditPositions.isNotEmpty()) {
+            if (onEditPositions.isEmpty()) {
                 val selectionPos = storyState.selection.position
                 val step = storyState.stories[selectionPos]
 
@@ -1320,8 +1317,7 @@ class WriteopiaStateManager(
                     }
             }
             .sortedWith(compareBy<SpanInfo> { it.start }.thenBy { it.end })
-            .mapNotNull { it.extra }
-            .firstOrNull()
+            .firstNotNullOfOrNull { it.extra }
             ?: return null
 
         return _commentConversations.value[conversationId]
@@ -1535,7 +1531,7 @@ class WriteopiaStateManager(
 
     fun addImage(imagePath: String, position: String? = null) {
         if (!isEditable) return
-        (position ?: currentPosition())?.let { pos ->
+        (position ?: currentPosition()).let { pos ->
             val story = getStory(pos)
 
             if (story != null) {
@@ -1576,7 +1572,7 @@ class WriteopiaStateManager(
                         }
 
                         // Upload in background
-                        val result = imageUploader!!.uploadImage(imagePath)
+                        val result = imageUploader.uploadImage(imagePath)
 
                         // Replace with final image
                         val currentStory = getStory(imagePosition)
@@ -2236,7 +2232,7 @@ class WriteopiaStateManager(
             // The lines changed outside changeStoryState: the same single change must apply again.
             lastStateChange = null
         } else {
-            val position = currentPosition() ?: return
+            val position = currentPosition()
             val currentStory = getStory(position)
 
             currentStory?.let { storyStep ->
@@ -2460,7 +2456,7 @@ class WriteopiaStateManager(
     fun addSpreadsheet(columnCount: Int) {
         if (!isEditable) return
 
-        val position = currentPosition() ?: return
+        val position = currentPosition()
         val currentStep = _currentStory.value.stories[position]
 
         val (targetPosition, insertMode) = getTitleProtectedPosition(
@@ -2653,10 +2649,10 @@ class WriteopiaStateManager(
 
     private fun getStories() = _currentStory.value.stories
 
-    private fun currentPosition(): String? =
+    private fun currentPosition(): String =
         _currentStory.value.focus ?: _currentStory.value.selection.position
 
-    private fun getCurrentStory(): StoryStep? = currentPosition()?.let(::getStory)
+    private fun getCurrentStory(): StoryStep? = currentPosition().let(::getStory)
 
     private fun selectAll() {
         keyboardSelectionAnchor = null
