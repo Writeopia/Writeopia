@@ -52,11 +52,42 @@ import WrModels
         #expect(manager.currentStory.stories.count == 1)
     }
 
-    @Test func backspaceAtTheStartOfAnUploadedImageReportsIt() {
+    @Test func backspaceAtTheStartOfTheTextBelowAnImageRemovesTheImageAndReportsIt() {
         let (manager, removed) = manager()
+        // "local" sits between "img" and "a": the text right below the uploaded image.
+        manager.removeStep(stepId: "local")
 
-        manager.onErase(stepId: "img")
+        manager.onErase(stepId: "a")
 
         #expect(removed() == ["img"])
+        #expect(manager.currentStory.stories.values.contains { $0.id == "a" })
+    }
+
+    @Test func backspaceBelowTwoAdjacentImagesRemovesOnlyTheNearest() {
+        let manager = WriteopiaStateManager()
+        var removed: [String] = []
+        manager.onImagesRemoved = { steps in removed += steps.map(\.id) }
+        manager.loadDocument(WrDocument(id: "d", title: "Doc", workspaceId: "w", content: [
+            StoryStep(id: "t", type: .title, text: "Doc", position: Rank.at(0)),
+            StoryStep(id: "first", type: .image, url: "https://storage.test/uploads/u/1.jpg", position: Rank.at(1)),
+            StoryStep(id: "second", type: .image, url: "https://storage.test/uploads/u/2.jpg", position: Rank.at(2)),
+            StoryStep(id: "a", type: .text, text: "Hello", position: Rank.at(3)),
+        ]))
+
+        manager.onErase(stepId: "a")
+
+        #expect(removed == ["second"])
+        #expect(manager.currentStory.stories.values.contains { $0.id == "first" })
+    }
+
+    @Test func anUploadThatFinishesAfterItsStepLeftIsReported() {
+        let (manager, removed) = manager()
+        let stepId = manager.addImage(path: "/tmp/new.jpg", uploading: true)!
+        manager.removeStep(stepId: stepId)
+
+        manager.imageUploadFinished(stepId: stepId, url: "https://storage.test/uploads/u/late.jpg")
+
+        #expect(removed() == [stepId])
+        #expect(manager.uploadingStepIds.isEmpty)
     }
 }

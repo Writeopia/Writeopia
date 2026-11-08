@@ -1564,9 +1564,10 @@ class WriteopiaStateManager(
 
                 // Check if we should upload to cloud
                 coroutineScope.launch(dispatcher) {
-                    val shouldUpload = imageUploader?.isAuthenticated() == true
+                    val uploader = imageUploader
+                    val shouldUpload = uploader?.isAuthenticated() == true
 
-                    if (shouldUpload) {
+                    if (uploader != null && shouldUpload) {
                         // Insert image with loading state immediately
                         val loadingStep = StoryStep(
                             type = StoryTypes.IMAGE.type,
@@ -1575,8 +1576,9 @@ class WriteopiaStateManager(
                             loading = true
                         )
 
-                        val imagePosition = if (useInsertMode || position != null) {
+                        val imageStepId = if (useInsertMode || position != null) {
                             addAtPosition(loadingStep, targetPosition)
+                            loadingStep.id
                         } else {
                             changeStoryStateAndTrackIt(
                                 Action.StoryStateChange(
@@ -1589,15 +1591,25 @@ class WriteopiaStateManager(
                                     targetPosition
                                 )
                             )
-                            targetPosition
+                            story.id
                         }
 
                         // Upload in background
-                        val result = imageUploader.uploadImage(imagePath)
+                        val result = uploader.uploadImage(imagePath)
 
-                        // Replace with final image
-                        val currentStory = getStory(imagePosition)
-                        if (currentStory != null) {
+                        // Replace with final image. The step is found by id: it may have moved,
+                        // or have been removed while the upload ran.
+                        val current = _currentStory.value.stories.entries
+                            .firstOrNull { (_, step) -> step.id == imageStepId }
+                        val imagePosition = current?.key
+                        val currentStory = current?.value
+                        if (currentStory == null) {
+                            // The picture left the document before it arrived: it must not stay
+                            // in the user's storage.
+                            if (result is io.writeopia.sdk.models.utils.ResultData.Complete) {
+                                uploader.deleteImage(result.data)
+                            }
+                        } else if (imagePosition != null) {
                             val finalStep = when (result) {
                                 is io.writeopia.sdk.models.utils.ResultData.Complete -> currentStory.copy(
                                     url = result.data,

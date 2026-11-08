@@ -25,9 +25,9 @@ fun main() {
 
 fun Application.module(
     debugMode: Boolean = System.getenv("WRITEOPIA_DEBUG_MODE")?.toBoolean() ?: false,
-    writeopiaDb: WriteopiaDbBackend? = configurePersistence(debugMode)
+    writeopiaDb: WriteopiaDbBackend = configurePersistence(debugMode)
 ) {
-    logger.info("Media microservice starting - debug: $debugMode, db available: ${writeopiaDb != null}")
+    logger.info("Media microservice starting - debug: $debugMode")
     installCORS()
     installAuth()
     configureRouting(debugMode, writeopiaDb)

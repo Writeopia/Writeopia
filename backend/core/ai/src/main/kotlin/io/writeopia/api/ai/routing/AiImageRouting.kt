@@ -84,8 +84,16 @@ fun Routing.aiImageRoute(
                 return@post
             }
 
-            // A space with no room left gets no picture, and spends no tokens on one.
-            val storage = storageUsage?.usage(userId)
+            // A space with no room left gets no picture, and spends no tokens on one. The size
+            // of a picture is only known once drawn, so a picture larger than what is left is
+            // still refused afterwards, with the tokens spent: the model did its work.
+            val storage = try {
+                storageUsage?.usage(userId)
+            } catch (e: Exception) {
+                logger.error("Failed to read the storage usage of user {}", userId, e)
+                call.respond(HttpStatusCode.ServiceUnavailable, AiImageResponse(error = "Storage is unavailable, try again"))
+                return@post
+            }
             if (storage != null && storage.freeBytes == 0L) {
                 call.respond(HttpStatusCode.InsufficientStorage, AiImageResponse(error = STORAGE_FULL))
                 return@post

@@ -17,6 +17,7 @@ import io.writeopia.app.endpoints.EndPoints
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.serialization.request.MediaDeleteRequest
 import io.writeopia.sdk.serialization.response.StorageUsageResponse
+import kotlinx.coroutines.CancellationException
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
@@ -87,6 +88,8 @@ class MediaApi(
                     ResultData.Error()
                 }
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             println("Media upload error: ${e.message}")
             ResultData.Error(e)
@@ -102,6 +105,8 @@ class MediaApi(
             } else {
                 ResultData.Error(Exception("Storage usage failed with status: ${response.status}"))
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             ResultData.Error(e)
         }
@@ -127,6 +132,8 @@ class MediaApi(
             } else {
                 ResultData.Error(Exception("Media delete failed with status: ${response.status}"))
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             ResultData.Error(e)
         }

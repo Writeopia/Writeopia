@@ -10,6 +10,7 @@ import io.writeopia.sdk.models.utils.toBoolean
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -52,14 +53,19 @@ internal class AccountMenuKmpViewModel(
     private val _storageUsageState = MutableStateFlow<StorageUsageState>(StorageUsageState.Loading)
     override val storageUsageState: StateFlow<StorageUsageState> = _storageUsageState.asStateFlow()
 
+    /** The request in flight; a new load cancels it so an older answer never lands last. */
+    private var storageUsageJob: Job? = null
+
     override fun loadStorageUsage() {
         val api = mediaApi ?: run {
             _storageUsageState.value = StorageUsageState.Error("Storage is not configured")
             return
         }
 
-        viewModelScope.launch {
-            if (authRepository.getAuthToken() == null) {
+        storageUsageJob?.cancel()
+        storageUsageJob = viewModelScope.launch {
+            // The web signs in with a cookie and has no token, so the session is what counts.
+            if (!authRepository.isLoggedIn()) {
                 _storageUsageState.value = StorageUsageState.Error("Sign in to see your storage")
                 return@launch
             }

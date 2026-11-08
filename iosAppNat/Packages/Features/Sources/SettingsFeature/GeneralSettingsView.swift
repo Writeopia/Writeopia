@@ -30,6 +30,7 @@ final class StorageUsageViewModel {
             usage = try await api.usage()
             errorMessage = nil
         } catch {
+            usage = nil
             errorMessage = error.userMessage
         }
     }

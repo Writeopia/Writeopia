@@ -32,14 +32,16 @@ data class ImageUploadResponse(val imageUrl: String)
 
 /**
  * The media of the users: uploads go to the bucket and count in the user's storage, which the
- * user can read and give back by deleting a picture. Without [storageUsage] (no database) the
- * pictures are stored but not counted.
+ * user can read and give back by deleting a picture. [storageUsage] is only null in debug
+ * mode, where the pictures are stored but not counted.
  */
 fun Routing.mediaRoute(
     debug: Boolean = false,
     imageStorageService: ImageStorageService = GcpBucketImageStorageService,
     storageUsage: StorageUsageService? = null
 ) {
+    require(debug || storageUsage != null) { "Uploads must be counted: the storage usage is required" }
+
     val mediaStore = MediaStore(imageStorageService, storageUsage, debug)
 
     authenticate("auth-jwt", optional = debug) {

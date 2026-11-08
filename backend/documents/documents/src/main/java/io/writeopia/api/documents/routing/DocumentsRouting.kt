@@ -67,6 +67,7 @@ import io.writeopia.sdk.serialization.response.GenerateSummaryResponse
 import io.writeopia.sdk.serialization.response.LinkCardDescriptionResponse
 import io.writeopia.sdk.serialization.response.PresentationsResponse
 import io.writeopia.sdk.serialization.response.SearchResponse
+import io.writeopia.sdk.serialization.response.StorageUsageResponse
 import io.writeopia.sdk.serialization.response.SyncEventApi
 import io.writeopia.sdk.serialization.response.WorkspaceDiffResponse
 import io.writeopia.sql.WriteopiaDbBackend
@@ -724,7 +725,7 @@ fun Routing.documentsRoute(
 
             when (val stored = mediaStore.store(image, userId)) {
                 is MediaStoreResult.Stored -> call.respond(HttpStatusCode.Created, ImageUploadRequest(stored.url))
-                is MediaStoreResult.QuotaExceeded -> call.respond(HttpStatusCode.InsufficientStorage, "Storage is full")
+                is MediaStoreResult.QuotaExceeded -> call.respond(HttpStatusCode.InsufficientStorage, stored.usage.toApi())
                 is MediaStoreResult.Busy -> call.respond(HttpStatusCode.ServiceUnavailable, "Storage busy, try again")
                 is MediaStoreResult.Failed -> call.respond(HttpStatusCode.ServiceUnavailable, "The image could not be stored")
             }
@@ -1383,7 +1384,7 @@ fun Routing.documentsRoute(
             val imageUrl = when (val stored = mediaStore.store(image, userId)) {
                 is MediaStoreResult.Stored -> stored.url
                 is MediaStoreResult.QuotaExceeded -> {
-                    call.respond(HttpStatusCode.InsufficientStorage, "Storage is full")
+                    call.respond(HttpStatusCode.InsufficientStorage, stored.usage.toApi())
                     return@runIfMember
                 }
                 is MediaStoreResult.Busy -> {
@@ -1513,6 +1514,9 @@ fun Routing.documentsRoute(
         }
     }
 }
+
+/** The usage as the media service answers it on a full storage (507). */
+private fun io.writeopia.storage.StorageUsage.toApi() = StorageUsageResponse(usedBytes, quotaBytes, version)
 
 /** Story steps per document in the folder contents preview, unless the request asks otherwise. */
 private const val DEFAULT_PREVIEW_STEPS = 7

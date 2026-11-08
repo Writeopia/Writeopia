@@ -62,6 +62,7 @@ import io.writeopia.common.utils.Destinations
 import io.writeopia.ui.keyboard.KeyboardEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -196,6 +197,9 @@ class GlobalShellKmpViewModel(
 
     private val _storageUsageState = MutableStateFlow<StorageUsageState>(StorageUsageState.Loading)
     override val storageUsageState: StateFlow<StorageUsageState> = _storageUsageState.asStateFlow()
+
+    /** The request in flight; a new load cancels it so an older answer never lands last. */
+    private var storageUsageJob: Job? = null
 
     private val _aiProviderState = MutableStateFlow(aiClients.defaultProvider)
     override val aiProviderState: StateFlow<AiProvider> = _aiProviderState.asStateFlow()
@@ -425,9 +429,11 @@ class GlobalShellKmpViewModel(
             return
         }
 
-        viewModelScope.launch {
-            // Offline there is no session, so the backend can't answer for the user.
-            if (authRepository.getAuthToken() == null) {
+        storageUsageJob?.cancel()
+        storageUsageJob = viewModelScope.launch {
+            // Offline there is no session, so the backend can't answer for the user. The web
+            // signs in with a cookie and has no token, so the session is what counts.
+            if (!authRepository.isLoggedIn()) {
                 _storageUsageState.value = StorageUsageState.Error("Sign in to see your storage")
                 return@launch
             }

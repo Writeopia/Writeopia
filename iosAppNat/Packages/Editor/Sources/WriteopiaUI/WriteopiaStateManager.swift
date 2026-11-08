@@ -524,15 +524,26 @@ public final class WriteopiaStateManager {
     public func onErase(stepId: String) {
         dismissAiSuggestions()
         guard isEditable, let (position, step) = find(stepId) else { return }
+        // Backspace removes the step above when it has no text (an image, a divider), so the
+        // pictures that left are read from the states, not from the step passed in.
+        let before = currentStory
         apply(writeopiaManager.onErase(Action.EraseStory(storyStep: step, position: position), state: currentStory))
-        notifyImagesRemoved([step])
+        notifyImagesRemoved(since: before)
     }
 
-    /// Hands the uploaded pictures among `steps` to `onImagesRemoved`.
-    private func notifyImagesRemoved(_ steps: [StoryStep]) {
-        let images = steps.filter { $0.type == .image && $0.url != nil && $0.path == nil }
+    /// Hands the uploaded pictures of `before` that are no longer in the document to
+    /// `onImagesRemoved`.
+    private func notifyImagesRemoved(since before: StoryState) {
+        let remaining = Set(currentStory.stories.values.map(\.id))
+        let images = before.stories.values.filter { step in
+            !remaining.contains(step.id) && Self.isUploadedImage(step)
+        }
         guard !images.isEmpty else { return }
-        onImagesRemoved?(images)
+        onImagesRemoved?(images.sorted { $0.position < $1.position })
+    }
+
+    private static func isUploadedImage(_ step: StoryStep) -> Bool {
+        step.type == .image && step.url != nil && step.path == nil
     }
 
     public func onFocusChange(stepId: String, hasFocus: Bool) {
@@ -791,11 +802,11 @@ public final class WriteopiaStateManager {
     /// Deletes the selected lines and clears the selection, like `deleteSelection` of the SDK.
     public func deleteSelectedLines() {
         guard isEditable else { return }
-        let removed = selectedLines
+        let before = currentStory
         let newState = writeopiaManager.deleteSteps(selectedPositions, state: currentStory)
         selectedStepIds.removeAll()
         commit(newState)
-        notifyImagesRemoved(removed)
+        notifyImagesRemoved(since: before)
     }
 
     /// Adds a link to another document right after the last selected line.
@@ -1020,7 +1031,13 @@ public final class WriteopiaStateManager {
     /// With a nil `url` (upload failed) the image keeps its local path, like the SDK.
     public func imageUploadFinished(stepId: String, url: String?) {
         uploadingStepIds.remove(stepId)
-        guard let url, var step = step(withId: stepId) else { return }
+        guard let url else { return }
+        guard var step = step(withId: stepId) else {
+            // The picture left the document while it was uploading: it must not stay in the
+            // user's storage either.
+            onImagesRemoved?([StoryStep(id: stepId, type: .image, url: url, position: Rank.first)])
+            return
+        }
         step.url = url
         step.path = nil
         currentStory = writeopiaManager.replaceStep(step, state: currentStory)
@@ -1044,10 +1061,10 @@ public final class WriteopiaStateManager {
 
     public func removeStep(stepId: String) {
         aiAnswerFinished(stepId: stepId)
-        let removed = step(withId: stepId)
+        let before = currentStory
         currentStory = writeopiaManager.removeStep(id: stepId, state: currentStory)
         changeCount += 1
-        if let removed { notifyImagesRemoved([removed]) }
+        notifyImagesRemoved(since: before)
     }
 
     // MARK: - Drag and drop
