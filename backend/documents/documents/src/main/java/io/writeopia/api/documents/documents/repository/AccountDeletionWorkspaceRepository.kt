@@ -97,4 +97,6 @@ fun WriteopiaDbBackend.removeUserFromWorkspaceContents(userId: String, workspace
 fun WriteopiaDbBackend.sweepRemainingUserAccountData(userId: String) {
     this.userFavoriteEntityQueries.deleteByUser(userId)
     this.workspaceTutorialStatusQueries.deleteByUser(userId)
+    // The media saga empties the user's bucket folder; the count of it goes here.
+    this.userStorageUsageEntityQueries.deleteByUser(userId)
 }

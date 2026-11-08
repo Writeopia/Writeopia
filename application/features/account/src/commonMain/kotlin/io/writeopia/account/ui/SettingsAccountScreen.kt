@@ -45,6 +45,8 @@ fun SettingsAccountScreen(
     isLoggedInState: StateFlow<ResultData<Boolean>>,
     workspacesState: StateFlow<ResultData<List<Workspace>>>,
     exportWorkspaceState: StateFlow<ResultData<Unit>>,
+    storageUsageState: StateFlow<StorageUsageState>,
+    loadStorageUsage: () -> Unit,
     goToRegister: () -> Unit,
     switchSpace: () -> Unit,
     changeWorkspace: () -> Unit,
@@ -118,6 +120,14 @@ fun SettingsAccountScreen(
                 title = WrStrings.logout(),
                 icon = WrIcons.backArrowDesktop,
                 onClick = { showLogoutDialog = true }
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            StorageUsageSection(
+                usageState = storageUsageState,
+                loadUsage = loadStorageUsage,
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }

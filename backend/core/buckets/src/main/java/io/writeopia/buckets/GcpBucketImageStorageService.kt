@@ -3,10 +3,11 @@ package io.writeopia.buckets
 import com.google.cloud.storage.BlobId
 import com.google.cloud.storage.BlobInfo
 import com.google.cloud.storage.Storage
-import io.ktor.http.content.*
 import io.writeopia.backend.models.ImageStorageService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.net.URI
+import java.net.URISyntaxException
 import java.util.concurrent.TimeUnit
 
 object GcpBucketImageStorageService : ImageStorageService {
@@ -16,44 +17,15 @@ object GcpBucketImageStorageService : ImageStorageService {
     // Signed URL expiration time (7 days)
     private const val SIGNED_URL_EXPIRATION_DAYS = 7L
 
-    /**
-     * Processes multipart data to find an image and upload it to GCP.
-     * @return A signed URL for the uploaded image (valid for 7 days), or null if no image was found.
-     */
-    override suspend fun uploadImage(
-        multipart: MultiPartData,
-        userId: String,
-        debugMode: Boolean
-    ): String? =
-        withContext(Dispatchers.IO) {
-            var uploadedUrl: String? = null
-            val bucketName = BucketConfig.imagesBucketName(debugMode)
+    private const val UPLOADS_FOLDER = "uploads"
 
-            multipart.forEachPart { part ->
-                if (part is PartData.FileItem) {
-                    if (debugMode) {
-                        uploadedUrl = "https://picsum.photos/200"
-                    } else {
-                        val fileName =
-                            "uploads/$userId/${System.currentTimeMillis()}-${part.originalFileName}"
-
-                        uploadedUrl = store(
-                            bucketName = bucketName,
-                            fileName = fileName,
-                            contentType = part.contentType?.toString(),
-                            bytes = part.streamProvider().readBytes()
-                        )
-                    }
-                }
-                part.dispose()
-            }
-
-            uploadedUrl
-        }
+    /** The host of the path-style URLs `Storage.signUrl` makes: `https://storage.googleapis.com/<bucket>/<object>`. */
+    private const val STORAGE_HOST = "storage.googleapis.com"
 
     /**
-     * Stores [bytes] under the uploads folder of [userId], like [uploadImage] does with a file
-     * the user sent, so the account deletion finds it with the rest of the user's media.
+     * Stores [bytes] under the uploads folder of [userId]: a file the user sent or a picture
+     * the AI drew. Everything of a user lives under `uploads/$userId/`, so the account deletion
+     * finds it with the rest of the user's media and [deleteImage] knows what is theirs.
      * @return A signed URL (valid for 7 days), or a placeholder in debug mode.
      */
     override suspend fun uploadImageBytes(
@@ -68,12 +40,29 @@ object GcpBucketImageStorageService : ImageStorageService {
         } else {
             store(
                 bucketName = BucketConfig.imagesBucketName(debugMode),
-                fileName = "uploads/$userId/${System.currentTimeMillis()}-$fileName",
+                fileName = "${prefixOf(userId)}${System.currentTimeMillis()}-$fileName",
                 contentType = contentType,
                 bytes = bytes
             )
         }
     }
+
+    /**
+     * Deletes the object [url] points to when it is in the folder of [userId]. Reads the size
+     * first, so the caller can give the bytes back to the user's storage.
+     */
+    override suspend fun deleteImage(url: String, userId: String, debugMode: Boolean): Long? =
+        withContext(Dispatchers.IO) {
+            if (debugMode) return@withContext 0L
+
+            val bucketName = BucketConfig.imagesBucketName(debugMode)
+            val objectName = objectNameOf(url, bucketName, userId) ?: return@withContext null
+
+            val blob = storage.get(BlobId.of(bucketName, objectName)) ?: return@withContext 0L
+            val size = blob.size ?: 0L
+            blob.delete()
+            size
+        }
 
     /** Writes the object and signs a URL for it. */
     private fun store(bucketName: String, fileName: String, contentType: String?, bytes: ByteArray): String {
@@ -95,7 +84,7 @@ object GcpBucketImageStorageService : ImageStorageService {
 
     /**
      * Deletes every object under [prefix] in [bucketName] (e.g. "uploads/$userId/" - see
-     * uploadImage's fileName convention). Used by the account-deletion saga: media is stored
+     * uploadImageBytes's fileName convention). Used by the account-deletion saga: media is stored
      * per-user, not per-workspace, so a single prefix delete covers everything regardless of
      * how many workspaces the user was in. Idempotent - a retry after a partial failure just
      * finds fewer (or no) objects left to delete.
@@ -124,4 +113,39 @@ object GcpBucketImageStorageService : ImageStorageService {
         )
         signedUrl.toString()
     }
+
+    /**
+     * The object name [url] points to, when it is a URL of [bucketName] (path-style, as
+     * [store] signs them, or virtual-hosted `<bucket>.storage.googleapis.com`) and the object is
+     * directly in the folder of [userId]. The query (the signature) is ignored. Anything else,
+     * like another user's folder, a `..` segment or a deeper path, gives null, so a user can
+     * only delete their own pictures.
+     */
+    fun objectNameOf(url: String, bucketName: String, userId: String): String? {
+        val uri = try {
+            URI(url)
+        } catch (e: URISyntaxException) {
+            return null
+        }
+
+        if (uri.scheme != "https" || bucketName.isEmpty() || userId.isEmpty()) return null
+
+        // getPath decodes the percent-encoding of the signed URL (spaces, unicode in file names).
+        val path = uri.path?.removePrefix("/") ?: return null
+        val objectName = when (uri.host) {
+            STORAGE_HOST -> path.removePrefix("$bucketName/").takeIf { it != path }
+            "$bucketName.$STORAGE_HOST" -> path
+            else -> null
+        } ?: return null
+
+        val prefix = prefixOf(userId)
+        if (!objectName.startsWith(prefix)) return null
+
+        val name = objectName.removePrefix(prefix)
+        if (name.isEmpty() || name.contains('/') || name == "." || name == "..") return null
+
+        return objectName
+    }
+
+    private fun prefixOf(userId: String) = "$UPLOADS_FOLDER/$userId/"
 }

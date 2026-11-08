@@ -157,6 +157,17 @@ public final class NoteEditorViewModel {
             writeopiaManager.onListStarted = { [weak self] stepId in self?.suggestListItems(after: stepId) }
         }
         writeopiaManager.onLinkCardCreated = { [weak self] card in self?.describeLinkCard(card) }
+        if let imageUploader {
+            // A removed picture leaves the user's storage on the backend. Best effort.
+            writeopiaManager.onImagesRemoved = { images in
+                Task {
+                    for image in images {
+                        guard let url = image.url else { continue }
+                        try? await imageUploader.deleteImage(url: url)
+                    }
+                }
+            }
+        }
         if let headerImages {
             writeopiaManager.headerImages = HeaderImagesModel(
                 service: headerImages,
@@ -373,7 +384,15 @@ public final class NoteEditorViewModel {
         ) else { return }
 
         guard let imageUploader else { return }
-        let url = try? await imageUploader.uploadImage(jpeg, fileName: file.lastPathComponent, mimeType: "image/jpeg")
+        var url: String?
+        do {
+            url = try await imageUploader.uploadImage(jpeg, fileName: file.lastPathComponent, mimeType: "image/jpeg")
+        } catch APIError.storageFull {
+            // The picture stays on this device only; the user learns why.
+            imageError = APIError.storageFull.userMessage
+        } catch {
+            url = nil
+        }
         writeopiaManager.imageUploadFinished(stepId: stepId, url: url)
     }
 

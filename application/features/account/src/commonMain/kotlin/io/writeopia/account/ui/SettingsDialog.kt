@@ -89,6 +89,7 @@ fun SettingsDialog(
     isCloudAiAvailable: StateFlow<Boolean>,
     selectAiProvider: (AiProvider) -> Unit,
     cloudAiUsageState: StateFlow<CloudAiUsageState>,
+    storageUsageState: StateFlow<StorageUsageState>,
     userOnlineState: StateFlow<WriteopiaUser>,
     showDeleteConfirmation: StateFlow<Boolean>,
     workspaces: StateFlow<ResultData<List<Workspace>>>,
@@ -100,6 +101,7 @@ fun SettingsDialog(
     selectAccentColor: (AccentColor) -> Unit,
     selectWorkplacePath: (String) -> Unit,
     loadCloudAiUsage: () -> Unit,
+    loadStorageUsage: () -> Unit,
     signIn: () -> Unit,
     switchSpace: () -> Unit,
     changeWorkspace: () -> Unit,
@@ -138,6 +140,8 @@ fun SettingsDialog(
                     AccountScreen(
                         userOnlineState = userOnlineState,
                         workspaces = workspaces,
+                        storageUsageState = storageUsageState,
+                        loadStorageUsage = loadStorageUsage,
                         showDeleteConfirmation = showDeleteConfirmation,
                         exportWorkspaceState = exportWorkspaceState,
                         logoutInProgress = logoutInProgress,
@@ -209,6 +213,8 @@ fun SettingsDialog(
 private fun AccountScreen(
     userOnlineState: StateFlow<WriteopiaUser>,
     workspaces: StateFlow<ResultData<List<Workspace>>>,
+    storageUsageState: StateFlow<StorageUsageState>,
+    loadStorageUsage: () -> Unit,
     showDeleteConfirmation: StateFlow<Boolean>,
     exportWorkspaceState: StateFlow<ResultData<Unit>>,
     logoutInProgress: StateFlow<Boolean>,
@@ -277,6 +283,15 @@ private fun AccountScreen(
             if (isLoggingOut) {
                 SigningOutDialog()
             }
+
+            // Storage: the pictures of the user on the backend, against the quota
+            Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
+
+            StorageUsageSection(
+                usageState = storageUsageState,
+                loadUsage = loadStorageUsage,
+                modifier = Modifier.fillMaxWidth()
+            )
 
             // Export section
             var showExportDialog by remember { mutableStateOf(false) }

@@ -38,3 +38,20 @@ private fun formatOneDecimal(value: Double): String {
         rounded.toString()
     }
 }
+
+/**
+ * Formats a number of bytes for people: "0 B", "512 KB", "1.5 MB", "20 GB". Binary units, one
+ * decimal at most.
+ */
+fun formatBytes(bytes: Long): String {
+    val units = listOf("B", "KB", "MB", "GB", "TB")
+    var value = bytes.coerceAtLeast(0).toDouble()
+    var unit = 0
+
+    while (value >= 1024 && unit < units.lastIndex) {
+        value /= 1024
+        unit++
+    }
+
+    return if (unit == 0) "${value.toLong()} ${units[unit]}" else "${formatOneDecimal(value)} ${units[unit]}"
+}

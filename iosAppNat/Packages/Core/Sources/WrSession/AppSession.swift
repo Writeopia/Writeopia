@@ -243,9 +243,14 @@ public final class AppSession {
         return nil
     }
 
+    /// The media service: uploads and the storage usage. Nil outside the open space.
+    public var mediaAPI: MediaAPI? {
+        isOnline ? MediaAPI(client: client) : nil
+    }
+
     /// Image uploads; nil outside the open space, where images stay on the device.
     public var imageUploader: ImageUploading? {
-        isOnline ? MediaAPI(client: client) : nil
+        mediaAPI
     }
 
     /// The writing agent of the editor (suggestions while writing, folders for a root document,

@@ -274,6 +274,7 @@ public final class APIClient {
         case 404: throw APIError.notFound
         case 409: throw APIError.conflict(Self.serverMessage(data))
         case 429: throw APIError.quotaExceeded
+        case 507: throw APIError.storageFull
         default: throw APIError.unexpectedStatus(status)
         }
     }

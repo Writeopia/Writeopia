@@ -1,5 +1,6 @@
 package io.writeopia.account.viewmodel
 
+import io.writeopia.account.ui.StorageUsageState
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
 import kotlinx.coroutines.flow.Flow
@@ -21,6 +22,9 @@ interface AccountMenuViewModel {
 
     val logoutInProgress: StateFlow<Boolean>
 
+    /** How much media the user keeps on the backend. */
+    val storageUsageState: StateFlow<StorageUsageState>
+
     fun logout(onLogOutSuccess: () -> Unit)
 
     fun changeWorkspace(onChangeSuccess: () -> Unit)
@@ -34,4 +38,6 @@ interface AccountMenuViewModel {
     fun exportWorkspace(workspaceId: String)
 
     fun resetExportState()
+
+    fun loadStorageUsage()
 }

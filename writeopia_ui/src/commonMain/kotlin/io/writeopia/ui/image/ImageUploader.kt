@@ -15,6 +15,13 @@ interface ImageUploader {
     suspend fun uploadImage(localPath: String): ResultData<String>
 
     /**
+     * Deletes an image this uploader stored, when the user removes it from the document, so
+     * the remote storage can give its space back. By default nothing is deleted.
+     * @param url The URL [uploadImage] answered with.
+     */
+    suspend fun deleteImage(url: String): ResultData<Unit> = ResultData.Complete(Unit)
+
+    /**
      * Checks if the user is authenticated and can upload images.
      * @return true if authenticated, false otherwise.
      */

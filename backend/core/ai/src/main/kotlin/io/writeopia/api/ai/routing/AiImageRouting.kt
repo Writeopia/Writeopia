@@ -18,23 +18,31 @@ import io.writeopia.api.genai.service.GenAiService
 import io.writeopia.app.dto.ai.AiImageRequest
 import io.writeopia.app.dto.ai.AiImageResponse
 import io.writeopia.app.endpoints.EndPoints
+import io.writeopia.backend.models.ImageFile
 import io.writeopia.backend.models.ImageStorageService
 import io.writeopia.connection.logger
 import io.writeopia.sql.WriteopiaDbBackend
+import io.writeopia.storage.MediaStore
+import io.writeopia.storage.MediaStoreResult
+import io.writeopia.storage.StorageUsageService
 
 private const val ENDPOINT_NAME = "image"
 
 /**
  * Draws a picture for a paragraph with the cloud AI and stores it with the user's media. The
  * picture counts in the monthly quota with the tokens the model reports; when it reports none,
- * [AiConfig.imageTokenCost] tokens are charged instead, so every picture costs something.
+ * [AiConfig.imageTokenCost] tokens are charged instead, so every picture costs something. Its
+ * bytes also count in the user's storage, so a full space refuses the picture before it is drawn.
  */
 fun Routing.aiImageRoute(
     genAiService: GenAiService,
     imageStorageService: ImageStorageService,
     debugMode: Boolean,
-    writeopiaDb: WriteopiaDbBackend?
+    writeopiaDb: WriteopiaDbBackend?,
+    storageUsage: StorageUsageService? = writeopiaDb?.let { StorageUsageService(it) }
 ) {
+    val mediaStore = MediaStore(imageStorageService, storageUsage, debugMode)
+
     authenticate("auth-jwt", optional = debugMode) {
         post("/${EndPoints.aiImage()}") {
             val userId = call.principal<JWTPrincipal>()?.payload?.getClaim("userId")?.asString()
@@ -76,6 +84,13 @@ fun Routing.aiImageRoute(
                 return@post
             }
 
+            // A space with no room left gets no picture, and spends no tokens on one.
+            val storage = storageUsage?.usage(userId)
+            if (storage != null && storage.freeBytes == 0L) {
+                call.respond(HttpStatusCode.InsufficientStorage, AiImageResponse(error = STORAGE_FULL))
+                return@post
+            }
+
             logger.info(
                 "AI image request - user: {}, paragraph: {} chars, document: {} chars",
                 userId, request.paragraph.length, request.documentText.length
@@ -110,31 +125,30 @@ fun Routing.aiImageRoute(
                 writeopiaDb = writeopiaDb
             )
 
-            val imageUrl = try {
-                imageStorageService.uploadImageBytes(
+            val stored = mediaStore.store(
+                ImageFile(
                     bytes = image.bytes,
                     contentType = image.mimeType,
-                    fileName = "ai-image.${extensionOf(image.mimeType)}",
-                    userId = userId,
-                    debugMode = debugMode
-                )
-            } catch (e: Exception) {
-                logger.error("Failed to store the AI image for user {}", userId, e)
-                null
-            }
+                    fileName = "ai-image.${extensionOf(image.mimeType)}"
+                ),
+                userId
+            )
 
-            if (imageUrl == null) {
-                call.respond(
-                    HttpStatusCode.ServiceUnavailable,
-                    AiImageResponse(error = "The picture could not be stored")
-                )
-                return@post
+            when (stored) {
+                is MediaStoreResult.Stored ->
+                    call.respond(HttpStatusCode.OK, AiImageResponse(imageUrl = stored.url))
+                is MediaStoreResult.QuotaExceeded ->
+                    call.respond(HttpStatusCode.InsufficientStorage, AiImageResponse(error = STORAGE_FULL))
+                is MediaStoreResult.Busy ->
+                    call.respond(HttpStatusCode.ServiceUnavailable, AiImageResponse(error = "Storage busy, try again"))
+                is MediaStoreResult.Failed ->
+                    call.respond(HttpStatusCode.ServiceUnavailable, AiImageResponse(error = "The picture could not be stored"))
             }
-
-            call.respond(HttpStatusCode.OK, AiImageResponse(imageUrl = imageUrl))
         }
     }
 }
+
+private const val STORAGE_FULL = "Your storage is full. Delete some pictures to make room."
 
 /** The reported tokens, or the fixed cost of a picture when the model reported none. */
 internal fun TokenUsage.orImageCost(cost: Int = AiConfig.imageTokenCost()): TokenUsage =

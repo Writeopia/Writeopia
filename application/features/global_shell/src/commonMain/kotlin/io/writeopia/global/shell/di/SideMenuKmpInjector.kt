@@ -102,6 +102,7 @@ class SideMenuKmpInjector(
                 workspaceHandler = workspaceInjection.provideWorkspaceHandler(),
                 keyboardEventFlow = keyboardEventFlow,
                 genAiApi = genAiInjection?.provideGenAiApi(),
+                mediaApi = workspaceInjection.provideMediaApi(),
                 sideMenuSource = provideSideMenuSource(notesUseCase),
                 aiClients = AiClients(
                     localAiRepository = localAiInjection.provideRepository(),

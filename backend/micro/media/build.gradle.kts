@@ -32,8 +32,11 @@ dependencies {
     implementation(project(":backend:core:auth"))
     implementation(project(":backend:core:buckets"))
     implementation(project(":backend:core:connection"))
+    implementation(project(":backend:core:database"))
     implementation(project(":backend:core:models"))
     implementation(project(":backend:core:pubsub"))
+    implementation(project(":backend:core:storage"))
+    implementation(project(":common:endpoints"))
 
     // Ktor
     implementation(libs.ktor.server.cors)
@@ -49,7 +52,11 @@ dependencies {
 
     // Testing
     testImplementation(libs.ktor.server.tests)
+    testImplementation(libs.ktor.server.content.negotiation)
     testImplementation(libs.kotlin.test)
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.database.embedded.postgres)
+    testImplementation(libs.database.hikaricp)
+    testImplementation(libs.database.postgresql)
 }

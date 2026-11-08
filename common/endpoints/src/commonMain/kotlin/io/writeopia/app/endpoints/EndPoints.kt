@@ -65,6 +65,15 @@ object EndPoints {
     // Public, CDN-cacheable configuration for auto-configuring Local AI (Ollama / llmman)
     fun aiLocalConfig() = "api/ai/local-config"
 
+    /** POST a multipart image; the media service stores it with the user's media. */
+    fun mediaUpload() = "api/media/upload"
+
+    /** GET how much media the user keeps and the quota. */
+    fun mediaUsage() = "api/media/usage"
+
+    /** POST the URL of one of the user's pictures to delete it and give its bytes back. */
+    fun mediaDelete() = "api/media/delete"
+
     /** The presentations of a document: GET lists them, POST generates a new one. */
     fun documentPresentations(workspaceId: String = "{workspaceId}", documentId: String = "{documentId}") =
         "api/docs/workspace/$workspaceId/document/$documentId/presentations"

@@ -4,6 +4,10 @@ import androidx.compose.runtime.Composable
 import org.jetbrains.compose.resources.stringResource
 import writeopia.application.core.resources.generated.resources.Res
 import writeopia.application.core.resources.generated.resources.accent_color
+import writeopia.application.core.resources.generated.resources.storage
+import writeopia.application.core.resources.generated.resources.loading_storage
+import writeopia.application.core.resources.generated.resources.storage_used_description
+import writeopia.application.core.resources.generated.resources.storage_full
 import writeopia.application.core.resources.generated.resources.workspace_sync_title
 import writeopia.application.core.resources.generated.resources.workspace_sync_message
 import writeopia.application.core.resources.generated.resources.workspace_sync_in_background
@@ -1121,6 +1125,18 @@ object WrStrings {
 
     @Composable
     fun tokensUsed() = stringResource(Res.string.tokens_used)
+
+    @Composable
+    fun storage() = stringResource(Res.string.storage)
+
+    @Composable
+    fun loadingStorage() = stringResource(Res.string.loading_storage)
+
+    @Composable
+    fun storageUsedDescription() = stringResource(Res.string.storage_used_description)
+
+    @Composable
+    fun storageFull() = stringResource(Res.string.storage_full)
 
     @Composable
     fun monthlyQuota() = stringResource(Res.string.monthly_quota)

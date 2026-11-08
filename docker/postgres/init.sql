@@ -139,6 +139,14 @@ CREATE TABLE user_favorite_entity (
   PRIMARY KEY (user_id, document_id)
 );
 
+-- Bytes of media each user keeps (UserStorageUsageEntity.sq); changed under an optimistic lock.
+CREATE TABLE user_storage_usage (
+  user_id TEXT PRIMARY KEY,
+  used_bytes BIGINT NOT NULL,
+  version BIGINT NOT NULL,
+  updated_at BIGINT NOT NULL
+);
+
 -- Non-partitioned here for local dev simplicity. Production (Cloud SQL) uses a
 -- RANGE-partitioned version, see backend/core/database/scripts/sync_event_partitioning.sql.
 CREATE TABLE sync_event (

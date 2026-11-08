@@ -1,11 +1,43 @@
+import Observation
 import SetupFeature
 import SwiftUI
+import WrData
 import WrDesign
 import WrModels
+import WrNetwork
 import WrSession
+
+/// The storage of the user on the backend, for the "Storage" section. Like `AiSettingsViewModel`.
+@Observable
+final class StorageUsageViewModel {
+    private(set) var usage: StorageUsage?
+    private(set) var isLoading = false
+    private(set) var errorMessage: String?
+
+    private let session: AppSession
+
+    init(session: AppSession) {
+        self.session = session
+    }
+
+    func load() async {
+        guard let api = session.mediaAPI else { return }
+
+        isLoading = true
+        defer { isLoading = false }
+
+        do {
+            usage = try await api.usage()
+            errorMessage = nil
+        } catch {
+            errorMessage = error.userMessage
+        }
+    }
+}
 
 struct GeneralSettingsView: View {
     @Environment(AppSession.self) private var session
+    @State private var storage: StorageUsageViewModel?
 
     /// The grouped form on every platform, like the other settings pages.
     var body: some View {
@@ -48,12 +80,67 @@ struct GeneralSettingsView: View {
             }
             #endif
 
+            if session.isOnline {
+                storageSection
+            }
+
             Section("About") {
                 LabeledContent("Version", value: Bundle.main.appVersion)
                 LabeledContent("Space", value: session.spaceType == .online ? String(localized: "Open space") : String(localized: "Private space"))
             }
         }
         .navigationTitle("General")
+        .task(id: session.isOnline) {
+            guard session.isOnline else { return }
+            let viewModel = storage ?? StorageUsageViewModel(session: session)
+            storage = viewModel
+            await viewModel.load()
+        }
+        .refreshable { await storage?.load() }
+    }
+
+    /// How much of the storage the pictures of the user take, with the quota.
+    @ViewBuilder
+    private var storageSection: some View {
+        Section {
+            if let usage = storage?.usage {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("\(usage.usedBytes.bytesFormatted) / \(usage.quotaBytes.bytesFormatted)")
+                        .font(.title2.bold())
+                        .monospacedDigit()
+                        .accessibilityIdentifier("settings.storage.usage")
+                    ProgressView(value: usage.progress)
+                        .tint(usage.progress > 0.9 ? .red : WrColors.accent)
+                    Text(usage.progress, format: .percent.precision(.fractionLength(0)))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    if usage.isFull {
+                        Text("Your storage is full. Delete some pictures to make room.")
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                    }
+                }
+                .padding(.vertical, 4)
+            } else if storage?.isLoading == true {
+                HStack {
+                    ProgressView()
+                    Text("Loading storage…").foregroundStyle(.secondary)
+                }
+            } else if let error = storage?.errorMessage {
+                Text(error).foregroundStyle(.red)
+            }
+        } header: {
+            Text("Storage")
+        } footer: {
+            Text("Pictures you upload and the ones the AI draws for you count here. Deleting a picture from a document gives its space back.")
+        }
+    }
+}
+
+extension Int64 {
+    /// Bytes for people: "512 KB", "1.5 MB", "20 GB".
+    var bytesFormatted: String {
+        ByteCountFormatter.string(fromByteCount: self, countStyle: .binary)
     }
 }
 

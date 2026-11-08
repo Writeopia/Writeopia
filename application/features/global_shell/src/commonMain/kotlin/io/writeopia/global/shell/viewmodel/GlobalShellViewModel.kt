@@ -1,6 +1,7 @@
 package io.writeopia.global.shell.viewmodel
 
 import io.writeopia.account.ui.CloudAiUsageState
+import io.writeopia.account.ui.StorageUsageState
 import io.writeopia.app.dto.SearchUserApi
 import io.writeopia.common.utils.download.DownloadState
 import io.writeopia.commonui.dtos.MenuItemUi
@@ -78,6 +79,9 @@ interface GlobalShellViewModel : FolderController, LocalAiConfigController {
 
     val cloudAiUsageState: StateFlow<CloudAiUsageState>
 
+    /** How much media the user keeps on the backend, for the settings. */
+    val storageUsageState: StateFlow<StorageUsageState>
+
     /** The AI the user picked to answer the AI commands, local or cloud. */
     val aiProviderState: StateFlow<AiProvider>
 
@@ -92,6 +96,8 @@ interface GlobalShellViewModel : FolderController, LocalAiConfigController {
     fun init()
 
     fun loadCloudAiUsage()
+
+    fun loadStorageUsage()
 
     fun selectAiProvider(provider: AiProvider)
 

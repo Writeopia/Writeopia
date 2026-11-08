@@ -73,6 +73,9 @@ public final class WriteopiaStateManager {
     /// Called with a link card just made from a pasted address, so the app can ask the backend
     /// for a description of the page.
     @ObservationIgnored public var onLinkCardCreated: ((StoryStep) -> Void)?
+    /// Called with the uploaded pictures the user just removed from the document (image steps
+    /// with a URL and no local file), so the app can free their space on the backend.
+    @ObservationIgnored public var onImagesRemoved: (([StoryStep]) -> Void)?
     /// Link cards whose description is being written; their drawer says so.
     public private(set) var describingLinkStepIds: Set<String> = []
     @ObservationIgnored let writeopiaManager: WriteopiaManager
@@ -522,6 +525,14 @@ public final class WriteopiaStateManager {
         dismissAiSuggestions()
         guard isEditable, let (position, step) = find(stepId) else { return }
         apply(writeopiaManager.onErase(Action.EraseStory(storyStep: step, position: position), state: currentStory))
+        notifyImagesRemoved([step])
+    }
+
+    /// Hands the uploaded pictures among `steps` to `onImagesRemoved`.
+    private func notifyImagesRemoved(_ steps: [StoryStep]) {
+        let images = steps.filter { $0.type == .image && $0.url != nil && $0.path == nil }
+        guard !images.isEmpty else { return }
+        onImagesRemoved?(images)
     }
 
     public func onFocusChange(stepId: String, hasFocus: Bool) {
@@ -780,9 +791,11 @@ public final class WriteopiaStateManager {
     /// Deletes the selected lines and clears the selection, like `deleteSelection` of the SDK.
     public func deleteSelectedLines() {
         guard isEditable else { return }
+        let removed = selectedLines
         let newState = writeopiaManager.deleteSteps(selectedPositions, state: currentStory)
         selectedStepIds.removeAll()
         commit(newState)
+        notifyImagesRemoved(removed)
     }
 
     /// Adds a link to another document right after the last selected line.
@@ -1031,8 +1044,10 @@ public final class WriteopiaStateManager {
 
     public func removeStep(stepId: String) {
         aiAnswerFinished(stepId: stepId)
+        let removed = step(withId: stepId)
         currentStory = writeopiaManager.removeStep(id: stepId, state: currentStory)
         changeCount += 1
+        if let removed { notifyImagesRemoved([removed]) }
     }
 
     // MARK: - Drag and drop

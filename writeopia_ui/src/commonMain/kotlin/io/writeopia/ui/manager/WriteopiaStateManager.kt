@@ -1085,7 +1085,26 @@ class WriteopiaStateManager(
             )?.let { newState ->
                 _currentStory.value = newState
                 cleanupOrphanCommentConversations()
+                releaseRemovedImages(listOf(deleteStory.storyStep))
             }
+        }
+    }
+
+    /**
+     * Tells the [imageUploader] about the pictures among [removed] it stored, so the backend
+     * frees their space. Best effort: a failure leaves the picture counted, nothing else.
+     */
+    private fun releaseRemovedImages(removed: Collection<StoryStep>) {
+        val uploader = imageUploader ?: return
+        val urls = removed
+            .filter { step -> step.type == StoryTypes.IMAGE.type && step.path == null }
+            .mapNotNull { step -> step.url }
+
+        if (urls.isEmpty()) return
+
+        coroutineScope.launch(dispatcher) {
+            if (!uploader.isAuthenticated()) return@launch
+            urls.forEach { url -> uploader.deleteImage(url) }
         }
     }
 
@@ -1115,6 +1134,7 @@ class WriteopiaStateManager(
             backStackManager.addState(_currentStory.value)
             _currentStory.value = state
             cleanupOrphanCommentConversations()
+            releaseRemovedImages(listOf(eraseStory.storyStep))
         }
     }
 
@@ -1147,6 +1167,7 @@ class WriteopiaStateManager(
             )
             _currentStory.value = state
             cleanupOrphanCommentConversations()
+            releaseRemovedImages(toDeleteStories.values)
         }
     }
 

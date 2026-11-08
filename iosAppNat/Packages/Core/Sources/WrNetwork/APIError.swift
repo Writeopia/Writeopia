@@ -8,6 +8,8 @@ public enum APIError: Error, Equatable {
     case conflict(String?)
     case badRequest(String?)
     case quotaExceeded
+    /// The storage of the user is full (507): no more pictures until some are deleted.
+    case storageFull
     case unexpectedStatus(Int)
     case decoding
     case offline
@@ -20,6 +22,7 @@ public enum APIError: Error, Equatable {
         case .conflict(let message): message ?? String(localized: "This already exists.")
         case .badRequest(let message): message ?? String(localized: "The request was not valid.")
         case .quotaExceeded: String(localized: "You reached your AI quota for this month.")
+        case .storageFull: String(localized: "Your storage is full. Delete some pictures to make room.")
         case .unexpectedStatus(let code): String(localized: "The server answered with an error (\(code)).")
         case .decoding: String(localized: "We couldn't read the server response.")
         case .offline: String(localized: "You seem to be offline. Check your connection and try again.")
