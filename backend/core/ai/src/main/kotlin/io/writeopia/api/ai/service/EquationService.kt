@@ -9,6 +9,7 @@ import io.writeopia.api.genai.service.GenAiService
 import io.writeopia.backend.models.EquationImageStorage
 import io.writeopia.connection.logger
 import java.security.MessageDigest
+import kotlin.coroutines.cancellation.CancellationException
 
 /** What came out of reading or rendering an equation. */
 sealed class EquationResult {
@@ -94,6 +95,8 @@ class EquationService(
 
         val url = try {
             storage.store(png, LatexRenderer.CONTENT_TYPE, objectNameOf(latex), debugMode)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logger.error("Failed to store the picture of an equation", e)
             return EquationResult.Failed("The equation could not be stored", usage)

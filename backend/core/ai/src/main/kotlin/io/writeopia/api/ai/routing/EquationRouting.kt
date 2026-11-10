@@ -23,6 +23,12 @@ import io.writeopia.sql.WriteopiaDbBackend
 
 private const val RECOGNIZE_ENDPOINT = "equation-recognize"
 
+/** Characters of LaTeX a render accepts; an equation is a line or a few, not a document. */
+internal const val MAX_LATEX_LENGTH = 4_000
+
+/** Characters of drawing JSON a recognition accepts: about 50,000 points. */
+internal const val MAX_DRAWING_LENGTH = 2_000_000
+
 /**
  * Equations: the cloud AI reads one in a drawing (premium and quota, like the other AI routes),
  * and the backend renders LaTeX to a picture (any signed-in user; no AI involved).
@@ -67,6 +73,11 @@ fun Routing.equationRoute(
                 return@post
             }
 
+            if (request.drawing.length > MAX_DRAWING_LENGTH) {
+                call.respond(HttpStatusCode.BadRequest, EquationResponse(error = "The drawing is too large"))
+                return@post
+            }
+
             val started = System.currentTimeMillis()
             val result = equationService.recognize(request.drawing)
             logger.info(
@@ -100,6 +111,11 @@ fun Routing.equationRoute(
 
             if (request.latex.isBlank()) {
                 call.respond(HttpStatusCode.BadRequest, EquationResponse(error = "The equation is empty"))
+                return@post
+            }
+
+            if (request.latex.length > MAX_LATEX_LENGTH) {
+                call.respond(HttpStatusCode.BadRequest, EquationResponse(error = "The equation is too long"))
                 return@post
             }
 

@@ -193,4 +193,24 @@ class EquationRoutingTest {
         assertEquals(HttpStatusCode.BadRequest, response.status)
         assertNotNull(json.decodeFromString<EquationResponse>(response.bodyAsText()).error)
     }
+
+    @Test
+    fun `too long LaTeX and too large drawings are refused before any work`() = testApplication {
+        setUpApp()
+
+        val longLatex = client.post("/${EndPoints.aiEquationRender()}") {
+            header(HttpHeaders.Authorization, "Bearer ${token()}")
+            contentType(ContentType.Application.Json)
+            setBody(json.encodeToString(EquationRenderRequest("x+".repeat(MAX_LATEX_LENGTH))))
+        }
+        assertEquals(HttpStatusCode.BadRequest, longLatex.status)
+
+        val largeDrawing = client.post("/${EndPoints.aiEquationRecognize()}") {
+            header(HttpHeaders.Authorization, "Bearer ${token()}")
+            contentType(ContentType.Application.Json)
+            setBody(json.encodeToString(EquationRecognizeRequest("{".repeat(MAX_DRAWING_LENGTH + 1))))
+        }
+        assertEquals(HttpStatusCode.BadRequest, largeDrawing.status)
+        assertEquals(0, db.getAiUsageSummary(userId, 0, Long.MAX_VALUE).totalTokens)
+    }
 }

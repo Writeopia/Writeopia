@@ -158,4 +158,25 @@ class MarkdownParserTest {
         // Two dollars alone are text, not an empty equation.
         assertEquals(StoryTypes.TEXT.type.number, steps[2].type.number)
     }
+
+    @Test
+    fun `an equation over several lines becomes one step and keeps its LaTeX as written`() {
+        val steps = MarkdownParser.parse(
+            listOf("# Title", "$$", "\\sum_{i=1}^{n} i", "= \\frac{n(n+1)}{2}", "$$", "**bold** text", "$$", "never closed")
+        )
+
+        assertEquals(StoryTypes.EQUATION.type.number, steps[1].type.number)
+        assertEquals("\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}", steps[1].text)
+        // The inline Markdown of the next line is still handled, and the open block stays as lines.
+        assertEquals("bold text", steps[2].text)
+        assertEquals(StoryTypes.TEXT.type.number, steps[3].type.number)
+        assertEquals(StoryTypes.TEXT.type.number, steps[4].type.number)
+    }
+
+    @Test
+    fun `underscores and stars inside an equation are not Markdown`() {
+        val steps = MarkdownParser.parse(listOf("# Title", "$$ x_1 * x_2 = y^{**} $$"))
+
+        assertEquals("x_1 * x_2 = y^{**}", steps[1].text)
+    }
 }

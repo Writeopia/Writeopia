@@ -36,4 +36,9 @@ class LatexRendererTest {
         assertTrue(LatexRenderer.bracesBalanced("\\frac{1}{2}"))
         assertTrue(LatexRenderer.toPng("\\{ 1, 2 \\}").isNotEmpty())
     }
+
+    @Test
+    fun `a formula wider than a screen is refused before it is drawn`() {
+        assertFailsWith<InvalidLatexException> { LatexRenderer.toPng("x+".repeat(400) + "x") }
+    }
 }

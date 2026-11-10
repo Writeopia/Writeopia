@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
+import kotlin.coroutines.cancellation.CancellationException
 
 data class GenAiResult(
     val text: String,
@@ -171,6 +172,8 @@ class GenAiService(
             )
 
             Pair(AiGenerateResponse(response = response.text(), done = true), tokenUsage)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             logger.error("Error generating content from an image with GenAI", e)
             Pair(AiGenerateResponse(error = e.message ?: "Unknown error occurred"), TokenUsage(0, 0, 0))

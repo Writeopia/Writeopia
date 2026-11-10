@@ -1129,6 +1129,11 @@ class NoteEditorKmpViewModel(
     override fun convertDrawingToEquation() {
         val options = _drawingOptions.value ?: return
         if (!isEditable.value || options.phase == DrawingOptionsState.Phase.CONVERTING) return
+        // The dialog may have been closed and opened again while the AI still reads this drawing.
+        if (options.step.id in _convertingDrawingIds.value) {
+            _drawingOptions.value = options.copy(phase = DrawingOptionsState.Phase.CONVERTING, error = null)
+            return
+        }
         val drawingJson = options.step.text
         if (drawingJson.isNullOrBlank()) {
             _drawingOptions.value = options.copy(phase = DrawingOptionsState.Phase.FAILED, error = null)
@@ -1151,8 +1156,12 @@ class NoteEditorKmpViewModel(
                 type = AiTaskType.EQUATION,
                 description = "Reading the equation..."
             ) {
-                val result = equations.recognize(drawingJson)
-                _convertingDrawingIds.update { ids -> ids - options.step.id }
+                val result = try {
+                    equations.recognize(drawingJson)
+                } finally {
+                    // Cleared whatever happened, so the preview never keeps its progress.
+                    _convertingDrawingIds.update { ids -> ids - options.step.id }
+                }
 
                 when (result) {
                     is ResultData.Complete -> {

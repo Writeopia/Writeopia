@@ -421,8 +421,11 @@ public final class NoteEditorViewModel {
         writeopiaManager.convertingDrawingStepIds.insert(stepId)
         equationTasks[stepId] = Task { [weak self] in
             defer {
-                self?.writeopiaManager.convertingDrawingStepIds.remove(stepId)
-                self?.equationTasks[stepId] = nil
+                // A cancelled task was replaced by another on the same step: that one owns the state now.
+                if !Task.isCancelled {
+                    self?.writeopiaManager.convertingDrawingStepIds.remove(stepId)
+                    self?.equationTasks[stepId] = nil
+                }
             }
             do {
                 let equation = try await equations.recognizeEquation(drawingJson: drawingJson)
@@ -460,8 +463,11 @@ public final class NoteEditorViewModel {
         equationTasks[edition.stepId]?.cancel()
         equationTasks[edition.stepId] = Task { [weak self] in
             defer {
-                self?.writeopiaManager.renderingEquationStepIds.remove(edition.stepId)
-                self?.equationTasks[edition.stepId] = nil
+                // A cancelled task was replaced by another on the same step: that one owns the state now.
+                if !Task.isCancelled {
+                    self?.writeopiaManager.renderingEquationStepIds.remove(edition.stepId)
+                    self?.equationTasks[edition.stepId] = nil
+                }
             }
             do {
                 let equation = try await equations.renderEquation(latex: latex)

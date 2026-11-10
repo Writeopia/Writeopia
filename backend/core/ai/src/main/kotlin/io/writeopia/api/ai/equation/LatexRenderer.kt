@@ -5,6 +5,7 @@ import org.scilab.forge.jlatexmath.ParseException
 import org.scilab.forge.jlatexmath.TeXConstants
 import org.scilab.forge.jlatexmath.TeXFormula
 import java.awt.Color
+import java.awt.Insets
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
@@ -28,6 +29,9 @@ object LatexRenderer {
 
     const val CONTENT_TYPE = "image/png"
 
+    /** The widest and tallest picture drawn, in pixels. */
+    const val MAX_SIDE = 4_096
+
     /**
      * The PNG of [latex], written as math with no delimiters.
      * @throws InvalidLatexException when [latex] does not parse.
@@ -48,15 +52,29 @@ object LatexRenderer {
             throw InvalidLatexException(latex, e)
         }
 
-        val image = try {
-            formula.createBufferedImage(
-                TeXConstants.STYLE_DISPLAY,
-                EquationImage.FONT_SIZE_POINTS * EquationImage.SCALE,
-                Color.BLACK,
-                null
-            ) as BufferedImage
+        val icon = try {
+            formula.createTeXIcon(TeXConstants.STYLE_DISPLAY, EquationImage.FONT_SIZE_POINTS * EquationImage.SCALE)
+                .also { icon -> icon.insets = Insets(2, 2, 2, 2) }
         } catch (e: RuntimeException) {
             throw InvalidLatexException(latex, e)
+        }
+
+        // The size is known before anything is allocated: a formula wider or taller than a
+        // screen is refused rather than drawn into a picture of hundreds of megabytes.
+        if (icon.iconWidth > MAX_SIDE || icon.iconHeight > MAX_SIDE) {
+            throw InvalidLatexException(latex, IllegalArgumentException("The equation is too large to draw"))
+        }
+
+        // What TeXFormula.createBufferedImage does, with the size checked first.
+        val image = BufferedImage(icon.iconWidth, icon.iconHeight, BufferedImage.TYPE_INT_ARGB)
+        val graphics = image.createGraphics()
+        try {
+            icon.setForeground(Color.BLACK)
+            icon.paintIcon(null, graphics, 0, 0)
+        } catch (e: RuntimeException) {
+            throw InvalidLatexException(latex, e)
+        } finally {
+            graphics.dispose()
         }
 
         return ByteArrayOutputStream().use { output ->
