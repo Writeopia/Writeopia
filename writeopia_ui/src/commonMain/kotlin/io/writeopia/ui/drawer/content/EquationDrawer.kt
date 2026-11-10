@@ -39,7 +39,10 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImagePainter
+import coil3.compose.LocalPlatformContext
 import coil3.compose.rememberAsyncImagePainter
+import coil3.request.ImageRequest
+import coil3.size.Size
 import io.writeopia.sdk.model.action.Action
 import io.writeopia.sdk.model.draganddrop.DropInfo
 import io.writeopia.sdk.models.files.ExternalFile
@@ -220,7 +223,13 @@ private fun EquationContent(step: StoryStep, modifier: Modifier = Modifier) {
         return
     }
 
-    val painter = rememberAsyncImagePainter(model = url)
+    // The original size is asked for up front: the painter is only drawn once the picture is
+    // there, and without a size it would wait for that drawing forever.
+    val request = ImageRequest.Builder(LocalPlatformContext.current)
+        .data(url)
+        .size(Size.ORIGINAL)
+        .build()
+    val painter = rememberAsyncImagePainter(model = request)
     val state by painter.state.collectAsState()
 
     when (state) {

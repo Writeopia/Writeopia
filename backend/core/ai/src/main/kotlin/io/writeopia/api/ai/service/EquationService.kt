@@ -105,7 +105,12 @@ class EquationService(
     companion object {
         private val NO_USAGE = TokenUsage(0, 0, 0)
 
-        private const val FOLDER = "equations"
+        /**
+         * Under the folder of the header pictures: the load balancer serves only that folder
+         * from the bucket, so any other prefix would reach the API gateway instead.
+         * The names never look like a header (`<workspace>/<uuid>.<ext>`), so `isHeaderOf` stays false.
+         */
+        private const val FOLDER = "header-images/equations"
 
         /** The object name of the picture of [latex]: the same LaTeX always has the same name. */
         fun objectNameOf(latex: String): String {

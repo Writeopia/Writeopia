@@ -7,7 +7,7 @@ package io.writeopia.backend.models
  */
 interface EquationImageStorage {
     /**
-     * Stores the picture of an equation under [objectName] (`equations/<hash>.png`), unless it is
+     * Stores the picture of an equation under [objectName] (`header-images/equations/<hash>.png`), unless it is
      * there already.
      * @return The public URL of the picture.
      */

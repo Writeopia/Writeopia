@@ -9,7 +9,8 @@ import java.util.Base64
 
 /**
  * The pictures of the equations, in the public bucket of the header pictures behind Cloud CDN.
- * The objects are named by the caller after the LaTeX they draw (`equations/<hash>.png`), so an
+ * The objects are named by the caller after the LaTeX they draw (`header-images/equations/<hash>.png`,
+ * the one folder the load balancer serves from the bucket), so an
  * equation is stored once and the name never changes: the CDN and the browsers keep it for a year.
  */
 object GcpBucketEquationImageStorage : EquationImageStorage {

@@ -171,7 +171,7 @@ class EquationRoutingTest {
         assertEquals(HttpStatusCode.OK, rendered.status, rendered.bodyAsText())
         val body = json.decodeFromString<EquationResponse>(rendered.bodyAsText())
         assertEquals("\\frac{1}{2}", body.latex)
-        assertTrue(assertNotNull(body.imageUrl).startsWith("https://cdn.test/equations/"))
+        assertTrue(assertNotNull(body.imageUrl).startsWith("https://cdn.test/header-images/equations/"))
 
         val anonymous = client.post("/${EndPoints.aiEquationRender()}") {
             contentType(ContentType.Application.Json)
