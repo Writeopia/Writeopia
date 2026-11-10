@@ -75,6 +75,12 @@ public final class WriteopiaStateManager {
     @ObservationIgnored public var onLinkCardCreated: ((StoryStep) -> Void)?
     /// Link cards whose description is being written; their drawer says so.
     public private(set) var describingLinkStepIds: Set<String> = []
+    /// Drawings the cloud AI is reading into equations; their preview shows a progress.
+    public var convertingDrawingStepIds: Set<String> = []
+    /// Equations whose picture the backend is rendering; their drawer shows a progress.
+    public var renderingEquationStepIds: Set<String> = []
+    /// The pencil of an equation (its context menu): the app opens the dialog that edits the LaTeX.
+    @ObservationIgnored public var onEquationEdit: ((StoryStep) -> Void)?
     @ObservationIgnored let writeopiaManager: WriteopiaManager
     @ObservationIgnored private let focusHandler = FocusHandler()
     @ObservationIgnored private let backstack = SnapshotBackstackManager()
@@ -1020,6 +1026,18 @@ public final class WriteopiaStateManager {
         var state = writeopiaManager.addAtPosition(step, after: lastPosition, state: currentStory)
         state.focus = nil
         commit(state)
+    }
+
+    /// Makes the step with `stepId` the equation `latex`, shown as the picture at `imageUrl` (nil
+    /// while there is none), like `setEquation` of the SDK manager. A drawing converted to an
+    /// equation goes through here, so undo brings the drawing back.
+    public func setEquation(stepId: String, latex: String, imageUrl: String?) {
+        guard isEditable, var step = step(withId: stepId) else { return }
+        step.type = .equation
+        step.text = latex
+        step.url = imageUrl
+        step.path = nil
+        commit(writeopiaManager.replaceStep(step, state: currentStory))
     }
 
     /// Replaces the text of a step, keeping its type and position (e.g. an edited drawing).

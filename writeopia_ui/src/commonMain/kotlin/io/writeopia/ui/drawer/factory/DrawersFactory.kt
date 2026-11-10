@@ -23,7 +23,6 @@ interface DrawersFactory {
         receiveExternalFile: (List<ExternalFile>, String) -> Unit = { _, _ -> },
         onDocumentLinkClick: (String) -> Unit = {},
         linkLeadingIcon: ImageVector? = null,
-        equationToImageUrl: String? = null,
         customDrawers: Map<Int, StoryStepDrawer> = emptyMap()
     ): Map<Int, StoryStepDrawer>
 }

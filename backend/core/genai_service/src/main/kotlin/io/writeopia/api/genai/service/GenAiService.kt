@@ -2,9 +2,11 @@ package io.writeopia.api.genai.service
 
 import io.writeopia.sdk.models.presentation.PresentationPrompt
 import com.google.genai.Client
+import com.google.genai.types.Content
 import com.google.genai.types.EmbedContentConfig
 import com.google.genai.types.GenerateContentConfig
 import com.google.genai.types.ImageConfig
+import com.google.genai.types.Part
 import com.google.genai.types.Tool
 import com.google.genai.types.UrlContext
 import io.writeopia.api.genai.model.AiGenerateResponse
@@ -127,6 +129,51 @@ class GenAiService(
                     TokenUsage(0, 0, 0)
                 )
             }
+        }
+    }
+
+    /**
+     * Answers [prompt] about the picture in [imageBytes] (of [mimeType], like `image/png`): the
+     * prompt and the picture go to the model as the parts of one message; [jsonResponse] asks for
+     * JSON. Like [generateWithUsage], an error comes back in the response, never thrown.
+     */
+    suspend fun generateWithImageAndUsage(
+        prompt: String,
+        imageBytes: ByteArray,
+        mimeType: String,
+        modelName: String? = null,
+        jsonResponse: Boolean = false,
+    ): Pair<AiGenerateResponse, TokenUsage> = withContext(Dispatchers.IO) {
+        try {
+            if (!isAvailable()) {
+                return@withContext Pair(
+                    AiGenerateResponse(
+                        error = "GenAI is not configured. Please set GOOGLE_CLOUD_PROJECT environment variable."
+                    ),
+                    TokenUsage(0, 0, 0)
+                )
+            }
+
+            val targetModel = modelName?.takeIf { it.isNotBlank() } ?: defaultModel
+            val content = Content.fromParts(Part.fromText(prompt), Part.fromBytes(imageBytes, mimeType))
+            val config = if (jsonResponse) {
+                GenerateContentConfig.builder().responseMimeType("application/json").build()
+            } else {
+                null
+            }
+            val response = getClient().models.generateContent(targetModel, content, config)
+
+            val usage = response.usageMetadata().orElse(null)
+            val tokenUsage = TokenUsage(
+                inputTokens = usage?.promptTokenCount()?.orElse(0) ?: 0,
+                outputTokens = usage?.candidatesTokenCount()?.orElse(0) ?: 0,
+                totalTokens = usage?.totalTokenCount()?.orElse(0) ?: 0
+            )
+
+            Pair(AiGenerateResponse(response = response.text(), done = true), tokenUsage)
+        } catch (e: Exception) {
+            logger.error("Error generating content from an image with GenAI", e)
+            Pair(AiGenerateResponse(error = e.message ?: "Unknown error occurred"), TokenUsage(0, 0, 0))
         }
     }
 

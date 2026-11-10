@@ -3,6 +3,9 @@ package io.writeopia.genai.repository
 import io.writeopia.app.dto.ai.AiCommandIntentResponse
 import io.writeopia.app.dto.ai.AiCommandRequest
 import io.writeopia.app.dto.ai.AiImageRequest
+import io.writeopia.app.dto.ai.EquationRecognizeRequest
+import io.writeopia.app.dto.ai.EquationRenderRequest
+import io.writeopia.app.dto.ai.EquationResponse
 import io.writeopia.sdk.serialization.request.HeaderImageGenerateRequest
 import io.writeopia.sdk.ai.AiClient
 import io.writeopia.sdk.models.utils.ResultData
@@ -115,6 +118,14 @@ class GenAiRepository(
     /** The answer of a free command, streamed. */
     fun streamCommand(request: AiCommandRequest): Flow<ResultData<String>> =
         genAiApi.streamCommand(request.copy(model = request.model ?: defaultModel))
+
+    /** The equation the backend reads in the strokes of [drawingJson], with the picture of it. */
+    suspend fun recognizeEquation(drawingJson: String): ResultData<EquationResponse> =
+        genAiApi.recognizeEquation(EquationRecognizeRequest(drawingJson))
+
+    /** The picture of [latex], rendered by the backend. */
+    suspend fun renderEquation(latex: String): ResultData<EquationResponse> =
+        genAiApi.renderEquation(EquationRenderRequest(latex))
 
     /**
      * A picture for [paragraph], drawn by the backend with the whole document as context. The

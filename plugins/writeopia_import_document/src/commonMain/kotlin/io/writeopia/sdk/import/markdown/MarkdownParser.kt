@@ -88,6 +88,15 @@ object MarkdownParser {
 //                    StoryType.OrderedListItem to trimmed.replace(Regex("^\\d+\\.\\s+"), "")
 //                }
 
+            trimmed.length > 4 && trimmed.startsWith("$$") && trimmed.endsWith("$$") -> {
+                val type = StoryTypes.EQUATION.type
+                StoryStepApi(
+                    type = StoryTypeApi(type.name, type.number),
+                    text = trimmed.removePrefix("$$").removeSuffix("$$").trim(),
+                    position = Rank.at(acc)
+                )
+            }
+
             trimmed.startsWith("---") -> {
                 val type = StoryTypes.DIVIDER.type
                 StoryStepApi(

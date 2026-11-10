@@ -148,4 +148,14 @@ class MarkdownParserTest {
         // It is necessary to compare like this because the ids won't match.
         assertEquals(expected, parsedResults)
     }
+
+    @Test
+    fun aLineBetweenDoubleDollarsIsAnEquation() {
+        val steps = MarkdownParser.parse(listOf("# Title", "$$ \\frac{a}{b} $$", "$$", "text"))
+
+        assertEquals(StoryTypes.EQUATION.type.number, steps[1].type.number)
+        assertEquals("\\frac{a}{b}", steps[1].text)
+        // Two dollars alone are text, not an empty equation.
+        assertEquals(StoryTypes.TEXT.type.number, steps[2].type.number)
+    }
 }

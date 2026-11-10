@@ -4,6 +4,17 @@ import androidx.compose.runtime.Composable
 import org.jetbrains.compose.resources.stringResource
 import writeopia.application.core.resources.generated.resources.Res
 import writeopia.application.core.resources.generated.resources.accent_color
+import writeopia.application.core.resources.generated.resources.drawing_options_title
+import writeopia.application.core.resources.generated.resources.drawing_convert_to_equation
+import writeopia.application.core.resources.generated.resources.drawing_convert_explanation
+import writeopia.application.core.resources.generated.resources.drawing_converting
+import writeopia.application.core.resources.generated.resources.drawing_convert_failed
+import writeopia.application.core.resources.generated.resources.drawing_convert_retry
+import writeopia.application.core.resources.generated.resources.equation_cloud_ai_unavailable
+import writeopia.application.core.resources.generated.resources.equation_edit_title
+import writeopia.application.core.resources.generated.resources.equation_latex_hint
+import writeopia.application.core.resources.generated.resources.equation_rendering
+import writeopia.application.core.resources.generated.resources.equation_render_failed
 import writeopia.application.core.resources.generated.resources.workspace_sync_title
 import writeopia.application.core.resources.generated.resources.workspace_sync_message
 import writeopia.application.core.resources.generated.resources.workspace_sync_in_background
@@ -1480,4 +1491,37 @@ object WrStrings {
 
     @Composable
     fun workspaceSyncContinue() = stringResource(Res.string.workspace_sync_continue)
+
+    @Composable
+    fun drawingOptionsTitle() = stringResource(Res.string.drawing_options_title)
+
+    @Composable
+    fun drawingConvertToEquation() = stringResource(Res.string.drawing_convert_to_equation)
+
+    @Composable
+    fun drawingConvertExplanation() = stringResource(Res.string.drawing_convert_explanation)
+
+    @Composable
+    fun drawingConverting() = stringResource(Res.string.drawing_converting)
+
+    @Composable
+    fun drawingConvertFailed() = stringResource(Res.string.drawing_convert_failed)
+
+    @Composable
+    fun drawingConvertRetry() = stringResource(Res.string.drawing_convert_retry)
+
+    @Composable
+    fun equationCloudAiUnavailable() = stringResource(Res.string.equation_cloud_ai_unavailable)
+
+    @Composable
+    fun equationEditTitle() = stringResource(Res.string.equation_edit_title)
+
+    @Composable
+    fun equationLatexHint() = stringResource(Res.string.equation_latex_hint)
+
+    @Composable
+    fun equationRendering() = stringResource(Res.string.equation_rendering)
+
+    @Composable
+    fun equationRenderFailed() = stringResource(Res.string.equation_render_failed)
 }

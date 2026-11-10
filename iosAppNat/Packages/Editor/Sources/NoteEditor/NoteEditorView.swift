@@ -48,6 +48,8 @@ public struct NoteEditorView: View {
     @State private var showPublish = false
     @State private var showPremium = false
     @State private var drawingTarget: DrawingTarget?
+    /// The drawing whose options ("...") are open.
+    @State private var drawingOptionsStepId: String?
     /// The image picker opened by the writing agent when the cloud can't draw.
     @State private var showAgentImagePicker = false
     @State private var agentImageItem: PhotosPickerItem?
@@ -79,6 +81,7 @@ public struct NoteEditorView: View {
         writingAgent: WritingAgentServing? = nil,
         imageGenerator: AiImageGenerating? = nil,
         headerImages: HeaderImagesAPI? = nil,
+        equations: EquationServing? = nil,
         loadActivity: ContentLoadActivity? = nil,
         searchQuery: String? = nil,
         rootTitle: String = String(localized: "Documents"),
@@ -95,6 +98,7 @@ public struct NoteEditorView: View {
             writingAgent: writingAgent,
             imageGenerator: imageGenerator,
             headerImages: headerImages.map(HeaderImagesService.init(api:)),
+            equations: equations,
             loadActivity: loadActivity,
             searchQuery: searchQuery
         ))
@@ -104,17 +108,24 @@ public struct NoteEditorView: View {
     }
 
     /// Drawings in the document, like `DrawingPreviewDrawer` of the Compose app: tap to edit,
-    /// long press to delete.
+    /// "..." or long press for the options (convert to an equation, delete).
     private var customDrawers: [Int: CustomStepDrawer] {
         [
             StoryType.drawing.number: { step in
                 AnyView(
-                    DrawingPreview(json: step.text) {
+                    DrawingPreview(
+                        json: step.text,
+                        isConverting: viewModel.writeopiaManager.convertingDrawingStepIds.contains(step.id),
+                        onOptions: viewModel.isLocked ? nil : { drawingOptionsStepId = step.id }
+                    ) {
                         guard !viewModel.isLocked else { return }
                         drawingTarget = DrawingTarget(stepId: step.id, drawing: DrawingData.fromJson(step.text))
                     }
                     .contextMenu {
                         if !viewModel.isLocked {
+                            Button("Convert to equation", systemImage: "function") {
+                                viewModel.convertDrawingToEquation(stepId: step.id)
+                            }
                             Button("Delete drawing", systemImage: "trash", role: .destructive) {
                                 viewModel.writeopiaManager.removeStep(stepId: step.id)
                             }
@@ -123,6 +134,48 @@ public struct NoteEditorView: View {
                 )
             },
         ]
+    }
+
+    /// The options of a drawing and the LaTeX dialog of an equation, like the dialogs of `TextEditor`
+    /// in the Compose app.
+    private func equationDialogs(_ content: some View) -> some View {
+        content
+            .confirmationDialog(
+                "Drawing",
+                isPresented: Binding(get: { drawingOptionsStepId != nil }, set: { if !$0 { drawingOptionsStepId = nil } }),
+                titleVisibility: .visible
+            ) {
+                if let stepId = drawingOptionsStepId {
+                    Button("Convert to equation") { viewModel.convertDrawingToEquation(stepId: stepId) }
+                    Button("Delete drawing", role: .destructive) { viewModel.writeopiaManager.removeStep(stepId: stepId) }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text(viewModel.canConvertToEquation
+                    ? "The cloud AI reads the strokes and writes the equation in their place. Uses your AI tokens."
+                    : "Sign in to an online workspace to convert drawings with the cloud AI.")
+            }
+            .alert(
+                "Edit equation",
+                isPresented: Binding(get: { viewModel.equationEdition != nil }, set: { if !$0 { viewModel.equationEdition = nil } })
+            ) {
+                TextField(
+                    "LaTeX, like \\frac{a}{b} or x^2",
+                    text: Binding(get: { viewModel.equationEdition?.latex ?? "" }, set: { viewModel.equationEdition?.latex = $0 })
+                )
+                .autocorrectionDisabled()
+                Button("Save") { viewModel.saveEquation() }
+                    .disabled((viewModel.equationEdition?.latex ?? "").trimmingCharacters(in: .whitespaces).isEmpty)
+                Button("Cancel", role: .cancel) { viewModel.equationEdition = nil }
+            }
+            .alert(
+                "Could not make the equation",
+                isPresented: Binding(get: { viewModel.equationError != nil }, set: { if !$0 { viewModel.equationError = nil } })
+            ) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(viewModel.equationError ?? "")
+            }
     }
 
     /// Image files dropped on the editor are added where the cursor is, like the Compose app.
@@ -333,7 +386,7 @@ public struct NoteEditorView: View {
             .overlay(alignment: .top) { aiRunningChip }
             .animation(.snappy, value: viewModel.isAiRunning)
             .animation(.snappy, value: viewModel.writingAgent?.executor.activity)
-        return lifecycle(drawingEditor(alerts(sheets(chrome(writingAgentDialogs(content))))))
+        return lifecycle(drawingEditor(equationDialogs(alerts(sheets(chrome(writingAgentDialogs(content)))))))
     }
 
     /// The editor once the document is loaded; an error or a spinner before.

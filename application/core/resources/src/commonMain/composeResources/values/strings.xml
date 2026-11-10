@@ -386,4 +386,15 @@
   <string name="quick_actions_cursor_hint">Quick actions work on the document or on selected lines.</string>
   <string name="moved_item_to_folder">“%1$s” moved to “%2$s”</string>
   <string name="moved_items_to_folder">%1$d items moved to “%2$s”</string>
+  <string name="drawing_options_title">Drawing</string>
+  <string name="drawing_convert_to_equation">Convert to equation</string>
+  <string name="drawing_convert_explanation">The cloud AI reads the strokes and writes the equation in their place. Uses your AI tokens.</string>
+  <string name="drawing_converting">Reading the equation…</string>
+  <string name="drawing_convert_failed">The equation could not be read. Try again.</string>
+  <string name="drawing_convert_retry">Try again</string>
+  <string name="equation_cloud_ai_unavailable">Sign in to an online workspace to use the cloud AI.</string>
+  <string name="equation_edit_title">Edit equation</string>
+  <string name="equation_latex_hint">LaTeX, like \\frac{a}{b} or x^2</string>
+  <string name="equation_rendering">Rendering…</string>
+  <string name="equation_render_failed">The equation could not be rendered. Check the LaTeX.</string>
 </resources>

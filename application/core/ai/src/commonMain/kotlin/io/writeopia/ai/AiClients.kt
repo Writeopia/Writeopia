@@ -94,6 +94,15 @@ class AiClients(
         return if (isCloudAiReady()) CloudImageGenerator(repository) else null
     }
 
+    /**
+     * The equations of the cloud (reading a drawing, rendering LaTeX), when it can answer right
+     * now; null otherwise. Only the backend reads and renders, whatever provider the user picked.
+     */
+    suspend fun equations(): EquationAi? {
+        val repository = genAiRepository ?: return null
+        return if (isCloudAiReady()) CloudEquationAi(repository) else null
+    }
+
     /** The header pictures of the cloud, when it can answer right now; null otherwise. */
     suspend fun headerImages(): HeaderImages? {
         val repository = genAiRepository ?: return null

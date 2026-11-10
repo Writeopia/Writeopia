@@ -256,6 +256,13 @@ public final class AppSession {
         return WritingAgentAPI(client: client)
     }
 
+    /// The equations of the cloud (reading a drawing, rendering LaTeX); nil outside an online
+    /// workspace, since only the backend reads and renders them.
+    public var equations: EquationAPI? {
+        guard isOnline, let workspace, workspace.id != Workspace.localId else { return nil }
+        return EquationAPI(client: client)
+    }
+
     /// The header pictures of the current workspace, drawn by the cloud; nil outside an online
     /// workspace, since only the backend draws and keeps them.
     public var headerImages: HeaderImagesAPI? {

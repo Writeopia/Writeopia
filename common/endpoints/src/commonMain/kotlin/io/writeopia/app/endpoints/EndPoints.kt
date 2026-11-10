@@ -59,6 +59,12 @@ object EndPoints {
     /** POST a document; the cloud AI draws a header picture for it, served by the CDN. */
     fun aiHeaderImage() = "api/ai/header-image"
 
+    /** POST the strokes of a drawing; the cloud AI reads the equation in them and answers its LaTeX, rendered to a picture. */
+    fun aiEquationRecognize() = "api/ai/equation/recognize"
+
+    /** POST LaTeX; the backend renders it to a picture served by the CDN. */
+    fun aiEquationRender() = "api/ai/equation/render"
+
     /** The header pictures of a workspace: GET lists them, POST adds an approved one. */
     fun workspaceHeaderImages(workspaceId: String = "{workspaceId}") = "api/ai/header-images/$workspaceId"
 
