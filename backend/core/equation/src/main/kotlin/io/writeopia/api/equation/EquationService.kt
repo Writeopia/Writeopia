@@ -1,9 +1,5 @@
-package io.writeopia.api.ai.service
+package io.writeopia.api.equation
 
-import io.writeopia.api.ai.equation.DrawingRasterizer
-import io.writeopia.api.ai.equation.EquationLatexParser
-import io.writeopia.api.ai.equation.InvalidLatexException
-import io.writeopia.api.ai.equation.LatexRenderer
 import io.writeopia.api.genai.model.TokenUsage
 import io.writeopia.api.genai.service.GenAiService
 import io.writeopia.backend.models.EquationImageStorage

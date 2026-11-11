@@ -17,7 +17,7 @@ import io.writeopia.api.ai.config.AiConfig
 import io.writeopia.api.ai.model.AiRequestResult
 import io.writeopia.api.ai.repository.getAiUsageSummary
 import io.writeopia.api.ai.service.AiService
-import io.writeopia.api.ai.service.EquationService
+import io.writeopia.api.equation.EquationService
 import io.writeopia.api.genai.model.AiGenerateRequest
 import io.writeopia.api.genai.model.AiGenerateResponse
 import io.writeopia.api.genai.model.TokenUsage

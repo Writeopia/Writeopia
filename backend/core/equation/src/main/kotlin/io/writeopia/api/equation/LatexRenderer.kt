@@ -1,4 +1,4 @@
-package io.writeopia.api.ai.equation
+package io.writeopia.api.equation
 
 import io.writeopia.sdk.models.story.EquationImage
 import org.scilab.forge.jlatexmath.ParseException

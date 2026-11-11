@@ -1,4 +1,4 @@
-package io.writeopia.api.ai.equation
+package io.writeopia.api.equation
 
 import java.io.ByteArrayInputStream
 import javax.imageio.ImageIO

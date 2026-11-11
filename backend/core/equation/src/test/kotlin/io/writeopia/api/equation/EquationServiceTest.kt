@@ -1,9 +1,8 @@
-package io.writeopia.api.ai.service
+package io.writeopia.api.equation
 
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
-import io.writeopia.api.ai.equation.InvalidLatexException
 import io.writeopia.api.genai.model.AiGenerateResponse
 import io.writeopia.api.genai.model.TokenUsage
 import io.writeopia.api.genai.service.GenAiService

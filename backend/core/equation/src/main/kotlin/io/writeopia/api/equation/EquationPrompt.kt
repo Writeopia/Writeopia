@@ -1,4 +1,4 @@
-package io.writeopia.api.ai.service
+package io.writeopia.api.equation
 
 /** What the model is told when it reads the equation in the picture of a drawing. */
 object EquationPrompt {

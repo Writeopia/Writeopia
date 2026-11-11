@@ -12,8 +12,8 @@ import io.ktor.server.routing.RoutingContext
 import io.ktor.server.routing.post
 import io.writeopia.api.ai.model.AiRequestResult
 import io.writeopia.api.ai.service.AiService
-import io.writeopia.api.ai.service.EquationResult
-import io.writeopia.api.ai.service.EquationService
+import io.writeopia.api.equation.EquationResult
+import io.writeopia.api.equation.EquationService
 import io.writeopia.app.dto.ai.EquationRecognizeRequest
 import io.writeopia.app.dto.ai.EquationRenderRequest
 import io.writeopia.app.dto.ai.EquationResponse

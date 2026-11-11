@@ -1,4 +1,4 @@
-package io.writeopia.api.ai.equation
+package io.writeopia.api.equation
 
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
