@@ -386,4 +386,15 @@
   <string name="quick_actions_cursor_hint">クイックアクションはドキュメント全体または選択した行に適用されます。</string>
   <string name="moved_item_to_folder">「%1$s」を「%2$s」に移動しました</string>
   <string name="moved_items_to_folder">%1$d件の項目を「%2$s」に移動しました</string>
+  <string name="drawing_options_title">描画</string>
+  <string name="drawing_convert_to_equation">数式に変換</string>
+  <string name="drawing_convert_explanation">クラウドAIがストロークを読み取り、その場所に数式を書きます。AIトークンを消費します。</string>
+  <string name="drawing_converting">数式を読み取っています…</string>
+  <string name="drawing_convert_failed">数式を読み取れませんでした。もう一度お試しください。</string>
+  <string name="drawing_convert_retry">もう一度試す</string>
+  <string name="equation_cloud_ai_unavailable">クラウドAIを使うには、オンラインのワークスペースにサインインしてください。</string>
+  <string name="equation_edit_title">数式を編集</string>
+  <string name="equation_latex_hint">LaTeX（例: \\frac{a}{b} や x^2）</string>
+  <string name="equation_rendering">描画中…</string>
+  <string name="equation_render_failed">数式を描画できませんでした。LaTeXを確認してください。</string>
 </resources>

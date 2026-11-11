@@ -151,9 +151,12 @@ public struct NoteEditorView: View {
                 }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text(viewModel.canConvertToEquation
-                    ? "The cloud AI reads the strokes and writes the equation in their place. Uses your AI tokens."
-                    : "Sign in to an online workspace to convert drawings with the cloud AI.")
+                // Two literals, not one ternary: a literal is a localized key, a `String` is not.
+                if viewModel.canConvertToEquation {
+                    Text("The cloud AI reads the strokes and writes the equation in their place. Uses your AI tokens.")
+                } else {
+                    Text("Sign in to an online workspace to convert drawings with the cloud AI.")
+                }
             }
             .alert(
                 "Edit equation",
