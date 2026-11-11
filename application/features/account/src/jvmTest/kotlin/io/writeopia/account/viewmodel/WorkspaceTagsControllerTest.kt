@@ -134,4 +134,27 @@ class WorkspaceTagsControllerTest {
         assertFalse(WorkspaceTagsController.isNameTaken(tags, "Plans"))
         assertFalse(WorkspaceTagsController.isNameTaken(tags, "  "))
     }
+
+    @Test
+    fun `a creation queued behind another with the same name creates nothing`() = runTest {
+        val controller = controller()
+
+        controller.createTag("Ideas", "")
+        controller.createTag(" ideas ", "")
+
+        assertEquals(listOf("Ideas"), controller.tags.first().map { it.name })
+        assertEquals(1, sent.size)
+    }
+
+    @Test
+    fun `an edit to the name of another tag is refused`() = runTest {
+        repository.upsertTag(tag("t1", "Ideas"))
+        repository.upsertTag(tag("t2", "Work"))
+        val controller = controller()
+
+        controller.editTag("t2", "IDEAS", "")
+
+        assertEquals("Work", repository.getTagById("t2")?.name)
+        assertTrue(sent.isEmpty())
+    }
 }

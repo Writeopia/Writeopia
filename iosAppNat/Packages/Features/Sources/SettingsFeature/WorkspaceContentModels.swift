@@ -77,6 +77,9 @@ final class TagsSettingsModel {
 
     private let repository: DocumentsRepository
     private let workspaceId: String
+    /// The last save: each one waits for the one before, so the backend, which keeps whichever
+    /// copy of a tag arrives last, gets the changes in the order they were made.
+    private var lastSave: Task<String?, Never>?
 
     init(repository: DocumentsRepository, workspaceId: String) {
         self.repository = repository
@@ -144,12 +147,20 @@ final class TagsSettingsModel {
         if !tag.deleted { shown.append(tag) }
         tags = Self.sorted(shown)
 
-        var saveError: String?
-        do {
-            try await repository.saveTag(tag)
-        } catch {
-            saveError = error.userMessage
+        let previous = lastSave
+        let repository = repository
+        let save = Task<String?, Never> {
+            _ = await previous?.value
+            do {
+                try await repository.saveTag(tag)
+                return nil
+            } catch {
+                return error.userMessage
+            }
         }
+        lastSave = save
+
+        let saveError = await save.value
         await load()
         if let saveError { errorMessage = saveError }
     }

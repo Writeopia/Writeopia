@@ -34,6 +34,10 @@ class HeaderImagesController(
     /** The pictures approved in this menu since the last listing, which it may not have had yet. */
     private val approvedHere = mutableSetOf<String>()
 
+    /** The listings started and the newest one applied: an older answer arriving late is dropped. */
+    private var listingsStarted = 0
+    private var listingApplied = 0
+
     /** Fetches the pictures of the workspace again, each time the header menu opens. */
     fun load() {
         scope.launch {
@@ -49,8 +53,10 @@ class HeaderImagesController(
 
             // The approvals made before this listing started are in it: the backend saved them first.
             val approvedBefore = approvedHere.toSet()
+            val listing = ++listingsStarted
             val result = source.images(workspaceId)
-            if (result is ResultData.Complete) {
+            if (result is ResultData.Complete && listing > listingApplied) {
+                listingApplied = listing
                 approvedHere.removeAll(approvedBefore)
 
                 // The backend decides, so a picture deleted in the settings leaves the menu. Only a

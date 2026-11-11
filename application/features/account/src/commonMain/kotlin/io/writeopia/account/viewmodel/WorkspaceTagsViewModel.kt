@@ -47,7 +47,11 @@ class WorkspaceTagsController(
 
         scope.launch {
             mutex.withLock {
-                val tag = DocumentTag.create(name, description, workspaceId())
+                val workspaceId = workspaceId()
+                // A creation queued behind another may have the same name: checked again here.
+                if (isNameTaken(tagRepository.getTagsForWorkspace(workspaceId), name)) return@withLock
+
+                val tag = DocumentTag.create(name, description, workspaceId)
                 tagRepository.upsertTag(tag)
                 send(tag.id)
             }
@@ -66,6 +70,9 @@ class WorkspaceTagsController(
                     lastUpdatedAt = Clock.System.now()
                 )
                 if (edited.name == tag.name && edited.description == tag.description) return@withLock
+                if (isNameTaken(tagRepository.getTagsForWorkspace(tag.workspaceId), edited.name, exceptId = id)) {
+                    return@withLock
+                }
 
                 tagRepository.upsertTag(edited)
                 send(id)
