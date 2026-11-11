@@ -65,6 +65,10 @@ public final class NoteEditorViewModel {
     public var publishError: String?
     public var linkError: String?
     public var imageError: String?
+    /// Why a drawing could not become an equation, or an equation could not be rendered.
+    public var equationError: String?
+    /// The equation being edited in the LaTeX dialog; nil while it is closed.
+    public var equationEdition: EquationEdition?
 
     let documentId: String
     private let repository: DocumentsRepository
@@ -75,6 +79,9 @@ public final class NoteEditorViewModel {
     @ObservationIgnored private let loadActivity: ContentLoadActivity?
     @ObservationIgnored private let isPremium: Bool
     @ObservationIgnored private let tagAgent: WritingAgentServing?
+    /// The backend reading equations in drawings and rendering LaTeX; nil outside an online workspace.
+    @ObservationIgnored private let equations: EquationServing?
+    @ObservationIgnored private var equationTasks: [String: Task<Void, Never>] = [:]
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private var aiTask: Task<Void, Never>?
     @ObservationIgnored private var suggestionTask: Task<Void, Never>?
@@ -133,6 +140,7 @@ public final class NoteEditorViewModel {
         writingAgent: WritingAgentServing? = nil,
         imageGenerator: AiImageGenerating? = nil,
         headerImages: HeaderImageServing? = nil,
+        equations: EquationServing? = nil,
         loadActivity: ContentLoadActivity? = nil,
         searchQuery: String? = nil,
         defaults: UserDefaults = .standard,
@@ -147,8 +155,10 @@ public final class NoteEditorViewModel {
         self.loadActivity = loadActivity
         self.isPremium = isPremium
         self.tagAgent = writingAgent
+        self.equations = equations
         self.defaults = defaults
         self.writeopiaManager = writeopiaManager
+        writeopiaManager.onEquationEdit = { [weak self] step in self?.editEquation(stepId: step.id) }
         writeopiaManager.fontFamily = defaults.string(forKey: Self.fontKey).flatMap(EditorFont.init(rawValue:)) ?? .system
         writeopiaManager.customDrawableTypes = [StoryType.drawing.number]
 
@@ -386,6 +396,87 @@ public final class NoteEditorViewModel {
             writeopiaManager.updateText(drawing.toJson(), stepId: stepId)
         } else if !drawing.isEmpty {
             writeopiaManager.addAtTheEnd(StoryStep(type: .drawing, text: drawing.toJson(), position: Rank.first))
+        }
+    }
+
+    // MARK: - Equations
+
+    /// Whether the cloud can read and render equations right now.
+    public var canConvertToEquation: Bool { equations != nil }
+
+    /// Asks the cloud AI to read the equation in the drawing `stepId` and replaces the drawing
+    /// with it, at the same position, like `convertDrawingToEquation` of the Compose editor.
+    /// Undo brings the drawing back.
+    public func convertDrawingToEquation(stepId: String) {
+        guard writeopiaManager.isEditable, equationTasks[stepId] == nil,
+              let step = writeopiaManager.step(withId: stepId),
+              step.type.number == StoryType.drawing.number,
+              let drawingJson = step.text, !drawingJson.isEmpty
+        else { return }
+        guard let equations else {
+            equationError = String(localized: "Sign in to an online workspace to use the cloud AI.")
+            return
+        }
+
+        writeopiaManager.convertingDrawingStepIds.insert(stepId)
+        equationTasks[stepId] = Task { [weak self] in
+            defer {
+                // A cancelled task was replaced by another on the same step: that one owns the state now.
+                if !Task.isCancelled {
+                    self?.writeopiaManager.convertingDrawingStepIds.remove(stepId)
+                    self?.equationTasks[stepId] = nil
+                }
+            }
+            do {
+                let equation = try await equations.recognizeEquation(drawingJson: drawingJson)
+                guard !Task.isCancelled, let self else { return }
+                // The drawing may have left the document while the AI read it.
+                guard writeopiaManager.step(withId: stepId)?.type.number == StoryType.drawing.number else { return }
+                writeopiaManager.setEquation(stepId: stepId, latex: equation.latex, imageUrl: equation.imageUrl)
+            } catch {
+                guard !Task.isCancelled else { return }
+                self?.equationError = error.userMessage
+            }
+        }
+    }
+
+    /// Opens the dialog that edits the LaTeX of the equation `stepId`.
+    public func editEquation(stepId: String) {
+        guard writeopiaManager.isEditable, let step = writeopiaManager.step(withId: stepId) else { return }
+        equationEdition = EquationEdition(stepId: stepId, latex: step.text ?? "")
+    }
+
+    /// Puts the LaTeX of the dialog in its equation, with the picture the backend renders of it.
+    /// Without the cloud the step keeps the LaTeX as text and no picture.
+    public func saveEquation() {
+        guard let edition = equationEdition else { return }
+        equationEdition = nil
+        let latex = edition.latex.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !latex.isEmpty, writeopiaManager.isEditable else { return }
+
+        guard let equations else {
+            writeopiaManager.setEquation(stepId: edition.stepId, latex: latex, imageUrl: nil)
+            return
+        }
+
+        writeopiaManager.renderingEquationStepIds.insert(edition.stepId)
+        equationTasks[edition.stepId]?.cancel()
+        equationTasks[edition.stepId] = Task { [weak self] in
+            defer {
+                // A cancelled task was replaced by another on the same step: that one owns the state now.
+                if !Task.isCancelled {
+                    self?.writeopiaManager.renderingEquationStepIds.remove(edition.stepId)
+                    self?.equationTasks[edition.stepId] = nil
+                }
+            }
+            do {
+                let equation = try await equations.renderEquation(latex: latex)
+                guard !Task.isCancelled, let self else { return }
+                writeopiaManager.setEquation(stepId: edition.stepId, latex: equation.latex, imageUrl: equation.imageUrl)
+            } catch {
+                guard !Task.isCancelled else { return }
+                self?.equationError = error.userMessage
+            }
         }
     }
 
@@ -1087,5 +1178,16 @@ public final class NoteEditorViewModel {
         } catch {
             errorMessage = error.userMessage
         }
+    }
+}
+
+/// The LaTeX of an equation while the user edits it in the dialog.
+public struct EquationEdition: Equatable {
+    public let stepId: String
+    public var latex: String
+
+    public init(stepId: String, latex: String) {
+        self.stepId = stepId
+        self.latex = latex
     }
 }

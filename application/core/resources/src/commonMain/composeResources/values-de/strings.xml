@@ -386,4 +386,15 @@
   <string name="quick_actions_cursor_hint">Schnellaktionen wirken auf das Dokument oder auf ausgewählte Zeilen.</string>
   <string name="moved_item_to_folder">„%1$s“ nach „%2$s“ verschoben</string>
   <string name="moved_items_to_folder">%1$d Elemente nach „%2$s“ verschoben</string>
+  <string name="drawing_options_title">Zeichnung</string>
+  <string name="drawing_convert_to_equation">In Gleichung umwandeln</string>
+  <string name="drawing_convert_explanation">Die Cloud-KI liest die Striche und schreibt die Gleichung an ihre Stelle. Verbraucht deine KI-Token.</string>
+  <string name="drawing_converting">Gleichung wird gelesen…</string>
+  <string name="drawing_convert_failed">Die Gleichung konnte nicht gelesen werden. Versuche es erneut.</string>
+  <string name="drawing_convert_retry">Erneut versuchen</string>
+  <string name="equation_cloud_ai_unavailable">Melde dich in einem Online-Arbeitsbereich an, um die Cloud-KI zu nutzen.</string>
+  <string name="equation_edit_title">Gleichung bearbeiten</string>
+  <string name="equation_latex_hint">LaTeX, z. B. \\frac{a}{b} oder x^2</string>
+  <string name="equation_rendering">Wird gerendert…</string>
+  <string name="equation_render_failed">Die Gleichung konnte nicht gerendert werden. Prüfe das LaTeX.</string>
 </resources>

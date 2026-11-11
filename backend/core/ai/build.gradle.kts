@@ -35,6 +35,8 @@ dependencies {
     // The pictures the AI draws are stored with the user's other media.
     implementation(project(":backend:core:buckets"))
     implementation(project(":backend:core:typesafe_service"))
+    // Reads equations in drawings and renders their LaTeX to pictures.
+    implementation(project(":backend:core:equation"))
 
     testImplementation(libs.ktor.server.tests)
     testImplementation(libs.ktor.server.content.negotiation)

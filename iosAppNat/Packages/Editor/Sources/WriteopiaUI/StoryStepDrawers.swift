@@ -104,6 +104,10 @@ struct StoryStepDrawer: View {
             DraggableStep(step: step, position: draw.position, manager: manager, block: draw.block) {
                 DividerDrawer()
             }
+        case StoryType.equation.number:
+            DraggableStep(step: step, position: draw.position, manager: manager, block: draw.block) {
+                EquationDrawer(step: step, manager: manager)
+            }
         case StoryType.loading.number:
             LoadingDrawer()
         case StoryType.skeleton.number:
@@ -926,6 +930,87 @@ struct LinkCardDrawer: View {
     }
 }
 
+/// An equation, like `EquationDrawer` of the SDK: the picture the backend rendered of its LaTeX
+/// (black on transparent, `EquationImage.scale` pixels per point), shown as a template tinted
+/// with the text color at a `scale`th of its size, so it reads in both themes; the LaTeX as
+/// monospaced text while there is no picture. The context menu edits, copies or deletes it.
+struct EquationDrawer: View {
+    let step: StoryStep
+    let manager: WriteopiaStateManager
+    @State private var picture: CGImage?
+    @State private var failed = false
+
+    private var latex: String { step.text ?? "" }
+    private var isRendering: Bool { manager.renderingEquationStepIds.contains(step.id) }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            content
+                .frame(maxWidth: .infinity)
+            if isRendering {
+                ProgressView()
+                    .controlSize(.small)
+            }
+        }
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity)
+        .contentShape(Rectangle())
+        .task(id: step.url) { await load() }
+        .accessibilityLabel(Text("Equation \(latex)"))
+        .accessibilityIdentifier("step.equation")
+        .contextMenu {
+            if manager.isEditable {
+                Button("Edit equation", systemImage: "pencil") {
+                    manager.onEquationEdit?(step)
+                }
+            }
+            Button("Copy LaTeX", systemImage: "doc.on.doc") {
+                SystemPasteboard.copy(latex)
+            }
+            if manager.isEditable {
+                Button("Delete equation", systemImage: "trash", role: .destructive) {
+                    manager.removeStep(stepId: step.id)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        if let picture {
+            // The natural size of the picture, shrunk only when wider than the row.
+            let width = CGFloat(picture.width) / EquationImage.scale
+            let height = CGFloat(picture.height) / EquationImage.scale
+            Image(decorative: picture, scale: EquationImage.scale)
+                .renderingMode(.template)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(maxWidth: width, maxHeight: height)
+                .foregroundStyle(.primary)
+        } else if step.url != nil && !failed {
+            ProgressView()
+                .controlSize(.small)
+        } else {
+            Text(latex)
+                .font(.system(.body, design: .monospaced))
+                .foregroundStyle(.primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func load() async {
+        guard let urlString = step.url, let url = URL(string: urlString) else {
+            picture = nil
+            return
+        }
+        failed = false
+        let loaded = await EquationPictureLoader.shared.picture(at: url)
+        guard !Task.isCancelled else { return }
+        picture = loaded
+        failed = loaded == nil
+    }
+}
+
 struct DividerDrawer: View {
     var body: some View {
         // `Divider` would be vertical inside the gutter's HStack, so draw the line directly.
@@ -1042,6 +1127,7 @@ struct DragPreview: View {
     private var previewText: String {
         if step.type.number == StoryType.divider.number { return String(localized: "Divider") }
         if step.type.number == StoryType.linkCard.number { return step.url ?? String(localized: "Link") }
+        if step.type.number == StoryType.equation.number { return step.text ?? String(localized: "Equation") }
         let text = step.documentLink?.title ?? step.text ?? ""
         return text.isEmpty ? String(localized: "Empty line") : text
     }

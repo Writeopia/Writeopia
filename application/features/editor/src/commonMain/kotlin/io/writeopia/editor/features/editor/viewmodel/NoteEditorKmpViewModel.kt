@@ -99,6 +99,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import io.writeopia.ui.model.EquationEvent
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -266,6 +267,15 @@ class NoteEditorKmpViewModel(
         viewModelScope.launch(Dispatchers.Default) {
             writeopiaManager.linkCardCreated.collect { creation ->
                 launch { describeLinkCard(creation) }
+            }
+        }
+
+        viewModelScope.launch(Dispatchers.Default) {
+            writeopiaManager.equationEvents.collect { event ->
+                when (event) {
+                    is EquationEvent.Edit -> equationsController.edit(event.step, event.position)
+                    is EquationEvent.Render -> launch { equationsController.render(event.position, event.step.text ?: "") }
+                }
             }
         }
 
@@ -1089,6 +1099,40 @@ class NoteEditorKmpViewModel(
     override fun onHeaderEditionCancel() {
         _editHeader.value = false
     }
+
+    // Equations: the "..." dialog of a drawing and the LaTeX dialog of an equation.
+
+    private val equationsController = EquationsController(
+        scope = viewModelScope,
+        resolveEquations = { aiClients.equations() },
+        isEditable = { isEditable.value },
+        stepAt = { position -> writeopiaManager.currentStory.value.stories[position] },
+        positionOf = { stepId ->
+            writeopiaManager.currentStory.value.stories.entries.firstOrNull { (_, step) -> step.id == stepId }?.key
+        },
+        setEquation = writeopiaManager::setEquation,
+        enqueueTask = { id, description, execution ->
+            aiTaskManager.enqueueTask(id = id, type = AiTaskType.EQUATION, description = description, execution = execution)
+        },
+        taskIdPrefix = { "editor-${writeopiaManager.documentInfo.value.id}" },
+    )
+
+    override val drawingOptions: StateFlow<DrawingOptionsState?> = equationsController.drawingOptions
+    override val convertingDrawingIds: StateFlow<Set<String>> = equationsController.convertingDrawingIds
+    override val equationEdition: StateFlow<EquationEditionState?> = equationsController.edition
+
+    override fun onDrawingOptionsClick(step: StoryStep, position: String) =
+        equationsController.openDrawingOptions(step, position)
+
+    override fun dismissDrawingOptions() = equationsController.dismissDrawingOptions()
+
+    override fun convertDrawingToEquation() = equationsController.convertDrawing()
+
+    override fun onEquationLatexChange(latex: String) = equationsController.onLatexChange(latex)
+
+    override fun saveEquation() = equationsController.saveEdition()
+
+    override fun dismissEquationEdition() = equationsController.dismissEdition()
 
     override fun onMoreOptionsClick() {
         _showGlobalMenu.value = !_showGlobalMenu.value

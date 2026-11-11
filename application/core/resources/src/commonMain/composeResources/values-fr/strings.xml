@@ -386,4 +386,15 @@
   <string name="quick_actions_cursor_hint">Les actions rapides s’appliquent au document ou aux lignes sélectionnées.</string>
   <string name="moved_item_to_folder">« %1$s » déplacé vers « %2$s »</string>
   <string name="moved_items_to_folder">%1$d éléments déplacés vers « %2$s »</string>
+  <string name="drawing_options_title">Dessin</string>
+  <string name="drawing_convert_to_equation">Convertir en équation</string>
+  <string name="drawing_convert_explanation">L’IA cloud lit les traits et écrit l’équation à leur place. Consomme vos tokens d’IA.</string>
+  <string name="drawing_converting">Lecture de l’équation…</string>
+  <string name="drawing_convert_failed">L’équation n’a pas pu être lue. Réessayez.</string>
+  <string name="drawing_convert_retry">Réessayer</string>
+  <string name="equation_cloud_ai_unavailable">Connectez-vous à un espace de travail en ligne pour utiliser l’IA cloud.</string>
+  <string name="equation_edit_title">Modifier l’équation</string>
+  <string name="equation_latex_hint">LaTeX, comme \\frac{a}{b} ou x^2</string>
+  <string name="equation_rendering">Rendu en cours…</string>
+  <string name="equation_render_failed">L’équation n’a pas pu être rendue. Vérifiez le LaTeX.</string>
 </resources>

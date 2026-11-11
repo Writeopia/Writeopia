@@ -669,6 +669,7 @@ private struct DocumentsNavigation: View {
                             writingAgent: session.writingAgent,
                             imageGenerator: session.writingAgent,
                             headerImages: session.headerImages,
+                            equations: session.equations,
                             loadActivity: session.contentLoad,
                             searchQuery: searchQuery,
                             rootTitle: rootTitle

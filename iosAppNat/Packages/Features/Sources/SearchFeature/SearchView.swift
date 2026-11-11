@@ -103,6 +103,7 @@ public struct SearchRootView: View {
             presentations: session.presentationsSource,
             writingAgent: session.writingAgent,
             headerImages: session.headerImages,
+            equations: session.equations,
             loadActivity: session.contentLoad,
             loadPresentation: { id in await session.presentation(id: id) }
         )
@@ -121,6 +122,7 @@ struct SearchView: View {
     private let presentations: PresentationsSource?
     private let writingAgent: WritingAgentAPI?
     private let headerImages: HeaderImagesAPI?
+    private let equations: EquationAPI?
     private let loadActivity: ContentLoadActivity?
     private let loadPresentation: (String) async -> Presentation?
     /// The presentation shown full screen (the phones; the Mac opens a window).
@@ -138,6 +140,7 @@ struct SearchView: View {
         presentations: PresentationsSource? = nil,
         writingAgent: WritingAgentAPI? = nil,
         headerImages: HeaderImagesAPI? = nil,
+        equations: EquationAPI? = nil,
         loadActivity: ContentLoadActivity? = nil,
         loadPresentation: @escaping (String) async -> Presentation? = { _ in nil }
     ) {
@@ -149,6 +152,7 @@ struct SearchView: View {
         self.presentations = presentations
         self.writingAgent = writingAgent
         self.headerImages = headerImages
+        self.equations = equations
         self.loadActivity = loadActivity
         self.loadPresentation = loadPresentation
         _viewModel = State(initialValue: SearchViewModel(repository: repository))
@@ -208,6 +212,7 @@ struct SearchView: View {
                         writingAgent: writingAgent,
                         imageGenerator: writingAgent,
                         headerImages: headerImages,
+                        equations: equations,
                         loadActivity: loadActivity,
                         searchQuery: searchQuery
                     ) { link in

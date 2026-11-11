@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 
 /// A block of content inside a document. See `CLAUDE_CODE_WRITEOPIA_MANUAL.md` for the format.
@@ -136,6 +137,9 @@ public struct StoryType: Codable, Equatable, Hashable, Sendable {
     /// A card for a pasted web address: `url` is the address, `text` the description the
     /// backend AI writes for the page.
     public static let linkCard = StoryType(name: "link_card", number: 24)
+    /// A math equation: `text` is its LaTeX, `url` the picture the backend rendered of it (black
+    /// glyphs on a transparent background, `EquationImage.scale` pixels per point).
+    public static let equation = StoryType(name: "equation", number: 22)
     /// Free drawing; the strokes are stored as JSON in the text of the step.
     public static let drawing = StoryType(name: "drawing", number: 100)
 }
@@ -180,4 +184,11 @@ public struct DocumentLink: Codable, Equatable, Hashable, Sendable {
         self.id = id
         self.title = title
     }
+}
+
+/// How the pictures of equations are drawn, the same as `EquationImage` of the Kotlin models: the
+/// backend renders at `scale` pixels per point, and the apps show the picture at its pixel size
+/// over `scale`, tinted with the text color.
+public enum EquationImage {
+    public static let scale: CGFloat = 3
 }

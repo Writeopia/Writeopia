@@ -50,6 +50,7 @@ import io.writeopia.ui.edition.TextCommandHandler
 import io.writeopia.ui.extensions.toSelectionMetadata
 import io.writeopia.ui.keyboard.KeyboardEvent
 import io.writeopia.ui.model.DrawState
+import io.writeopia.ui.model.EquationEvent
 import io.writeopia.ui.model.DrawStory
 import io.writeopia.ui.model.LinkCardCreation
 import io.writeopia.ui.image.ImageUploader
@@ -168,19 +169,14 @@ class WriteopiaStateManager(
                             }
 
                             KeyboardEvent.EQUATION -> {
-                                // Add method that changes based on type and changes either the current
-                                // position or the selected ones
+                                // The current line becomes an equation of its text; the app
+                                // renders the picture when the Render event arrives.
                                 getCurrentStory()?.let { story ->
                                     val position = currentPosition()
+                                    val equation = story.copy(type = StoryTypes.EQUATION.type, url = null)
 
-                                    changeStoryState(
-                                        Action.StoryStateChange(
-                                            storyStep = story.copy(
-                                                type = StoryTypes.EQUATION.type
-                                            ),
-                                            position
-                                        )
-                                    )
+                                    changeStoryState(Action.StoryStateChange(storyStep = equation, position))
+                                    _equationEvents.tryEmit(EquationEvent.Render(equation, position))
                                 }
                             }
 
@@ -259,6 +255,14 @@ class WriteopiaStateManager(
      * ask the backend for a description of each page.
      */
     val linkCardCreated: SharedFlow<LinkCardCreation> = _linkCardCreated.asSharedFlow()
+
+    private val _equationEvents = MutableSharedFlow<EquationEvent>(extraBufferCapacity = 16)
+
+    /**
+     * What the equation steps need from the app: a picture of their LaTeX, rendered by the
+     * backend, or the dialog to edit it. See [EquationEvent].
+     */
+    val equationEvents: SharedFlow<EquationEvent> = _equationEvents.asSharedFlow()
 
     /**
      * Tracks the anchor position for keyboard-based multi-line selection.
@@ -590,15 +594,29 @@ class WriteopiaStateManager(
         clearSelection()
     }
 
+    /** The pencil of an equation: the app opens the dialog that edits its LaTeX. */
     fun onEquationEdition(position: String) {
+        if (!isEditable) return
         getStory(position)?.let { storyStep ->
-            changeStoryState(
-                stateChange = Action.StoryStateChange(
-                    storyStep.copy(type = StoryTypes.TEXT.type),
-                    position
-                )
-            )
+            _equationEvents.tryEmit(EquationEvent.Edit(storyStep, position))
         }
+    }
+
+    /**
+     * Makes the step at [position] the equation [latex], shown as the picture at [imageUrl] (null
+     * while there is none). A drawing converted to an equation goes through here, so undo brings
+     * the drawing back.
+     */
+    fun setEquation(position: String, latex: String, imageUrl: String?) {
+        if (!isEditable) return
+        val storyStep = getStory(position) ?: return
+
+        changeStoryState(
+            Action.StoryStateChange(
+                storyStep.copy(type = StoryTypes.EQUATION.type, text = latex, url = imageUrl, path = null),
+                position
+            )
+        )
     }
 
     /**

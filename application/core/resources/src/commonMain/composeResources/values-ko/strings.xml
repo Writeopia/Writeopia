@@ -386,4 +386,15 @@
   <string name="quick_actions_cursor_hint">빠른 작업은 문서 전체 또는 선택한 줄에 적용됩니다.</string>
   <string name="moved_item_to_folder">“%1$s”을(를) “%2$s”(으)로 이동했습니다</string>
   <string name="moved_items_to_folder">항목 %1$d개를 “%2$s”(으)로 이동했습니다</string>
+  <string name="drawing_options_title">드로잉</string>
+  <string name="drawing_convert_to_equation">수식으로 변환</string>
+  <string name="drawing_convert_explanation">클라우드 AI가 획을 읽고 그 자리에 수식을 씁니다. AI 토큰을 사용합니다.</string>
+  <string name="drawing_converting">수식을 읽는 중…</string>
+  <string name="drawing_convert_failed">수식을 읽을 수 없습니다. 다시 시도하세요.</string>
+  <string name="drawing_convert_retry">다시 시도</string>
+  <string name="equation_cloud_ai_unavailable">클라우드 AI를 사용하려면 온라인 워크스페이스에 로그인하세요.</string>
+  <string name="equation_edit_title">수식 편집</string>
+  <string name="equation_latex_hint">LaTeX (예: \\frac{a}{b} 또는 x^2)</string>
+  <string name="equation_rendering">렌더링 중…</string>
+  <string name="equation_render_failed">수식을 렌더링할 수 없습니다. LaTeX를 확인하세요.</string>
 </resources>

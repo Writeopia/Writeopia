@@ -74,7 +74,6 @@ object CommonDrawers {
         headerEndContent: @Composable ((StoryStep, DrawInfo, Boolean) -> Unit)? = null,
         onDocumentLinkClick: (String) -> Unit,
         linkLeadingIcon: ImageVector? = null,
-        equationToImageUrl: String? = null,
         textToolbox: @Composable (Boolean) -> Unit = {},
         slashCommands: List<SlashCommand> = defaultSlashCommands + createTypeCommands(
             onTypeChange = manager::changeStoryType,
@@ -287,7 +286,6 @@ object CommonDrawers {
 
         val equationsDrawer = EquationDrawer(
             showEditAlways = !isDesktop,
-            equationToImageUrl = equationToImageUrl ?: "",
             customBackgroundColor = MaterialTheme.colorScheme.surfaceVariant,
             dragIconWidth = dragIconWidth,
             config = drawConfig,

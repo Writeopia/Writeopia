@@ -68,7 +68,6 @@ class LinkCardEditorUiTest {
                         receiveExternalFile = { _, _ -> },
                         onDocumentLinkClick = {},
                         linkLeadingIcon = null,
-                        equationToImageUrl = null,
                         customDrawers = emptyMap()
                     ),
                     storyState = drawState

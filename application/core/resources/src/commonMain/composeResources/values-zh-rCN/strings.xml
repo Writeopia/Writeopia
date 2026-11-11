@@ -386,4 +386,15 @@
   <string name="quick_actions_cursor_hint">快捷操作作用于整篇文档或所选行。</string>
   <string name="moved_item_to_folder">“%1$s”已移动到“%2$s”</string>
   <string name="moved_items_to_folder">%1$d 个项目已移动到“%2$s”</string>
+  <string name="drawing_options_title">绘图</string>
+  <string name="drawing_convert_to_equation">转换为公式</string>
+  <string name="drawing_convert_explanation">云端 AI 识别笔画并在原位置写出公式。消耗你的 AI Token。</string>
+  <string name="drawing_converting">正在识别公式…</string>
+  <string name="drawing_convert_failed">无法识别公式。请重试。</string>
+  <string name="drawing_convert_retry">重试</string>
+  <string name="equation_cloud_ai_unavailable">登录在线工作区以使用云端 AI。</string>
+  <string name="equation_edit_title">编辑公式</string>
+  <string name="equation_latex_hint">LaTeX，例如 \\frac{a}{b} 或 x^2</string>
+  <string name="equation_rendering">正在渲染…</string>
+  <string name="equation_render_failed">无法渲染公式。请检查 LaTeX。</string>
 </resources>

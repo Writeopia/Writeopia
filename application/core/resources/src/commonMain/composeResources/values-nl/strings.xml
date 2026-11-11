@@ -386,4 +386,15 @@
   <string name="quick_actions_cursor_hint">Snelle acties werken op het document of op geselecteerde regels.</string>
   <string name="moved_item_to_folder">“%1$s” verplaatst naar “%2$s”</string>
   <string name="moved_items_to_folder">%1$d items verplaatst naar “%2$s”</string>
+  <string name="drawing_options_title">Tekening</string>
+  <string name="drawing_convert_to_equation">Omzetten naar vergelijking</string>
+  <string name="drawing_convert_explanation">De cloud-AI leest de lijnen en schrijft de vergelijking op hun plaats. Gebruikt je AI-tokens.</string>
+  <string name="drawing_converting">Vergelijking lezen…</string>
+  <string name="drawing_convert_failed">De vergelijking kon niet worden gelezen. Probeer het opnieuw.</string>
+  <string name="drawing_convert_retry">Opnieuw proberen</string>
+  <string name="equation_cloud_ai_unavailable">Meld je aan bij een online werkruimte om de cloud-AI te gebruiken.</string>
+  <string name="equation_edit_title">Vergelijking bewerken</string>
+  <string name="equation_latex_hint">LaTeX, zoals \\frac{a}{b} of x^2</string>
+  <string name="equation_rendering">Weergeven…</string>
+  <string name="equation_render_failed">De vergelijking kon niet worden weergegeven. Controleer de LaTeX.</string>
 </resources>

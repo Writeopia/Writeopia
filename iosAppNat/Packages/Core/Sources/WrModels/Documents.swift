@@ -210,6 +210,7 @@ public struct WrDocument: Codable, Identifiable, Equatable, Hashable, Sendable {
         let textTypes: Set<Int> = [
             StoryType.text.number, StoryType.checkItem.number,
             StoryType.unorderedListItem.number, StoryType.aiAnswer.number,
+            StoryType.equation.number,
         ]
         return bodySteps
             .compactMap { step -> String? in

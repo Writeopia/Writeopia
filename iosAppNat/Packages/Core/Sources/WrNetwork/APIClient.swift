@@ -273,6 +273,8 @@ public final class APIClient {
         case 403: throw APIError.forbidden(Self.serverMessage(data))
         case 404: throw APIError.notFound
         case 409: throw APIError.conflict(Self.serverMessage(data))
+        // The request was fine but what it carried could not be worked with (a drawing with no equation).
+        case 422: throw APIError.badRequest(Self.serverMessage(data))
         case 429: throw APIError.quotaExceeded
         default: throw APIError.unexpectedStatus(status)
         }

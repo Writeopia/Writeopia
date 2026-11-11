@@ -229,6 +229,7 @@ jobs:
           :backend:core:ai:test
           :backend:core:auth:test
           :backend:core:email:test
+          :backend:core:equation:test
           :backend:core:genai_service:test
           :backend:documents:documents:test
           :backend:editor:api_editor_socket:test
