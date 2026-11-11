@@ -44,10 +44,17 @@ class WorkspaceHeaderImagesController(
     private val _state = MutableStateFlow(WorkspaceHeaderImagesState())
     val state: StateFlow<WorkspaceHeaderImagesState> = _state.asStateFlow()
 
+    /** The pictures deleted here, which a listing that started before may still carry. */
+    private val deleted = mutableSetOf<String>()
+
     fun load() {
         scope.launch {
-            val source = resolveHeaderImages()
-            val workspaceId = workspaceId()
+            val resolved = safely { resolve() }
+            if (resolved == null) {
+                _state.update { state -> state.copy(status = WorkspaceHeaderImagesState.Status.FAILED) }
+                return@launch
+            }
+            val (source, workspaceId) = resolved
 
             if (source == null || workspaceId == null) {
                 _state.update { state -> state.copy(status = WorkspaceHeaderImagesState.Status.OFFLINE) }
@@ -63,12 +70,12 @@ class WorkspaceHeaderImagesController(
                 }
             }
 
-            val result = safely { source.pictures(workspaceId) }
+            val result = safelyResult { source.pictures(workspaceId) }
             _state.update { state ->
                 when (result) {
                     is ResultData.Complete -> state.copy(
                         status = WorkspaceHeaderImagesState.Status.LOADED,
-                        images = result.data
+                        images = result.data.filterNot { image -> image.id in deleted }
                     )
 
                     else -> state.copy(status = WorkspaceHeaderImagesState.Status.FAILED)
@@ -83,17 +90,14 @@ class WorkspaceHeaderImagesController(
         _state.update { state -> state.copy(deleting = state.deleting + imageId, deleteFailed = false) }
 
         scope.launch {
-            val source = resolveHeaderImages()
-            val workspaceId = workspaceId()
-
-            val result = if (source == null || workspaceId == null) {
-                ResultData.Error()
-            } else {
-                safely { source.delete(workspaceId, imageId) }
+            val result = safelyResult {
+                val (source, workspaceId) = resolve()
+                if (source == null || workspaceId == null) ResultData.Error() else source.delete(workspaceId, imageId)
             }
 
             _state.update { state ->
                 if (result is ResultData.Complete) {
+                    deleted.add(imageId)
                     state.copy(
                         images = state.images.filterNot { image -> image.id == imageId },
                         deleting = state.deleting - imageId
@@ -109,7 +113,19 @@ class WorkspaceHeaderImagesController(
         _state.update { state -> state.copy(deleteFailed = false) }
     }
 
-    private suspend fun <T> safely(block: suspend () -> ResultData<T>): ResultData<T> =
+    private suspend fun resolve(): Pair<HeaderImages?, String?> = resolveHeaderImages() to workspaceId()
+
+    /** [block], or null when it throws. Cancellation still goes through. */
+    private suspend fun <T> safely(block: suspend () -> T): T? =
+        try {
+            block()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            null
+        }
+
+    private suspend fun <T> safelyResult(block: suspend () -> ResultData<T>): ResultData<T> =
         try {
             block()
         } catch (e: CancellationException) {

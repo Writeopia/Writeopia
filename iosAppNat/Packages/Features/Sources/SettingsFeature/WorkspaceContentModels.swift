@@ -26,6 +26,8 @@ final class HeaderImagesSettingsModel {
 
     /// Nil outside an online workspace: the pictures live on the backend only.
     private let source: HeaderImagesManaging?
+    /// The pictures deleted here, which a listing that started before may still carry.
+    private var deleted: Set<String> = []
 
     init(source: HeaderImagesManaging?) {
         self.source = source
@@ -39,7 +41,8 @@ final class HeaderImagesSettingsModel {
         defer { isLoading = false }
 
         do {
-            images = try await source.pictures()
+            let listed = try await source.pictures()
+            images = listed.filter { !deleted.contains($0.id) }
             errorMessage = nil
         } catch {
             errorMessage = error.userMessage
@@ -54,6 +57,7 @@ final class HeaderImagesSettingsModel {
 
         do {
             try await source.deleteHeaderImage(id: image.id)
+            deleted.insert(image.id)
             images.removeAll { $0.id == image.id }
         } catch {
             deleteError = String(localized: "The header image could not be deleted.")
@@ -84,9 +88,8 @@ final class TagsSettingsModel {
         defer { isLoading = false }
 
         do {
-            tags = try await repository.tags()
-                .filter { !$0.deleted }
-                .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+            tags = Self.sorted(try await repository.tags().filter { !$0.deleted })
+            errorMessage = nil
         } catch {
             errorMessage = error.userMessage
         }
@@ -133,13 +136,25 @@ final class TagsSettingsModel {
         }
     }
 
+    /// Shows the change right away, so the form's name check sees it while the save (which
+    /// may wait for the backend) runs, then reloads what was stored. A save error outlives the
+    /// reload.
     private func save(_ tag: DocumentTag) async {
+        var shown = tags.filter { $0.id != tag.id }
+        if !tag.deleted { shown.append(tag) }
+        tags = Self.sorted(shown)
+
+        var saveError: String?
         do {
             try await repository.saveTag(tag)
-            errorMessage = nil
         } catch {
-            errorMessage = error.userMessage
+            saveError = error.userMessage
         }
         await load()
+        if let saveError { errorMessage = saveError }
+    }
+
+    private static func sorted(_ tags: [DocumentTag]) -> [DocumentTag] {
+        tags.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
 }

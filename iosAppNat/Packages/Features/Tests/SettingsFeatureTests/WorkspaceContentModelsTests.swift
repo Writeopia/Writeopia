@@ -11,6 +11,8 @@ private final class FakeHeaderImages: HeaderImagesManaging {
     var failsToDelete = false
     var failsToList = false
     private(set) var deleted: [String] = []
+    /// Runs between reading the pictures and answering, like a slow listing.
+    var whileListing: (() async -> Void)?
 
     init(_ images: [HeaderImage]) {
         self.images = images
@@ -18,7 +20,12 @@ private final class FakeHeaderImages: HeaderImagesManaging {
 
     func pictures() async throws -> [HeaderImage] {
         if failsToList { throw APIError.offline }
-        return images
+        let listed = images
+        if let whileListing {
+            self.whileListing = nil
+            await whileListing()
+        }
+        return listed
     }
 
     func deleteHeaderImage(id: String) async throws {
@@ -71,6 +78,17 @@ private final class FakeHeaderImages: HeaderImagesManaging {
         #expect(source.deleted == ["a"])
         #expect(model.images.map(\.id) == ["b"])
         #expect(model.deleting.isEmpty)
+    }
+
+    @Test func aListingThatStartedBeforeADeleteDoesNotBringThePictureBack() async {
+        let source = FakeHeaderImages([picture("a"), picture("b")])
+        let model = HeaderImagesSettingsModel(source: source)
+        await model.load()
+
+        source.whileListing = { await model.delete(picture("a")) }
+        await model.load()
+
+        #expect(model.images.map(\.id) == ["b"])
     }
 
     @Test func aPictureThatCouldNotBeDeletedStays() async {
@@ -151,3 +169,4 @@ private final class FakeHeaderImages: HeaderImagesManaging {
         #expect(!TagsSettingsModel.isNameTaken("  ", in: tags))
     }
 }
+

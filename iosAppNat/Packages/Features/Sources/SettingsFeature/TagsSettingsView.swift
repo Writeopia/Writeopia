@@ -44,7 +44,15 @@ struct TagsSettingsView: View {
             }
         }
         .overlay {
-            if model.tags.isEmpty && !model.isLoading {
+            if model.tags.isEmpty, !model.isLoading, let error = model.errorMessage {
+                ContentUnavailableView {
+                    Label("Something went wrong", systemImage: "exclamationmark.triangle")
+                } description: {
+                    Text(error)
+                } actions: {
+                    Button("Try again") { Task { await model.load() } }
+                }
+            } else if model.tags.isEmpty && !model.isLoading {
                 ContentUnavailableView {
                     Label("No tags", systemImage: "tag")
                 } description: {

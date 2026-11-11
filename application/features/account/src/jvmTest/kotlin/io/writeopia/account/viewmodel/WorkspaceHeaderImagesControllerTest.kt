@@ -3,6 +3,7 @@ package io.writeopia.account.viewmodel
 import io.writeopia.ai.HeaderImages
 import io.writeopia.ai.WorkspaceHeaderImage
 import io.writeopia.sdk.models.utils.ResultData
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -18,6 +19,9 @@ private class FakeHeaderImages(
 ) : HeaderImages {
     val deleted = mutableListOf<Pair<String, String>>()
 
+    /** Holds a listing back, after it read the pictures, until completed. */
+    var listingGate: CompletableDeferred<Unit>? = null
+
     override suspend fun generate(workspaceId: String, documentTitle: String, documentText: String): ResultData<String> =
         ResultData.Error()
 
@@ -26,8 +30,12 @@ private class FakeHeaderImages(
 
     override suspend fun save(workspaceId: String, imageUrl: String): ResultData<Unit> = ResultData.Complete(Unit)
 
-    override suspend fun pictures(workspaceId: String): ResultData<List<WorkspaceHeaderImage>> =
-        if (listFailure) ResultData.Error() else ResultData.Complete(pictures.toList())
+    override suspend fun pictures(workspaceId: String): ResultData<List<WorkspaceHeaderImage>> {
+        if (listFailure) return ResultData.Error()
+        val listed = pictures.toList()
+        listingGate?.await()
+        return ResultData.Complete(listed)
+    }
 
     override suspend fun delete(workspaceId: String, imageId: String): ResultData<Unit> {
         if (deleteFailure) return ResultData.Error()
@@ -109,5 +117,36 @@ class WorkspaceHeaderImagesControllerTest {
 
         controller.dismissDeleteError()
         assertEquals(false, controller.state.value.deleteFailed)
+    }
+
+    @Test
+    fun `a listing that started before a delete does not bring the picture back`() = runTest {
+        val source = FakeHeaderImages(mutableListOf(picture("a"), picture("b")))
+        val controller = controller(source)
+        controller.load()
+
+        val gate = CompletableDeferred<Unit>()
+        source.listingGate = gate
+        controller.load()
+        controller.delete("a")
+        gate.complete(Unit)
+
+        assertEquals(listOf("b"), controller.state.value.images.map { it.id })
+    }
+
+    @Test
+    fun `a source that throws leaves no picture dimmed`() = runTest {
+        val controller = WorkspaceHeaderImagesController(
+            scope = TestScope(UnconfinedTestDispatcher(testScheduler)),
+            resolveHeaderImages = { throw IllegalStateException("no session") },
+            workspaceId = { "ws" },
+        )
+
+        controller.load()
+        assertEquals(WorkspaceHeaderImagesState.Status.FAILED, controller.state.value.status)
+
+        controller.delete("a")
+        assertTrue(controller.state.value.deleting.isEmpty())
+        assertTrue(controller.state.value.deleteFailed)
     }
 }

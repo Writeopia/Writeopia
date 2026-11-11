@@ -31,7 +31,7 @@ class HeaderImagesController(
 
     private var generationJob: Job? = null
 
-    /** The pictures approved in this menu, which the backend listing may not have yet. */
+    /** The pictures approved in this menu since the last listing, which it may not have had yet. */
     private val approvedHere = mutableSetOf<String>()
 
     /** Fetches the pictures of the workspace again, each time the header menu opens. */
@@ -47,10 +47,14 @@ class HeaderImagesController(
 
             _state.update { state -> state.copy(canGenerate = true) }
 
+            // The approvals made before this listing started are in it: the backend saved them first.
+            val approvedBefore = approvedHere.toSet()
             val result = source.images(workspaceId)
             if (result is ResultData.Complete) {
+                approvedHere.removeAll(approvedBefore)
+
                 // The backend decides, so a picture deleted in the settings leaves the menu. Only a
-                // picture approved here, which a listing that started before may miss, stays in front.
+                // picture approved while this listing ran, which it may miss, stays in front.
                 _state.update { state ->
                     val approved = state.images.filter { image -> image in approvedHere && image !in result.data }
                     state.copy(images = approved + result.data)

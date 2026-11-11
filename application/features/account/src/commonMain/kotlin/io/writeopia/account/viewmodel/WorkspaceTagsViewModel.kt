@@ -14,6 +14,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
@@ -30,6 +32,12 @@ class WorkspaceTagsController(
     /** Sends tags to the backend; an error outside an online workspace. */
     private val sendTags: suspend (List<DocumentTag>, String) -> ResultData<Unit>,
 ) {
+    /**
+     * One change at a time: each is stored and sent before the next starts, so a slow answer can
+     * never mark a newer local change as synced.
+     */
+    private val mutex = Mutex()
+
     /** The live tags of the workspace, by name. */
     val tags: Flow<List<DocumentTag>> = flow { emit(workspaceId()) }
         .flatMapLatest { workspaceId -> tagRepository.listenForTags(workspaceId) }
@@ -38,9 +46,11 @@ class WorkspaceTagsController(
         if (name.isBlank()) return
 
         scope.launch {
-            val tag = DocumentTag.create(name, description, workspaceId())
-            tagRepository.upsertTag(tag)
-            send(tag)
+            mutex.withLock {
+                val tag = DocumentTag.create(name, description, workspaceId())
+                tagRepository.upsertTag(tag)
+                send(tag.id)
+            }
         }
     }
 
@@ -48,30 +58,36 @@ class WorkspaceTagsController(
         if (name.isBlank()) return
 
         scope.launch {
-            val tag = tagRepository.getTagById(id)?.takeIf { tag -> !tag.deleted } ?: return@launch
-            val edited = tag.copy(
-                name = name.trim(),
-                description = description.trim(),
-                lastUpdatedAt = Clock.System.now()
-            )
-            if (edited.name == tag.name && edited.description == tag.description) return@launch
+            mutex.withLock {
+                val tag = tagRepository.getTagById(id)?.takeIf { tag -> !tag.deleted } ?: return@withLock
+                val edited = tag.copy(
+                    name = name.trim(),
+                    description = description.trim(),
+                    lastUpdatedAt = Clock.System.now()
+                )
+                if (edited.name == tag.name && edited.description == tag.description) return@withLock
 
-            tagRepository.upsertTag(edited)
-            send(edited)
+                tagRepository.upsertTag(edited)
+                send(id)
+            }
         }
     }
 
     fun deleteTag(id: String) {
         scope.launch {
-            val workspaceId = workspaceId()
-            tagRepository.softDeleteTag(id, workspaceId)
-            val tombstone = tagRepository.getTagById(id)?.takeIf { tag -> tag.deleted } ?: return@launch
-            send(tombstone)
+            mutex.withLock {
+                tagRepository.softDeleteTag(id, workspaceId())
+                send(id)
+            }
         }
     }
 
-    /** Marks the tag synced once the backend has it, unless it changed again meanwhile. */
-    private suspend fun send(tag: DocumentTag) {
+    /**
+     * Sends the stored copy of the tag, the latest one, and marks it synced once the backend has
+     * it, unless it changed again meanwhile. Called under [mutex].
+     */
+    private suspend fun send(id: String) {
+        val tag = tagRepository.getTagById(id) ?: return
         val result = try {
             sendTags(listOf(tag), tag.workspaceId)
         } catch (e: CancellationException) {
