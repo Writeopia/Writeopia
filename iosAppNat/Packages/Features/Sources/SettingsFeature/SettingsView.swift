@@ -4,7 +4,8 @@ import WrSession
 
 enum SettingsRoute: String, Hashable, CaseIterable {
     case general
-    /// The folder of the computer the workspace is saved to and synced with (the Mac).
+    /// The header images and the tags of the workspace, and the folder of the computer the
+    /// workspace is saved to and synced with (the Mac).
     case workspace
     case teams
     case ai
@@ -117,6 +118,10 @@ public struct SettingsRootView: View {
                     NavigationLink(value: SettingsRoute.general) {
                         SettingsLabel("General", systemImage: "gearshape", color: .gray)
                     }
+                    NavigationLink(value: SettingsRoute.workspace) {
+                        SettingsLabel("Workspace", systemImage: "externaldrive.fill", color: .green)
+                    }
+                    .accessibilityIdentifier("settings.workspace")
                     NavigationLink(value: SettingsRoute.teams) {
                         SettingsLabel("Teams", systemImage: "person.3.fill", color: .blue)
                     }

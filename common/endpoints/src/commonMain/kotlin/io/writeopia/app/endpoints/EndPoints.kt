@@ -68,6 +68,10 @@ object EndPoints {
     /** The header pictures of a workspace: GET lists them, POST adds an approved one. */
     fun workspaceHeaderImages(workspaceId: String = "{workspaceId}") = "api/ai/header-images/$workspaceId"
 
+    /** DELETE takes a picture out of the pictures of the workspace. */
+    fun workspaceHeaderImage(workspaceId: String = "{workspaceId}", imageId: String = "{imageId}") =
+        "api/ai/header-images/$workspaceId/$imageId"
+
     // Public, CDN-cacheable configuration for auto-configuring Local AI (Ollama / llmman)
     fun aiLocalConfig() = "api/ai/local-config"
 

@@ -397,4 +397,21 @@
   <string name="equation_latex_hint">LaTeX, zoals \\frac{a}{b} of x^2</string>
   <string name="equation_rendering">Weergeven…</string>
   <string name="equation_render_failed">De vergelijking kon niet worden weergegeven. Controleer de LaTeX.</string>
+  <string name="settings_workspace_content">Inhoud van de werkruimte</string>
+  <string name="settings_tags">Tags</string>
+  <string name="settings_header_images">Koptekstafbeeldingen</string>
+  <string name="settings_header_images_description">Met AI getekende afbeeldingen voor de kopteksten van deze werkruimte. Verwijderen haalt er een uit deze lijst; documenten die hem al gebruiken houden hem.</string>
+  <string name="settings_header_images_empty">Nog geen koptekstafbeeldingen. Teken er een met AI vanuit de koptekst van een document.</string>
+  <string name="settings_header_images_offline">Koptekstafbeeldingen staan in de cloud. Log in bij een online werkruimte om ze te beheren.</string>
+  <string name="settings_header_images_failed">De koptekstafbeeldingen konden niet worden geladen.</string>
+  <string name="settings_header_image_delete_title">Koptekstafbeelding verwijderen?</string>
+  <string name="settings_header_image_delete_message">Hij verdwijnt uit de afbeeldingen van deze werkruimte. Documenten die hem als koptekst gebruiken houden hem.</string>
+  <string name="settings_header_image_delete_failed">De koptekstafbeelding kon niet worden verwijderd.</string>
+  <string name="settings_tags_description">De tags die documenten van deze werkruimte kunnen dragen.</string>
+  <string name="settings_tags_empty">Nog geen tags. Maak er een om je documenten te ordenen.</string>
+  <string name="settings_tag_new">Nieuwe tag</string>
+  <string name="settings_tag_edit">Tag bewerken</string>
+  <string name="settings_tag_delete_title">Tag verwijderen?</string>
+  <string name="settings_tag_delete_message">‘%1$s’ wordt verwijderd uit elk document dat hem draagt.</string>
+  <string name="settings_tag_name_taken">Er bestaat al een tag met deze naam.</string>
 </resources>

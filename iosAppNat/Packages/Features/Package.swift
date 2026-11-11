@@ -44,10 +44,23 @@ let package = Package(
             dependencies: coreProducts + ["DocumentsFeature", .product(name: "NoteEditor", package: "Editor")],
             swiftSettings: mainActorByDefault
         ),
-        .target(name: "SettingsFeature", dependencies: coreProducts + ["SetupFeature"], swiftSettings: mainActorByDefault),
+        .target(
+            name: "SettingsFeature",
+            dependencies: coreProducts + [
+                "SetupFeature",
+                // The header pictures, drawn like in the editor.
+                .product(name: "WriteopiaUI", package: "Editor"),
+            ],
+            swiftSettings: mainActorByDefault
+        ),
         .testTarget(
             name: "DocumentsFeatureTests",
             dependencies: ["DocumentsFeature"] + coreProducts,
+            swiftSettings: mainActorByDefault
+        ),
+        .testTarget(
+            name: "SettingsFeatureTests",
+            dependencies: ["SettingsFeature"] + coreProducts,
             swiftSettings: mainActorByDefault
         ),
         .testTarget(

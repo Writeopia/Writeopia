@@ -397,4 +397,21 @@
   <string name="equation_latex_hint">LaTeX, like \\frac{a}{b} or x^2</string>
   <string name="equation_rendering">Rendering…</string>
   <string name="equation_render_failed">The equation could not be rendered. Check the LaTeX.</string>
+  <string name="settings_workspace_content">Workspace content</string>
+  <string name="settings_tags">Tags</string>
+  <string name="settings_header_images">Header images</string>
+  <string name="settings_header_images_description">Pictures drawn with AI for the headers of this workspace. Deleting one takes it out of this list; documents that already use it keep it.</string>
+  <string name="settings_header_images_empty">No header images yet. Draw one with AI from the header of a document.</string>
+  <string name="settings_header_images_offline">Header images live in the cloud. Sign in to an online workspace to manage them.</string>
+  <string name="settings_header_images_failed">The header images could not be loaded.</string>
+  <string name="settings_header_image_delete_title">Delete header image?</string>
+  <string name="settings_header_image_delete_message">It leaves the images of this workspace. Documents that use it as their header keep it.</string>
+  <string name="settings_header_image_delete_failed">The header image could not be deleted.</string>
+  <string name="settings_tags_description">The tags the documents of this workspace can carry.</string>
+  <string name="settings_tags_empty">No tags yet. Create one to organize your documents.</string>
+  <string name="settings_tag_new">New tag</string>
+  <string name="settings_tag_edit">Edit tag</string>
+  <string name="settings_tag_delete_title">Delete tag?</string>
+  <string name="settings_tag_delete_message">“%1$s” will be removed from every document that carries it.</string>
+  <string name="settings_tag_name_taken">A tag with this name already exists.</string>
 </resources>

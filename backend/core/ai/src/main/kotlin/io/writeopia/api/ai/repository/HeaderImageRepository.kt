@@ -30,6 +30,14 @@ fun WriteopiaDbBackend.saveHeaderImage(workspaceId: String, url: String, userId:
 }
 
 /**
+ * Takes the picture [imageId] out of the pictures of [workspaceId]. The picture itself stays on
+ * the CDN: the documents that already use it as their header keep showing it.
+ * @return Whether the workspace had the picture.
+ */
+fun WriteopiaDbBackend.deleteHeaderImage(workspaceId: String, imageId: String): Boolean =
+    workspaceHeaderImageEntityQueries.deleteByWorkspaceAndId(workspaceId, imageId).value > 0
+
+/**
  * Whether [userId] is a member of [workspaceId], like `isUserInWorkspace` of the workspaces: a
  * workspace being deleted takes no new pictures.
  */

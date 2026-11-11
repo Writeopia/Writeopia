@@ -9,13 +9,17 @@ import io.writeopia.account.viewmodel.CloudAiUsageViewModel
 import io.writeopia.account.viewmodel.UserAddViewModel
 import io.writeopia.account.viewmodel.UserEditViewModel
 import io.writeopia.account.viewmodel.UserSearchViewModel
+import io.writeopia.account.viewmodel.WorkspaceHeaderImagesViewModel
+import io.writeopia.account.viewmodel.WorkspaceTagsViewModel
 import io.writeopia.account.viewmodel.WorkspaceUsersViewModel
 import io.writeopia.ai.AiClients
 import io.writeopia.ai.UiConfigurationAiProviderStore
 import io.writeopia.auth.core.di.AuthCoreInjectionNeo
 import io.writeopia.core.configuration.di.UiConfigurationCoreInjector
 import io.writeopia.di.LocalAiInjection
+import io.writeopia.core.folders.di.DocumentTagsInjector
 import io.writeopia.core.folders.di.WorkspaceInjection
+import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.genai.di.GenAiInjection
 
 class AccountMenuKmpInjector private constructor(
@@ -132,6 +136,33 @@ class AccountMenuKmpInjector private constructor(
             CloudAiUsageViewModel(
                 genAiApi = genAiInjection?.provideGenAiApi(),
                 isCloudAiAvailable = { aiClients.isCloudAiReady() }
+            )
+        }
+
+    /** The header pictures of the current workspace, to delete them. */
+    @Composable
+    fun provideWorkspaceHeaderImagesViewModel(): WorkspaceHeaderImagesViewModel =
+        viewModel {
+            val aiClients = provideAiClients()
+            val authRepository = authCoreInjection.provideAuthRepository()
+
+            WorkspaceHeaderImagesViewModel(
+                resolveHeaderImages = { aiClients.headerImages() },
+                workspaceId = { authRepository.getWorkspace()?.id },
+            )
+        }
+
+    /** The tag catalogue of the current workspace, to create, edit and delete tags. */
+    @Composable
+    fun provideWorkspaceTagsViewModel(): WorkspaceTagsViewModel =
+        viewModel {
+            val authRepository = authCoreInjection.provideAuthRepository()
+            val documentsApi = workspaceInjection.provideDocumentsApi()
+
+            WorkspaceTagsViewModel(
+                tagRepository = DocumentTagsInjector.singleton().provideDocumentTagRepository(),
+                workspaceId = { (authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()).id },
+                sendTags = documentsApi::sendTags,
             )
         }
 

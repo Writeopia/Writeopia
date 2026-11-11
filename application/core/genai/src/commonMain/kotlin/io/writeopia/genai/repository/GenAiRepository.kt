@@ -7,6 +7,7 @@ import io.writeopia.app.dto.ai.EquationRecognizeRequest
 import io.writeopia.app.dto.ai.EquationRenderRequest
 import io.writeopia.app.dto.ai.EquationResponse
 import io.writeopia.sdk.serialization.request.HeaderImageGenerateRequest
+import io.writeopia.sdk.serialization.response.HeaderImageApi
 import io.writeopia.sdk.ai.AiClient
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.genai.api.GenAiApi
@@ -167,6 +168,14 @@ class GenAiRepository(
             is ResultData.Error -> ResultData.Error(result.exception)
             else -> ResultData.Error()
         }
+
+    /** The header pictures of [workspaceId] with their ids, the newest first. */
+    suspend fun headerImagesWithIds(workspaceId: String): ResultData<List<HeaderImageApi>> =
+        genAiApi.headerImages(workspaceId)
+
+    /** Takes the picture [imageId] out of the pictures of [workspaceId]. */
+    suspend fun deleteHeaderImage(workspaceId: String, imageId: String): ResultData<Unit> =
+        genAiApi.deleteHeaderImage(workspaceId, imageId)
 
     /** Keeps an approved header picture with the pictures of [workspaceId]. */
     suspend fun saveHeaderImage(workspaceId: String, imageUrl: String): ResultData<Unit> =

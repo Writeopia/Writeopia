@@ -397,4 +397,21 @@
   <string name="equation_latex_hint">LaTeX, z. B. \\frac{a}{b} oder x^2</string>
   <string name="equation_rendering">Wird gerendert…</string>
   <string name="equation_render_failed">Die Gleichung konnte nicht gerendert werden. Prüfe das LaTeX.</string>
+  <string name="settings_workspace_content">Inhalte des Arbeitsbereichs</string>
+  <string name="settings_tags">Tags</string>
+  <string name="settings_header_images">Kopfbilder</string>
+  <string name="settings_header_images_description">Mit KI gezeichnete Bilder für die Kopfzeilen dieses Arbeitsbereichs. Ein gelöschtes Bild verschwindet aus dieser Liste; Dokumente, die es bereits nutzen, behalten es.</string>
+  <string name="settings_header_images_empty">Noch keine Kopfbilder. Zeichne eines mit KI im Kopf eines Dokuments.</string>
+  <string name="settings_header_images_offline">Kopfbilder liegen in der Cloud. Melde dich bei einem Online-Arbeitsbereich an, um sie zu verwalten.</string>
+  <string name="settings_header_images_failed">Die Kopfbilder konnten nicht geladen werden.</string>
+  <string name="settings_header_image_delete_title">Kopfbild löschen?</string>
+  <string name="settings_header_image_delete_message">Es verschwindet aus den Bildern dieses Arbeitsbereichs. Dokumente, die es als Kopfbild nutzen, behalten es.</string>
+  <string name="settings_header_image_delete_failed">Das Kopfbild konnte nicht gelöscht werden.</string>
+  <string name="settings_tags_description">Die Tags, die Dokumente dieses Arbeitsbereichs tragen können.</string>
+  <string name="settings_tags_empty">Noch keine Tags. Erstelle eines, um deine Dokumente zu ordnen.</string>
+  <string name="settings_tag_new">Neues Tag</string>
+  <string name="settings_tag_edit">Tag bearbeiten</string>
+  <string name="settings_tag_delete_title">Tag löschen?</string>
+  <string name="settings_tag_delete_message">„%1$s“ wird aus jedem Dokument entfernt, das es trägt.</string>
+  <string name="settings_tag_name_taken">Es gibt bereits ein Tag mit diesem Namen.</string>
 </resources>

@@ -37,6 +37,23 @@ public final class HeaderImagesAPI {
         return response.images.map(\.url)
     }
 
+    /// The approved pictures of the workspace with their ids, the newest first, to manage them.
+    public func pictures() async throws -> [HeaderImage] {
+        let response: HeaderImagesResponse = try await client.get(path)
+        return response.images
+    }
+
+    /// Takes a picture out of the pictures of the workspace. The documents that already use it
+    /// as their header keep it, since it stays on the CDN. A picture already gone (deleted from
+    /// another device) counts as deleted.
+    public func deleteHeaderImage(id: String) async throws {
+        do {
+            try await client.perform(.delete, "\(path)/\(id)")
+        } catch APIError.notFound {
+            return
+        }
+    }
+
     /// Keeps an approved picture with the pictures of the workspace.
     public func saveHeaderImage(url: String) async throws {
         try await client.perform(.post, path, body: HeaderImageSaveRequest(imageUrl: url))

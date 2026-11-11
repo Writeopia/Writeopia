@@ -27,6 +27,9 @@ import io.writeopia.account.navigation.navigateToSettingsAccount
 import io.writeopia.account.navigation.navigateToSettingsAi
 import io.writeopia.account.navigation.navigateToSettingsAppearance
 import io.writeopia.account.navigation.navigateToSettingsCloudAi
+import io.writeopia.account.navigation.navigateToSettingsHeaderImages
+import io.writeopia.account.navigation.navigateToSettingsTags
+import io.writeopia.account.navigation.navigateToSettingsWorkspace
 import io.writeopia.account.navigation.navigateToSettingsTeams
 import io.writeopia.account.navigation.navigateToUserAdd
 import io.writeopia.account.navigation.navigateToUserEdit
@@ -248,6 +251,9 @@ fun Navigation(
                 navigateToSettingsAccount = navController::navigateToSettingsAccount,
                 navigateToSettingsAi = navController::navigateToSettingsAi,
                 navigateToSettingsCloudAi = navController::navigateToSettingsCloudAi,
+                navigateToSettingsWorkspace = navController::navigateToSettingsWorkspace,
+                navigateToSettingsHeaderImages = navController::navigateToSettingsHeaderImages,
+                navigateToSettingsTags = navController::navigateToSettingsTags,
                 navigateToWorkspaceUsers = navController::navigateToWorkspaceUsers,
                 navigateToUserSearch = navController::navigateToUserSearch,
                 navigateToUserAdd = navController::navigateToUserAdd,

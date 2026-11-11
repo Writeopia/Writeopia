@@ -32,6 +32,7 @@ fun AccountMenuScreen(
     navigateToTeams: () -> Unit,
     navigateToAccount: () -> Unit,
     navigateToAi: () -> Unit,
+    navigateToWorkspace: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -46,6 +47,14 @@ fun AccountMenuScreen(
             title = WrStrings.appearance(),
             icon = WrIcons.colorModeLight,
             onClick = navigateToAppearance
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        SettingsMenuItem(
+            title = WrStrings.workspaceName(),
+            icon = WrIcons.folder,
+            onClick = navigateToWorkspace
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -83,13 +92,14 @@ fun AccountMenuScreen(
 }
 
 @Composable
-private fun SettingsMenuItem(
+internal fun SettingsMenuItem(
     title: String,
     icon: ImageVector,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.medium)
             .background(WriteopiaTheme.colorScheme.optionsSelector)

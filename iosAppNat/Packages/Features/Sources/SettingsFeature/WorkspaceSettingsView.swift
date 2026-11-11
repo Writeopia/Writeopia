@@ -65,9 +65,10 @@ final class WorkspaceFolderViewModel {
     }
 }
 
-/// The "Workspace" page of Settings: the folder of the computer the workspace is kept in as
-/// JSON files, with a button to save the workspace there and one to sync with it, like the
-/// local folder of the Compose desktop app.
+/// The "Workspace" page of Settings: the header images and the tags of the workspace, each on a
+/// page of its own, and, on the Mac, the folder of the computer the workspace is kept in as JSON
+/// files, with a button to save the workspace there and one to sync with it, like the local
+/// folder of the Compose desktop app.
 struct WorkspaceSettingsView: View {
     @Environment(AppSession.self) private var session
     @State private var viewModel: WorkspaceFolderViewModel
@@ -85,6 +86,28 @@ struct WorkspaceSettingsView: View {
                 LabeledContent("Space", value: session.spaceType == .online ? String(localized: "Open space") : String(localized: "Private space"))
             }
 
+            Section {
+                NavigationLink {
+                    HeaderImagesSettingsView(session: session)
+                } label: {
+                    SettingsLabel("Header images", systemImage: "photo.on.rectangle", color: .pink)
+                }
+                .accessibilityIdentifier("workspace.headerImages")
+
+                NavigationLink {
+                    TagsSettingsView(session: session)
+                } label: {
+                    SettingsLabel("Tags", systemImage: "tag.fill", color: .indigo)
+                }
+                .accessibilityIdentifier("workspace.tags")
+            } header: {
+                Text("Workspace content")
+            } footer: {
+                Text("Header images and tags are shared by every document of this workspace.")
+            }
+
+            // The folder of the computer: the Mac only.
+            #if os(macOS)
             Section {
                 folderRow
                     .listRowBackground(Color.clear)
@@ -109,6 +132,7 @@ struct WorkspaceSettingsView: View {
             } footer: {
                 Text("Save writes every document and folder of the workspace to the folder. Sync first loads what is newer in the folder, then saves.")
             }
+            #endif
         }
         .navigationTitle("Workspace")
         .animation(.default, value: viewModel.errorMessage)
