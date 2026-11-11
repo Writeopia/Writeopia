@@ -269,7 +269,8 @@ fun Navigation(
                 selectedAccentColor = selectedAccentColor,
                 selectColorTheme = selectColorTheme,
                 selectAccentColor = selectAccentColor,
-                isToolbarVisible = isToolbarVisible
+                isToolbarVisible = isToolbarVisible,
+                nestedScrollConnection = nestedScrollConnection
             )
 
             if (searchInjection != null) {

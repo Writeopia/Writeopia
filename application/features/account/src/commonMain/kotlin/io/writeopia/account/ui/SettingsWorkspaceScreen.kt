@@ -9,6 +9,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import io.writeopia.common.utils.icons.WrIcons
@@ -57,14 +59,35 @@ fun WorkspaceContentLinks(
     }
 }
 
-/** A page of the phone settings that scrolls, around [SettingsHeaderImagesRoute] or [SettingsTagsRoute]. */
+/**
+ * A page of the phone settings that scrolls, around [SettingsHeaderImagesRoute] or [SettingsTagsRoute].
+ * With a [nestedScrollConnection] its scroll hides and shows the top and bottom bars, like the
+ * documents menu and the editor, and the end of the page keeps clear of the bottom bar over it.
+ */
 @Composable
-fun ScrollingSettingsPage(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+fun ScrollingSettingsPage(
+    modifier: Modifier = Modifier,
+    nestedScrollConnection: NestedScrollConnection? = null,
+    content: @Composable () -> Unit
+) {
+    val scrollModifier = if (nestedScrollConnection != null) {
+        Modifier.nestedScroll(nestedScrollConnection)
+    } else {
+        Modifier
+    }
+
     Column(
         modifier = modifier.fillMaxSize()
+            .then(scrollModifier)
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
         content()
+
+        if (nestedScrollConnection != null) {
+            Spacer(modifier = Modifier.height(BOTTOM_BAR_CLEARANCE))
+        }
     }
 }
+
+private val BOTTOM_BAR_CLEARANCE = 96.dp

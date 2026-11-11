@@ -23,6 +23,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
@@ -147,6 +148,7 @@ fun NavGraphBuilder.accountMenuNavigation(
     selectColorTheme: (ColorThemeOption) -> Unit,
     selectAccentColor: (AccentColor) -> Unit,
     isToolbarVisible: Boolean = true,
+    nestedScrollConnection: NestedScrollConnection? = null,
 ) {
     composable(
         Destinations.ACCOUNT.id,
@@ -881,7 +883,8 @@ fun NavGraphBuilder.accountMenuNavigation(
         ) { paddingValues ->
             ScrollingSettingsPage(
                 modifier = Modifier.background(MaterialTheme.colorScheme.background)
-                    .padding(paddingValues)
+                    .padding(paddingValues),
+                nestedScrollConnection = nestedScrollConnection,
             ) {
                 SettingsHeaderImagesRoute()
             }
@@ -900,7 +903,8 @@ fun NavGraphBuilder.accountMenuNavigation(
         ) { paddingValues ->
             ScrollingSettingsPage(
                 modifier = Modifier.background(MaterialTheme.colorScheme.background)
-                    .padding(paddingValues)
+                    .padding(paddingValues),
+                nestedScrollConnection = nestedScrollConnection,
             ) {
                 SettingsTagsRoute()
             }
