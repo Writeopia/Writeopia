@@ -99,7 +99,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.update
 import io.writeopia.ui.model.EquationEvent
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
@@ -274,10 +273,8 @@ class NoteEditorKmpViewModel(
         viewModelScope.launch(Dispatchers.Default) {
             writeopiaManager.equationEvents.collect { event ->
                 when (event) {
-                    is EquationEvent.Edit ->
-                        _equationEdition.value =
-                            EquationEditionState(event.position, event.step.text ?: "")
-                    is EquationEvent.Render -> launch { renderEquationStep(event.position, event.step.text ?: "") }
+                    is EquationEvent.Edit -> equationsController.edit(event.step, event.position)
+                    is EquationEvent.Render -> launch { equationsController.render(event.position, event.step.text ?: "") }
                 }
             }
         }
@@ -1103,147 +1100,39 @@ class NoteEditorKmpViewModel(
         _editHeader.value = false
     }
 
-    // Drawings to equations
+    // Equations: the "..." dialog of a drawing and the LaTeX dialog of an equation.
 
-    private val _drawingOptions = MutableStateFlow<DrawingOptionsState?>(null)
-    override val drawingOptions: StateFlow<DrawingOptionsState?> = _drawingOptions.asStateFlow()
+    private val equationsController = EquationsController(
+        scope = viewModelScope,
+        resolveEquations = { aiClients.equations() },
+        isEditable = { isEditable.value },
+        stepAt = { position -> writeopiaManager.currentStory.value.stories[position] },
+        positionOf = { stepId ->
+            writeopiaManager.currentStory.value.stories.entries.firstOrNull { (_, step) -> step.id == stepId }?.key
+        },
+        setEquation = writeopiaManager::setEquation,
+        enqueueTask = { id, description, execution ->
+            aiTaskManager.enqueueTask(id = id, type = AiTaskType.EQUATION, description = description, execution = execution)
+        },
+        taskIdPrefix = { "editor-${writeopiaManager.documentInfo.value.id}" },
+    )
 
-    private val _convertingDrawingIds = MutableStateFlow<Set<String>>(emptySet())
-    override val convertingDrawingIds: StateFlow<Set<String>> = _convertingDrawingIds.asStateFlow()
+    override val drawingOptions: StateFlow<DrawingOptionsState?> = equationsController.drawingOptions
+    override val convertingDrawingIds: StateFlow<Set<String>> = equationsController.convertingDrawingIds
+    override val equationEdition: StateFlow<EquationEditionState?> = equationsController.edition
 
-    override fun onDrawingOptionsClick(step: StoryStep, position: String) {
-        if (!isEditable.value) return
-        _drawingOptions.value = DrawingOptionsState(step, position)
-    }
+    override fun onDrawingOptionsClick(step: StoryStep, position: String) =
+        equationsController.openDrawingOptions(step, position)
 
-    override fun dismissDrawingOptions() {
-        // The conversion goes on in the background: the preview shows it and the result lands anyway.
-        _drawingOptions.value = null
-    }
+    override fun dismissDrawingOptions() = equationsController.dismissDrawingOptions()
 
-    /**
-     * The cloud AI reads the strokes of the drawing and the step becomes the equation it wrote,
-     * at the same position, so undo brings the drawing back. The dialog follows the work and
-     * closes when it is done.
-     */
-    override fun convertDrawingToEquation() {
-        val options = _drawingOptions.value ?: return
-        if (!isEditable.value || options.phase == DrawingOptionsState.Phase.CONVERTING) return
-        // The dialog may have been closed and opened again while the AI still reads this drawing.
-        if (options.step.id in _convertingDrawingIds.value) {
-            _drawingOptions.value = options.copy(phase = DrawingOptionsState.Phase.CONVERTING, error = null)
-            return
-        }
-        val drawingJson = options.step.text
-        if (drawingJson.isNullOrBlank()) {
-            _drawingOptions.value = options.copy(phase = DrawingOptionsState.Phase.FAILED, error = null)
-            return
-        }
+    override fun convertDrawingToEquation() = equationsController.convertDrawing()
 
-        viewModelScope.launch {
-            val equations = aiClients.equations()
-            if (equations == null) {
-                _drawingOptions.value = options.copy(phase = DrawingOptionsState.Phase.UNAVAILABLE)
-                return@launch
-            }
+    override fun onEquationLatexChange(latex: String) = equationsController.onLatexChange(latex)
 
-            _drawingOptions.value = options.copy(phase = DrawingOptionsState.Phase.CONVERTING, error = null)
-            _convertingDrawingIds.update { ids -> ids + options.step.id }
+    override fun saveEquation() = equationsController.saveEdition()
 
-            val documentId = writeopiaManager.documentInfo.value.id
-            aiTaskManager.enqueueTask(
-                id = "editor-$documentId-equation-${options.step.id}",
-                type = AiTaskType.EQUATION,
-                description = "Reading the equation..."
-            ) {
-                val result = try {
-                    equations.recognize(drawingJson)
-                } finally {
-                    // Cleared whatever happened, so the preview never keeps its progress.
-                    _convertingDrawingIds.update { ids -> ids - options.step.id }
-                }
-
-                when (result) {
-                    is ResultData.Complete -> {
-                        // The drawing may have moved while the AI read it: find it again by id.
-                        val position = positionOf(options.step.id) ?: options.position
-                        writeopiaManager.setEquation(position, result.data.latex, result.data.imageUrl)
-                        _drawingOptions.update { current -> if (current?.step?.id == options.step.id) null else current }
-                        Result.success(Unit)
-                    }
-                    else -> {
-                        val message = (result as? ResultData.Error)?.exception?.message
-                        _drawingOptions.update { current ->
-                            if (current?.step?.id == options.step.id) {
-                                current.copy(phase = DrawingOptionsState.Phase.FAILED, error = message)
-                            } else {
-                                current
-                            }
-                        }
-                        Result.failure(Exception(message ?: "The equation could not be read"))
-                    }
-                }
-            }
-        }
-    }
-
-    private fun positionOf(stepId: String): String? =
-        writeopiaManager.currentStory.value.stories.entries.firstOrNull { (_, step) -> step.id == stepId }?.key
-
-    // Editing equations
-
-    private val _equationEdition = MutableStateFlow<EquationEditionState?>(null)
-    override val equationEdition: StateFlow<EquationEditionState?> = _equationEdition.asStateFlow()
-
-    override fun onEquationLatexChange(latex: String) {
-        _equationEdition.update { state -> state?.copy(latex = latex, error = null) }
-    }
-
-    override fun dismissEquationEdition() {
-        _equationEdition.value = null
-    }
-
-    override fun saveEquation() {
-        val edition = _equationEdition.value ?: return
-        if (!isEditable.value || edition.rendering) return
-        val latex = edition.latex.trim()
-        if (latex.isEmpty()) return
-
-        viewModelScope.launch {
-            _equationEdition.update { state -> state?.copy(rendering = true, error = null) }
-            val rendered = renderEquationStep(edition.position, latex)
-            _equationEdition.update { state ->
-                when {
-                    state == null -> null
-                    rendered == null -> null
-                    else -> state.copy(rendering = false, error = rendered)
-                }
-            }
-        }
-    }
-
-    /**
-     * Renders [latex] with the backend and puts it, with its picture, in the step at [position].
-     * Without the cloud, the step keeps the LaTeX as text and no picture.
-     * @return null when the step was updated, else the error to show.
-     */
-    private suspend fun renderEquationStep(position: String, latex: String): String? {
-        val trimmed = latex.trim()
-        val equations = aiClients.equations()
-        if (equations == null) {
-            writeopiaManager.setEquation(position, trimmed, imageUrl = null)
-            return null
-        }
-
-        return when (val result = equations.render(trimmed)) {
-            is ResultData.Complete -> {
-                writeopiaManager.setEquation(position, result.data.latex, result.data.imageUrl)
-                null
-            }
-            is ResultData.Error -> result.exception?.message ?: "The equation could not be rendered"
-            else -> "The equation could not be rendered"
-        }
-    }
+    override fun dismissEquationEdition() = equationsController.dismissEdition()
 
     override fun onMoreOptionsClick() {
         _showGlobalMenu.value = !_showGlobalMenu.value
