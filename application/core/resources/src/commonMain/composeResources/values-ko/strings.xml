@@ -397,4 +397,21 @@
   <string name="equation_latex_hint">LaTeX (예: \\frac{a}{b} 또는 x^2)</string>
   <string name="equation_rendering">렌더링 중…</string>
   <string name="equation_render_failed">수식을 렌더링할 수 없습니다. LaTeX를 확인하세요.</string>
+  <string name="settings_workspace_content">워크스페이스 콘텐츠</string>
+  <string name="settings_tags">태그</string>
+  <string name="settings_header_images">헤더 이미지</string>
+  <string name="settings_header_images_description">이 워크스페이스의 헤더용으로 AI가 그린 이미지입니다. 삭제하면 이 목록에서 빠지며, 이미 사용 중인 문서는 그대로 유지됩니다.</string>
+  <string name="settings_header_images_empty">아직 헤더 이미지가 없습니다. 문서 헤더에서 AI로 그려 보세요.</string>
+  <string name="settings_header_images_offline">헤더 이미지는 클라우드에 있습니다. 관리하려면 온라인 워크스페이스에 로그인하세요.</string>
+  <string name="settings_header_images_failed">헤더 이미지를 불러올 수 없습니다.</string>
+  <string name="settings_header_image_delete_title">헤더 이미지를 삭제할까요?</string>
+  <string name="settings_header_image_delete_message">이 워크스페이스의 이미지에서 빠집니다. 헤더로 사용하는 문서는 그대로 유지됩니다.</string>
+  <string name="settings_header_image_delete_failed">헤더 이미지를 삭제할 수 없습니다.</string>
+  <string name="settings_tags_description">이 워크스페이스의 문서에 붙일 수 있는 태그입니다.</string>
+  <string name="settings_tags_empty">아직 태그가 없습니다. 태그를 만들어 문서를 정리해 보세요.</string>
+  <string name="settings_tag_new">새 태그</string>
+  <string name="settings_tag_edit">태그 편집</string>
+  <string name="settings_tag_delete_title">태그를 삭제할까요?</string>
+  <string name="settings_tag_delete_message">“%1$s” 태그가 붙은 모든 문서에서 제거됩니다.</string>
+  <string name="settings_tag_name_taken">같은 이름의 태그가 이미 있습니다.</string>
 </resources>

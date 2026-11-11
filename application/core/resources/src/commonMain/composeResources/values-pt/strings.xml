@@ -397,4 +397,21 @@
   <string name="equation_latex_hint">LaTeX, como \\frac{a}{b} ou x^2</string>
   <string name="equation_rendering">Renderizando…</string>
   <string name="equation_render_failed">Não foi possível renderizar a equação. Verifique o LaTeX.</string>
+  <string name="settings_workspace_content">Conteúdo do workspace</string>
+  <string name="settings_tags">Tags</string>
+  <string name="settings_header_images">Imagens de cabeçalho</string>
+  <string name="settings_header_images_description">Imagens desenhadas com IA para os cabeçalhos deste workspace. Excluir uma a tira desta lista; os documentos que já a usam continuam com ela.</string>
+  <string name="settings_header_images_empty">Ainda não há imagens de cabeçalho. Desenhe uma com IA no cabeçalho de um documento.</string>
+  <string name="settings_header_images_offline">As imagens de cabeçalho ficam na nuvem. Entre em um workspace online para gerenciá-las.</string>
+  <string name="settings_header_images_failed">Não foi possível carregar as imagens de cabeçalho.</string>
+  <string name="settings_header_image_delete_title">Excluir imagem de cabeçalho?</string>
+  <string name="settings_header_image_delete_message">Ela sai das imagens deste workspace. Os documentos que a usam como cabeçalho continuam com ela.</string>
+  <string name="settings_header_image_delete_failed">Não foi possível excluir a imagem de cabeçalho.</string>
+  <string name="settings_tags_description">As tags que os documentos deste workspace podem ter.</string>
+  <string name="settings_tags_empty">Ainda não há tags. Crie uma para organizar seus documentos.</string>
+  <string name="settings_tag_new">Nova tag</string>
+  <string name="settings_tag_edit">Editar tag</string>
+  <string name="settings_tag_delete_title">Excluir tag?</string>
+  <string name="settings_tag_delete_message">“%1$s” será removida de todos os documentos que a têm.</string>
+  <string name="settings_tag_name_taken">Já existe uma tag com esse nome.</string>
 </resources>

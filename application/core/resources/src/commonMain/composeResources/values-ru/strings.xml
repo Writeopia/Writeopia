@@ -397,4 +397,21 @@
   <string name="equation_latex_hint">LaTeX, например \\frac{a}{b} или x^2</string>
   <string name="equation_rendering">Отрисовка…</string>
   <string name="equation_render_failed">Не удалось отрисовать уравнение. Проверьте LaTeX.</string>
+  <string name="settings_workspace_content">Содержимое рабочего пространства</string>
+  <string name="settings_tags">Теги</string>
+  <string name="settings_header_images">Изображения заголовков</string>
+  <string name="settings_header_images_description">Изображения, нарисованные ИИ для заголовков этого рабочего пространства. Удалённое изображение пропадает из списка; документы, которые уже его используют, сохраняют его.</string>
+  <string name="settings_header_images_empty">Изображений заголовков пока нет. Нарисуйте его с помощью ИИ в заголовке документа.</string>
+  <string name="settings_header_images_offline">Изображения заголовков хранятся в облаке. Войдите в онлайн-пространство, чтобы управлять ими.</string>
+  <string name="settings_header_images_failed">Не удалось загрузить изображения заголовков.</string>
+  <string name="settings_header_image_delete_title">Удалить изображение заголовка?</string>
+  <string name="settings_header_image_delete_message">Оно пропадёт из изображений этого рабочего пространства. Документы, которые используют его как заголовок, сохранят его.</string>
+  <string name="settings_header_image_delete_failed">Не удалось удалить изображение заголовка.</string>
+  <string name="settings_tags_description">Теги, которые могут быть у документов этого рабочего пространства.</string>
+  <string name="settings_tags_empty">Тегов пока нет. Создайте тег, чтобы упорядочить документы.</string>
+  <string name="settings_tag_new">Новый тег</string>
+  <string name="settings_tag_edit">Изменить тег</string>
+  <string name="settings_tag_delete_title">Удалить тег?</string>
+  <string name="settings_tag_delete_message">«%1$s» будет снят со всех документов, у которых он есть.</string>
+  <string name="settings_tag_name_taken">Тег с таким названием уже есть.</string>
 </resources>

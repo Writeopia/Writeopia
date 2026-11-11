@@ -43,6 +43,7 @@ kotlin {
                 implementation(project(":writeopia"))
                 implementation(project(":application:core:auth_core"))
                 implementation(project(":common:endpoints"))
+                implementation(project(":plugins:writeopia_serialization"))
 
                 implementation(libs.kotlinx.coroutines.core)
             }

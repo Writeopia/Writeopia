@@ -397,4 +397,21 @@
   <string name="equation_latex_hint">LaTeX, come \\frac{a}{b} o x^2</string>
   <string name="equation_rendering">Rendering in corso…</string>
   <string name="equation_render_failed">Impossibile eseguire il rendering dell’equazione. Controlla il LaTeX.</string>
+  <string name="settings_workspace_content">Contenuti dell’area di lavoro</string>
+  <string name="settings_tags">Tag</string>
+  <string name="settings_header_images">Immagini di intestazione</string>
+  <string name="settings_header_images_description">Immagini disegnate con l’IA per le intestazioni di quest’area di lavoro. Eliminarne una la toglie da questo elenco; i documenti che già la usano la mantengono.</string>
+  <string name="settings_header_images_empty">Ancora nessuna immagine di intestazione. Disegnane una con l’IA dall’intestazione di un documento.</string>
+  <string name="settings_header_images_offline">Le immagini di intestazione sono nel cloud. Accedi a un’area di lavoro online per gestirle.</string>
+  <string name="settings_header_images_failed">Impossibile caricare le immagini di intestazione.</string>
+  <string name="settings_header_image_delete_title">Eliminare l’immagine di intestazione?</string>
+  <string name="settings_header_image_delete_message">Esce dalle immagini di quest’area di lavoro. I documenti che la usano come intestazione la mantengono.</string>
+  <string name="settings_header_image_delete_failed">Impossibile eliminare l’immagine di intestazione.</string>
+  <string name="settings_tags_description">I tag che i documenti di quest’area di lavoro possono avere.</string>
+  <string name="settings_tags_empty">Ancora nessun tag. Creane uno per organizzare i tuoi documenti.</string>
+  <string name="settings_tag_new">Nuovo tag</string>
+  <string name="settings_tag_edit">Modifica tag</string>
+  <string name="settings_tag_delete_title">Eliminare il tag?</string>
+  <string name="settings_tag_delete_message">“%1$s” verrà rimosso da tutti i documenti che lo hanno.</string>
+  <string name="settings_tag_name_taken">Esiste già un tag con questo nome.</string>
 </resources>

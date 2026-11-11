@@ -32,3 +32,10 @@ deleteByWorkspace:
 DELETE
 FROM workspace_header_image_entity
 WHERE workspace_id = ?;
+
+-- Takes a picture out of the workspace. The picture stays on the CDN, since the documents that
+-- already use it as their header keep showing it.
+deleteByWorkspaceAndId:
+DELETE
+FROM workspace_header_image_entity
+WHERE workspace_id = ? AND id = ?;

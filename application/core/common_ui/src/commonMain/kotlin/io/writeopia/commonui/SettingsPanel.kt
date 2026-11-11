@@ -61,14 +61,15 @@ fun SettingsPanel(
                 SettingsButton("AI", SettingsPage.AI, pageState) { page ->
                     pageState = page
                 }
+            }
 
-                SettingsButton(
-                    WrStrings.workspaceName(),
-                    SettingsPage.DIRECTORY,
-                    pageState
-                ) { page ->
-                    pageState = page
-                }
+            // The header pictures and the tags of the workspace, plus its local folder on desktop.
+            SettingsButton(
+                WrStrings.workspaceName(),
+                SettingsPage.DIRECTORY,
+                pageState
+            ) { page ->
+                pageState = page
             }
 
             SettingsButton(WrStrings.teams(), SettingsPage.TEAMS, pageState) { page ->

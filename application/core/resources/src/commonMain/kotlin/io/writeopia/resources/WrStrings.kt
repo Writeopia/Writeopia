@@ -4,6 +4,23 @@ import androidx.compose.runtime.Composable
 import org.jetbrains.compose.resources.stringResource
 import writeopia.application.core.resources.generated.resources.Res
 import writeopia.application.core.resources.generated.resources.accent_color
+import writeopia.application.core.resources.generated.resources.settings_workspace_content
+import writeopia.application.core.resources.generated.resources.settings_tags
+import writeopia.application.core.resources.generated.resources.settings_header_images
+import writeopia.application.core.resources.generated.resources.settings_header_images_description
+import writeopia.application.core.resources.generated.resources.settings_header_images_empty
+import writeopia.application.core.resources.generated.resources.settings_header_images_offline
+import writeopia.application.core.resources.generated.resources.settings_header_images_failed
+import writeopia.application.core.resources.generated.resources.settings_header_image_delete_title
+import writeopia.application.core.resources.generated.resources.settings_header_image_delete_message
+import writeopia.application.core.resources.generated.resources.settings_header_image_delete_failed
+import writeopia.application.core.resources.generated.resources.settings_tags_description
+import writeopia.application.core.resources.generated.resources.settings_tags_empty
+import writeopia.application.core.resources.generated.resources.settings_tag_new
+import writeopia.application.core.resources.generated.resources.settings_tag_edit
+import writeopia.application.core.resources.generated.resources.settings_tag_delete_title
+import writeopia.application.core.resources.generated.resources.settings_tag_delete_message
+import writeopia.application.core.resources.generated.resources.settings_tag_name_taken
 import writeopia.application.core.resources.generated.resources.drawing_options_title
 import writeopia.application.core.resources.generated.resources.drawing_convert_to_equation
 import writeopia.application.core.resources.generated.resources.drawing_convert_explanation
@@ -1524,4 +1541,55 @@ object WrStrings {
 
     @Composable
     fun equationRenderFailed() = stringResource(Res.string.equation_render_failed)
+
+    @Composable
+    fun settingsWorkspaceContent() = stringResource(Res.string.settings_workspace_content)
+
+    @Composable
+    fun settingsTags() = stringResource(Res.string.settings_tags)
+
+    @Composable
+    fun settingsHeaderImages() = stringResource(Res.string.settings_header_images)
+
+    @Composable
+    fun settingsHeaderImagesDescription() = stringResource(Res.string.settings_header_images_description)
+
+    @Composable
+    fun settingsHeaderImagesEmpty() = stringResource(Res.string.settings_header_images_empty)
+
+    @Composable
+    fun settingsHeaderImagesOffline() = stringResource(Res.string.settings_header_images_offline)
+
+    @Composable
+    fun settingsHeaderImagesFailed() = stringResource(Res.string.settings_header_images_failed)
+
+    @Composable
+    fun settingsHeaderImageDeleteTitle() = stringResource(Res.string.settings_header_image_delete_title)
+
+    @Composable
+    fun settingsHeaderImageDeleteMessage() = stringResource(Res.string.settings_header_image_delete_message)
+
+    @Composable
+    fun settingsHeaderImageDeleteFailed() = stringResource(Res.string.settings_header_image_delete_failed)
+
+    @Composable
+    fun settingsTagsDescription() = stringResource(Res.string.settings_tags_description)
+
+    @Composable
+    fun settingsTagsEmpty() = stringResource(Res.string.settings_tags_empty)
+
+    @Composable
+    fun settingsTagNew() = stringResource(Res.string.settings_tag_new)
+
+    @Composable
+    fun settingsTagEdit() = stringResource(Res.string.settings_tag_edit)
+
+    @Composable
+    fun settingsTagDeleteTitle() = stringResource(Res.string.settings_tag_delete_title)
+
+    @Composable
+    fun settingsTagDeleteMessage(name: String) = stringResource(Res.string.settings_tag_delete_message, name)
+
+    @Composable
+    fun settingsTagNameTaken() = stringResource(Res.string.settings_tag_name_taken)
 }

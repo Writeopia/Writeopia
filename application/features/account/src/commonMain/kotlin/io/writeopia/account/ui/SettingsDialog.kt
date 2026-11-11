@@ -170,9 +170,9 @@ fun SettingsDialog(
                     }
                 },
                 directoryScreen = {
-                    WorkspaceSection(
+                    WorkspacePage(
                         workplacePathState = workplacePathState,
-                        showPath = true,
+                        showPath = currentPlatform == PlatformType.DESKTOP,
                         selectWorkplacePath = selectWorkplacePath,
                     )
                 },
@@ -494,6 +494,81 @@ private fun TeamLine(workspace: Workspace, modifier: Modifier = Modifier) {
             style = MaterialTheme.typography
                 .bodySmall
                 .copy(MaterialTheme.colorScheme.onBackground)
+        )
+    }
+}
+
+/** The sub pages of the workspace page, each opened from a link of [WorkspaceContentLinks]. */
+private enum class WorkspaceSubPage { HEADER_IMAGES, TAGS }
+
+/**
+ * The workspace page of the settings dialog: the local folder (desktop only) and the links to the
+ * header pictures and to the tags, which open in place of the page, with a way back.
+ */
+@Composable
+private fun WorkspacePage(
+    workplacePathState: StateFlow<String>,
+    showPath: Boolean,
+    selectWorkplacePath: (String) -> Unit,
+) {
+    var subPage by remember { mutableStateOf<WorkspaceSubPage?>(null) }
+
+    when (subPage) {
+        null -> Column {
+            WorkspaceSection(
+                workplacePathState = workplacePathState,
+                showPath = showPath,
+                selectWorkplacePath = selectWorkplacePath,
+            )
+
+            if (showPath) Spacer(modifier = Modifier.height(32.dp))
+
+            Text(
+                WrStrings.settingsWorkspaceContent(),
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+
+            Spacer(modifier = Modifier.height(SPACE_AFTER_TITLE.dp))
+
+            WorkspaceContentLinks(
+                navigateToHeaderImages = { subPage = WorkspaceSubPage.HEADER_IMAGES },
+                navigateToTags = { subPage = WorkspaceSubPage.TAGS },
+            )
+        }
+
+        WorkspaceSubPage.HEADER_IMAGES -> Column {
+            SubPageTitle(WrStrings.settingsHeaderImages(), onBack = { subPage = null })
+            SettingsHeaderImagesRoute()
+        }
+
+        WorkspaceSubPage.TAGS -> Column {
+            SubPageTitle(WrStrings.settingsTags(), onBack = { subPage = null })
+            SettingsTagsRoute()
+        }
+    }
+}
+
+@Composable
+private fun SubPageTitle(title: String, onBack: () -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = SPACE_AFTER_TITLE.dp)) {
+        Icon(
+            imageVector = WrIcons.backArrowDesktop,
+            contentDescription = WrStrings.back(),
+            tint = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier
+                .clip(CircleShape)
+                .clickable(onClick = onBack)
+                .padding(6.dp)
+                .size(20.dp)
+        )
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        Text(
+            title,
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onBackground
         )
     }
 }

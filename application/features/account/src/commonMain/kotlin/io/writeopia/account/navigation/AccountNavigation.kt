@@ -7,6 +7,7 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
@@ -17,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,6 +31,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import io.writeopia.account.di.AccountMenuKmpInjector
 import io.writeopia.account.ui.AccountMenuScreen
+import io.writeopia.account.ui.ScrollingSettingsPage
+import io.writeopia.account.ui.SettingsHeaderImagesRoute
+import io.writeopia.account.ui.SettingsTagsRoute
+import io.writeopia.account.ui.SettingsWorkspaceScreen
 import io.writeopia.account.ui.SettingsAccountScreen
 import io.writeopia.account.ui.SettingsAiScreen
 import io.writeopia.account.ui.SettingsAppearanceScreen
@@ -63,6 +69,18 @@ fun NavController.navigateToSettingsAi() {
 
 fun NavController.navigateToSettingsCloudAi() {
     navigate(Destinations.SETTINGS_CLOUD_AI.id)
+}
+
+fun NavController.navigateToSettingsWorkspace() {
+    navigate(Destinations.SETTINGS_WORKSPACE.id)
+}
+
+fun NavController.navigateToSettingsHeaderImages() {
+    navigate(Destinations.SETTINGS_HEADER_IMAGES.id)
+}
+
+fun NavController.navigateToSettingsTags() {
+    navigate(Destinations.SETTINGS_TAGS.id)
 }
 
 fun NavController.navigateToWorkspaceUsers(workspaceId: String, workspaceName: String) {
@@ -116,6 +134,9 @@ fun NavGraphBuilder.accountMenuNavigation(
     navigateToSettingsAccount: () -> Unit,
     navigateToSettingsAi: () -> Unit,
     navigateToSettingsCloudAi: () -> Unit,
+    navigateToSettingsWorkspace: () -> Unit,
+    navigateToSettingsHeaderImages: () -> Unit,
+    navigateToSettingsTags: () -> Unit,
     navigateToWorkspaceUsers: (String, String) -> Unit,
     navigateToUserSearch: (String, String) -> Unit,
     navigateToUserAdd: (String, String, String, String, String) -> Unit,
@@ -183,6 +204,7 @@ fun NavGraphBuilder.accountMenuNavigation(
                 navigateToTeams = navigateToSettingsTeams,
                 navigateToAccount = navigateToSettingsAccount,
                 navigateToAi = navigateToSettingsAi,
+                navigateToWorkspace = navigateToSettingsWorkspace,
             )
         }
     }
@@ -826,4 +848,103 @@ fun NavGraphBuilder.accountMenuNavigation(
             )
         }
     }
+
+    // Workspace Section: what the workspace keeps, each on a page of its own
+    composable(
+        Destinations.SETTINGS_WORKSPACE.id,
+        enterTransition = { slideInHorizontally(initialOffsetX = { intSize -> intSize }) },
+        exitTransition = { slideOutHorizontally(targetOffsetX = { intSize -> intSize }) }
+    ) {
+        SettingsScaffold(
+            title = WrStrings.workspaceName(),
+            isToolbarVisible = isToolbarVisible,
+            navigationClick = navigationClick
+        ) { paddingValues ->
+            SettingsWorkspaceScreen(
+                modifier = Modifier.background(MaterialTheme.colorScheme.background)
+                    .padding(paddingValues),
+                navigateToHeaderImages = navigateToSettingsHeaderImages,
+                navigateToTags = navigateToSettingsTags,
+            )
+        }
+    }
+
+    composable(
+        Destinations.SETTINGS_HEADER_IMAGES.id,
+        enterTransition = { slideInHorizontally(initialOffsetX = { intSize -> intSize }) },
+        exitTransition = { slideOutHorizontally(targetOffsetX = { intSize -> intSize }) }
+    ) {
+        SettingsScaffold(
+            title = WrStrings.settingsHeaderImages(),
+            isToolbarVisible = isToolbarVisible,
+            navigationClick = navigationClick
+        ) { paddingValues ->
+            ScrollingSettingsPage(
+                modifier = Modifier.background(MaterialTheme.colorScheme.background)
+                    .padding(paddingValues)
+            ) {
+                SettingsHeaderImagesRoute()
+            }
+        }
+    }
+
+    composable(
+        Destinations.SETTINGS_TAGS.id,
+        enterTransition = { slideInHorizontally(initialOffsetX = { intSize -> intSize }) },
+        exitTransition = { slideOutHorizontally(targetOffsetX = { intSize -> intSize }) }
+    ) {
+        SettingsScaffold(
+            title = WrStrings.settingsTags(),
+            isToolbarVisible = isToolbarVisible,
+            navigationClick = navigationClick
+        ) { paddingValues ->
+            ScrollingSettingsPage(
+                modifier = Modifier.background(MaterialTheme.colorScheme.background)
+                    .padding(paddingValues)
+            ) {
+                SettingsTagsRoute()
+            }
+        }
+    }
+}
+
+/** A settings page of the phones: the toolbar with its title and the back arrow, over [content]. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SettingsScaffold(
+    title: String,
+    isToolbarVisible: Boolean,
+    navigationClick: () -> Unit,
+    content: @Composable (PaddingValues) -> Unit,
+) {
+    Scaffold(
+        topBar = {
+            AnimatedVisibility(
+                visible = isToolbarVisible,
+                enter = slideInVertically { -it },
+                exit = slideOutVertically { -it }
+            ) {
+                TopAppBar(
+                    title = { Text(title, color = MaterialTheme.colorScheme.onPrimary) },
+                    navigationIcon = {
+                        Row(
+                            modifier = Modifier.fillMaxHeight(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .clickable(onClick = navigationClick)
+                                    .padding(10.dp),
+                                imageVector = WrIcons.backArrowMobile,
+                                contentDescription = "",
+                                tint = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
+                    }
+                )
+            }
+        },
+        content = content
+    )
 }

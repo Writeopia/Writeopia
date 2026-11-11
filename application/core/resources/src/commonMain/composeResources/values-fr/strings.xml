@@ -397,4 +397,21 @@
   <string name="equation_latex_hint">LaTeX, comme \\frac{a}{b} ou x^2</string>
   <string name="equation_rendering">Rendu en cours…</string>
   <string name="equation_render_failed">L’équation n’a pas pu être rendue. Vérifiez le LaTeX.</string>
+  <string name="settings_workspace_content">Contenu de l’espace de travail</string>
+  <string name="settings_tags">Étiquettes</string>
+  <string name="settings_header_images">Images d’en-tête</string>
+  <string name="settings_header_images_description">Images dessinées par l’IA pour les en-têtes de cet espace de travail. En supprimer une la retire de cette liste ; les documents qui l’utilisent déjà la gardent.</string>
+  <string name="settings_header_images_empty">Aucune image d’en-tête pour l’instant. Dessinez-en une avec l’IA depuis l’en-tête d’un document.</string>
+  <string name="settings_header_images_offline">Les images d’en-tête sont dans le cloud. Connectez-vous à un espace de travail en ligne pour les gérer.</string>
+  <string name="settings_header_images_failed">Les images d’en-tête n’ont pas pu être chargées.</string>
+  <string name="settings_header_image_delete_title">Supprimer l’image d’en-tête ?</string>
+  <string name="settings_header_image_delete_message">Elle quitte les images de cet espace de travail. Les documents qui l’utilisent comme en-tête la gardent.</string>
+  <string name="settings_header_image_delete_failed">L’image d’en-tête n’a pas pu être supprimée.</string>
+  <string name="settings_tags_description">Les étiquettes que peuvent porter les documents de cet espace de travail.</string>
+  <string name="settings_tags_empty">Aucune étiquette pour l’instant. Créez-en une pour organiser vos documents.</string>
+  <string name="settings_tag_new">Nouvelle étiquette</string>
+  <string name="settings_tag_edit">Modifier l’étiquette</string>
+  <string name="settings_tag_delete_title">Supprimer l’étiquette ?</string>
+  <string name="settings_tag_delete_message">« %1$s » sera retirée de tous les documents qui la portent.</string>
+  <string name="settings_tag_name_taken">Une étiquette porte déjà ce nom.</string>
 </resources>

@@ -3,6 +3,7 @@ package io.writeopia.genai.api
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.preparePost
@@ -265,6 +266,25 @@ class GenAiApi(
             ResultData.Complete(response.body<HeaderImagesResponse>().images)
         } else {
             ResultData.Error(GenAiException("The header pictures could not be loaded (${response.status})"))
+        }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        ResultData.Error(e)
+    }
+
+    /**
+     * Takes the picture [imageId] out of the pictures of [workspaceId]. The documents that use it
+     * as their header keep showing it.
+     */
+    suspend fun deleteHeaderImage(workspaceId: String, imageId: String): ResultData<Unit> = try {
+        val response = client.delete("$baseUrl/${EndPoints.workspaceHeaderImage(workspaceId, imageId)}")
+
+        if (response.status.isSuccess() || response.status.value == 404) {
+            // Gone already, maybe deleted from another device: the workspace no longer has it.
+            ResultData.Complete(Unit)
+        } else {
+            ResultData.Error(GenAiException("The header picture could not be deleted (${response.status})"))
         }
     } catch (e: CancellationException) {
         throw e

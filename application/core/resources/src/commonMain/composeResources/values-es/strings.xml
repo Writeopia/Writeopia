@@ -397,4 +397,21 @@
   <string name="equation_latex_hint">LaTeX, como \\frac{a}{b} o x^2</string>
   <string name="equation_rendering">Renderizando…</string>
   <string name="equation_render_failed">No se pudo renderizar la ecuación. Revisa el LaTeX.</string>
+  <string name="settings_workspace_content">Contenido del espacio de trabajo</string>
+  <string name="settings_tags">Etiquetas</string>
+  <string name="settings_header_images">Imágenes de cabecera</string>
+  <string name="settings_header_images_description">Imágenes dibujadas con IA para las cabeceras de este espacio de trabajo. Al eliminar una sale de esta lista; los documentos que ya la usan la conservan.</string>
+  <string name="settings_header_images_empty">Aún no hay imágenes de cabecera. Dibuja una con IA desde la cabecera de un documento.</string>
+  <string name="settings_header_images_offline">Las imágenes de cabecera están en la nube. Inicia sesión en un espacio de trabajo en línea para gestionarlas.</string>
+  <string name="settings_header_images_failed">No se pudieron cargar las imágenes de cabecera.</string>
+  <string name="settings_header_image_delete_title">¿Eliminar la imagen de cabecera?</string>
+  <string name="settings_header_image_delete_message">Sale de las imágenes de este espacio de trabajo. Los documentos que la usan como cabecera la conservan.</string>
+  <string name="settings_header_image_delete_failed">No se pudo eliminar la imagen de cabecera.</string>
+  <string name="settings_tags_description">Las etiquetas que pueden llevar los documentos de este espacio de trabajo.</string>
+  <string name="settings_tags_empty">Aún no hay etiquetas. Crea una para organizar tus documentos.</string>
+  <string name="settings_tag_new">Nueva etiqueta</string>
+  <string name="settings_tag_edit">Editar etiqueta</string>
+  <string name="settings_tag_delete_title">¿Eliminar la etiqueta?</string>
+  <string name="settings_tag_delete_message">“%1$s” se quitará de todos los documentos que la llevan.</string>
+  <string name="settings_tag_name_taken">Ya existe una etiqueta con este nombre.</string>
 </resources>

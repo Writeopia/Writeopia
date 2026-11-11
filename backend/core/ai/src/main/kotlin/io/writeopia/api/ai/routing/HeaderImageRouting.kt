@@ -9,9 +9,11 @@ import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.RoutingContext
+import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.writeopia.api.ai.model.AiRequestResult
+import io.writeopia.api.ai.repository.deleteHeaderImage
 import io.writeopia.api.ai.repository.getHeaderImages
 import io.writeopia.api.ai.repository.isMemberOfWorkspace
 import io.writeopia.api.ai.repository.saveHeaderImage
@@ -192,6 +194,34 @@ fun Routing.headerImageRoute(
 
             val image = writeopiaDb.saveHeaderImage(workspaceId, request.imageUrl, userId)
             call.respond(HttpStatusCode.OK, image)
+        }
+
+        // Any member can take a picture out of the workspace, like any member can approve one.
+        delete("/${EndPoints.workspaceHeaderImage()}") {
+            val userId = userIdOrDebug(debugMode)
+            val workspaceId = call.parameters["workspaceId"]
+            val imageId = call.parameters["imageId"]
+
+            if (userId == null || workspaceId == null || imageId == null) {
+                call.respond(HttpStatusCode.Unauthorized)
+                return@delete
+            }
+
+            if (!isMember(userId, workspaceId, writeopiaDb, debugMode)) {
+                call.respond(HttpStatusCode.Forbidden)
+                return@delete
+            }
+
+            if (writeopiaDb == null) {
+                call.respond(HttpStatusCode.ServiceUnavailable)
+                return@delete
+            }
+
+            if (writeopiaDb.deleteHeaderImage(workspaceId, imageId)) {
+                call.respond(HttpStatusCode.NoContent)
+            } else {
+                call.respond(HttpStatusCode.NotFound)
+            }
         }
     }
 }

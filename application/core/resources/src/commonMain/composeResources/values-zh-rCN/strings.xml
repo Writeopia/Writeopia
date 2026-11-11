@@ -397,4 +397,21 @@
   <string name="equation_latex_hint">LaTeX，例如 \\frac{a}{b} 或 x^2</string>
   <string name="equation_rendering">正在渲染…</string>
   <string name="equation_render_failed">无法渲染公式。请检查 LaTeX。</string>
+  <string name="settings_workspace_content">工作区内容</string>
+  <string name="settings_tags">标签</string>
+  <string name="settings_header_images">页眉图片</string>
+  <string name="settings_header_images_description">为此工作区页眉用 AI 绘制的图片。删除后会从此列表中移除；已在使用它的文档会保留它。</string>
+  <string name="settings_header_images_empty">还没有页眉图片。可在文档页眉中用 AI 绘制一张。</string>
+  <string name="settings_header_images_offline">页眉图片保存在云端。登录在线工作区即可管理。</string>
+  <string name="settings_header_images_failed">无法加载页眉图片。</string>
+  <string name="settings_header_image_delete_title">删除页眉图片？</string>
+  <string name="settings_header_image_delete_message">它将从此工作区的图片中移除。将其用作页眉的文档会保留它。</string>
+  <string name="settings_header_image_delete_failed">无法删除页眉图片。</string>
+  <string name="settings_tags_description">此工作区的文档可以使用的标签。</string>
+  <string name="settings_tags_empty">还没有标签。创建一个来整理你的文档。</string>
+  <string name="settings_tag_new">新建标签</string>
+  <string name="settings_tag_edit">编辑标签</string>
+  <string name="settings_tag_delete_title">删除标签？</string>
+  <string name="settings_tag_delete_message">将从所有带有“%1$s”的文档中移除该标签。</string>
+  <string name="settings_tag_name_taken">已存在同名标签。</string>
 </resources>

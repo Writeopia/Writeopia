@@ -397,4 +397,21 @@
   <string name="equation_latex_hint">LaTeX（例: \\frac{a}{b} や x^2）</string>
   <string name="equation_rendering">描画中…</string>
   <string name="equation_render_failed">数式を描画できませんでした。LaTeXを確認してください。</string>
+  <string name="settings_workspace_content">ワークスペースのコンテンツ</string>
+  <string name="settings_tags">タグ</string>
+  <string name="settings_header_images">ヘッダー画像</string>
+  <string name="settings_header_images_description">このワークスペースのヘッダー用にAIで描いた画像です。削除するとこの一覧から外れますが、すでに使っているドキュメントはそのまま残ります。</string>
+  <string name="settings_header_images_empty">ヘッダー画像はまだありません。ドキュメントのヘッダーからAIで描いてみましょう。</string>
+  <string name="settings_header_images_offline">ヘッダー画像はクラウドに保存されています。管理するにはオンラインのワークスペースにサインインしてください。</string>
+  <string name="settings_header_images_failed">ヘッダー画像を読み込めませんでした。</string>
+  <string name="settings_header_image_delete_title">ヘッダー画像を削除しますか？</string>
+  <string name="settings_header_image_delete_message">このワークスペースの画像から外れます。ヘッダーとして使っているドキュメントはそのまま残ります。</string>
+  <string name="settings_header_image_delete_failed">ヘッダー画像を削除できませんでした。</string>
+  <string name="settings_tags_description">このワークスペースのドキュメントに付けられるタグです。</string>
+  <string name="settings_tags_empty">タグはまだありません。作成してドキュメントを整理しましょう。</string>
+  <string name="settings_tag_new">新しいタグ</string>
+  <string name="settings_tag_edit">タグを編集</string>
+  <string name="settings_tag_delete_title">タグを削除しますか？</string>
+  <string name="settings_tag_delete_message">「%1$s」は付いているすべてのドキュメントから外されます。</string>
+  <string name="settings_tag_name_taken">この名前のタグはすでにあります。</string>
 </resources>

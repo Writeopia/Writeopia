@@ -1,6 +1,7 @@
 package io.writeopia.editor.features.editor.viewmodel
 
 import io.writeopia.ai.HeaderImages
+import io.writeopia.ai.WorkspaceHeaderImage
 import io.writeopia.sdk.models.utils.ResultData
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.TestScope
@@ -36,6 +37,14 @@ private class FakeHeaderImages(
     override suspend fun save(workspaceId: String, imageUrl: String): ResultData<Unit> {
         saveFailure?.let { message -> return ResultData.Error(Exception(message)) }
         saved.add(0, imageUrl)
+        return ResultData.Complete(Unit)
+    }
+
+    override suspend fun pictures(workspaceId: String): ResultData<List<WorkspaceHeaderImage>> =
+        ResultData.Complete(saved.map { url -> WorkspaceHeaderImage(id = url, url = url, createdAt = 0) })
+
+    override suspend fun delete(workspaceId: String, imageId: String): ResultData<Unit> {
+        saved.remove(imageId)
         return ResultData.Complete(Unit)
     }
 }
