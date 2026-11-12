@@ -24,6 +24,9 @@ interface AccountMenuViewModel {
     /** True while the account is being deleted on the backend. */
     val deleteAccountInProgress: StateFlow<Boolean>
 
+    /** True when the last deletion attempt failed. Cleared when a new attempt starts. */
+    val deleteAccountFailed: StateFlow<Boolean>
+
     /** Email of the signed-in user, to be typed again to confirm the deletion. */
     val userEmail: StateFlow<String>
 

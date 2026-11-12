@@ -142,6 +142,7 @@
   <string name="company">Bedrijf</string>
   <string name="change_workspace">Werkruimte wijzigen</string>
   <string name="delete_account">Account verwijderen</string>
+  <string name="delete_account_failed">Je account kon niet worden verwijderd. Probeer het opnieuw.</string>
   <string name="are_you_sure">Weet je het zeker?</string>
   <string name="notes_will_be_deleted">Al je notities worden verwijderd.</string>
   <string name="email_to_confirm">Typ je e-mailadres om te bevestigen</string>

@@ -142,6 +142,7 @@
   <string name="company">会社</string>
   <string name="change_workspace">ワークスペースを変更</string>
   <string name="delete_account">アカウントを削除</string>
+  <string name="delete_account_failed">アカウントを削除できませんでした。もう一度お試しください。</string>
   <string name="are_you_sure">本当によろしいですか？</string>
   <string name="notes_will_be_deleted">すべてのノートが削除されます。</string>
   <string name="email_to_confirm">確認のためメールアドレスを入力してください</string>

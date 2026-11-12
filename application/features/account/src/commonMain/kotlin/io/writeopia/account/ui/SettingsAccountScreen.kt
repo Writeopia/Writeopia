@@ -48,6 +48,7 @@ fun SettingsAccountScreen(
     workspacesState: StateFlow<ResultData<List<Workspace>>>,
     exportWorkspaceState: StateFlow<ResultData<Unit>>,
     deleteAccountInProgress: StateFlow<Boolean>,
+    deleteAccountFailed: StateFlow<Boolean>,
     userEmail: StateFlow<String>,
     goToRegister: () -> Unit,
     switchSpace: () -> Unit,
@@ -169,7 +170,10 @@ fun SettingsAccountScreen(
 
     if (showDeleteDialog) {
         val isDeleting by deleteAccountInProgress.collectAsState()
+        val failed by deleteAccountFailed.collectAsState()
         val email by userEmail.collectAsState()
+        // The failure flag may be left over from an earlier dialog: only this one's attempt counts.
+        var submitted by remember { mutableStateOf(false) }
         var confirmEmailInput by remember { mutableStateOf("") }
         val canDelete = !isDeleting &&
             email.isNotBlank() &&
@@ -197,11 +201,24 @@ fun SettingsAccountScreen(
                         enabled = !isDeleting,
                         placeholder = { Text(WrStrings.email()) }
                     )
+
+                    if (failed && submitted && !isDeleting) {
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = WrStrings.deleteAccountFailed(),
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
                 }
             },
             confirmButton = {
                 TextButton(
-                    onClick = deleteAccount,
+                    onClick = {
+                        submitted = true
+                        deleteAccount()
+                    },
                     enabled = canDelete
                 ) {
                     if (isDeleting) {

@@ -142,6 +142,7 @@
   <string name="company">Компания</string>
   <string name="change_workspace">Сменить рабочее пространство</string>
   <string name="delete_account">Удалить учётную запись</string>
+  <string name="delete_account_failed">Не удалось удалить учётную запись. Попробуйте ещё раз.</string>
   <string name="are_you_sure">Вы уверены?</string>
   <string name="notes_will_be_deleted">Все ваши заметки будут удалены.</string>
   <string name="email_to_confirm">Введите эл. почту для подтверждения</string>

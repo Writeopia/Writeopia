@@ -78,6 +78,40 @@ class LegalRoutingTest {
     }
 
     @Test
+    fun `it should answer not modified when the etag is in a list`() = testApplication {
+        application { testModule() }
+        val etag = "\"privacy-${LegalDocuments.VERSION}\""
+
+        val response = client.get("/api/${EndPoints.legalDocument("privacy")}") {
+            header(HttpHeaders.IfNoneMatch, "\"other\", $etag")
+        }
+
+        assertEquals(HttpStatusCode.NotModified, response.status)
+    }
+
+    @Test
+    fun `it should serve the document when no etag in the list matches`() = testApplication {
+        application { testModule() }
+
+        val response = client.get("/api/${EndPoints.legalDocument("privacy")}") {
+            header(HttpHeaders.IfNoneMatch, "\"other\", \"another\"")
+        }
+
+        assertEquals(HttpStatusCode.OK, response.status)
+    }
+
+    @Test
+    fun `it should answer not modified for the wildcard`() = testApplication {
+        application { testModule() }
+
+        val response = client.get("/api/${EndPoints.legalDocument("terms")}") {
+            header(HttpHeaders.IfNoneMatch, "*")
+        }
+
+        assertEquals(HttpStatusCode.NotModified, response.status)
+    }
+
+    @Test
     fun `it should answer not found for an unknown document`() = testApplication {
         application { testModule() }
 

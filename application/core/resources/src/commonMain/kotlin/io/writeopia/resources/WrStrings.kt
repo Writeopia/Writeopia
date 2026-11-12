@@ -180,6 +180,7 @@ import writeopia.application.core.resources.generated.resources.dark_theme
 import writeopia.application.core.resources.generated.resources.decoration
 import writeopia.application.core.resources.generated.resources.delete
 import writeopia.application.core.resources.generated.resources.delete_account
+import writeopia.application.core.resources.generated.resources.delete_account_failed
 import writeopia.application.core.resources.generated.resources.dismiss
 import writeopia.application.core.resources.generated.resources.document
 import writeopia.application.core.resources.generated.resources.download_model
@@ -803,6 +804,9 @@ object WrStrings {
 
     @Composable
     fun deleteAccount() = stringResource(Res.string.delete_account)
+
+    @Composable
+    fun deleteAccountFailed() = stringResource(Res.string.delete_account_failed)
 
     @Composable
     fun areYouSure() = stringResource(Res.string.are_you_sure)

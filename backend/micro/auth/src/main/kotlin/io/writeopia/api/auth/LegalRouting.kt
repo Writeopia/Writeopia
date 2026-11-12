@@ -32,10 +32,16 @@ fun Routing.legalRoute() {
         call.response.header(HttpHeaders.CacheControl, CACHE_CONTROL)
         call.response.header(HttpHeaders.ETag, etag)
 
-        if (call.request.headers[HttpHeaders.IfNoneMatch] == etag) {
+        if (matchesEtag(call.request.headers[HttpHeaders.IfNoneMatch], etag)) {
             call.respond(HttpStatusCode.NotModified)
         } else {
             call.respond(HttpStatusCode.OK, document)
         }
     }
 }
+
+// If-None-Match is a comma-separated list of tags, or "*". Weak tags (W/"...") compare by value.
+private fun matchesEtag(header: String?, etag: String): Boolean =
+    header?.split(',')
+        ?.map { it.trim().removePrefix("W/") }
+        ?.any { it == "*" || it == etag } == true

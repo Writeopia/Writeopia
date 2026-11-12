@@ -16,6 +16,7 @@ import io.writeopia.sdk.serialization.data.toModel
 import io.writeopia.sdk.serialization.response.LegalDocumentResponse
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -175,7 +176,13 @@ internal class RegisterViewModel(
         _legalDocument.value = LegalDocumentState.Loading(type)
 
         legalJob = viewModelScope.launch {
-            _legalDocument.value = when (val result = authApi.legalDocument(type)) {
+            val result = authApi.legalDocument(type)
+
+            // AuthApi turns a cancellation into an Error result: a cancelled request must not
+            // overwrite the state of the newer one (or of a closed dialog).
+            ensureActive()
+
+            _legalDocument.value = when (result) {
                 is ResultData.Complete -> LegalDocumentState.Loaded(result.data)
                 else -> LegalDocumentState.Failed(type)
             }

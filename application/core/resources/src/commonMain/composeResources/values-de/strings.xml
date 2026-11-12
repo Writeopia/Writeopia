@@ -142,6 +142,7 @@
   <string name="company">Unternehmen</string>
   <string name="change_workspace">Arbeitsbereich wechseln</string>
   <string name="delete_account">Konto löschen</string>
+  <string name="delete_account_failed">Dein Konto konnte nicht gelöscht werden. Bitte versuche es erneut.</string>
   <string name="are_you_sure">Bist du sicher?</string>
   <string name="notes_will_be_deleted">Alle deine Notizen werden gelöscht.</string>
   <string name="email_to_confirm">Gib zur Bestätigung deine E-Mail-Adresse ein</string>

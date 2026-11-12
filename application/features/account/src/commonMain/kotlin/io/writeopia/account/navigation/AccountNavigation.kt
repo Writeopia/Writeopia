@@ -710,6 +710,7 @@ fun NavGraphBuilder.accountMenuNavigation(
                 workspacesState = accountMenuViewModel.availableWorkspaces,
                 exportWorkspaceState = accountMenuViewModel.exportWorkspaceState,
                 deleteAccountInProgress = accountMenuViewModel.deleteAccountInProgress,
+                deleteAccountFailed = accountMenuViewModel.deleteAccountFailed,
                 userEmail = accountMenuViewModel.userEmail,
                 goToRegister = navigateToAuthMenu,
                 switchSpace = navigateToSpaceChoice,

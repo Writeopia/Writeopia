@@ -142,6 +142,7 @@
   <string name="company">公司</string>
   <string name="change_workspace">切换工作区</string>
   <string name="delete_account">删除账户</string>
+  <string name="delete_account_failed">无法删除账户，请重试。</string>
   <string name="are_you_sure">确定吗？</string>
   <string name="notes_will_be_deleted">你的所有笔记都将被删除。</string>
   <string name="email_to_confirm">输入你的邮箱以确认</string>

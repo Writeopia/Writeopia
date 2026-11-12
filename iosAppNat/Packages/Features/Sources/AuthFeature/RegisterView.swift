@@ -140,6 +140,9 @@ final class RegisterViewModel {
             // backend refuses an older one.
             let legal = try await self.session.authAPI.legalDocument(LegalDocumentRoute.terms.type)
 
+            // The box could not be cleared by the user while this ran, but check it anyway.
+            guard self.termsAccepted else { return }
+
             let result = try await self.session.authAPI.register(
                 name: self.name.trimmingCharacters(in: .whitespaces),
                 email: self.normalizedEmail,
@@ -343,6 +346,7 @@ struct TermsAgreementRow: View {
                     .foregroundStyle(viewModel.termsAccepted ? Color.accentColor : WrColors.textLighter)
             }
             .buttonStyle(.plain)
+            .disabled(viewModel.isLoading)
             .accessibilityLabel("Accept the Terms of Service and the Privacy Policy")
             .accessibilityValue(viewModel.termsAccepted ? "On" : "Off")
             .accessibilityIdentifier("register.terms")

@@ -53,6 +53,9 @@ internal class AccountMenuKmpViewModel(
     override val deleteAccountInProgress: StateFlow<Boolean> =
         _deleteAccountInProgress.asStateFlow()
 
+    private val _deleteAccountFailed = MutableStateFlow(false)
+    override val deleteAccountFailed: StateFlow<Boolean> = _deleteAccountFailed.asStateFlow()
+
     override val userEmail: StateFlow<String> by lazy {
         authRepository.listenForUser().map { it.email }
             .stateIn(viewModelScope, SharingStarted.Lazily, "")
@@ -82,11 +85,12 @@ internal class AccountMenuKmpViewModel(
     }
 
     override fun deleteAccount(onSuccess: () -> Unit) {
-        if (_deleteAccountInProgress.value) return
+        // Taken before launching, so two quick taps can't start two requests.
+        if (!_deleteAccountInProgress.compareAndSet(expect = false, update = true)) return
+
+        _deleteAccountFailed.value = false
 
         viewModelScope.launch(Dispatchers.Default) {
-            _deleteAccountInProgress.value = true
-
             try {
                 if (authRepository.getUser().id == WriteopiaUser.DISCONNECTED) return@launch
 
@@ -107,6 +111,8 @@ internal class AccountMenuKmpViewModel(
                     withContext(Dispatchers.Main) {
                         onSuccess()
                     }
+                } else {
+                    _deleteAccountFailed.value = true
                 }
             } finally {
                 _deleteAccountInProgress.value = false

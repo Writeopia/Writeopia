@@ -142,6 +142,7 @@
   <string name="company">Empresa</string>
   <string name="change_workspace">Trocar workspace</string>
   <string name="delete_account">Deletar conta</string>
+  <string name="delete_account_failed">Não foi possível deletar sua conta. Tente novamente.</string>
   <string name="are_you_sure">Tem certeza?</string>
   <string name="notes_will_be_deleted">Suas notas serão deletadas.</string>
   <string name="email_to_confirm">Escreva seu email para confirmar</string>
