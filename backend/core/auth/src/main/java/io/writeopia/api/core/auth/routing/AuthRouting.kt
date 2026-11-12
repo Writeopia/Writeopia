@@ -32,6 +32,8 @@ import io.writeopia.sdk.serialization.data.auth.AuthResponse
 import io.writeopia.sdk.serialization.data.auth.DeleteAccountResponse
 import io.writeopia.sdk.serialization.data.auth.LoginRequest
 import io.writeopia.sdk.serialization.data.auth.RegisterRequest
+import io.writeopia.api.core.auth.legal.LegalDocuments
+import io.writeopia.api.core.auth.repository.recordLegalAcceptance
 import io.writeopia.sdk.serialization.data.auth.RefreshTokenRequest
 import io.writeopia.sdk.serialization.data.auth.RegisterResponse
 import io.writeopia.sdk.serialization.data.auth.ResetPasswordRequest
@@ -186,6 +188,13 @@ fun Routing.authRoute(
                 return@post
             }
 
+            // The Terms of Service and Privacy Policy must be accepted at their current version.
+            if (request.acceptedLegalVersion != LegalDocuments.VERSION) {
+                logger.info("register request - terms and privacy policy not accepted at the current version")
+                call.respond(HttpStatusCode.BadRequest, "Terms and Privacy Policy must be accepted")
+                return@post
+            }
+
             // since we are not allowing email probing and we don't need user data in this case
             if (writeopiaDb.userExistsByUsernameOrEmail(username = request.username, email = request.email)) {
                 logger.info("register request - user or workspace already exist")
@@ -214,6 +223,8 @@ fun Routing.authRoute(
                 )
 
                 onWorkspaceProvisioned(user.id, workspaceId)
+
+                writeopiaDb.recordLegalAcceptance(user.id, LegalDocuments.VERSION)
 
                 writeopiaDb.deleteEmailVerification(request.email)
 

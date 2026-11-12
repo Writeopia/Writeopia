@@ -125,6 +125,12 @@
   <string name="you_are_offline">You are using the offline workspace</string>
   <string name="create_your_account">Create your account</string>
   <string name="create_account">Create account</string>
+  <string name="terms_agree_prefix">I agree to the</string>
+  <string name="terms_of_service">Terms of Service</string>
+  <string name="terms_agree_and">and the</string>
+  <string name="privacy_policy">Privacy Policy</string>
+  <string name="legal_load_error">Couldn't load this document.</string>
+  <string name="legal_effective">Effective %1$s</string>
   <string name="jorney_starts">Your journey begins here.</string>
   <string name="start_now">Let's start now!</string>
   <string name="sign_in_account">Sign in to your account at Writeopia.</string>
@@ -136,6 +142,7 @@
   <string name="company">Company</string>
   <string name="change_workspace">Change workspace</string>
   <string name="delete_account">Delete Account</string>
+  <string name="delete_account_failed">Could not delete your account. Please try again.</string>
   <string name="are_you_sure">Are you sure?</string>
   <string name="notes_will_be_deleted">All your notes will be deleted.</string>
   <string name="email_to_confirm">Type your email to confirm</string>

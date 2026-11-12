@@ -21,7 +21,19 @@ interface AccountMenuViewModel {
 
     val logoutInProgress: StateFlow<Boolean>
 
+    /** True while the account is being deleted on the backend. */
+    val deleteAccountInProgress: StateFlow<Boolean>
+
+    /** True when the last deletion attempt failed. Cleared when a new attempt starts. */
+    val deleteAccountFailed: StateFlow<Boolean>
+
+    /** Email of the signed-in user, to be typed again to confirm the deletion. */
+    val userEmail: StateFlow<String>
+
     fun logout(onLogOutSuccess: () -> Unit)
+
+    /** Deletes the account and clears the local session. [onSuccess] runs only when it worked. */
+    fun deleteAccount(onSuccess: () -> Unit)
 
     fun changeWorkspace(onChangeSuccess: () -> Unit)
 

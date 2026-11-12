@@ -125,6 +125,12 @@
   <string name="you_are_offline">오프라인 워크스페이스를 사용 중입니다</string>
   <string name="create_your_account">계정 만들기</string>
   <string name="create_account">계정 만들기</string>
+  <string name="terms_agree_prefix">다음에 동의합니다:</string>
+  <string name="terms_of_service">서비스 약관</string>
+  <string name="terms_agree_and">및</string>
+  <string name="privacy_policy">개인정보 처리방침</string>
+  <string name="legal_load_error">이 문서를 불러올 수 없습니다.</string>
+  <string name="legal_effective">시행일 %1$s</string>
   <string name="jorney_starts">여정은 여기서 시작됩니다.</string>
   <string name="start_now">지금 시작해 볼까요!</string>
   <string name="sign_in_account">Writeopia 계정으로 로그인하세요.</string>
@@ -136,6 +142,7 @@
   <string name="company">회사</string>
   <string name="change_workspace">워크스페이스 변경</string>
   <string name="delete_account">계정 삭제</string>
+  <string name="delete_account_failed">계정을 삭제하지 못했습니다. 다시 시도해 주세요.</string>
   <string name="are_you_sure">정말 진행하시겠습니까?</string>
   <string name="notes_will_be_deleted">모든 노트가 삭제됩니다.</string>
   <string name="email_to_confirm">확인을 위해 이메일을 입력하세요</string>

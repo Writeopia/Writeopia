@@ -125,6 +125,12 @@
   <string name="you_are_offline">Je gebruikt de offline werkruimte</string>
   <string name="create_your_account">Maak je account aan</string>
   <string name="create_account">Account aanmaken</string>
+  <string name="terms_agree_prefix">Ik ga akkoord met de</string>
+  <string name="terms_of_service">Servicevoorwaarden</string>
+  <string name="terms_agree_and">en het</string>
+  <string name="privacy_policy">Privacybeleid</string>
+  <string name="legal_load_error">Dit document kon niet worden geladen.</string>
+  <string name="legal_effective">Geldig vanaf %1$s</string>
   <string name="jorney_starts">Je reis begint hier.</string>
   <string name="start_now">Laten we beginnen!</string>
   <string name="sign_in_account">Log in op je Writeopia-account.</string>
@@ -136,6 +142,7 @@
   <string name="company">Bedrijf</string>
   <string name="change_workspace">Werkruimte wijzigen</string>
   <string name="delete_account">Account verwijderen</string>
+  <string name="delete_account_failed">Je account kon niet worden verwijderd. Probeer het opnieuw.</string>
   <string name="are_you_sure">Weet je het zeker?</string>
   <string name="notes_will_be_deleted">Al je notities worden verwijderd.</string>
   <string name="email_to_confirm">Typ je e-mailadres om te bevestigen</string>

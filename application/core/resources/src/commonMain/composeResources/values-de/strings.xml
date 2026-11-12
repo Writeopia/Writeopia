@@ -125,6 +125,12 @@
   <string name="you_are_offline">Du verwendest den Offline-Arbeitsbereich</string>
   <string name="create_your_account">Erstelle dein Konto</string>
   <string name="create_account">Konto erstellen</string>
+  <string name="terms_agree_prefix">Ich stimme den</string>
+  <string name="terms_of_service">Nutzungsbedingungen</string>
+  <string name="terms_agree_and">und der</string>
+  <string name="privacy_policy">Datenschutzerklärung</string>
+  <string name="legal_load_error">Dieses Dokument konnte nicht geladen werden.</string>
+  <string name="legal_effective">Gültig ab %1$s</string>
   <string name="jorney_starts">Deine Reise beginnt hier.</string>
   <string name="start_now">Legen wir los!</string>
   <string name="sign_in_account">Melde dich bei deinem Writeopia-Konto an.</string>
@@ -136,6 +142,7 @@
   <string name="company">Unternehmen</string>
   <string name="change_workspace">Arbeitsbereich wechseln</string>
   <string name="delete_account">Konto löschen</string>
+  <string name="delete_account_failed">Dein Konto konnte nicht gelöscht werden. Bitte versuche es erneut.</string>
   <string name="are_you_sure">Bist du sicher?</string>
   <string name="notes_will_be_deleted">Alle deine Notizen werden gelöscht.</string>
   <string name="email_to_confirm">Gib zur Bestätigung deine E-Mail-Adresse ein</string>

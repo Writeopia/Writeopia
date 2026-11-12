@@ -125,6 +125,12 @@
   <string name="you_are_offline">オフラインワークスペースを使用しています</string>
   <string name="create_your_account">アカウントを作成</string>
   <string name="create_account">アカウントを作成</string>
+  <string name="terms_agree_prefix">同意します：</string>
+  <string name="terms_of_service">利用規約</string>
+  <string name="terms_agree_and">および</string>
+  <string name="privacy_policy">プライバシーポリシー</string>
+  <string name="legal_load_error">このドキュメントを読み込めませんでした。</string>
+  <string name="legal_effective">施行日 %1$s</string>
   <string name="jorney_starts">ここから旅が始まります。</string>
   <string name="start_now">さあ、始めましょう！</string>
   <string name="sign_in_account">Writeopiaのアカウントにサインインします。</string>
@@ -136,6 +142,7 @@
   <string name="company">会社</string>
   <string name="change_workspace">ワークスペースを変更</string>
   <string name="delete_account">アカウントを削除</string>
+  <string name="delete_account_failed">アカウントを削除できませんでした。もう一度お試しください。</string>
   <string name="are_you_sure">本当によろしいですか？</string>
   <string name="notes_will_be_deleted">すべてのノートが削除されます。</string>
   <string name="email_to_confirm">確認のためメールアドレスを入力してください</string>

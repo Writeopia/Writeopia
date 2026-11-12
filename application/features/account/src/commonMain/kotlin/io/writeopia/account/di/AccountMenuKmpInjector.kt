@@ -35,7 +35,8 @@ class AccountMenuKmpInjector private constructor(
         viewModel {
             AccountMenuKmpViewModel(
                 authRepository = authCoreInjection.provideAuthRepository(),
-                workspaceHandler = workspaceInjection.provideWorkspaceHandler()
+                workspaceHandler = workspaceInjection.provideWorkspaceHandler(),
+                authApi = authCoreInjection.provideAuthApi(),
             )
         }
 

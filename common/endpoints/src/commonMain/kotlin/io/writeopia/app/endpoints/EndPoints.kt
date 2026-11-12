@@ -85,4 +85,7 @@ object EndPoints {
 
     // Public, CDN-cacheable latest desktop application version
     fun desktopAppVersion() = "auth/app/version"
+
+    /** Public, CDN-cacheable legal text. [type] is `terms` or `privacy`. */
+    fun legalDocument(type: String = "{type}") = "auth/legal/$type"
 }

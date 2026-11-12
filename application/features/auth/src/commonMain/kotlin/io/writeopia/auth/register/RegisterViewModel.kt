@@ -13,8 +13,10 @@ import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.utils.map
 import io.writeopia.sdk.serialization.data.auth.RegisterResponse
 import io.writeopia.sdk.serialization.data.toModel
+import io.writeopia.sdk.serialization.response.LegalDocumentResponse
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -35,6 +37,19 @@ enum class UsernameAvailability {
     CHECKING,
     AVAILABLE,
     TAKEN,
+}
+
+/**
+ * The Terms of Service or Privacy Policy being read from the sign-up form.
+ */
+sealed interface LegalDocumentState {
+    data object Hidden : LegalDocumentState
+
+    data class Loading(val type: String) : LegalDocumentState
+
+    data class Loaded(val document: LegalDocumentResponse) : LegalDocumentState
+
+    data class Failed(val type: String) : LegalDocumentState
 }
 
 // The NavigationActivity won't leak because it is the single activity of the whole project
@@ -66,6 +81,14 @@ internal class RegisterViewModel(
     private val _password = MutableStateFlow("")
     val password = _password.asStateFlow()
 
+    private val _termsAccepted = MutableStateFlow(false)
+    val termsAccepted = _termsAccepted.asStateFlow()
+
+    private val _legalDocument = MutableStateFlow<LegalDocumentState>(LegalDocumentState.Hidden)
+    val legalDocument = _legalDocument.asStateFlow()
+
+    private var legalJob: Job? = null
+
     private val _register = MutableStateFlow<ResultData<Boolean>>(ResultData.Idle())
     val register = _register.asStateFlow()
 
@@ -93,6 +116,8 @@ internal class RegisterViewModel(
         filled &&
             availability != UsernameAvailability.TAKEN &&
             availability != UsernameAvailability.CHECKING
+    }.combine(_termsAccepted) { canRegister, accepted ->
+        canRegister && accepted
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -139,6 +164,36 @@ internal class RegisterViewModel(
         }
     }
 
+    fun termsAcceptedChanged(accepted: Boolean) {
+        _termsAccepted.value = accepted
+    }
+
+    /**
+     * Loads and shows the [LegalDocumentResponse.type] (`terms` or `privacy`) document.
+     */
+    fun openLegalDocument(type: String) {
+        legalJob?.cancel()
+        _legalDocument.value = LegalDocumentState.Loading(type)
+
+        legalJob = viewModelScope.launch {
+            val result = authApi.legalDocument(type)
+
+            // AuthApi turns a cancellation into an Error result: a cancelled request must not
+            // overwrite the state of the newer one (or of a closed dialog).
+            ensureActive()
+
+            _legalDocument.value = when (result) {
+                is ResultData.Complete -> LegalDocumentState.Loaded(result.data)
+                else -> LegalDocumentState.Failed(type)
+            }
+        }
+    }
+
+    fun closeLegalDocument() {
+        legalJob?.cancel()
+        _legalDocument.value = LegalDocumentState.Hidden
+    }
+
     fun workspaceChanged(company: String) {
         _workspace.value = company
     }
@@ -160,6 +215,17 @@ internal class RegisterViewModel(
 
         viewModelScope.launch {
             try {
+                // The version of the texts the user agreed to is the one served right now: the
+                // backend refuses an older one.
+                val legalVersion = when (val legal = authApi.legalDocument(LEGAL_TERMS)) {
+                    is ResultData.Complete -> legal.data.version
+                    else -> {
+                        delay(300)
+                        _register.value = ResultData.Error(Exception("Terms and Privacy Policy unavailable"))
+                        return@launch
+                    }
+                }
+
                 val result = authApi.register(
                     name = _name.value,
                     email = _email.value,
@@ -167,6 +233,7 @@ internal class RegisterViewModel(
                     password = _password.value,
                     username = _username.value,
                     verificationCode = verificationCode,
+                    acceptedLegalVersion = legalVersion,
                 )
 
                 _register.value = when (result) {

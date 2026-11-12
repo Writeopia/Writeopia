@@ -37,6 +37,36 @@ public struct RegisterResponse: Decodable, Sendable {
     public let refreshToken: String?
 }
 
+/// The Terms of Service or the Privacy Policy, as served by the public, CDN-cached legal endpoint.
+public struct LegalDocument: Decodable, Equatable, Sendable {
+    /// `terms` or `privacy`.
+    public let type: String
+    /// Changes whenever users must accept the text again. Sent back when registering.
+    public let version: String
+    public let effectiveDate: String
+    public let title: String
+    public let sections: [LegalSection]
+
+    public init(type: String, version: String, effectiveDate: String, title: String, sections: [LegalSection]) {
+        self.type = type
+        self.version = version
+        self.effectiveDate = effectiveDate
+        self.title = title
+        self.sections = sections
+    }
+}
+
+public struct LegalSection: Decodable, Equatable, Sendable {
+    public let heading: String
+    /// Plain text. Paragraphs are separated by a blank line; a line starting with `- ` is a bullet.
+    public let body: String
+
+    public init(heading: String, body: String) {
+        self.heading = heading
+        self.body = body
+    }
+}
+
 struct StatusResponse: Decodable {
     let success: Bool
     let message: String?
@@ -142,6 +172,11 @@ public final class AuthAPI {
         return response.available
     }
 
+    /// The Terms of Service (`terms`) or the Privacy Policy (`privacy`).
+    public func legalDocument(_ type: String) async throws -> LegalDocument {
+        try await client.get("api/auth/legal/\(type)", authenticated: false)
+    }
+
     /// Last step of sign-up: creates the account for the verified email and signs in.
     public func register(
         name: String,
@@ -149,7 +184,8 @@ public final class AuthAPI {
         username: String,
         workspaceName: String,
         password: String,
-        verificationCode: String
+        verificationCode: String,
+        acceptedLegalVersion: String
     ) async throws -> LoginResult {
         struct Body: Encodable {
             let name: String
@@ -158,6 +194,7 @@ public final class AuthAPI {
             let workspaceName: String
             let password: String
             let verificationCode: String
+            let acceptedLegalVersion: String
         }
 
         let response: RegisterResponse
@@ -171,7 +208,8 @@ public final class AuthAPI {
                     username: username,
                     workspaceName: workspaceName,
                     password: password,
-                    verificationCode: verificationCode
+                    verificationCode: verificationCode,
+                    acceptedLegalVersion: acceptedLegalVersion
                 ),
                 authenticated: false
             )

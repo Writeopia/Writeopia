@@ -125,6 +125,12 @@
   <string name="you_are_offline">你正在使用离线工作区</string>
   <string name="create_your_account">创建你的账户</string>
   <string name="create_account">创建账户</string>
+  <string name="terms_agree_prefix">我同意</string>
+  <string name="terms_of_service">服务条款</string>
+  <string name="terms_agree_and">和</string>
+  <string name="privacy_policy">隐私政策</string>
+  <string name="legal_load_error">无法加载此文档。</string>
+  <string name="legal_effective">生效日期 %1$s</string>
   <string name="jorney_starts">你的旅程从这里开始。</string>
   <string name="start_now">现在就开始吧！</string>
   <string name="sign_in_account">登录你的 Writeopia 账户。</string>
@@ -136,6 +142,7 @@
   <string name="company">公司</string>
   <string name="change_workspace">切换工作区</string>
   <string name="delete_account">删除账户</string>
+  <string name="delete_account_failed">无法删除账户，请重试。</string>
   <string name="are_you_sure">确定吗？</string>
   <string name="notes_will_be_deleted">你的所有笔记都将被删除。</string>
   <string name="email_to_confirm">输入你的邮箱以确认</string>
