@@ -272,7 +272,16 @@ class DocumentSyncService(
 
     /** [mergeReceivedDocument] for each document. */
     suspend fun mergeReceivedDocuments(received: List<Document>, excluding: Set<String> = emptySet()) {
-        received.forEach { document -> mergeReceivedDocument(document, excluding) }
+        received.forEach { document ->
+            try {
+                mergeReceivedDocument(document, excluding)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: IllegalArgumentException) {
+                // The id exists here under another workspace: that document is skipped, it must not
+                // fail the sync of every other one.
+            }
+        }
     }
 
     /**
