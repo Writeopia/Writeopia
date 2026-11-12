@@ -295,27 +295,49 @@ struct TitleDrawer: View {
 }
 
 private extension View {
-    /// The header colors: a popover under the pencil on the Mac, and a bottom sheet on iOS, where
-    /// a popover doesn't fit the screen.
+    /// The header dialog: a sheet on every platform. The body scrolls vertically (colors, the
+    /// pictures, the one being drawn) and the description of the AI picture is pinned at the bottom.
     @ViewBuilder
     func headerColorsPresentation(isPresented: Binding<Bool>, manager: WriteopiaStateManager) -> some View {
-        #if os(macOS)
-        popover(isPresented: isPresented, arrowEdge: .bottom) {
-            HeaderColorPicker(manager: manager)
-                .padding(16)
-        }
-        #else
         sheet(isPresented: isPresented) {
-            ScrollView {
+            HeaderDialog(manager: manager) { isPresented.wrappedValue = false }
+            #if os(macOS)
+                .frame(width: 520, height: manager.headerImages == nil ? 220 : 620)
+            #else
+                // The pictures need room for the one the AI draws; the colors alone fit a short sheet.
+                .presentationDetents(manager.headerImages == nil ? [.height(220)] : [.medium, .large])
+                .presentationDragIndicator(.visible)
+            #endif
+        }
+    }
+}
+
+/// The content of the header dialog.
+struct HeaderDialog: View {
+    let manager: WriteopiaStateManager
+    let onClose: () -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            ScrollView(.vertical) {
                 HeaderColorPicker(manager: manager)
                     .padding(.horizontal, 20)
-                    .padding(.top, 24)
+                    .padding(.top, 20)
                     .padding(.bottom, 16)
-                    .frame(maxWidth: .infinity, alignment: .top)
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
             }
-            // The pictures need room for the one the AI draws; the colors alone fit a short sheet.
-            .presentationDetents(manager.headerImages == nil ? [.height(220)] : [.medium, .large])
-            .presentationDragIndicator(.visible)
+
+            if let images = manager.headerImages {
+                Divider()
+                HeaderImageGenerateBar(model: images)
+                    .padding(16)
+            }
+        }
+        #if os(macOS)
+        .overlay(alignment: .topTrailing) {
+            Button("Done", action: onClose)
+                .keyboardShortcut(.cancelAction)
+                .padding(12)
         }
         #endif
     }
@@ -404,48 +426,33 @@ struct HeaderImagesSection: View {
     private static let tileSize = CGSize(width: 88, height: 56)
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Images")
-                .font(.subheadline.weight(.semibold))
+        ScrollViewReader { proxy in
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Images")
+                    .font(.subheadline.weight(.semibold))
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    generateTile
+                LazyVGrid(
+                    columns: [GridItem(.adaptive(minimum: Self.tileSize.width), spacing: 10)],
+                    alignment: .leading,
+                    spacing: 10
+                ) {
                     ForEach(model.images, id: \.self) { url in
                         imageTile(url)
                     }
                 }
-                .padding(.vertical, 2)
-            }
 
-            if model.generation != .idle {
-                generationPanel
-                    .transition(.opacity.combined(with: .move(edge: .top)))
+                if model.generation != .idle {
+                    generationPanel
+                        .id("generation")
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+            }
+            .animation(.snappy, value: model.generation)
+            .task { await model.load() }
+            .onChange(of: model.generation) { _, generation in
+                if generation != .idle { withAnimation { proxy.scrollTo("generation", anchor: .bottom) } }
             }
         }
-        .animation(.snappy, value: model.generation)
-        .task { await model.load() }
-    }
-
-    private var generateTile: some View {
-        Button {
-            model.generate()
-        } label: {
-            VStack(spacing: 4) {
-                Image(systemName: "sparkles")
-                    .foregroundStyle(WrColors.accent)
-                Text("Generate with AI")
-                    .font(.caption2)
-                    .lineLimit(1)
-            }
-            .frame(width: Self.tileSize.width + 24, height: Self.tileSize.height)
-            .background(WrColors.secondaryFill, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(WrColors.divider))
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .disabled(model.isGenerating)
-        .accessibilityIdentifier("editor.header.generateImage")
     }
 
     private func imageTile(_ url: String) -> some View {
@@ -530,6 +537,39 @@ struct HeaderImagesSection: View {
             }
             .frame(maxWidth: 420)
         }
+    }
+}
+
+/// The bottom of the header dialog: what the user wants in the picture, in as many lines as it
+/// takes, and the button that draws it with the AI.
+struct HeaderImageGenerateBar: View {
+    let model: HeaderImagesModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            TextField("Describe the image (optional)", text: instructionsBinding, axis: .vertical)
+                .lineLimit(3...6)
+                .textFieldStyle(.plain)
+                .padding(10)
+                .background(WrColors.secondaryFill, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(WrColors.divider))
+                .disabled(model.isGenerating)
+                .accessibilityIdentifier("editor.header.imageInstructions")
+
+            Button {
+                model.generate()
+            } label: {
+                Label("Generate with AI", systemImage: "sparkles")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(model.isGenerating || model.isSaving)
+            .accessibilityIdentifier("editor.header.generateImage")
+        }
+    }
+
+    private var instructionsBinding: Binding<String> {
+        Binding(get: { model.instructions }, set: { model.instructions = $0 })
     }
 }
 

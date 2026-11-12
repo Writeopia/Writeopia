@@ -372,6 +372,7 @@
   <string name="header_colors">Colors</string>
   <string name="header_images">Images</string>
   <string name="header_generate_image">Generate with AI</string>
+  <string name="header_image_instructions_hint">Describe the image (optional)</string>
   <string name="header_generating_image">Drawing your header…</string>
   <string name="header_use_image">Use this image</string>
   <string name="header_try_another">Try another</string>

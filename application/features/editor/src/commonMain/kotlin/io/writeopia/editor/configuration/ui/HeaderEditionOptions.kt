@@ -33,6 +33,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -64,6 +65,7 @@ fun HeaderEditionOptions(
     headerImages: HeaderImagesState = HeaderImagesState(),
     selectedImageUrl: String? = null,
     onImageSelection: (String) -> Unit = {},
+    onInstructionsChange: (String) -> Unit = {},
     onGenerateImage: () -> Unit = {},
     onApproveImage: () -> Unit = {},
     onDiscardImage: () -> Unit = {},
@@ -137,6 +139,21 @@ fun HeaderEditionOptions(
         )
 
         Spacer(modifier = Modifier.height(10.dp))
+
+        if (headerImages.canGenerate) {
+            OutlinedTextField(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                value = headerImages.instructions,
+                onValueChange = onInstructionsChange,
+                enabled = headerImages.generation !is HeaderImageGeneration.Generating,
+                placeholder = { Text(WrStrings.headerImageInstructionsHint()) },
+                textStyle = MaterialTheme.typography.bodyMedium,
+                maxLines = 3,
+                shape = RoundedCornerShape(12.dp)
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+        }
 
         LazyVerticalGrid(
             modifier = Modifier.fillMaxWidth().heightIn(max = imagesGridMaxHeight),

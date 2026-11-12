@@ -372,6 +372,7 @@
   <string name="header_colors">颜色</string>
   <string name="header_images">图片</string>
   <string name="header_generate_image">用 AI 生成</string>
+  <string name="header_image_instructions_hint">描述图片（可选）</string>
   <string name="header_generating_image">正在绘制你的页眉…</string>
   <string name="header_use_image">使用这张图片</string>
   <string name="header_try_another">换一张</string>

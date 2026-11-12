@@ -372,6 +372,7 @@
   <string name="header_colors">Kleuren</string>
   <string name="header_images">Afbeeldingen</string>
   <string name="header_generate_image">Genereren met AI</string>
+  <string name="header_image_instructions_hint">Beschrijf de afbeelding (optioneel)</string>
   <string name="header_generating_image">Je header wordt getekend…</string>
   <string name="header_use_image">Deze afbeelding gebruiken</string>
   <string name="header_try_another">Nog een proberen</string>

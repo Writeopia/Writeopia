@@ -67,6 +67,22 @@ class ImagePromptTest {
     }
 
     @Test
+    fun `the header prompt carries what the user asks, cut at the limit`() {
+        val prompt = ImagePrompt.forHeader(
+            HeaderImageGenerateRequest(workspaceId = "w", instructions = "  a red lighthouse at dusk  ")
+        )
+        assertTrue(prompt.contains("a red lighthouse at dusk"))
+
+        val long = ImagePrompt.forHeader(
+            HeaderImageGenerateRequest(workspaceId = "w", instructions = "y".repeat(ImagePrompt.INSTRUCTIONS_LIMIT + 10))
+        )
+        assertTrue(long.contains("y".repeat(ImagePrompt.INSTRUCTIONS_LIMIT)))
+        assertFalse(long.contains("y".repeat(ImagePrompt.INSTRUCTIONS_LIMIT + 1)))
+
+        assertFalse(ImagePrompt.forHeader(HeaderImageGenerateRequest(workspaceId = "w")).contains("The user asks"))
+    }
+
+    @Test
     fun `a header for an empty document asks only for the cover`() {
         val prompt = ImagePrompt.forHeader(HeaderImageGenerateRequest(workspaceId = "workspace"))
 

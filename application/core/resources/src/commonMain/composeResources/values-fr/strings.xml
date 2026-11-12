@@ -372,6 +372,7 @@
   <string name="header_colors">Couleurs</string>
   <string name="header_images">Images</string>
   <string name="header_generate_image">Générer avec l’IA</string>
+  <string name="header_image_instructions_hint">Décrivez l’image (facultatif)</string>
   <string name="header_generating_image">Dessin de votre bannière…</string>
   <string name="header_use_image">Utiliser cette image</string>
   <string name="header_try_another">Essayer une autre</string>

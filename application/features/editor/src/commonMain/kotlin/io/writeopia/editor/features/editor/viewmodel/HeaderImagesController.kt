@@ -69,9 +69,16 @@ class HeaderImagesController(
         }
     }
 
+    /** What the user asks of the next picture. It stays for the pictures drawn after it. */
+    fun setInstructions(instructions: String) {
+        _state.update { state -> state.copy(instructions = instructions.take(INSTRUCTIONS_LIMIT)) }
+    }
+
     /** Draws a picture for the document, or a different one in place of the candidate. */
     fun generate() {
         if (_state.value.generation is HeaderImageGeneration.Generating) return
+
+        val instructions = _state.value.instructions.trim()
 
         _state.update { state -> state.copy(generation = HeaderImageGeneration.Generating) }
 
@@ -83,7 +90,7 @@ class HeaderImagesController(
                 if (source == null || workspaceId == null) {
                     HeaderImageGeneration.Failed(null)
                 } else {
-                    when (val result = source.generate(workspaceId, documentTitle(), documentText())) {
+                    when (val result = source.generate(workspaceId, documentTitle(), documentText(), instructions)) {
                         is ResultData.Complete -> HeaderImageGeneration.Candidate(result.data)
                         is ResultData.Error -> HeaderImageGeneration.Failed(result.exception?.message)
                         else -> HeaderImageGeneration.Failed(null)
@@ -154,5 +161,10 @@ class HeaderImagesController(
         generationJob?.cancel()
         generationJob = null
         _state.update { state -> state.copy(generation = HeaderImageGeneration.Idle) }
+    }
+
+    companion object {
+        /** The most the user can write to ask for a picture; the backend cuts at the same size. */
+        const val INSTRUCTIONS_LIMIT = 500
     }
 }

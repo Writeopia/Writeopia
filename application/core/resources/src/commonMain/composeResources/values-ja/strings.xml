@@ -372,6 +372,7 @@
   <string name="header_colors">カラー</string>
   <string name="header_images">画像</string>
   <string name="header_generate_image">AIで生成</string>
+  <string name="header_image_instructions_hint">画像の内容を入力（任意）</string>
   <string name="header_generating_image">ヘッダーを描画中…</string>
   <string name="header_use_image">この画像を使う</string>
   <string name="header_try_another">別の画像を試す</string>

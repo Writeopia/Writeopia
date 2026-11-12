@@ -799,6 +799,10 @@ class NoteEditorKmpViewModel(
         headerImagesController.load()
     }
 
+    override fun onHeaderImageInstructions(instructions: String) {
+        headerImagesController.setInstructions(instructions)
+    }
+
     override fun generateHeaderImage() {
         if (!isEditable.value) return
         headerImagesController.generate()

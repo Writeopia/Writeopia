@@ -13,6 +13,7 @@ private final class FakeHeaderImages: HeaderImageServing {
     var failure: String?
     var saveFailure: String?
     var generatedFor: [(String, String)] = []
+    var instructionsFor: [String] = []
 
     init(saved: [String] = [], failure: String? = nil, saveFailure: String? = nil) {
         self.saved = saved
@@ -20,8 +21,9 @@ private final class FakeHeaderImages: HeaderImageServing {
         self.saveFailure = saveFailure
     }
 
-    func generateHeaderImage(documentTitle: String, documentText: String) async throws -> String {
+    func generateHeaderImage(documentTitle: String, documentText: String, instructions: String) async throws -> String {
         generatedFor.append((documentTitle, documentText))
+        instructionsFor.append(instructions)
         if let failure { throw FakeError(message: failure) }
         return "https://cdn.test/header-images/w/\(generatedFor.count).png"
     }
@@ -67,6 +69,24 @@ private struct FakeError: LocalizedError {
 
         manager.setHeaderImage("https://cdn.test/a.png")
         #expect(manager.headerImageUrl == nil)
+    }
+
+    @Test func theInstructionsOfTheUserGoWithEveryPicture() async {
+        let service = FakeHeaderImages()
+        let model = HeaderImagesModel(
+            service: service,
+            documentTitle: { "Doc" },
+            documentText: { "Text" },
+            onApproved: { _ in }
+        )
+
+        model.generate()
+        await model.waitForGeneration()
+        model.instructions = "  a red lighthouse  "
+        model.generate()
+        await model.waitForGeneration()
+
+        #expect(service.instructionsFor == ["", "a red lighthouse"])
     }
 
     @Test func aDrawnPictureWaitsForApprovalThenJoinsTheWorkspace() async {
