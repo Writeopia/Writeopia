@@ -48,7 +48,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.semantics.semantics
@@ -548,7 +547,7 @@ private fun FolderItem(
 
     // The card grows into the folder screen and the title flies into its toolbar.
     val cardModifier = with(sharedTransitionScope) {
-        shadowModifier().sharedBounds(
+        cardBorderModifier(folderUi.selected).sharedBounds(
             rememberSharedContentState(key = FolderSharedKeys.card(folderId)),
             animatedVisibilityScope = animatedVisibilityScope,
             resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds
@@ -594,7 +593,6 @@ private fun FolderItem(
                     isDropTarget -> accent.copy(alpha = 0.15F)
                         .compositeOver(WriteopiaTheme.colorScheme.cardBg)
 
-                    folderUi.selected -> WriteopiaTheme.colorScheme.selectedBg
                     else -> WriteopiaTheme.colorScheme.cardBg
                 },
                 label = "folderDropBackground"
@@ -748,15 +746,12 @@ private fun DocumentItem(
     val titleFallback = "untitled"
 //        stringResource(R.string.untitled)
 
-    val backgroundColor = if (documentUi.selected) {
-        WriteopiaTheme.colorScheme.selectedBg
-    } else {
-        WriteopiaTheme.colorScheme.cardBg
-    }
+    // Selection is shown by the border, the background stays the same.
+    val backgroundColor = WriteopiaTheme.colorScheme.cardBg
 
     sharedTransitionScope.run {
         SelectableByDrag(
-            shadowModifier().sharedBounds(
+            cardBorderModifier(documentUi.selected).sharedBounds(
                 rememberSharedContentState(key = "noteInit${documentUi.documentId}"),
                 animatedVisibilityScope = animatedVisibilityScope,
                 resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds
@@ -941,14 +936,22 @@ private val GRID_CARD_HEIGHT = 200.dp
 /** A picture in a grid card leaves room for the text under it. */
 private val GRID_CARD_IMAGE_MAX_HEIGHT = 90.dp
 
+/** The card outline: one dynamic color when idle and another one when selected. */
 @Composable
-private fun shadowModifier(): Modifier =
-    Modifier.padding(4.dp)
-        .shadow(
-            8.dp,
-            shape = MaterialTheme.shapes.large,
-            spotColor = WriteopiaTheme.colorScheme.cardShadow
+private fun cardBorderModifier(selected: Boolean): Modifier {
+    val colors = WriteopiaTheme.colorScheme
+    val color by animateColorAsState(
+        targetValue = if (selected) colors.cardBorderSelected else colors.cardBorder,
+        label = "cardBorder"
+    )
+
+    return Modifier.padding(4.dp)
+        .border(
+            width = if (selected) 3.dp else 1.dp,
+            color = color,
+            shape = MaterialTheme.shapes.large
         )
+}
 
 @Composable
 private fun TapToStartButton(
@@ -976,6 +979,11 @@ private fun TapToStartButton(
             .background(
                 WriteopiaTheme.colorScheme.cardBg,
                 MaterialTheme.shapes.large
+            )
+            .border(
+                width = 1.dp,
+                color = WriteopiaTheme.colorScheme.cardBorder,
+                shape = MaterialTheme.shapes.large
             )
             .clip(MaterialTheme.shapes.large)
             .clickable(onClick = newNote)

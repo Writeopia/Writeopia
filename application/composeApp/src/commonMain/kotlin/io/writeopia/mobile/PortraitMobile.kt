@@ -23,6 +23,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -176,6 +178,15 @@ fun PortraitMobile(
                         ?.savedStateHandle
                         ?.get<String?>(NAVIGATION_TYPE) == NotesNavigationType.FAVORITES.type
 
+                    // In light mode the accent can be pale, so the highlight is a darker shade of it.
+                    val primary = MaterialTheme.colorScheme.primary
+                    val isLightTheme = MaterialTheme.colorScheme.background.luminance() > 0.5F
+                    val selectedIconColor = if (isLightTheme) {
+                        lerp(primary, Color.Black, 0.5F)
+                    } else {
+                        primary
+                    }
+
                     navigationItems.forEach { item ->
                         val matchesRoute =
                             currentDestination?.hierarchy?.any { destination ->
@@ -218,7 +229,7 @@ fun PortraitMobile(
                             },
                             colors = NavigationBarItemDefaults.colors()
                                 .copy(
-                                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                                    selectedIconColor = selectedIconColor,
                                     unselectedIconColor = MaterialTheme.colorScheme.onBackground,
                                     selectedIndicatorColor = Color.Transparent,
                                 )
