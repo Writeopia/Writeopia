@@ -84,10 +84,12 @@ class HeaderImagesController(
 
         generationJob = scope.launch {
             val generation = try {
-                val source = resolveHeaderImages()
                 val workspaceId = workspaceId()
+                val source = resolveHeaderImages()
 
-                if (source == null || workspaceId == null) {
+                // The check and the request must be about the same workspace: if it changed while
+                // the cloud was resolved (say, to an offline one), nothing leaves the device.
+                if (source == null || workspaceId == null || workspaceId() != workspaceId) {
                     HeaderImageGeneration.Failed(null)
                 } else {
                     when (val result = source.generate(workspaceId, documentTitle(), documentText(), instructions)) {
