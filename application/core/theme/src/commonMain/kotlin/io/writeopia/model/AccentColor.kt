@@ -10,6 +10,6 @@ enum class AccentColor(val id: String, val lightColor: Color, val darkColor: Col
     DYNAMIC("dynamic", Color(0xFFB7409A), Color(0xFFE987D0));
 
     companion object {
-        fun fromId(id: String?): AccentColor = entries.find { it.id == id } ?: PURPLE
+        fun fromId(id: String?): AccentColor = entries.find { it.id == id } ?: DYNAMIC
     }
 }

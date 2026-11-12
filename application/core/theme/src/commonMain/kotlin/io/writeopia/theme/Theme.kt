@@ -8,6 +8,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import io.github.kdroidfilter.platformtools.darkmodedetector.isSystemInDarkMode
 import io.writeopia.model.AccentColor
 
@@ -77,7 +78,7 @@ val LocalWriteopiaColors = staticCompositionLocalOf {
 @Composable
 fun WriteopiaTheme(
     darkTheme: Boolean = isSystemInDarkMode(),
-    accentColor: AccentColor = AccentColor.PURPLE,
+    accentColor: AccentColor = AccentColor.DYNAMIC,
     content: @Composable () -> Unit
 ) {
     // Get dynamic colors if DYNAMIC is selected and available on this platform
@@ -124,7 +125,10 @@ fun WriteopiaTheme(
             secondary = secondary,
             onPrimary = onAccent ?: baseColors.onPrimary,
             onSecondary = onAccent ?: baseColors.onSecondary,
-            surfaceVariant = globalBackground
+            surfaceVariant = globalBackground,
+            // The dialogs are Cards, which default to this level, the same one the buttons use
+            // (defaultButton). A lower one makes the buttons stand out inside the dialogs.
+            surfaceContainerHighest = dynamicScheme.surfaceContainerLow
         )
     } else {
         baseColors.copy(surfaceVariant = globalBackground)
@@ -134,7 +138,11 @@ fun WriteopiaTheme(
     val textLight = if (darkTheme) Color(0xFFDFDFDF) else Color(0xFF444444)
     val textLighter = if (darkTheme) Color(0xFFAAAAAA) else Color(0xFF666666)
     val tintLight = if (darkTheme) Color(0xFFDFDFDF) else Color(0xFF444444)
-    val highlight = if (darkTheme) Color(0xFF616161) else Color(0xFFE0E0E0)
+    // With dynamic colors the highlight is the button color pushed towards the text color, so it
+    // stands out from the buttons (the gray was hard to see on the tinted surfaces).
+    val highlight = dynamicScheme?.let {
+        lerp(it.surfaceContainerHighest, it.onSurface, if (darkTheme) 0.25F else 0.22F)
+    } ?: if (darkTheme) Color(0xFF616161) else Color(0xFFE0E0E0)
     val lightBackground = if (darkTheme) Color(0xFF222222) else Color(0xFFF1F1F1)
     val cardBackground = dynamicScheme?.surfaceContainerHigh ?: colors.surfaceContainer
     val cardShadow = if (darkTheme) colors.background else Color.Gray

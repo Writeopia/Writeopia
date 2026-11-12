@@ -257,7 +257,7 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
 
                 WriteopiaTheme(
                     darkTheme = colorTheme.value.isDarkTheme(),
-                    accentColor = accentColor ?: AccentColor.PURPLE
+                    accentColor = accentColor ?: AccentColor.DYNAMIC
                 ) {
                     Box(
                         modifier = Modifier

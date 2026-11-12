@@ -203,7 +203,8 @@ private fun AccentColorOptions(
         Row(modifier = Modifier.fillMaxWidth().height(70.dp)) {
             AccentColorOption(
                 accentColor = AccentColor.PURPLE,
-                isSelected = selectedColor == AccentColor.PURPLE,
+                isSelected = selectedColor == AccentColor.PURPLE ||
+                    (selectedColor == AccentColor.DYNAMIC && getDynamicAccentColors() == null),
                 onClick = { selectAccentColor(AccentColor.PURPLE) }
             )
 

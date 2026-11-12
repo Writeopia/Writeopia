@@ -103,7 +103,7 @@ fun PortraitMobile(
 
     WriteopiaTheme(
         darkTheme = colorTheme.isDarkTheme(),
-        accentColor = accentColor ?: AccentColor.PURPLE
+        accentColor = accentColor ?: AccentColor.DYNAMIC
     ) {
         BoxWithConstraints(modifier = modifier.fillMaxSize()) {
             val isWideScreen = maxWidth > maxHeight
@@ -178,14 +178,15 @@ fun PortraitMobile(
                         ?.savedStateHandle
                         ?.get<String?>(NAVIGATION_TYPE) == NotesNavigationType.FAVORITES.type
 
-                    // In light mode the accent can be pale, so the highlight is a darker shade of it.
-                    val primary = MaterialTheme.colorScheme.primary
-                    val isLightTheme = MaterialTheme.colorScheme.background.luminance() > 0.5F
-                    val selectedIconColor = if (isLightTheme) {
-                        lerp(primary, Color.Black, 0.5F)
-                    } else {
-                        primary
-                    }
+                    // The selected icon is the accent pushed away from the bar background until it
+                    // reads well (the dynamic accent can be pale in light mode and dark in dark
+                    // mode), and the others are dimmed so the difference is clear.
+                    val barBackground = MaterialTheme.colorScheme.background
+                    val selectedIconColor = accentWithContrast(
+                        MaterialTheme.colorScheme.primary,
+                        barBackground
+                    )
+                    val unselectedIconColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6F)
 
                     navigationItems.forEach { item ->
                         val matchesRoute =
@@ -230,8 +231,8 @@ fun PortraitMobile(
                             colors = NavigationBarItemDefaults.colors()
                                 .copy(
                                     selectedIconColor = selectedIconColor,
-                                    unselectedIconColor = MaterialTheme.colorScheme.onBackground,
-                                    selectedIndicatorColor = Color.Transparent,
+                                    unselectedIconColor = unselectedIconColor,
+                                    selectedIndicatorColor = selectedIconColor.copy(alpha = 0.15F),
                                 )
                         )
                     }
@@ -283,3 +284,25 @@ fun NavItemName.iconForNavItem(): ImageVector =
         NavItemName.SEARCH -> WrIcons.search
         NavItemName.SETTINGS -> WrIcons.settings
     }
+
+/** Moves [accent] towards black (light background) or white (dark one) until it reaches [MIN_ICON_CONTRAST]. */
+private fun accentWithContrast(accent: Color, background: Color): Color {
+    val target = if (background.luminance() > 0.5F) Color.Black else Color.White
+
+    for (step in 0..10) {
+        val candidate = lerp(accent, target, step / 10F)
+
+        if (contrastRatio(candidate, background) >= MIN_ICON_CONTRAST) return candidate
+    }
+
+    return target
+}
+
+private fun contrastRatio(a: Color, b: Color): Float {
+    val l1 = a.luminance()
+    val l2 = b.luminance()
+
+    return (maxOf(l1, l2) + 0.05F) / (minOf(l1, l2) + 0.05F)
+}
+
+private const val MIN_ICON_CONTRAST = 4.5F

@@ -108,7 +108,7 @@ fun CreateSiteView(documentId: String) {
 
     WriteopiaTheme(
         darkTheme = colorThemeValue.isDarkTheme(),
-        accentColor = accentColorValue ?: AccentColor.PURPLE
+        accentColor = accentColorValue ?: AccentColor.DYNAMIC
     ) {
         SiteScreen(
             documentId = documentId,
@@ -161,7 +161,7 @@ fun CreateAppInMemory() {
     CompositionLocalProvider(LocalPlatform provides PlatformType.WEB) {
         WriteopiaTheme(
             darkTheme = colorTheme.value.isDarkTheme(),
-            accentColor = accentColorValue ?: AccentColor.PURPLE
+            accentColor = accentColorValue ?: AccentColor.DYNAMIC
         ) {
             Box(
                 modifier = Modifier
