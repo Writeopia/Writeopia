@@ -114,6 +114,9 @@ class AuthMenuViewModel(
             workspace != null -> LoginStatus.ONLINE
             else -> LoginStatus.CHOOSE_WORKSPACE
         }
+        if (status == LoginStatus.ONLINE) {
+            analyticsTracker.setEnabled(true)
+        }
         emit(status)
     }
 
@@ -158,6 +161,8 @@ class AuthMenuViewModel(
     fun onLoginRequest() {
         _loginState.value = ResultData.Loading()
         _accountDeletionPending.value = false
+        // Enabled here, before the request, so a failed attempt's login_failed is observable too.
+        analyticsTracker.setEnabled(true)
 
         viewModelScope.launch {
             try {
@@ -188,7 +193,6 @@ class AuthMenuViewModel(
                                 user = user.copy(tier = Tier.PREMIUM),
                                 selected = true
                             )
-                            analyticsTracker.setEnabled(true)
                             analyticsTracker.capture("user_logged_in")
                             val accessToken = result.data.accessToken
                             val refreshToken = result.data.refreshToken

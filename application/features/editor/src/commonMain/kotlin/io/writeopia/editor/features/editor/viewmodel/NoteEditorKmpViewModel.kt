@@ -551,7 +551,12 @@ class NoteEditorKmpViewModel(
             val tag = DocumentTag.create(name, description, workspaceId)
 
             repository.upsertTag(tag)
-            analyticsTracker.capture("tag_created", mapOf("tag_name" to name))
+            // The workspace can change while upsertTag is in flight (e.g. the user goes
+            // offline); only attribute the event if the tag's workspace is still current.
+            val currentWorkspaceId = (authRepository.getWorkspace() ?: Workspace.disconnectedWorkspace()).id
+            if (tag.workspaceId == currentWorkspaceId) {
+                analyticsTracker.capture("tag_created", mapOf("tag_name" to name))
+            }
             writeopiaManager.addDocumentTag(tag.id)
             hideAddTagDialog()
             sendTagToBackend(tag)
@@ -851,8 +856,6 @@ class NoteEditorKmpViewModel(
     override fun loadDocument(documentId: String) {
         if (writeopiaManager.isInitialized()) return
 
-        analyticsTracker.capture("document_opened", mapOf("document_id" to documentId))
-
         viewModelScope.launch(Dispatchers.Default) {
             ContentLoadActivity.track { openDocument(documentId) }
         }
@@ -870,6 +873,7 @@ class NoteEditorKmpViewModel(
             registerForSync(documentId, isDisconnected)
             // Set initial published state from local document
             _isDocumentPublished.value = localDocument.published
+            analyticsTracker.capture("document_opened", mapOf("document_id" to documentId))
         }
 
         // Step 2: If online, fetch from backend in background and merge
@@ -886,6 +890,7 @@ class NoteEditorKmpViewModel(
                     // Register for sync if this is the first load (backend-only document)
                     if (localDocument == null) {
                         registerForSync(documentId, isDisconnected)
+                        analyticsTracker.capture("document_opened", mapOf("document_id" to documentId))
                     }
                 }
             )

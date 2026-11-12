@@ -5,6 +5,7 @@ import io.writeopia.analytics.AnalyticsTracker
 class FakeAnalyticsTracker : AnalyticsTracker {
 
     data class CapturedEvent(val event: String, val properties: Map<String, Any?>)
+
     data class IdentifiedUser(val distinctId: String, val properties: Map<String, Any?>)
 
     val capturedEvents = mutableListOf<CapturedEvent>()

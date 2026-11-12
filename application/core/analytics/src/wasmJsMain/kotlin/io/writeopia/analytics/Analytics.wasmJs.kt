@@ -37,13 +37,15 @@ actual object Analytics : AnalyticsTracker {
 }
 
 private fun jsPosthogInit(token: String): Unit =
-    js("""
+    js(
+        """
         posthog.init(token, {
             api_host: 'https://eu.i.posthog.com',
             person_profiles: 'identified_only',
             opt_out_capturing_by_default: true
         })
-    """)
+        """
+    )
 
 private fun jsPosthogOptIn(): Unit =
     js("posthog.opt_in_capturing()")

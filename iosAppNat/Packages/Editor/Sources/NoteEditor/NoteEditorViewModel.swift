@@ -279,7 +279,9 @@ public final class NoteEditorViewModel {
         try await repository.saveTag(tag)
         workspaceTags = (workspaceTags + [tag]).sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
         addTag(id: tag.id)
-        analytics.capture("tag_created", properties: ["tag_name": tag.name])
+        if tag.workspaceId != Workspace.localId {
+            analytics.capture("tag_created", properties: ["tag_name": tag.name])
+        }
         return tag
     }
 

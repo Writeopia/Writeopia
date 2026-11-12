@@ -25,6 +25,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AuthMenuViewModelTest {
@@ -312,6 +313,9 @@ class AuthMenuViewModelTest {
         // Then
         assertEquals(1, analyticsTracker.capturedEvents.size)
         assertEquals("login_failed", analyticsTracker.capturedEvents.single().event)
+        // Tracking is enabled as soon as an online login is attempted, not only on success,
+        // so a real tracker's isEnabled gate doesn't swallow this event.
+        assertTrue(analyticsTracker.isEnabled)
     }
 
     @Test

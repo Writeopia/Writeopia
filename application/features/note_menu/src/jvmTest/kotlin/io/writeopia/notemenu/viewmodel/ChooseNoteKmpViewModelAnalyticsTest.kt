@@ -81,6 +81,16 @@ class ChooseNoteKmpViewModelAnalyticsTest {
 
     @Test
     fun `createFolderWithDetails should track folder_created with the new folder id`() = runBlocking {
+        // An online workspace: the disconnected one from setUp is the "no telemetry" space.
+        coEvery { authRepository.getWorkspace() } returns Workspace(
+            id = "workspace-1",
+            userId = "user-1",
+            name = "My Workspace",
+            lastSync = Clock.System.now(),
+            selected = true,
+            role = "owner",
+        )
+
         viewModel().createFolderWithDetails("New folder", icon = null)
 
         // createFolderWithDetails runs on Dispatchers.Default, a real dispatcher the test
@@ -94,4 +104,14 @@ class ChooseNoteKmpViewModelAnalyticsTest {
         assertEquals("folder_created", event.event)
         assertEquals("folder-1", event.properties["folder_id"])
     }
+
+    @Test
+    fun `createFolderWithDetails should not track folder_created in the disconnected workspace`() =
+        runBlocking {
+            viewModel().createFolderWithDetails("New folder", icon = null)
+
+            delay(200) // no success signal to poll for
+
+            assertEquals(emptyList(), analyticsTracker.capturedEvents)
+        }
 }

@@ -1,6 +1,7 @@
 package io.writeopia.editor.features.editor.viewmodel
 
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.mockk
 import io.writeopia.ai.task.AiTaskManager
 import io.writeopia.analytics.testing.FakeAnalyticsTracker
@@ -119,14 +120,36 @@ class NoteEditorKmpViewModelAnalyticsTest {
     }
 
     @Test
-    fun `loadDocument should track document_opened`() = runBlocking {
+    fun `loadDocument should track document_opened once the local copy actually loads`() = runBlocking {
+        val now = Clock.System.now()
+        coEvery { documentRepository.loadDocumentById("doc-2", any()) } returns Document(
+            content = emptyMap(),
+            workspaceId = Workspace.disconnectedWorkspace().id,
+            createdAt = now,
+            lastUpdatedAt = now,
+            parentId = "root",
+            lastSyncedAt = null,
+        )
+
         viewModel().loadDocument("doc-2")
+        awaitEvent("document_opened")
 
         assertEquals(1, analyticsTracker.capturedEvents.size)
         val event = analyticsTracker.capturedEvents.single()
         assertEquals("document_opened", event.event)
         assertEquals("doc-2", event.properties["document_id"])
     }
+
+    @Test
+    fun `loadDocument should not track document_opened when there is no local copy and no backend`() =
+        runBlocking {
+            coEvery { documentRepository.loadDocumentById("doc-missing", any()) } returns null
+
+            viewModel().loadDocument("doc-missing")
+            delay(200) // no success signal to poll for
+
+            assertEquals(emptyList(), analyticsTracker.capturedEvents)
+        }
 
     @Test
     fun `deleteDocument should track document_deleted`() = runBlocking {
@@ -146,6 +169,16 @@ class NoteEditorKmpViewModelAnalyticsTest {
     // structurally identical to document_created/document_deleted/tag_created, which ARE covered.
     @Test
     fun `publishDocument should not track when the API call fails`() = runBlocking {
+        // An online workspace, so the call actually reaches documentsApi instead of returning
+        // early on the disconnected-workspace guard (which setUp's stub would otherwise hit).
+        coEvery { authRepository.getWorkspace() } returns Workspace(
+            id = "workspace-1",
+            userId = "user-1",
+            name = "My Workspace",
+            lastSync = Clock.System.now(),
+            selected = true,
+            role = "owner",
+        )
         val vm = viewModel()
         vm.createNewDocument("doc-4", "Title")
         coEvery { documentsApi.publishDocument("doc-4", any()) } returns ResultData.Error()
@@ -153,6 +186,7 @@ class NoteEditorKmpViewModelAnalyticsTest {
         vm.publishDocument()
         delay(200) // no success signal to poll for
 
+        coVerify { documentsApi.publishDocument("doc-4", any()) }
         assertEquals(
             emptyList(),
             analyticsTracker.capturedEvents.filter { it.event == "document_published" }

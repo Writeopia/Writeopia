@@ -366,7 +366,7 @@ final class FolderContentsViewModel {
             actionError = error.userMessage
             return
         }
-        analytics.capture("folder_created")
+        analytics.capture("folder_created", properties: ["folder_id": created.id])
         // The folder exists now: a failed icon doesn't make it look like the creation failed.
         if let icon {
             var withIcon = created
@@ -385,8 +385,8 @@ final class FolderContentsViewModel {
         await perform {
             created = try await self.repository.createDocument(title: "", parentId: self.folderId)
         }
-        if created != nil {
-            analytics.capture("document_created")
+        if let created {
+            analytics.capture("document_created", properties: ["document_id": created.id])
         }
         return created
     }
