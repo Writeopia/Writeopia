@@ -8,8 +8,16 @@ import io.writeopia.sdk.models.utils.ResultData
  * backend, so any document of the workspace can use them, on any device.
  */
 interface HeaderImages {
-    /** Draws a header for a document, charged to the user. The result is the URL of a candidate. */
-    suspend fun generate(workspaceId: String, documentTitle: String, documentText: String): ResultData<String>
+    /**
+     * Draws a header for a document, charged to the user. [instructions] is what the user asks of
+     * the picture, empty for none. The result is the URL of a candidate.
+     */
+    suspend fun generate(
+        workspaceId: String,
+        documentTitle: String,
+        documentText: String,
+        instructions: String = ""
+    ): ResultData<String>
 
     /** The URLs of the approved pictures of [workspaceId], the newest first. */
     suspend fun images(workspaceId: String): ResultData<List<String>>
@@ -35,8 +43,9 @@ class CloudHeaderImages(private val repository: GenAiRepository) : HeaderImages 
     override suspend fun generate(
         workspaceId: String,
         documentTitle: String,
-        documentText: String
-    ): ResultData<String> = repository.generateHeaderImage(workspaceId, documentTitle, documentText)
+        documentText: String,
+        instructions: String
+    ): ResultData<String> = repository.generateHeaderImage(workspaceId, documentTitle, documentText, instructions)
 
     override suspend fun images(workspaceId: String): ResultData<List<String>> =
         repository.headerImages(workspaceId)

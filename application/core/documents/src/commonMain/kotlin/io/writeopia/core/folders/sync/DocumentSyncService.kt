@@ -383,11 +383,16 @@ class DocumentSyncService(
         val tombstoned = documentRepository.loadStoryStepTombstones(document.workspaceId)
             .map { tombstone -> tombstone.stepId }
             .toSet()
-        val localById = document.content.values.associateBy { step -> step.id }
+        // The document was loaded before the request: edits made while it ran are only in the
+        // store, so the steps are compared as stored now, not as they were sent.
+        val current = documentRepository.loadDocumentById(document.id, document.workspaceId) ?: document
+        val localById = current.content.values.associateBy { step -> step.id }
         val newerSteps = serverSteps.filter { (_, serverStep) ->
             if (serverStep.id in tombstoned) return@filter false
             val localStep = localById[serverStep.id] ?: return@filter true
-            val localTimestamp = localStep.lastUpdatedAt ?: Long.MAX_VALUE
+            // A step never stamped here (saved before stamps existed) is the oldest, as when sending:
+            // the backend copy wins if it has any stamp, and the local one stays on a tie.
+            val localTimestamp = localStep.lastUpdatedAt ?: 0L
             (serverStep.lastUpdatedAt ?: 0L) > localTimestamp
         }
 

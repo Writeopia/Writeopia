@@ -372,6 +372,7 @@
   <string name="header_colors">Colori</string>
   <string name="header_images">Immagini</string>
   <string name="header_generate_image">Genera con l'AI</string>
+  <string name="header_image_instructions_hint">Descrivi l’immagine (facoltativo)</string>
   <string name="header_generating_image">Sto disegnando la tua copertina…</string>
   <string name="header_use_image">Usa questa immagine</string>
   <string name="header_try_another">Prova un'altra</string>

@@ -156,6 +156,9 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
     /** Puts a picture of the workspace in the header; null removes it. */
     fun onHeaderImageSelection(url: String?)
 
+    /** What the user asks of the header pictures the AI draws, sent with each drawing. */
+    fun onHeaderImageInstructions(instructions: String)
+
     /** Asks the AI for a header picture, or for a different one. It costs tokens of the user. */
     fun generateHeaderImage()
 

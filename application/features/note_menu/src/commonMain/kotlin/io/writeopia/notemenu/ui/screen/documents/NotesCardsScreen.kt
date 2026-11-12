@@ -425,10 +425,12 @@ private fun LazyGridNotes(
                             animatedVisibilityScope = animatedVisibilityScope,
                             onDocumentClick,
                             selectionListener,
-                            previewDrawers(isDarkTheme),
+                            previewDrawers(isDarkTheme, imageMaxHeight = GRID_CARD_IMAGE_MAX_HEIGHT),
                             position = i,
                             { onDragIconClick(menuItem.documentId) },
-                            modifier = Modifier.animateItem()
+                            // Fixed height, like the grid cards of the native apps: a long
+                            // document is clipped instead of stretching its card (and its row).
+                            modifier = Modifier.animateItem().height(GRID_CARD_HEIGHT)
                         )
                     }
 
@@ -910,7 +912,10 @@ private fun NoNotesScreen() {
 }
 
 @Composable
-private fun previewDrawers(isDarkTheme: Boolean): Map<Int, StoryStepDrawer> {
+private fun previewDrawers(
+    isDarkTheme: Boolean,
+    imageMaxHeight: Dp = 200.dp
+): Map<Int, StoryStepDrawer> {
     val unOrderedListItemPreviewDrawer = UnOrderedListItemPreviewDrawer(isDarkTheme = true)
 
     return mapOf(
@@ -925,11 +930,16 @@ private fun previewDrawers(isDarkTheme: Boolean): Map<Int, StoryStepDrawer> {
         StoryTypes.DOCUMENT_LINK.type.number to DocumentLinkPreviewDrawer(),
         StoryTypes.LINK_CARD.type.number to LinkCardPreviewDrawer(),
         StoryTypes.UNORDERED_LIST_ITEM.type.number to unOrderedListItemPreviewDrawer,
-        StoryTypes.IMAGE.type.number to ImagePreviewDrawer(),
+        StoryTypes.IMAGE.type.number to ImagePreviewDrawer(maxHeight = imageMaxHeight),
         StoryTypes.AI_ANSWER.type.number to AiAnswerPreviewDrawer(),
         StoryTypes.VIDEO.type.number to VideoPreviewDrawer()
     )
 }
+
+private val GRID_CARD_HEIGHT = 200.dp
+
+/** A picture in a grid card leaves room for the text under it. */
+private val GRID_CARD_IMAGE_MAX_HEIGHT = 90.dp
 
 @Composable
 private fun shadowModifier(): Modifier =

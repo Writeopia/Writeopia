@@ -133,7 +133,10 @@ jobs:
         run: ./gradlew jvmTest
   web_build_and_publish:
     name: Web - Build and Publish
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     env:
       isCI: "true"
     steps:
@@ -146,13 +149,21 @@ jobs:
           java-version: '21'
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
-      - name: Build development webpack
-        run: ./gradlew jsBrowserDevelopmentWebpack
-      - name: Upload JS webpack
-        uses: actions/upload-artifact@v7
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v3
         with:
-          name: writeopia-js-webpack
-          path: ./application/web/build/kotlin-webpack/js/developmentExecutable
-          if-no-files-found: error
-          retention-days: 10
-          overwrite: true
+          workload_identity_provider: 'projects/640912732949/locations/global/workloadIdentityPools/github-actions-pool/providers/github-provider'
+          service_account: 'github-actions-deployer@writeopia.iam.gserviceaccount.com'
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v3
+      - name: Build Web App (Production)
+        run: ./gradlew :application:web:jsBrowserDistribution
+      - name: Deploy to Cloud Storage
+        run: |
+          gsutil -m rsync -r -d application/web/build/dist/js/productionExecutable/ gs://writeopia-web/
+      # writeopia.js is not content-hashed and Cloud CDN caches it for 24h, so
+      # without this users can keep getting the previous bundle after a release.
+      - name: Invalidate Cloud CDN cache
+        run: |
+          gcloud compute url-maps invalidate-cdn-cache http-lb-writeopia2 --path "/*" --async

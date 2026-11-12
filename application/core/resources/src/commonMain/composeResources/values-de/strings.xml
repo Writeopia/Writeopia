@@ -372,6 +372,7 @@
   <string name="header_colors">Farben</string>
   <string name="header_images">Bilder</string>
   <string name="header_generate_image">Mit KI erstellen</string>
+  <string name="header_image_instructions_hint">Bild beschreiben (optional)</string>
   <string name="header_generating_image">Dein Titelbild wird gezeichnet…</string>
   <string name="header_use_image">Dieses Bild verwenden</string>
   <string name="header_try_another">Noch eins versuchen</string>

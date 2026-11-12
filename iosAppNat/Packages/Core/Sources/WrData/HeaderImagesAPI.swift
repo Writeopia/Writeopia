@@ -15,14 +15,15 @@ public final class HeaderImagesAPI {
     }
 
     /// Draws a header for a document. The result is the URL of a candidate, not yet approved.
-    public func generateHeaderImage(documentTitle: String, documentText: String) async throws -> String {
+    public func generateHeaderImage(documentTitle: String, documentText: String, instructions: String = "") async throws -> String {
         let response: HeaderImageGenerateResponse = try await client.send(
             .post,
             "api/ai/header-image",
             body: HeaderImageGenerateRequest(
                 workspaceId: workspaceId,
                 documentTitle: documentTitle,
-                documentText: documentText
+                documentText: documentText,
+                instructions: instructions
             )
         )
         guard let url = response.imageUrl, !url.isEmpty else {

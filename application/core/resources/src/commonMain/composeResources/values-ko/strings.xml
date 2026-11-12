@@ -372,6 +372,7 @@
   <string name="header_colors">색상</string>
   <string name="header_images">이미지</string>
   <string name="header_generate_image">AI로 생성</string>
+  <string name="header_image_instructions_hint">이미지 설명 (선택)</string>
   <string name="header_generating_image">헤더를 그리는 중…</string>
   <string name="header_use_image">이 이미지 사용</string>
   <string name="header_try_another">다른 이미지 시도</string>

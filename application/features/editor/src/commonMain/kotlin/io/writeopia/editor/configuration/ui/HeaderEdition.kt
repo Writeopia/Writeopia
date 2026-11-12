@@ -65,6 +65,7 @@ fun HeaderEditionContent(noteEditorViewModel: NoteEditorViewModel) {
         headerImages = headerImages,
         selectedImageUrl = header?.url,
         onImageSelection = noteEditorViewModel::onHeaderImageSelection,
+        onInstructionsChange = noteEditorViewModel::onHeaderImageInstructions,
         onGenerateImage = noteEditorViewModel::generateHeaderImage,
         onApproveImage = noteEditorViewModel::approveHeaderImage,
         onDiscardImage = noteEditorViewModel::discardHeaderImage,

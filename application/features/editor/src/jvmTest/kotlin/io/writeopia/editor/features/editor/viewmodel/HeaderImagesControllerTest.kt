@@ -19,11 +19,18 @@ private class FakeHeaderImages(
     var saveFailure: String? = null,
 ) : HeaderImages {
     val generatedFor = mutableListOf<Pair<String, String>>()
+    val instructionsFor = mutableListOf<String>()
     var gate: CompletableDeferred<Unit>? = null
 
-    override suspend fun generate(workspaceId: String, documentTitle: String, documentText: String): ResultData<String> {
+    override suspend fun generate(
+        workspaceId: String,
+        documentTitle: String,
+        documentText: String,
+        instructions: String
+    ): ResultData<String> {
         gate?.await()
         generatedFor.add(documentTitle to documentText)
+        instructionsFor.add(instructions)
         val failure = failure
         return if (failure != null) {
             ResultData.Error(Exception(failure))
@@ -106,6 +113,19 @@ class HeaderImagesControllerTest {
         )
         assertTrue(approved.isEmpty())
         assertTrue(images.saved.isEmpty())
+    }
+
+    @Test
+    fun `the instructions of the user go with every picture drawn`() = runTest(UnconfinedTestDispatcher()) {
+        val images = FakeHeaderImages()
+        val controller = controller(images)
+
+        controller.generate()
+        controller.setInstructions("  a red lighthouse  ")
+        controller.generate()
+
+        assertEquals(listOf("", "a red lighthouse"), images.instructionsFor)
+        assertEquals("  a red lighthouse  ", controller.state.value.instructions)
     }
 
     @Test

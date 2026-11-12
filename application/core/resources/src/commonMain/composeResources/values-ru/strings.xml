@@ -372,6 +372,7 @@
   <string name="header_colors">Цвета</string>
   <string name="header_images">Изображения</string>
   <string name="header_generate_image">Сгенерировать с помощью ИИ</string>
+  <string name="header_image_instructions_hint">Опишите изображение (необязательно)</string>
   <string name="header_generating_image">Рисуем шапку…</string>
   <string name="header_use_image">Использовать это изображение</string>
   <string name="header_try_another">Попробовать другое</string>

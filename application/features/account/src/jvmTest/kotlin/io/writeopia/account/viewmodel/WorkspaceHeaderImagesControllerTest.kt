@@ -22,8 +22,12 @@ private class FakeHeaderImages(
     /** Holds a listing back, after it read the pictures, until completed. */
     var listingGate: CompletableDeferred<Unit>? = null
 
-    override suspend fun generate(workspaceId: String, documentTitle: String, documentText: String): ResultData<String> =
-        ResultData.Error()
+    override suspend fun generate(
+        workspaceId: String,
+        documentTitle: String,
+        documentText: String,
+        instructions: String
+    ): ResultData<String> = ResultData.Error()
 
     override suspend fun images(workspaceId: String): ResultData<List<String>> =
         ResultData.Complete(pictures.map { it.url })

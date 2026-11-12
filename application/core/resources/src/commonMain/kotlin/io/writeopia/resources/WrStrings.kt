@@ -390,6 +390,7 @@ import writeopia.application.core.resources.generated.resources.header_title
 import writeopia.application.core.resources.generated.resources.header_colors
 import writeopia.application.core.resources.generated.resources.header_images
 import writeopia.application.core.resources.generated.resources.header_generate_image
+import writeopia.application.core.resources.generated.resources.header_image_instructions_hint
 import writeopia.application.core.resources.generated.resources.header_generating_image
 import writeopia.application.core.resources.generated.resources.header_use_image
 import writeopia.application.core.resources.generated.resources.header_try_another
@@ -1472,6 +1473,9 @@ object WrStrings {
 
     @Composable
     fun headerGenerateImage() = stringResource(Res.string.header_generate_image)
+
+    @Composable
+    fun headerImageInstructionsHint() = stringResource(Res.string.header_image_instructions_hint)
 
     @Composable
     fun headerGeneratingImage() = stringResource(Res.string.header_generating_image)

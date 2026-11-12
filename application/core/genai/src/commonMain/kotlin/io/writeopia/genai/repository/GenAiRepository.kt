@@ -157,9 +157,12 @@ class GenAiRepository(
     suspend fun generateHeaderImage(
         workspaceId: String,
         documentTitle: String,
-        documentText: String
+        documentText: String,
+        instructions: String = ""
     ): ResultData<String> =
-        genAiApi.generateHeaderImage(HeaderImageGenerateRequest(workspaceId, documentTitle, documentText))
+        genAiApi.generateHeaderImage(
+            HeaderImageGenerateRequest(workspaceId, documentTitle, documentText, instructions)
+        )
 
     /** The URLs of the header pictures of [workspaceId], the newest first. */
     suspend fun headerImages(workspaceId: String): ResultData<List<String>> =
