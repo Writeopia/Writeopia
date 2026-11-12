@@ -179,6 +179,40 @@ class DocumentMergerTest {
     )
 
     @Test
+    fun `a local step never stamped takes the newer backend copy`() {
+        val local = document(
+            lastUpdatedAt = 1,
+            comments = emptyMap(),
+            content = mapOf(Rank.at(0) to step("title", 1).copy(url = null, lastUpdatedAt = null)),
+        )
+        val backend = document(
+            lastUpdatedAt = 2,
+            comments = emptyMap(),
+            content = mapOf(Rank.at(0) to step("title", 5).copy(url = "https://cdn/new.png")),
+        )
+
+        val merged = merger.merge(local, backend)
+
+        assertEquals("https://cdn/new.png", merged?.content?.values?.single()?.url)
+    }
+
+    @Test
+    fun `a local step stamped as new as the backend copy stays`() {
+        val local = document(
+            lastUpdatedAt = 1,
+            comments = emptyMap(),
+            content = mapOf(Rank.at(0) to step("title", 5).copy(url = "https://cdn/local.png")),
+        )
+        val backend = document(
+            lastUpdatedAt = 2,
+            comments = emptyMap(),
+            content = mapOf(Rank.at(0) to step("title", 5).copy(url = "https://cdn/backend.png")),
+        )
+
+        assertEquals("https://cdn/local.png", merger.merge(local, backend)?.content?.values?.single()?.url)
+    }
+
+    @Test
     fun `two different steps at the same position both survive, in order`() {
         val local = document(
             lastUpdatedAt = 1,

@@ -387,7 +387,9 @@ class DocumentSyncService(
         val newerSteps = serverSteps.filter { (_, serverStep) ->
             if (serverStep.id in tombstoned) return@filter false
             val localStep = localById[serverStep.id] ?: return@filter true
-            val localTimestamp = localStep.lastUpdatedAt ?: Long.MAX_VALUE
+            // A step never stamped here (saved before stamps existed) is the oldest, as when sending:
+            // the backend copy wins if it has any stamp, and the local one stays on a tie.
+            val localTimestamp = localStep.lastUpdatedAt ?: 0L
             (serverStep.lastUpdatedAt ?: 0L) > localTimestamp
         }
 

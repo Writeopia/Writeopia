@@ -560,9 +560,11 @@ struct HeaderImageGenerateBar: View {
                 model.generate()
             } label: {
                 Label("Generate with AI", systemImage: "sparkles")
-                    .frame(maxWidth: .infinity)
+                    .font(.headline)
+                    .frame(maxWidth: .infinity, minHeight: 28)
             }
             .buttonStyle(.borderedProminent)
+            .controlSize(.large)
             .disabled(model.isGenerating || model.isSaving)
             .accessibilityIdentifier("editor.header.generateImage")
         }
