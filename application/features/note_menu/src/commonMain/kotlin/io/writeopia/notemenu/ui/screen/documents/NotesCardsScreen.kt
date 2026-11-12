@@ -428,7 +428,9 @@ private fun LazyGridNotes(
                             previewDrawers(isDarkTheme),
                             position = i,
                             { onDragIconClick(menuItem.documentId) },
-                            modifier = Modifier.animateItem()
+                            // Fixed height, like the grid cards of the native apps: a long
+                            // document is clipped instead of stretching its card (and its row).
+                            modifier = Modifier.animateItem().height(GRID_CARD_HEIGHT)
                         )
                     }
 
@@ -930,6 +932,8 @@ private fun previewDrawers(isDarkTheme: Boolean): Map<Int, StoryStepDrawer> {
         StoryTypes.VIDEO.type.number to VideoPreviewDrawer()
     )
 }
+
+private val GRID_CARD_HEIGHT = 200.dp
 
 @Composable
 private fun shadowModifier(): Modifier =
