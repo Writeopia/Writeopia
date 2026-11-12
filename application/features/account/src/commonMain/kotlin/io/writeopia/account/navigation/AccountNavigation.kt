@@ -128,6 +128,7 @@ fun NavGraphBuilder.accountMenuNavigation(
     navigateToChooseWorkspace: () -> Unit,
     navigateToSpaceChoice: () -> Unit,
     resetPassword: () -> Unit,
+    navigateToAccountDeletionStarted: () -> Unit,
     navigationClick: () -> Unit,
     showSettingsBackArrow: Boolean = true,
     navigateToSettingsTeams: () -> Unit,
@@ -708,6 +709,8 @@ fun NavGraphBuilder.accountMenuNavigation(
                 isLoggedInState = accountMenuViewModel.isLoggedIn,
                 workspacesState = accountMenuViewModel.availableWorkspaces,
                 exportWorkspaceState = accountMenuViewModel.exportWorkspaceState,
+                deleteAccountInProgress = accountMenuViewModel.deleteAccountInProgress,
+                userEmail = accountMenuViewModel.userEmail,
                 goToRegister = navigateToAuthMenu,
                 switchSpace = navigateToSpaceChoice,
                 changeWorkspace = {
@@ -726,6 +729,9 @@ fun NavGraphBuilder.accountMenuNavigation(
                     accountMenuViewModel.logout {
                         navigateToChooseWorkspace()
                     }
+                },
+                deleteAccount = {
+                    accountMenuViewModel.deleteAccount(navigateToAccountDeletionStarted)
                 }
             )
         }

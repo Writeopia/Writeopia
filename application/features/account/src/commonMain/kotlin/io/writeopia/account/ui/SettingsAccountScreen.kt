@@ -14,7 +14,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -45,6 +47,8 @@ fun SettingsAccountScreen(
     isLoggedInState: StateFlow<ResultData<Boolean>>,
     workspacesState: StateFlow<ResultData<List<Workspace>>>,
     exportWorkspaceState: StateFlow<ResultData<Unit>>,
+    deleteAccountInProgress: StateFlow<Boolean>,
+    userEmail: StateFlow<String>,
     goToRegister: () -> Unit,
     switchSpace: () -> Unit,
     changeWorkspace: () -> Unit,
@@ -52,10 +56,12 @@ fun SettingsAccountScreen(
     resetExportState: () -> Unit,
     resetPassword: () -> Unit,
     logout: () -> Unit,
+    deleteAccount: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showExportDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier.fillMaxSize()
@@ -119,6 +125,15 @@ fun SettingsAccountScreen(
                 icon = WrIcons.backArrowDesktop,
                 onClick = { showLogoutDialog = true }
             )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            AccountMenuItem(
+                title = WrStrings.deleteAccount(),
+                icon = WrIcons.delete,
+                onClick = { showDeleteDialog = true },
+                destructive = true
+            )
         }
     }
 
@@ -152,6 +167,67 @@ fun SettingsAccountScreen(
         )
     }
 
+    if (showDeleteDialog) {
+        val isDeleting by deleteAccountInProgress.collectAsState()
+        val email by userEmail.collectAsState()
+        var confirmEmailInput by remember { mutableStateOf("") }
+        val canDelete = !isDeleting &&
+            email.isNotBlank() &&
+            confirmEmailInput.trim().equals(email, ignoreCase = true)
+
+        AlertDialog(
+            onDismissRequest = { if (!isDeleting) showDeleteDialog = false },
+            title = {
+                Text(text = WrStrings.areYouSure())
+            },
+            text = {
+                Column {
+                    Text(text = WrStrings.notesWillBeDeleted(), fontWeight = FontWeight.Bold)
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(text = WrStrings.confirmEmail())
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        value = confirmEmailInput,
+                        onValueChange = { confirmEmailInput = it },
+                        singleLine = true,
+                        enabled = !isDeleting,
+                        placeholder = { Text(WrStrings.email()) }
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = deleteAccount,
+                    enabled = canDelete
+                ) {
+                    if (isDeleting) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text(
+                            text = WrStrings.deleteAccount(),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDeleteDialog = false },
+                    enabled = !isDeleting
+                ) {
+                    Text(text = WrStrings.cancel())
+                }
+            }
+        )
+    }
+
     if (showExportDialog) {
         ExportWorkspaceDialog(
             workspacesState = workspacesState,
@@ -169,8 +245,15 @@ fun SettingsAccountScreen(
 private fun AccountMenuItem(
     title: String,
     icon: ImageVector,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    destructive: Boolean = false,
 ) {
+    val contentColor = if (destructive) {
+        MaterialTheme.colorScheme.error
+    } else {
+        MaterialTheme.colorScheme.onBackground
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -183,7 +266,7 @@ private fun AccountMenuItem(
         Icon(
             imageVector = icon,
             contentDescription = title,
-            tint = MaterialTheme.colorScheme.onBackground,
+            tint = contentColor,
             modifier = Modifier.size(24.dp)
         )
 
@@ -192,7 +275,7 @@ private fun AccountMenuItem(
         Text(
             text = title,
             style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onBackground,
+            color = contentColor,
             modifier = Modifier.weight(1f)
         )
 

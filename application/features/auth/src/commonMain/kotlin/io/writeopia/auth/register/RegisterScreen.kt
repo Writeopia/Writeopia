@@ -452,7 +452,7 @@ private fun TermsAgreement(
             append(terms)
         }
         // "l'" in Italian is glued to the word after it.
-        append(if (and.endsWith("'")) and else "$and ")
+        append(if (and.endsWith("'")) " $and" else " $and ")
         withLink(LinkAnnotation.Clickable("privacy", linkStyle) { onOpenLegalDocument(LEGAL_PRIVACY) }) {
             append(privacy)
         }

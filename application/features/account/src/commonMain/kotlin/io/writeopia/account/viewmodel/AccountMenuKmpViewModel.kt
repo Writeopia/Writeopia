@@ -2,11 +2,14 @@ package io.writeopia.account.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.writeopia.auth.core.data.AuthApi
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.auth.core.manager.WorkspaceHandler
 import io.writeopia.sdk.models.utils.toBoolean
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
+import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
+import io.writeopia.sdk.models.user.WriteopiaUser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,6 +24,7 @@ import kotlinx.coroutines.withContext
 internal class AccountMenuKmpViewModel(
     private val authRepository: AuthRepository,
     private val workspaceHandler: WorkspaceHandler,
+    private val authApi: AuthApi,
 ) : AccountMenuViewModel, ViewModel() {
 
     override val lastWorkspaceSync: StateFlow<ResultData<String>> = workspaceHandler.lastWorkspaceSync
@@ -45,6 +49,15 @@ internal class AccountMenuKmpViewModel(
     private val _logoutInProgress = MutableStateFlow(false)
     override val logoutInProgress: StateFlow<Boolean> = _logoutInProgress.asStateFlow()
 
+    private val _deleteAccountInProgress = MutableStateFlow(false)
+    override val deleteAccountInProgress: StateFlow<Boolean> =
+        _deleteAccountInProgress.asStateFlow()
+
+    override val userEmail: StateFlow<String> by lazy {
+        authRepository.listenForUser().map { it.email }
+            .stateIn(viewModelScope, SharingStarted.Lazily, "")
+    }
+
     init {
         workspaceHandler.initScope(viewModelScope)
         workspaceHandler.loadAvailableWorkspaces()
@@ -64,6 +77,39 @@ internal class AccountMenuKmpViewModel(
                 }
             } finally {
                 _logoutInProgress.value = false
+            }
+        }
+    }
+
+    override fun deleteAccount(onSuccess: () -> Unit) {
+        if (_deleteAccountInProgress.value) return
+
+        viewModelScope.launch(Dispatchers.Default) {
+            _deleteAccountInProgress.value = true
+
+            try {
+                if (authRepository.getUser().id == WriteopiaUser.DISCONNECTED) return@launch
+
+                // Captured before the cleanup, to revoke it afterwards.
+                val refreshToken = authRepository.getRefreshToken()
+                val result = authApi.deleteAccount()
+
+                if (result is ResultData.Complete && result.data) {
+                    refreshToken?.let { authApi.logout(it) }
+
+                    authRepository.unselectAllWorkspaces()
+                    authRepository.clearTokens()
+                    authRepository.logout()
+
+                    // Caches an API instance built with the old HttpClient.
+                    WriteopiaConnectionInjector.clearInstance()
+
+                    withContext(Dispatchers.Main) {
+                        onSuccess()
+                    }
+                }
+            } finally {
+                _deleteAccountInProgress.value = false
             }
         }
     }

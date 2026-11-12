@@ -66,6 +66,7 @@ import io.writeopia.navigation.search.navigateToSearch
 import io.writeopia.notemenu.di.NotesMenuInjection
 import io.writeopia.notemenu.navigation.navigateToNotes
 import io.writeopia.notemenu.navigation.notesMenuNavigation
+import io.writeopia.notemenu.viewmodel.FolderStateController
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -243,6 +244,13 @@ fun Navigation(
                 },
                 resetPassword = {
                     navController.navigate(Destinations.AUTH_RESET_PASSWORD.id)
+                },
+                navigateToAccountDeletionStarted = {
+                    FolderStateController.clearInstance()
+
+                    navController.navigate(Destinations.ACCOUNT_DELETION_STARTED.id) {
+                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                    }
                 },
                 navigationClick = navController::navigateUp,
                 showSettingsBackArrow = !settingsAsTab,
