@@ -22,7 +22,7 @@ import io.writeopia.theme.WriteopiaTheme
 
 /**
  * The header menu of the phones: a bottom sheet with the colors and the pictures of the header.
- * It opens fully expanded, so the picture the AI draws is in view without dragging the sheet.
+ * It opens partially and expands when the content is scrolled.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,7 +35,7 @@ fun HeaderEdition(
 
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
         containerColor = WriteopiaTheme.colorScheme.lightBackground,
     ) {
         Column(

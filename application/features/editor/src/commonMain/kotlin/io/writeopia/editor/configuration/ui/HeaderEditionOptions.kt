@@ -140,21 +140,6 @@ fun HeaderEditionOptions(
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        if (headerImages.canGenerate) {
-            OutlinedTextField(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                value = headerImages.instructions,
-                onValueChange = onInstructionsChange,
-                enabled = headerImages.generation !is HeaderImageGeneration.Generating,
-                placeholder = { Text(WrStrings.headerImageInstructionsHint()) },
-                textStyle = MaterialTheme.typography.bodyMedium,
-                maxLines = 3,
-                shape = RoundedCornerShape(12.dp)
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-        }
-
         LazyVerticalGrid(
             modifier = Modifier.fillMaxWidth().heightIn(max = imagesGridMaxHeight),
             columns = GridCells.Adaptive(minSize = tileWidth),
@@ -162,21 +147,46 @@ fun HeaderEditionOptions(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             contentPadding = PaddingValues(horizontal = 16.dp)
         ) {
-            if (headerImages.canGenerate) {
-                item {
-                    GenerateImageTile(
-                        enabled = headerImages.generation !is HeaderImageGeneration.Generating,
-                        onClick = onGenerateImage
-                    )
-                }
-            }
-
             items(headerImages.images, key = { url -> url }) { url ->
                 ImageTile(
                     url = url,
                     isSelected = url == selectedImageUrl,
                     onClick = { onImageSelection(url) }
                 )
+            }
+        }
+
+        if (headerImages.canGenerate) {
+            val generating = headerImages.generation is HeaderImageGeneration.Generating
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedTextField(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                value = headerImages.instructions,
+                onValueChange = onInstructionsChange,
+                enabled = !generating,
+                placeholder = { Text(WrStrings.headerImageInstructionsHint()) },
+                textStyle = MaterialTheme.typography.bodyMedium,
+                maxLines = 3,
+                shape = RoundedCornerShape(12.dp)
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Button(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                enabled = !generating,
+                shape = MaterialTheme.shapes.large,
+                onClick = onGenerateImage
+            ) {
+                Icon(
+                    modifier = Modifier.size(18.dp),
+                    imageVector = WrIcons.ai,
+                    contentDescription = null
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(WrStrings.headerGenerateImage())
             }
         }
 
@@ -196,37 +206,6 @@ private val tileWidth = 100.dp
 
 // About three rows of pictures; more pictures scroll inside the grid.
 private val imagesGridMaxHeight = 200.dp
-
-@Composable
-private fun GenerateImageTile(enabled: Boolean, onClick: () -> Unit) {
-    val shape = RoundedCornerShape(14.dp)
-
-    Column(
-        modifier = Modifier
-            .clip(shape)
-            .clickable(enabled = enabled, onClick = onClick)
-            .border(BorderStroke(1.dp, WriteopiaTheme.colorScheme.dividerColor), shape)
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .height(tileHeight)
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Icon(
-            modifier = Modifier.size(20.dp),
-            imageVector = WrIcons.ai,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary
-        )
-        Text(
-            text = WrStrings.headerGenerateImage(),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1
-        )
-    }
-}
 
 @Composable
 private fun ImageTile(url: String, isSelected: Boolean, onClick: () -> Unit) {
