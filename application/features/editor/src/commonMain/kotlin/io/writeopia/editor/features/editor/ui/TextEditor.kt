@@ -36,7 +36,7 @@ internal fun TextEditor(
     drawersFactory: DrawersFactory,
     modifier: Modifier = Modifier,
     keyFn: (DrawStory) -> Int = { drawStory ->
-        drawStory.desktopKey + (drawStory.cursor?.position?.toInt() ?: 0)
+        drawStory.desktopKey + (drawStory.cursor?.position?.hashCode() ?: 0)
     },
     onDocumentLinkClick: (String) -> Unit,
     onDrawingClick: (StoryStep, String) -> Unit = { _, _ -> },
