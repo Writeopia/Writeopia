@@ -125,6 +125,12 @@
   <string name="you_are_offline">Você está usando a área de trabalha offline</string>
   <string name="create_your_account">Crie sua conta</string>
   <string name="create_account">Criar conta</string>
+  <string name="terms_agree_prefix">Eu concordo com os</string>
+  <string name="terms_of_service">Termos de Serviço</string>
+  <string name="terms_agree_and">e a</string>
+  <string name="privacy_policy">Política de Privacidade</string>
+  <string name="legal_load_error">Não foi possível carregar este documento.</string>
+  <string name="legal_effective">Em vigor desde %1$s</string>
   <string name="jorney_starts">Comece sua jornada</string>
   <string name="start_now">Comece agora!</string>
   <string name="sign_in_account">Entre em sua conta no Writeopia</string>

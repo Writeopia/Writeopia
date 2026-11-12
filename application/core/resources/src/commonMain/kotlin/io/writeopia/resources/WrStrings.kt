@@ -169,6 +169,12 @@ import writeopia.application.core.resources.generated.resources.confirmation_del
 import writeopia.application.core.resources.generated.resources.content
 import writeopia.application.core.resources.generated.resources.copy_note
 import writeopia.application.core.resources.generated.resources.create_account
+import writeopia.application.core.resources.generated.resources.terms_agree_prefix
+import writeopia.application.core.resources.generated.resources.terms_of_service
+import writeopia.application.core.resources.generated.resources.terms_agree_and
+import writeopia.application.core.resources.generated.resources.privacy_policy
+import writeopia.application.core.resources.generated.resources.legal_load_error
+import writeopia.application.core.resources.generated.resources.legal_effective
 import writeopia.application.core.resources.generated.resources.create_your_account
 import writeopia.application.core.resources.generated.resources.dark_theme
 import writeopia.application.core.resources.generated.resources.decoration
@@ -734,6 +740,24 @@ object WrStrings {
 
     @Composable
     fun createAccount() = stringResource(Res.string.create_account)
+
+    @Composable
+    fun termsAgreePrefix() = stringResource(Res.string.terms_agree_prefix)
+
+    @Composable
+    fun termsOfService() = stringResource(Res.string.terms_of_service)
+
+    @Composable
+    fun termsAgreeAnd() = stringResource(Res.string.terms_agree_and)
+
+    @Composable
+    fun privacyPolicy() = stringResource(Res.string.privacy_policy)
+
+    @Composable
+    fun legalLoadError() = stringResource(Res.string.legal_load_error)
+
+    @Composable
+    fun legalEffective(date: String) = stringResource(Res.string.legal_effective, date)
 
     @Composable
     fun startNow() = stringResource(Res.string.start_now)

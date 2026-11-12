@@ -34,6 +34,10 @@ final class RegisterViewModel {
     private(set) var errorMessage: String?
     private(set) var resendCooldown = 0
     private(set) var usernameAvailability = UsernameAvailability.unknown
+    /// Whether the Terms of Service and the Privacy Policy were accepted.
+    var termsAccepted = false
+    /// The legal document being read, shown in a sheet.
+    var legalDocument: LegalDocumentRoute?
 
     private let session: AppSession
     private var cooldownTask: Task<Void, Never>?
@@ -91,11 +95,16 @@ final class RegisterViewModel {
             usernameAvailability != .checking &&
             FieldValidator.isValidWorkspaceName(workspaceName) &&
             passwordValidation.isValid &&
+            termsAccepted &&
             !isLoading
     }
 
     var normalizedEmail: String {
         email.trimmingCharacters(in: .whitespaces).lowercased()
+    }
+
+    func loadLegalDocument(_ type: String) async throws -> LegalDocument {
+        try await session.authAPI.legalDocument(type)
     }
 
     /// Step 1: emails a verification code.
@@ -127,13 +136,18 @@ final class RegisterViewModel {
         guard canRegister else { return }
 
         _ = await run {
+            // The version of the texts the user agreed to is the one served right now: the
+            // backend refuses an older one.
+            let legal = try await self.session.authAPI.legalDocument(LegalDocumentRoute.terms.type)
+
             let result = try await self.session.authAPI.register(
                 name: self.name.trimmingCharacters(in: .whitespaces),
                 email: self.normalizedEmail,
                 username: self.username,
                 workspaceName: self.workspaceName.trimmingCharacters(in: .whitespaces),
                 password: self.password,
-                verificationCode: self.code
+                verificationCode: self.code,
+                acceptedLegalVersion: legal.version
             )
 
             switch result {
@@ -279,6 +293,8 @@ struct RegisterView: View {
                     PasswordStrengthView(validation: viewModel.passwordValidation)
                 }
 
+                TermsAgreementRow(viewModel: viewModel)
+
                 WrErrorText(viewModel.errorMessage)
 
                 WrPrimaryButton("Create account", isLoading: viewModel.isLoading) {
@@ -295,6 +311,11 @@ struct RegisterView: View {
         .navigationTitle("Register")
         .toolbarTitleDisplayMode(.inline)
         .animation(.default, value: viewModel.errorMessage)
+        .sheet(item: $viewModel.legalDocument) { route in
+            LegalDocumentView(type: route.type) { type in
+                try await viewModel.loadLegalDocument(type)
+            }
+        }
     }
 
     @ViewBuilder
@@ -304,6 +325,41 @@ struct RegisterView: View {
                 .font(.caption)
                 .foregroundStyle(.orange)
                 .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
+
+/// "I agree to the Terms of Service and the Privacy Policy", both names opening the document.
+struct TermsAgreementRow: View {
+    @Bindable var viewModel: RegisterViewModel
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Button {
+                viewModel.termsAccepted.toggle()
+            } label: {
+                Image(systemName: viewModel.termsAccepted ? "checkmark.square.fill" : "square")
+                    .font(.title3)
+                    .foregroundStyle(viewModel.termsAccepted ? Color.accentColor : WrColors.textLighter)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Accept the Terms of Service and the Privacy Policy")
+            .accessibilityValue(viewModel.termsAccepted ? "On" : "Off")
+            .accessibilityIdentifier("register.terms")
+
+            // The links are markdown inside the translated string, so each language orders
+            // the words as it needs. Tapping one is caught here and opens the sheet.
+            Text("I agree to the [Terms of Service](writeopia://legal/terms) and the [Privacy Policy](writeopia://legal/privacy)")
+                .font(.footnote)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .environment(\.openURL, OpenURLAction { url in
+                    guard url.scheme == "writeopia", url.host == "legal",
+                          let route = LegalDocumentRoute(type: url.lastPathComponent) else {
+                        return .systemAction
+                    }
+                    viewModel.legalDocument = route
+                    return .handled
+                })
         }
     }
 }

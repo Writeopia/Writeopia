@@ -139,6 +139,14 @@ CREATE TABLE user_favorite_entity (
   PRIMARY KEY (user_id, document_id)
 );
 
+CREATE TABLE user_legal_acceptance (
+  user_id TEXT NOT NULL,
+  document_type TEXT NOT NULL,
+  version TEXT NOT NULL,
+  accepted_at BIGINT NOT NULL,
+  PRIMARY KEY (user_id, document_type, version)
+);
+
 -- Non-partitioned here for local dev simplicity. Production (Cloud SQL) uses a
 -- RANGE-partitioned version, see backend/core/database/scripts/sync_event_partitioning.sql.
 CREATE TABLE sync_event (

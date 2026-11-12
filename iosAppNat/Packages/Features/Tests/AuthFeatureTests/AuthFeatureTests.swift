@@ -9,6 +9,7 @@ import WrStorage
 
 final class StubTransport: HTTPTransport {
     private(set) var paths: [String] = []
+    private(set) var bodies: [String] = []
     private let routes: [String: (Int, String)]
 
     init(_ routes: [String: (Int, String)]) {
@@ -18,10 +19,13 @@ final class StubTransport: HTTPTransport {
     func data(for request: URLRequest) async throws -> (Data, URLResponse) {
         let path = request.url!.path()
         paths.append(path)
+        bodies.append(String(decoding: request.httpBody ?? Data(), as: UTF8.self))
         let (status, body) = routes[path] ?? (404, "")
         return (Data(body.utf8), HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)!)
     }
 }
+
+private let legalJson = #"{"type":"terms","version":"v1","effectiveDate":"2026-11-12","title":"Terms of Service","sections":[{"heading":"1. Agreement","body":"Hello"}]}"#
 
 private let userJson = #"{"id":"u1","email":"ana@writeopia.io","name":"Ana"}"#
 
@@ -206,6 +210,7 @@ private func makeSession(
         let (session, transport) = makeSession([
             "/api/auth/register/email/send": (200, ok),
             "/api/auth/register/email/verify": (200, ok),
+            "/api/auth/legal/terms": (200, legalJson),
             "/api/auth/register": (201, #"{"writeopiaUser":\#(userJson),"emailConfirmationRequired":false,"accessToken":"a","refreshToken":"r"}"#),
         ], tokens: tokens)
         session.chooseOnlineSpace()
@@ -223,13 +228,35 @@ private func makeSession(
         viewModel.username = "ana"
         viewModel.workspaceName = "Ana's team"
         viewModel.password = "abcdefg!"
+        viewModel.termsAccepted = true
         #expect(viewModel.canRegister)
 
         await viewModel.register()
 
-        #expect(transport.paths.last == "/api/auth/register")
+        #expect(transport.paths.suffix(2) == ["/api/auth/legal/terms", "/api/auth/register"])
+        #expect(transport.bodies.last?.contains(#""acceptedLegalVersion":"v1""#) == true)
         #expect(tokens.accessToken == "a")
         #expect(session.phase == .chooseWorkspace)
+    }
+
+    @Test func registeringNeedsTheTermsToBeAccepted() async {
+        let (session, _) = makeSession([
+            "/api/auth/username/available": (200, #"{"available":true}"#),
+        ])
+
+        let viewModel = RegisterViewModel(session: session)
+        viewModel.name = "Ana"
+        viewModel.username = "ana"
+        viewModel.workspaceName = "Ana's team"
+        viewModel.password = "abcdefg!"
+        await viewModel.checkUsernameAvailability()
+        #expect(!viewModel.canRegister)
+
+        viewModel.termsAccepted = true
+        #expect(viewModel.canRegister)
+
+        viewModel.termsAccepted = false
+        #expect(!viewModel.canRegister)
     }
 
     @Test func takenUsernameIsFlaggedAndBlocksRegistering() async {
@@ -242,6 +269,7 @@ private func makeSession(
         viewModel.username = "ana"
         viewModel.workspaceName = "Ana's team"
         viewModel.password = "abcdefg!"
+        viewModel.termsAccepted = true
 
         await viewModel.checkUsernameAvailability()
 
@@ -261,6 +289,7 @@ private func makeSession(
         viewModel.username = "ana"
         viewModel.workspaceName = "Ana's team"
         viewModel.password = "abcdefg!"
+        viewModel.termsAccepted = true
 
         await viewModel.checkUsernameAvailability()
 
@@ -483,5 +512,24 @@ private func makeSession(
         // Offline the cloud can't answer, so Apple Intelligence does.
         let offline = session(online: false, appleIntelligence: true, defaults: defaults)
         #expect(offline.aiClient === offline.appleIntelligence)
+    }
+}
+
+@Suite struct LegalDocumentTests {
+    @Test func theLegalDocumentIsDecodedFromTheApi() async throws {
+        let (session, transport) = makeSession(["/api/auth/legal/terms": (200, legalJson)])
+
+        let document = try await session.authAPI.legalDocument("terms")
+
+        #expect(transport.paths == ["/api/auth/legal/terms"])
+        #expect(document.version == "v1")
+        #expect(document.title == "Terms of Service")
+        #expect(document.sections == [LegalSection(heading: "1. Agreement", body: "Hello")])
+    }
+
+    @Test func onlyTheTermsAndThePrivacyPolicyHaveARoute() {
+        #expect(LegalDocumentRoute(type: "terms") != nil)
+        #expect(LegalDocumentRoute(type: "privacy") != nil)
+        #expect(LegalDocumentRoute(type: "cookies") == nil)
     }
 }

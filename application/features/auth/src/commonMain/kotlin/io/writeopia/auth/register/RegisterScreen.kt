@@ -18,6 +18,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -38,6 +40,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withLink
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
@@ -75,10 +83,15 @@ fun RegisterScreen(
     usernameAvailabilityState: StateFlow<UsernameAvailability>,
     passwordValidationState: StateFlow<PasswordValidationResult>,
     canRegisterState: StateFlow<Boolean>,
+    termsAcceptedState: StateFlow<Boolean>,
+    legalDocumentState: StateFlow<LegalDocumentState>,
     nameChanged: (String) -> Unit,
     usernameChanged: (String) -> Unit,
     companyChanged: (String) -> Unit,
     passwordChanged: (String) -> Unit,
+    termsAcceptedChanged: (Boolean) -> Unit,
+    onOpenLegalDocument: (type: String) -> Unit,
+    onCloseLegalDocument: () -> Unit,
     onRegisterRequest: () -> Unit,
     onRegisterSuccess: () -> Unit,
     navigateBack: () -> Unit,
@@ -109,14 +122,25 @@ fun RegisterScreen(
                 passwordState,
                 passwordValidationState,
                 canRegisterState,
+                termsAcceptedState,
                 nameChanged,
                 usernameChanged,
                 companyChanged,
                 passwordChanged,
+                termsAcceptedChanged,
+                onOpenLegalDocument,
                 onRegisterRequest,
                 modifier
             )
         }
+
+        val legalDocument by legalDocumentState.collectAsState()
+
+        LegalDocumentDialog(
+            state = legalDocument,
+            onRetry = onOpenLegalDocument,
+            onDismiss = onCloseLegalDocument
+        )
 
         when (val register = registerStateValue) {
             is ResultData.Complete -> {
@@ -177,10 +201,13 @@ private fun BoxScope.RegisterContent(
     passwordState: StateFlow<String>,
     passwordValidationState: StateFlow<PasswordValidationResult>,
     canRegisterState: StateFlow<Boolean>,
+    termsAcceptedState: StateFlow<Boolean>,
     nameChanged: (String) -> Unit,
     usernameChanged: (String) -> Unit,
     companyChanged: (String) -> Unit,
     passwordChanged: (String) -> Unit,
+    termsAcceptedChanged: (Boolean) -> Unit,
+    onOpenLegalDocument: (type: String) -> Unit,
     onRegisterRequest: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -193,6 +220,7 @@ private fun BoxScope.RegisterContent(
     val password by passwordState.collectAsState()
     val passwordValidation by passwordValidationState.collectAsState()
     val canRegister by canRegisterState.collectAsState()
+    val termsAccepted by termsAcceptedState.collectAsState()
     var showPassword by remember { mutableStateOf(false) }
     val shape = MaterialTheme.shapes.large
 
@@ -360,7 +388,15 @@ private fun BoxScope.RegisterContent(
             modifier = Modifier
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
+
+        TermsAgreement(
+            accepted = termsAccepted,
+            onAcceptedChanged = termsAcceptedChanged,
+            onOpenLegalDocument = onOpenLegalDocument
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         val buttonColor = if (canRegister) {
             MaterialTheme.colorScheme.primary
@@ -390,6 +426,53 @@ private fun BoxScope.RegisterContent(
     }
 }
 
+/**
+ * "I agree to the Terms of Service and the Privacy Policy", with both names opening the document.
+ */
+@Composable
+private fun TermsAgreement(
+    accepted: Boolean,
+    onAcceptedChanged: (Boolean) -> Unit,
+    onOpenLegalDocument: (type: String) -> Unit,
+) {
+    val linkStyle = TextLinkStyles(
+        SpanStyle(
+            color = MaterialTheme.colorScheme.primary,
+            textDecoration = TextDecoration.Underline
+        )
+    )
+    val prefix = WrStrings.termsAgreePrefix()
+    val terms = WrStrings.termsOfService()
+    val and = WrStrings.termsAgreeAnd()
+    val privacy = WrStrings.privacyPolicy()
+
+    val text = buildAnnotatedString {
+        append("$prefix ")
+        withLink(LinkAnnotation.Clickable("terms", linkStyle) { onOpenLegalDocument(LEGAL_TERMS) }) {
+            append(terms)
+        }
+        // "l'" in Italian is glued to the word after it.
+        append(if (and.endsWith("'")) and else "$and ")
+        withLink(LinkAnnotation.Clickable("privacy", linkStyle) { onOpenLegalDocument(LEGAL_PRIVACY) }) {
+            append(privacy)
+        }
+    }
+
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Checkbox(checked = accepted, onCheckedChange = onAcceptedChanged)
+
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(start = 4.dp)
+        )
+    }
+}
+
 @Preview
 @Composable
 fun AuthScreenPreview() {
@@ -403,10 +486,15 @@ fun AuthScreenPreview() {
         usernameAvailabilityState = MutableStateFlow(UsernameAvailability.UNKNOWN),
         passwordValidationState = MutableStateFlow(PasswordValidator.validate("")),
         canRegisterState = MutableStateFlow(false),
+        termsAcceptedState = MutableStateFlow(false),
+        legalDocumentState = MutableStateFlow(LegalDocumentState.Hidden),
         nameChanged = {},
         usernameChanged = {},
         companyChanged = {},
         passwordChanged = {},
+        termsAcceptedChanged = {},
+        onOpenLegalDocument = {},
+        onCloseLegalDocument = {},
         onRegisterRequest = {},
         onRegisterSuccess = {},
         navigateBack = {}

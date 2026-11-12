@@ -417,10 +417,15 @@ fun NavGraphBuilder.authNavigation(
                     usernameAvailabilityState = registerViewModel.usernameAvailability,
                     passwordValidationState = registerViewModel.passwordValidation,
                     canRegisterState = registerViewModel.canRegister,
+                    termsAcceptedState = registerViewModel.termsAccepted,
+                    legalDocumentState = registerViewModel.legalDocument,
                     nameChanged = registerViewModel::nameChanged,
                     usernameChanged = registerViewModel::usernameChanged,
                     companyChanged = registerViewModel::workspaceChanged,
                     passwordChanged = registerViewModel::passwordChanged,
+                    termsAcceptedChanged = registerViewModel::termsAcceptedChanged,
+                    onOpenLegalDocument = registerViewModel::openLegalDocument,
+                    onCloseLegalDocument = registerViewModel::closeLegalDocument,
                     onRegisterRequest = registerViewModel::onRegister,
                     // The email was verified before the account was created, so the new
                     // account is already active and signed in.
