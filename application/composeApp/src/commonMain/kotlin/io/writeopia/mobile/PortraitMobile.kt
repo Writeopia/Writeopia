@@ -16,6 +16,8 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -74,6 +76,7 @@ fun PortraitMobile(
     navigationViewModel: NavigationViewModel,
     drawingInjection: DrawingInjection? = null,
     onDrawingSaved: (String, String, DrawingData) -> Unit = { _, _, _ -> },
+    onBackgroundColor: (Color) -> Unit = {},
     modifier: Modifier = Modifier,
     builder: NavGraphBuilder.() -> Unit
 ) {
@@ -103,6 +106,9 @@ fun PortraitMobile(
         darkTheme = colorTheme.isDarkTheme(),
         accentColor = accentColor ?: AccentColor.DYNAMIC
     ) {
+        val appBackground = WriteopiaTheme.colorScheme.globalBackground
+        SideEffect { onBackgroundColor(appBackground) }
+
         BoxWithConstraints(modifier = modifier.fillMaxSize()) {
             val isWideScreen = maxWidth > maxHeight
 

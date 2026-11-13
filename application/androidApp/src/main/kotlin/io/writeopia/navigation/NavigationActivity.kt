@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.view.Window
 import androidx.activity.ComponentActivity
@@ -14,6 +15,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.core.view.WindowCompat
@@ -128,6 +130,11 @@ fun NavigationGraph(
         uiConfigViewModel,
         colorThemeState,
         accentColorState,
-        navController
+        navController,
+        // The window behind Compose follows the app theme, not the system one, so it never
+        // flashes the system color during transitions.
+        onBackgroundColor = { background ->
+            window.setBackgroundDrawable(ColorDrawable(background.toArgb()))
+        }
     )
 }
