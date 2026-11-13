@@ -39,6 +39,8 @@ class ChooseWorkspaceViewModel(
     private val _workspacesState = MutableStateFlow<ResultData<List<Workspace>>>(ResultData.Idle())
     val workspacesState: StateFlow<ResultData<List<Workspace>>> = _workspacesState.asStateFlow()
 
+    private var loadGeneration = 0
+
     private val _createWorkspaceState = MutableStateFlow<ResultData<Unit>>(ResultData.Idle())
     val createWorkspaceState: StateFlow<ResultData<Unit>> = _createWorkspaceState.asStateFlow()
 
@@ -49,6 +51,10 @@ class ChooseWorkspaceViewModel(
      * ([ResultData.Complete]); the error is only for when there is nothing to show.
      */
     fun loadWorkspaces() {
+        // Retry, creating a workspace and the first load can overlap: only the last one counts.
+        val generation = ++loadGeneration
+        val isLatest = { generation == loadGeneration }
+
         viewModelScope.launch {
             val userId = getUserId()
 
@@ -58,26 +64,33 @@ class ChooseWorkspaceViewModel(
                 emptyList()
             }
 
+            if (!isLatest()) return@launch
+
             _workspacesState.value = if (cached.isEmpty()) {
                 ResultData.Loading()
             } else {
                 ResultData.InProgress(cached)
             }
 
-            _workspacesState.value = try {
-                when (val result = workspaceApi.getAvailableWorkspaces()) {
+            val result = try {
+                when (val response = workspaceApi.getAvailableWorkspaces()) {
                     is ResultData.Complete -> {
-                        if (userId != WriteopiaUser.DISCONNECTED) {
-                            runCatching { authRepository.cacheWorkspaces(userId, result.data) }
+                        if (isLatest() && userId != WriteopiaUser.DISCONNECTED) {
+                            runCatching { authRepository.cacheWorkspaces(userId, response.data) }
                         }
 
-                        ResultData.Complete(result.data)
+                        ResultData.Complete(response.data)
                     }
-                    is ResultData.Error -> cachedOrError(cached, result.exception)
+                    is ResultData.Error -> cachedOrError(cached, response.exception)
                     else -> cachedOrError(cached, null)
                 }
             } catch (e: Exception) {
                 cachedOrError(cached, e)
+            }
+
+            // A newer load is running (or ran): its state must not be overwritten by this one.
+            if (isLatest()) {
+                _workspacesState.value = result
             }
         }
     }

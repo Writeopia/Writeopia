@@ -31,8 +31,18 @@ final class ChooseWorkspaceViewModel {
         isLoading = true
         defer { isLoading = false }
 
+        let accountId = session.user?.id
+
         do {
             let fresh = try await session.workspacesAPI.userWorkspaces()
+
+            // Signing out (or into another account) while the request ran: its answer belongs to
+            // the previous account and must neither be saved nor shown.
+            guard session.spaceType == .online,
+                  session.phase == .chooseWorkspace,
+                  session.user?.id == accountId
+            else { return }
+
             session.cacheWorkspaces(fresh)
             workspaces = Self.sorted(fresh)
             errorMessage = nil
