@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -99,8 +100,23 @@ fun BoxScope.ChooseWorkspace(
         val workspacesResult = workspacesState.collectAsState().value
 
         when (workspacesResult) {
-            is ResultData.Complete -> {
-                val workspaces = workspacesResult.data
+            is ResultData.Complete, is ResultData.InProgress -> {
+                // InProgress: the workspaces saved on the device, while the backend is asked.
+                val refreshing = workspacesResult is ResultData.InProgress
+                val workspaces = when (workspacesResult) {
+                    is ResultData.Complete -> workspacesResult.data
+                    is ResultData.InProgress -> workspacesResult.data
+                    else -> emptyList()
+                }
+
+                if (refreshing) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
 
                 LazyColumn(
                     modifier = Modifier.width(400.dp).defaultMinSize(minHeight = 100.dp),
@@ -117,10 +133,10 @@ fun BoxScope.ChooseWorkspace(
                     }
 
                     items(workspaces) { workspace ->
-                        val documentText = if (workspace.documentCount == 1) {
-                            "1 document"
-                        } else {
-                            "${workspace.documentCount} documents"
+                        val documentText = when {
+                            workspace.documentCount < 0 -> null
+                            workspace.documentCount == 1 -> "1 document"
+                            else -> "${workspace.documentCount} documents"
                         }
                         WorkspaceItem(
                             modifier = Modifier.fillMaxWidth(),
@@ -148,7 +164,7 @@ fun BoxScope.ChooseWorkspace(
                 CommonButton(text = WrStrings.retry(), clickListener = retry)
             }
 
-            is ResultData.Idle, is ResultData.InProgress, is ResultData.Loading -> {
+            is ResultData.Idle, is ResultData.Loading -> {
                 CircularProgressIndicator()
             }
         }
@@ -159,7 +175,7 @@ fun BoxScope.ChooseWorkspace(
 private fun WorkspaceItem(
     modifier: Modifier = Modifier,
     name: String,
-    documentCount: String,
+    documentCount: String?,
     onClick: () -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -187,10 +203,12 @@ private fun WorkspaceItem(
             color = MaterialTheme.colorScheme.onBackground,
             fontWeight = FontWeight.Bold
         )
-        Text(
-            text = documentCount,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-        )
+        if (documentCount != null) {
+            Text(
+                text = documentCount,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+            )
+        }
     }
 }

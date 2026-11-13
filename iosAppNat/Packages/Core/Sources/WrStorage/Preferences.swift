@@ -6,6 +6,9 @@ public final class Preferences {
         case spaceType = "wr.spaceType"
         case selectedWorkspace = "wr.selectedWorkspace"
         case currentUser = "wr.currentUser"
+        /// The workspaces the backend last listed for the signed in user, shown by the picker
+        /// before (or without) the backend answering.
+        case cachedWorkspaces = "wr.cachedWorkspaces"
         case colorTheme = "wr.colorTheme"
         case pendingEmail = "wr.pendingEmail"
         case passwordResetEmail = "wr.passwordResetEmail"

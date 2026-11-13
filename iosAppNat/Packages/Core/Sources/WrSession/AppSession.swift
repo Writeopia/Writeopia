@@ -441,6 +441,16 @@ public final class AppSession {
         phase = .ready
     }
 
+    /// The workspaces the backend listed the last time the picker loaded them (none before the
+    /// first time, and none after signing out).
+    public func cachedWorkspaces() -> [Workspace] {
+        preferences.codable([Workspace].self, .cachedWorkspaces) ?? []
+    }
+
+    public func cacheWorkspaces(_ workspaces: [Workspace]) {
+        preferences.setCodable(workspaces, for: .cachedWorkspaces)
+    }
+
     /// Opens the workspace picker again, from Settings.
     public func changeWorkspace() {
         phase = .chooseWorkspace
@@ -476,6 +486,7 @@ public final class AppSession {
         workspace = nil
         syncedDocuments = nil
         preferences.remove(.selectedWorkspace)
+        preferences.remove(.cachedWorkspaces)
         phase = spaceType == .online ? .signedOut : resolvePhase()
     }
 
