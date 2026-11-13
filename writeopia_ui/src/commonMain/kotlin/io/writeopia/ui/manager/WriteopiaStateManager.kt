@@ -457,7 +457,7 @@ class WriteopiaStateManager(
         if (!isEditable) return
         _documentTagIds.value = tagIds
     }
-    
+
     fun liveSync(sharedEditionManager: SharedEditionManager) {
         coroutineScope.launch(dispatcher) {
             sharedEditionManager.startLiveEdition(
