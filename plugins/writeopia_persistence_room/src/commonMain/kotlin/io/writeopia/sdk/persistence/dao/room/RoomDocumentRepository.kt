@@ -98,10 +98,10 @@ class RoomDocumentRepository(
     }
 
     override suspend fun search(query: String, workspaceId: String): List<Document> =
-        documentEntityDao.search(query).map { it.toModel() }
+        documentEntityDao.search(query, workspaceId).map { it.toModel() }
 
     override suspend fun getLastUpdatedAt(workspaceId: String): List<Document> =
-        documentEntityDao.selectByLastUpdated().map { it.toModel() }
+        documentEntityDao.selectByLastUpdated(workspaceId).map { it.toModel() }
 
     override suspend fun listenForDocumentsByParentId(
         parentId: String,

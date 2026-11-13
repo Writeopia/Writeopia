@@ -30,11 +30,17 @@ interface DocumentEntityDao {
     @Query("DELETE FROM $DOCUMENT_ENTITY WHERE workspace_id = :userId")
     suspend fun purgeDocumentsByUserId(userId: String)
 
-    @Query("SELECT * FROM $DOCUMENT_ENTITY ORDER BY $DOCUMENT_ENTITY.last_updated_at LIMIT 10")
-    suspend fun selectByLastUpdated(): List<DocumentEntity>
+    @Query(
+        "SELECT * FROM $DOCUMENT_ENTITY WHERE workspace_id = :workspaceId AND is_deleted = FALSE " +
+            "ORDER BY $DOCUMENT_ENTITY.last_updated_at LIMIT 10"
+    )
+    suspend fun selectByLastUpdated(workspaceId: String): List<DocumentEntity>
 
-    @Query("SELECT * FROM $DOCUMENT_ENTITY WHERE title LIKE '%' || :query || '%' ORDER BY last_updated_at")
-    suspend fun search(query: String): List<DocumentEntity>
+    @Query(
+        "SELECT * FROM $DOCUMENT_ENTITY WHERE title LIKE '%' || :query || '%' " +
+            "AND workspace_id = :workspaceId AND is_deleted = FALSE ORDER BY last_updated_at"
+    )
+    suspend fun search(query: String, workspaceId: String): List<DocumentEntity>
 
     @Query("SELECT * FROM $DOCUMENT_ENTITY WHERE $DOCUMENT_ENTITY.id = :id")
     suspend fun loadDocumentById(id: String): DocumentEntity?
