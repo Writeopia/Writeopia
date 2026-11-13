@@ -16,6 +16,9 @@ data class Workspace(
     val documentCount: Int = 0,
 ) {
     companion object {
+        /** [documentCount] of a workspace read from the device, where the count isn't kept. */
+        const val UNKNOWN_DOCUMENT_COUNT = -1
+
         fun disconnectedWorkspace() = Workspace(
             id = "disconnected_user",
             userId = "disconnected_user",

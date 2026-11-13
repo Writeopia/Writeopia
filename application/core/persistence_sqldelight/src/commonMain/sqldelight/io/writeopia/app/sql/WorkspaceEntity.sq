@@ -36,3 +36,22 @@ updateLastEventSync:
 UPDATE workspace_entity
 SET last_event_sync_at = ?
 WHERE id = ?;
+
+selectWorkspacesByUser:
+SELECT *
+FROM workspace_entity
+WHERE user_id = ?
+ORDER BY name COLLATE NOCASE;
+
+-- Keeps the sync state and the selection of a workspace already known: only its name is refreshed.
+upsertWorkspaceName:
+INSERT INTO workspace_entity(id, user_id, name, last_synced_at, last_event_sync_at, icon, icon_tint, selected)
+VALUES (?, ?, ?, 0, 0, NULL, NULL, 0)
+ON CONFLICT(id) DO
+UPDATE SET name=excluded.name;
+
+deleteUnselectedOfUserNotIn:
+DELETE FROM workspace_entity
+WHERE user_id = ?
+AND selected = 0
+AND id NOT IN ?;

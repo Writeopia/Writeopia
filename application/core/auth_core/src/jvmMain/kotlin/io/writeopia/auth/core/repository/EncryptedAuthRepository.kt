@@ -90,6 +90,13 @@ internal class EncryptedAuthRepository(
         delegate.saveWorkspace(workspace)
     }
 
+    override suspend fun getCachedWorkspaces(userId: String): List<Workspace> =
+        delegate.getCachedWorkspaces(userId)
+
+    override suspend fun cacheWorkspaces(userId: String, workspaces: List<Workspace>) {
+        delegate.cacheWorkspaces(userId, workspaces)
+    }
+
     override suspend fun unselectAllWorkspaces() {
         delegate.unselectAllWorkspaces()
     }
