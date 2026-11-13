@@ -46,11 +46,14 @@ data class WriteopiaColors(
     val cardShadow: Color,
     val cardBorder: Color,
     val cardBorderSelected: Color,
+    /** The accent made readable over the cards and surfaces (icons, selection borders). */
+    val accentForeground: Color,
     val cardPlaceHolderBackground: Color,
     val searchBackground: Color,
     val linkColor: Color,
     val dividerColor: Color,
-    val defaultButton: Color
+    val defaultButton: Color,
+    val optionButton: Color
 )
 
 val LocalWriteopiaColors = staticCompositionLocalOf {
@@ -67,11 +70,13 @@ val LocalWriteopiaColors = staticCompositionLocalOf {
         cardShadow = Color.Unspecified,
         cardBorder = Color.Unspecified,
         cardBorderSelected = Color.Unspecified,
+        accentForeground = Color.Unspecified,
         cardPlaceHolderBackground = Color.Unspecified,
         searchBackground = Color.Unspecified,
         linkColor = Color.Unspecified,
         dividerColor = Color.Unspecified,
-        defaultButton = Color.Unspecified
+        defaultButton = Color.Unspecified,
+        optionButton = Color.Unspecified
     )
 }
 
@@ -148,7 +153,8 @@ fun WriteopiaTheme(
     val cardShadow = if (darkTheme) colors.background else Color.Gray
     val cardBorder = dynamicScheme?.outlineVariant
         ?: if (darkTheme) Color(0xFF3A3A3A) else Color(0xFFD9D2DA)
-    val cardBorderSelected = primary
+    val accentForeground = accentWithContrast(primary, cardBackground, minContrast = 3F)
+    val cardBorderSelected = accentForeground
     val cardPlaceHolderBackground = if (darkTheme) colors.background else colors.surfaceVariant
     val searchBackground = if (darkTheme) colors.surfaceVariant else colors.background
     val linkColor = if (darkTheme) Color(0xFF42A5F5) else Color.Blue
@@ -156,6 +162,9 @@ fun WriteopiaTheme(
     // With dynamic colors the sheets and menus are drawn on the (tinted) surface, so the buttons
     // need a higher surface to stand out from them.
     val defaultButton = dynamicScheme?.surfaceContainerHighest ?: colors.background
+    // The option buttons of the settings: the same dynamic button color, or the translucent
+    // overlay otherwise, which shows on the dialog whatever its color.
+    val optionButton = dynamicScheme?.surfaceContainerHighest ?: optionsSelector
 
     val writeopiaColors = WriteopiaColors(
         globalBackground = globalBackground,
@@ -170,11 +179,13 @@ fun WriteopiaTheme(
         cardShadow = cardShadow,
         cardBorder = cardBorder,
         cardBorderSelected = cardBorderSelected,
+        accentForeground = accentForeground,
         cardPlaceHolderBackground = cardPlaceHolderBackground,
         searchBackground = searchBackground,
         linkColor = linkColor,
         dividerColor = dividerColor,
         defaultButton = defaultButton,
+        optionButton = optionButton,
     )
 
     CompositionLocalProvider(LocalWriteopiaColors provides writeopiaColors) {

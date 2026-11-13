@@ -582,7 +582,7 @@ private fun FolderItem(
 
             // Like the folder cards of the native apps: an accent border and tint, and the icon
             // crossfading into the move icon.
-            val accent = MaterialTheme.colorScheme.primary
+            val accent = WriteopiaTheme.colorScheme.accentForeground
             val borderColor by animateColorAsState(
                 targetValue = if (isDropTarget) accent else accent.copy(alpha = 0F),
                 label = "folderDropBorder"
@@ -603,8 +603,8 @@ private fun FolderItem(
             SwipeBox(
                 modifier = modifier
                     .fillMaxWidth()
-                    .background(WriteopiaTheme.colorScheme.cardPlaceHolderBackground)
                     .clip(MaterialTheme.shapes.large)
+                    .background(WriteopiaTheme.colorScheme.cardBg)
                     .border(width = 2.dp, color = borderColor, shape = MaterialTheme.shapes.large)
                     .clickable {
                         folderClick(folderUi.documentId)
@@ -616,7 +616,7 @@ private fun FolderItem(
                 cornersShape = MaterialTheme.shapes.large,
                 defaultColor = WriteopiaTheme.colorScheme.cardBg,
                 activeColor = bgColor,
-                activeBorderColor = MaterialTheme.colorScheme.primary
+                activeBorderColor = WriteopiaTheme.colorScheme.accentForeground
             ) {
                 DragCardTarget(
                     modifier = Modifier.clip(MaterialTheme.shapes.large),
@@ -636,7 +636,7 @@ private fun FolderItem(
                     ) {
                         var showIconsOptions by remember { mutableStateOf(false) }
                         val tint = folderUi.icon?.tint?.let(::Color)
-                            ?: MaterialTheme.colorScheme.primary
+                            ?: WriteopiaTheme.colorScheme.accentForeground
 
                         Crossfade(
                             targetState = if (isDropTarget) {
@@ -767,7 +767,7 @@ private fun DocumentItem(
                 modifier = modifier
                     .fillMaxWidth()
                     .clip(MaterialTheme.shapes.large)
-                    .background(WriteopiaTheme.colorScheme.cardPlaceHolderBackground)
+                    .background(WriteopiaTheme.colorScheme.cardBg)
                     .clickable {
                         documentClick(
                             documentUi.documentId,
@@ -945,7 +945,7 @@ private fun cardBorderModifier(selected: Boolean): Modifier {
         label = "cardBorder"
     )
 
-    return Modifier.padding(4.dp)
+    return Modifier.padding(2.dp)
         .border(
             width = if (selected) 3.dp else 1.dp,
             color = color,

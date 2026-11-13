@@ -84,6 +84,7 @@ import kotlin.time.Instant
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * This is the entry class of the framework. It follows the Controller pattern, redirecting all the
@@ -456,7 +457,7 @@ class WriteopiaStateManager(
         if (!isEditable) return
         _documentTagIds.value = tagIds
     }
-
+    
     fun liveSync(sharedEditionManager: SharedEditionManager) {
         coroutineScope.launch(dispatcher) {
             sharedEditionManager.startLiveEdition(
@@ -1180,7 +1181,7 @@ class WriteopiaStateManager(
         coroutineScope.launch {
             // It is necessary to delay the stop dragging event to wait for the move request to
             // be received.
-            delay(100)
+            delay(100.milliseconds)
             isDragging.value = false
         }
     }

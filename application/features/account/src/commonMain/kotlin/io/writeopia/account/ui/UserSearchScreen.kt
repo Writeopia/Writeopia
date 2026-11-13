@@ -211,7 +211,7 @@ private fun SearchResultItem(
             .fillMaxWidth()
             .padding(vertical = 4.dp)
             .clip(MaterialTheme.shapes.medium)
-            .background(WriteopiaTheme.colorScheme.optionsSelector)
+            .background(WriteopiaTheme.colorScheme.optionButton)
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically

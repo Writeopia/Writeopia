@@ -22,9 +22,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.lerp
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -63,6 +60,7 @@ import io.writeopia.notemenu.navigation.NoteMenuDestiny
 import io.writeopia.notemenu.navigation.navigateBackToNotes
 import io.writeopia.notemenu.navigation.navigateToNotes
 import io.writeopia.theme.WriteopiaTheme
+import io.writeopia.theme.accentWithContrast
 import io.writeopia.viewmodel.UiConfigurationViewModel
 
 @Composable
@@ -284,25 +282,3 @@ fun NavItemName.iconForNavItem(): ImageVector =
         NavItemName.SEARCH -> WrIcons.search
         NavItemName.SETTINGS -> WrIcons.settings
     }
-
-/** Moves [accent] towards black (light background) or white (dark one) until it reaches [MIN_ICON_CONTRAST]. */
-private fun accentWithContrast(accent: Color, background: Color): Color {
-    val target = if (background.luminance() > 0.5F) Color.Black else Color.White
-
-    for (step in 0..10) {
-        val candidate = lerp(accent, target, step / 10F)
-
-        if (contrastRatio(candidate, background) >= MIN_ICON_CONTRAST) return candidate
-    }
-
-    return target
-}
-
-private fun contrastRatio(a: Color, b: Color): Float {
-    val l1 = a.luminance()
-    val l2 = b.luminance()
-
-    return (maxOf(l1, l2) + 0.05F) / (minOf(l1, l2) + 0.05F)
-}
-
-private const val MIN_ICON_CONTRAST = 4.5F
