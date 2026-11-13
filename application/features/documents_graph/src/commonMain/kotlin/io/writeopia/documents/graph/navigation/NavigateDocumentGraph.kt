@@ -67,7 +67,10 @@ fun NavGraphBuilder.documentsGraphNavigation(
     ) {
         val viewModel = documentsGraphInjection.injectViewModel()
 
-        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        // The app's theme, not the window's, which follows the system theme.
+        BoxWithConstraints(
+            modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
+        ) {
             // The canvas draws in pixels: the layout size in dp would centre the graph in the top
             // left quarter of a high-density screen.
             val density = LocalDensity.current
