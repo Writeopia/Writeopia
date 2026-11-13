@@ -154,7 +154,7 @@ fun DesktopApp(
 
     WriteopiaTheme(
         darkTheme = colorTheme.isDarkTheme(),
-        accentColor = accentColor ?: AccentColor.PURPLE
+        accentColor = accentColor ?: AccentColor.DYNAMIC
     ) {
         val density = LocalDensity.current
         val globalBackground = WriteopiaTheme.colorScheme.globalBackground

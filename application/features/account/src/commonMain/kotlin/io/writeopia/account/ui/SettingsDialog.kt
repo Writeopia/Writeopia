@@ -72,6 +72,7 @@ import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.theme.WriteopiaTheme
+import io.writeopia.theme.getDynamicAccentColors
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -985,7 +986,7 @@ private fun RowScope.Option(
     val textColor = WriteopiaTheme.colorScheme.textLight
 
     val iconTint = if (isSelected) {
-        MaterialTheme.colorScheme.primary
+        WriteopiaTheme.colorScheme.accentForeground
     } else {
         WriteopiaTheme.colorScheme.tintLight
     }
@@ -1009,7 +1010,7 @@ private fun RowScope.Option(
     Box(
         modifier = Modifier
             .clip(MaterialTheme.shapes.large)
-            .background(WriteopiaTheme.colorScheme.optionsSelector)
+            .background(WriteopiaTheme.colorScheme.optionButton)
             .clickable(onClick = selectColorTheme)
             .fillMaxHeight()
             .weight(weight)
@@ -1051,7 +1052,8 @@ private fun AccentColorOptions(
         Row(modifier = Modifier.fillMaxWidth().height(70.dp)) {
             AccentColorOption(
                 accentColor = AccentColor.PURPLE,
-                isSelected = selectedColor == AccentColor.PURPLE,
+                isSelected = selectedColor == AccentColor.PURPLE ||
+                    (selectedColor == AccentColor.DYNAMIC && getDynamicAccentColors() == null),
                 onClick = { selectAccentColor(AccentColor.PURPLE) }
             )
 
@@ -1077,7 +1079,8 @@ private fun AccentColorOptions(
                 Spacer(modifier = Modifier.width(spaceWidth))
 
                 DynamicColorOption(
-                    isSelected = selectedColor == AccentColor.DYNAMIC,
+                    // Dynamic falls back to purple where the system has no colors.
+                    isSelected = selectedColor == AccentColor.DYNAMIC && getDynamicAccentColors() != null,
                     onClick = { selectAccentColor(AccentColor.DYNAMIC) }
                 )
             }
@@ -1110,7 +1113,7 @@ private fun RowScope.DynamicColorOption(
     )
 
     val iconTint = if (isSelected) {
-        MaterialTheme.colorScheme.primary
+        WriteopiaTheme.colorScheme.accentForeground
     } else {
         WriteopiaTheme.colorScheme.tintLight
     }
@@ -1118,7 +1121,7 @@ private fun RowScope.DynamicColorOption(
     Box(
         modifier = Modifier
             .clip(MaterialTheme.shapes.large)
-            .background(WriteopiaTheme.colorScheme.optionsSelector)
+            .background(WriteopiaTheme.colorScheme.optionButton)
             .clickable(onClick = onClick)
             .fillMaxHeight()
             .weight(weight)
@@ -1181,7 +1184,7 @@ private fun RowScope.AccentColorOption(
     Box(
         modifier = Modifier
             .clip(MaterialTheme.shapes.large)
-            .background(WriteopiaTheme.colorScheme.optionsSelector)
+            .background(WriteopiaTheme.colorScheme.optionButton)
             .clickable(onClick = onClick)
             .fillMaxHeight()
             .weight(weight)

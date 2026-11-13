@@ -22,7 +22,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -61,6 +60,7 @@ import io.writeopia.notemenu.navigation.NoteMenuDestiny
 import io.writeopia.notemenu.navigation.navigateBackToNotes
 import io.writeopia.notemenu.navigation.navigateToNotes
 import io.writeopia.theme.WriteopiaTheme
+import io.writeopia.theme.accentWithContrast
 import io.writeopia.viewmodel.UiConfigurationViewModel
 
 @Composable
@@ -101,7 +101,7 @@ fun PortraitMobile(
 
     WriteopiaTheme(
         darkTheme = colorTheme.isDarkTheme(),
-        accentColor = accentColor ?: AccentColor.PURPLE
+        accentColor = accentColor ?: AccentColor.DYNAMIC
     ) {
         BoxWithConstraints(modifier = modifier.fillMaxSize()) {
             val isWideScreen = maxWidth > maxHeight
@@ -176,6 +176,16 @@ fun PortraitMobile(
                         ?.savedStateHandle
                         ?.get<String?>(NAVIGATION_TYPE) == NotesNavigationType.FAVORITES.type
 
+                    // The selected icon is the accent pushed away from the bar background until it
+                    // reads well (the dynamic accent can be pale in light mode and dark in dark
+                    // mode), and the others are dimmed so the difference is clear.
+                    val barBackground = MaterialTheme.colorScheme.background
+                    val selectedIconColor = accentWithContrast(
+                        MaterialTheme.colorScheme.primary,
+                        barBackground
+                    )
+                    val unselectedIconColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6F)
+
                     navigationItems.forEach { item ->
                         val matchesRoute =
                             currentDestination?.hierarchy?.any { destination ->
@@ -218,9 +228,9 @@ fun PortraitMobile(
                             },
                             colors = NavigationBarItemDefaults.colors()
                                 .copy(
-                                    selectedIconColor = MaterialTheme.colorScheme.primary,
-                                    unselectedIconColor = MaterialTheme.colorScheme.onBackground,
-                                    selectedIndicatorColor = Color.Transparent,
+                                    selectedIconColor = selectedIconColor,
+                                    unselectedIconColor = unselectedIconColor,
+                                    selectedIndicatorColor = selectedIconColor.copy(alpha = 0.15F),
                                 )
                         )
                     }

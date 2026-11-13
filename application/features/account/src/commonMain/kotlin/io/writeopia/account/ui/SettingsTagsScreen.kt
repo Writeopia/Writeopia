@@ -160,7 +160,7 @@ private fun TagRow(tag: DocumentTag, onEdit: () -> Unit, onDelete: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.medium)
-            .background(WriteopiaTheme.colorScheme.optionsSelector)
+            .background(WriteopiaTheme.colorScheme.optionButton)
             .clickable(onClick = onEdit)
             .padding(start = 14.dp, top = 10.dp, bottom = 10.dp, end = 4.dp)
             .testTag("$SETTINGS_TAGS_TAG.tag.${tag.id}"),

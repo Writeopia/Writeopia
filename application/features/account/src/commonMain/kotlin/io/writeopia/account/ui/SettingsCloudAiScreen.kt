@@ -121,7 +121,7 @@ private fun UsageContent(usage: AiUsageResponse) {
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(MaterialTheme.shapes.medium)
-                .background(WriteopiaTheme.colorScheme.optionsSelector)
+                .background(WriteopiaTheme.colorScheme.optionButton)
                 .padding(20.dp)
         ) {
             // Token count: "X / Y tokens used"

@@ -275,7 +275,7 @@ private fun AccountMenuItem(
         modifier = Modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.medium)
-            .background(WriteopiaTheme.colorScheme.optionsSelector)
+            .background(WriteopiaTheme.colorScheme.optionButton)
             .clickable(onClick = onClick)
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
