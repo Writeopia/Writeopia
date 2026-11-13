@@ -1,6 +1,7 @@
 package io.writeopia.features.search
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -8,7 +9,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.unit.dp
 import io.writeopia.features.search.repository.SearchItem
 import io.writeopia.features.search.ui.SearchInput
@@ -45,13 +45,13 @@ fun DocumentsSearchScreen(
                 search,
                 onSearchType,
                 Modifier.padding(12.dp)
-                    .shadow(
-                        10.dp,
-                        shape = MaterialTheme.shapes.large,
-                        spotColor = WriteopiaTheme.colorScheme.cardShadow
-                    )
                     .background(
                         WriteopiaTheme.colorScheme.searchBackground,
+                        shape = MaterialTheme.shapes.large
+                    )
+                    .border(
+                        1.dp,
+                        MaterialTheme.colorScheme.outlineVariant,
                         shape = MaterialTheme.shapes.large
                     )
             )
