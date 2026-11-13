@@ -51,7 +51,7 @@ fun DocumentsSearchScreen(
                     )
                     .border(
                         1.dp,
-                        MaterialTheme.colorScheme.outlineVariant,
+                        WriteopiaTheme.colorScheme.cardBorder,
                         shape = MaterialTheme.shapes.large
                     )
             )

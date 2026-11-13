@@ -156,7 +156,9 @@ fun WriteopiaTheme(
     val accentForeground = accentWithContrast(primary, cardBackground, minContrast = 3F)
     val cardBorderSelected = accentForeground
     val cardPlaceHolderBackground = if (darkTheme) colors.background else colors.surfaceVariant
-    val searchBackground = if (darkTheme) colors.surfaceVariant else colors.background
+    // With dynamic colors both of those are the page color, so the bar takes the card surface.
+    val searchBackground = dynamicScheme?.surfaceContainerHigh
+        ?: if (darkTheme) colors.surfaceVariant else colors.background
     val linkColor = if (darkTheme) Color(0xFF42A5F5) else Color.Blue
     val dividerColor = if (darkTheme) Color(0xFF333333) else Color(0xFFDFDFDF)
     // With dynamic colors the sheets and menus are drawn on the (tinted) surface, so the buttons
