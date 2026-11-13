@@ -3,6 +3,7 @@ package io.writeopia.account.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.auth.core.data.AuthApi
+import io.writeopia.core.folders.usecase.VersionEasterEggUseCase
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.auth.core.manager.WorkspaceHandler
 import io.writeopia.sdk.models.utils.toBoolean
@@ -25,6 +26,7 @@ internal class AccountMenuKmpViewModel(
     private val authRepository: AuthRepository,
     private val workspaceHandler: WorkspaceHandler,
     private val authApi: AuthApi,
+    private val versionEasterEgg: VersionEasterEggUseCase,
 ) : AccountMenuViewModel, ViewModel() {
 
     override val lastWorkspaceSync: StateFlow<ResultData<String>> = workspaceHandler.lastWorkspaceSync
@@ -64,6 +66,13 @@ internal class AccountMenuKmpViewModel(
     init {
         workspaceHandler.initScope(viewModelScope)
         workspaceHandler.loadAvailableWorkspaces()
+    }
+
+    override fun createVersionEasterEgg(onCreated: (id: String, title: String) -> Unit) {
+        viewModelScope.launch {
+            val document = versionEasterEgg.create()
+            onCreated(document.id, document.title)
+        }
     }
 
     override fun logout(onLogOutSuccess: () -> Unit) {

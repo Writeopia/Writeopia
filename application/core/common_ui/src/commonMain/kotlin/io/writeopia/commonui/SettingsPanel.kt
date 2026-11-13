@@ -38,6 +38,7 @@ fun SettingsPanel(
     aiScreen: @Composable () -> Unit,
     teamsScreen: @Composable () -> Unit,
     modifier: Modifier = Modifier,
+    onVersionEasterEgg: () -> Unit = {},
 ) {
     var pageState by remember {
         mutableStateOf(if (ALLOW_BACKEND) SettingsPage.ACCOUNT else SettingsPage.APPEARANCE)
@@ -78,7 +79,11 @@ fun SettingsPanel(
 
             Spacer(modifier = Modifier.height(40.dp))
 
-            Text(WrStrings.version(), style = MaterialTheme.typography.labelSmall)
+            Text(
+                WrStrings.version(),
+                modifier = Modifier.repeatedClick(onReached = onVersionEasterEgg),
+                style = MaterialTheme.typography.labelSmall
+            )
         }
 
         VerticalDivider(modifier = Modifier.fillMaxHeight(), thickness = 1.dp, color = Color.Blue)

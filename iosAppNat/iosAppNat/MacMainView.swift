@@ -26,7 +26,11 @@ struct MacMainView: View {
             case .search:
                 SearchRootView()
             case .settings:
-                SettingsRootView()
+                SettingsRootView { document in
+                    router.reset()
+                    selection = .documents
+                    router.open(document: document)
+                }
             }
         }
         .environment(\.openEditors, openEditors)

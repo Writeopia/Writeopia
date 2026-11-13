@@ -61,7 +61,7 @@
   <string name="download_models">下载模型</string>
   <string name="suggestions">建议：</string>
   <string name="error_model_download">下载模型时出错。</string>
-  <string name="version">Alpha 47 - Amado, Jorge</string>
+  <string name="version">Beta 48 - Bandeira, Manuel</string>
   <string name="update_check_failed">无法检查更新。请稍后重试。</string>
   <string name="update_open_failed">无法打开更新下载。请重试。</string>
   <string name="update_available">有可用更新</string>

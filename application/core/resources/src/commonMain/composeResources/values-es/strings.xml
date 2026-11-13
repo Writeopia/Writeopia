@@ -61,7 +61,7 @@
   <string name="download_models">Descargar modelo</string>
   <string name="suggestions">Sugerencias:</string>
   <string name="error_model_download">Error al descargar el modelo.</string>
-  <string name="version">Alpha 47 - Amado, Jorge</string>
+  <string name="version">Beta 48 - Bandeira, Manuel</string>
   <string name="update_check_failed">No se pudieron buscar actualizaciones. Inténtalo de nuevo más tarde.</string>
   <string name="update_open_failed">No se pudo abrir la descarga de la actualización. Inténtalo de nuevo.</string>
   <string name="update_available">Actualización disponible</string>

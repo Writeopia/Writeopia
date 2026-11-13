@@ -447,6 +447,7 @@ private fun LazyGridNotes(
                             position = i,
                             editFolder = editFolder,
                             onDragIconClick = { onDragIconClick(menuItem.documentId) },
+                            modifier = Modifier.animateItem().height(GRID_CARD_HEIGHT),
                         )
                     }
                 }
@@ -678,6 +679,8 @@ private fun FolderItem(
                                 }
                             )
                         }
+
+                        Spacer(modifier = Modifier.height(6.dp))
 
                         Text(
                             modifier = Modifier.padding(horizontal = 12.dp).then(titleModifier),
@@ -931,10 +934,11 @@ private fun previewDrawers(
     )
 }
 
-private val GRID_CARD_HEIGHT = 200.dp
+/** Documents and folders of the grid share it: a document is never taller than a folder. */
+private val GRID_CARD_HEIGHT = 170.dp
 
 /** A picture in a grid card leaves room for the text under it. */
-private val GRID_CARD_IMAGE_MAX_HEIGHT = 90.dp
+private val GRID_CARD_IMAGE_MAX_HEIGHT = 50.dp
 
 /** The card outline: one dynamic color when idle and another one when selected. */
 @Composable

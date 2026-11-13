@@ -103,6 +103,9 @@ interface GlobalShellViewModel : FolderController, LocalAiConfigController {
 
     fun hideSettings()
 
+    /** Easter egg: creates the document about the writer of the version and reports it. */
+    fun createVersionEasterEgg(onCreated: (id: String, title: String) -> Unit)
+
     fun saveMenuWidth()
 
     fun moveSideMenu(width: Float)

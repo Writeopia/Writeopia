@@ -30,6 +30,9 @@ interface AccountMenuViewModel {
     /** Email of the signed-in user, to be typed again to confirm the deletion. */
     val userEmail: StateFlow<String>
 
+    /** Easter egg: creates the document about the writer of the version and reports it. */
+    fun createVersionEasterEgg(onCreated: (id: String, title: String) -> Unit)
+
     fun logout(onLogOutSuccess: () -> Unit)
 
     /** Deletes the account and clears the local session. [onSuccess] runs only when it worked. */

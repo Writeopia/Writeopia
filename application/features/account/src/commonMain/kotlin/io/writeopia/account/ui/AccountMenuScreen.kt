@@ -23,6 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import io.writeopia.common.utils.icons.WrIcons
+import io.writeopia.commonui.repeatedClick
 import io.writeopia.resources.WrStrings
 import io.writeopia.theme.WriteopiaTheme
 
@@ -34,6 +35,7 @@ fun AccountMenuScreen(
     navigateToAi: () -> Unit,
     navigateToWorkspace: () -> Unit,
     modifier: Modifier = Modifier,
+    onVersionEasterEgg: () -> Unit = {},
 ) {
     Column(
         modifier = modifier.fillMaxSize()
@@ -85,6 +87,7 @@ fun AccountMenuScreen(
 
         Text(
             text = WrStrings.version(),
+            modifier = Modifier.repeatedClick(onReached = onVersionEasterEgg),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
         )

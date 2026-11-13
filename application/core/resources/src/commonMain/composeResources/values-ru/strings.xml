@@ -61,7 +61,7 @@
   <string name="download_models">Скачать модель</string>
   <string name="suggestions">Рекомендации:</string>
   <string name="error_model_download">Ошибка при скачивании модели.</string>
-  <string name="version">Alpha 47 - Amado, Jorge</string>
+  <string name="version">Beta 48 - Bandeira, Manuel</string>
   <string name="update_check_failed">Не удалось проверить обновления. Попробуйте позже.</string>
   <string name="update_open_failed">Не удалось открыть страницу загрузки обновления. Попробуйте ещё раз.</string>
   <string name="update_available">Доступно обновление</string>

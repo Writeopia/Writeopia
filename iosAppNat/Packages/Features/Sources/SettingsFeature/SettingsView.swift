@@ -1,5 +1,6 @@
 import SwiftUI
 import WrDesign
+import WrModels
 import WrSession
 
 enum SettingsRoute: String, Hashable, CaseIterable {
@@ -45,8 +46,12 @@ enum SettingsRoute: String, Hashable, CaseIterable {
 public struct SettingsRootView: View {
     @Environment(AppSession.self) private var session
     @State private var macRoute: SettingsRoute = .general
+    private let onOpenDocument: ((WrDocument) -> Void)?
 
-    public init() {}
+    /// `onOpenDocument` shows a document the settings created (the easter egg of the version).
+    public init(onOpenDocument: ((WrDocument) -> Void)? = nil) {
+        self.onOpenDocument = onOpenDocument
+    }
 
     public var body: some View {
         #if os(macOS)
@@ -99,7 +104,7 @@ public struct SettingsRootView: View {
     @ViewBuilder
     private func section(_ route: SettingsRoute) -> some View {
         switch route {
-        case .general: GeneralSettingsView()
+        case .general: GeneralSettingsView(onOpenDocument: onOpenDocument)
         case .workspace: WorkspaceSettingsView(session: session)
         case .teams: TeamsSettingsView(session: session)
         case .ai: AiSettingsView(session: session)

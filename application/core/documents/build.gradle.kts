@@ -47,6 +47,7 @@ kotlin {
             dependencies {
                 implementation(project(":writeopia"))
                 implementation(project(":writeopia_models"))
+                implementation(project(":tutorials"))
                 implementation(project(":writeopia_ui"))
                 implementation(project(":plugins:writeopia_persistence_core"))
                 implementation(project(":plugins:writeopia_serialization"))

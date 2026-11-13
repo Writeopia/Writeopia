@@ -59,6 +59,7 @@ import io.writeopia.navigation.notes.navigateToAccount
 import io.writeopia.navigation.notes.navigateToFolder
 import io.writeopia.navigation.notes.navigateToNewNote
 import io.writeopia.navigation.notes.navigateToNote
+import io.writeopia.navigation.notes.navigateToNoteMobile
 import io.writeopia.navigation.notes.navigateToNoteWithPresentation
 import io.writeopia.navigation.notes.navigateToNoteWithSearch
 import io.writeopia.navigation.presentation.navigateToPresentation
@@ -258,6 +259,7 @@ fun Navigation(
                 navigateToSettingsAppearance = navController::navigateToSettingsAppearance,
                 navigateToSettingsAccount = navController::navigateToSettingsAccount,
                 navigateToSettingsAi = navController::navigateToSettingsAi,
+                navigateToDocument = navController::navigateToNoteMobile,
                 navigateToSettingsCloudAi = navController::navigateToSettingsCloudAi,
                 navigateToSettingsWorkspace = navController::navigateToSettingsWorkspace,
                 navigateToSettingsHeaderImages = navController::navigateToSettingsHeaderImages,

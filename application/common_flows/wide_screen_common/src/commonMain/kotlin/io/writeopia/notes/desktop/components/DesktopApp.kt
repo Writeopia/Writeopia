@@ -334,6 +334,12 @@ fun DesktopApp(
                                     userSearchResults = globalShellViewModel.userSearchResults,
                                     onUserSearchQueryChange = globalShellViewModel::onUserSearchQueryChange,
                                     onUserSuggestionSelect = globalShellViewModel::onUserSuggestionSelect,
+                                    onVersionEasterEgg = {
+                                        globalShellViewModel.createVersionEasterEgg { id, title ->
+                                            globalShellViewModel.hideSettings()
+                                            navigationController.navigateToNoteMobile(id, title)
+                                        }
+                                    },
                                 )
                             }
 

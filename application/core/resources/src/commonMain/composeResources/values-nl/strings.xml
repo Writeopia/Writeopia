@@ -61,7 +61,7 @@
   <string name="download_models">Model downloaden</string>
   <string name="suggestions">Suggesties:</string>
   <string name="error_model_download">Fout bij het downloaden van het model.</string>
-  <string name="version">Alpha 47 - Amado, Jorge</string>
+  <string name="version">Beta 48 - Bandeira, Manuel</string>
   <string name="update_check_failed">Kon niet controleren op updates. Probeer het later opnieuw.</string>
   <string name="update_open_failed">Kon de updatedownload niet openen. Probeer het opnieuw.</string>
   <string name="update_available">Update beschikbaar</string>

@@ -55,6 +55,8 @@ import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.utils.map
 import io.writeopia.sdk.models.workspace.Workspace
+import io.writeopia.core.folders.usecase.VersionEasterEggUseCase
+import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
 import io.writeopia.common.utils.Destinations
 import io.writeopia.ui.keyboard.KeyboardEvent
@@ -492,6 +494,17 @@ class GlobalShellKmpViewModel(
 
     override fun hideSettings() {
         _showSettingsState.value = false
+    }
+
+    override fun createVersionEasterEgg(onCreated: (id: String, title: String) -> Unit) {
+        viewModelScope.launch {
+            val document = VersionEasterEggUseCase(
+                documentRepository = RepositoryInjector.singleton().provideDocumentRepository(),
+                authRepository = authRepository,
+            ).create()
+
+            onCreated(document.id, document.title)
+        }
     }
 
     override fun showSearch() {

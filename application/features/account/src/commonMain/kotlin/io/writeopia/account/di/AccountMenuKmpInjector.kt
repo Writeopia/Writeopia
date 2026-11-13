@@ -18,6 +18,8 @@ import io.writeopia.auth.core.di.AuthCoreInjectionNeo
 import io.writeopia.core.configuration.di.UiConfigurationCoreInjector
 import io.writeopia.di.LocalAiInjection
 import io.writeopia.core.folders.di.DocumentTagsInjector
+import io.writeopia.core.folders.usecase.VersionEasterEggUseCase
+import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.core.folders.di.WorkspaceInjection
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.genai.di.GenAiInjection
@@ -37,6 +39,10 @@ class AccountMenuKmpInjector private constructor(
                 authRepository = authCoreInjection.provideAuthRepository(),
                 workspaceHandler = workspaceInjection.provideWorkspaceHandler(),
                 authApi = authCoreInjection.provideAuthApi(),
+                versionEasterEgg = VersionEasterEggUseCase(
+                    documentRepository = RepositoryInjector.singleton().provideDocumentRepository(),
+                    authRepository = authCoreInjection.provideAuthRepository(),
+                ),
             )
         }
 

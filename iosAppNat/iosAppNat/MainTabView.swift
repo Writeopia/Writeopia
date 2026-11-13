@@ -55,7 +55,13 @@ private struct MainLayout: View {
             .defaultVisibility(.hidden, for: .tabBar)
 
             Tab("Settings", systemImage: "gearshape", value: .settings) {
-                SettingsRootView()
+                SettingsRootView { document in
+                    // The tree flow keeps the router as it is, so the document opens over the root.
+                    isOpeningFromTree = true
+                    router.reset()
+                    selection = .folders
+                    router.open(document: document)
+                }
                     .toolbar(tabBarVisibility, for: .tabBar)
             }
         }

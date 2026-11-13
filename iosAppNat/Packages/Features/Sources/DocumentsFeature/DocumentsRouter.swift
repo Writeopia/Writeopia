@@ -24,7 +24,8 @@ public final class DocumentsRouter {
         path = NavigationPath(folders.map(DocumentsRoute.folder))
     }
 
-    func open(document: WrDocument) {
+    /// Opens `document` over the root of the documents.
+    public func open(document: WrDocument) {
         path.append(DocumentsRoute.document(id: document.id, title: document.displayTitle))
     }
 

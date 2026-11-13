@@ -119,6 +119,7 @@ fun SettingsDialog(
     userSearchResults: StateFlow<ResultData<List<SearchUserApi>>>,
     onUserSearchQueryChange: (String) -> Unit,
     onUserSuggestionSelect: (SearchUserApi) -> Unit,
+    onVersionEasterEgg: () -> Unit = {},
 ) {
     Dialog(
         onDismissRequest = onDismissRequest,
@@ -135,6 +136,7 @@ fun SettingsDialog(
         ) {
             SettingsPanel(
                 modifier = Modifier.padding(20.dp).verticalScroll(rememberScrollState()),
+                onVersionEasterEgg = onVersionEasterEgg,
                 accountScreen = {
                     AccountScreen(
                         userOnlineState = userOnlineState,

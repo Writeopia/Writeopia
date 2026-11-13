@@ -1,15 +1,31 @@
 import SetupFeature
 import SwiftUI
+import WrData
 import WrDesign
 import WrModels
 import WrSession
 
 struct GeneralSettingsView: View {
     @Environment(AppSession.self) private var session
+    /// Easter egg: called with the document about the writer of the version, ten taps on it.
+    var onOpenDocument: ((WrDocument) -> Void)?
+    @State private var versionTaps = 0
 
     /// The grouped form on every platform, like the other settings pages.
     var body: some View {
         formBody
+    }
+
+    private func tapVersion() {
+        versionTaps += 1
+        guard versionTaps >= 10 else { return }
+        versionTaps = 0
+
+        let repository = session.documents
+        Task {
+            guard let document = try? await EasterEggs.createVersionWriterDocument(in: repository) else { return }
+            onOpenDocument?(document)
+        }
     }
 
     private var formBody: some View {
@@ -50,6 +66,8 @@ struct GeneralSettingsView: View {
 
             Section("About") {
                 LabeledContent("Version", value: Bundle.main.appVersion)
+                    .contentShape(Rectangle())
+                    .onTapGesture { tapVersion() }
                 LabeledContent("Space", value: session.spaceType == .online ? String(localized: "Open space") : String(localized: "Private space"))
             }
         }

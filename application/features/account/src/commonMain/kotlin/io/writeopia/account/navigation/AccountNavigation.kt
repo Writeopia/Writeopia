@@ -135,6 +135,7 @@ fun NavGraphBuilder.accountMenuNavigation(
     navigateToSettingsAppearance: () -> Unit,
     navigateToSettingsAccount: () -> Unit,
     navigateToSettingsAi: () -> Unit,
+    navigateToDocument: (id: String, title: String) -> Unit = { _, _ -> },
     navigateToSettingsCloudAi: () -> Unit,
     navigateToSettingsWorkspace: () -> Unit,
     navigateToSettingsHeaderImages: () -> Unit,
@@ -200,7 +201,12 @@ fun NavGraphBuilder.accountMenuNavigation(
                 }
             }
         ) { paddingValues ->
+            val accountMenuViewModel = AccountMenuKmpInjector.singleton().provideAccountMenuViewModel()
+
             AccountMenuScreen(
+                onVersionEasterEgg = {
+                    accountMenuViewModel.createVersionEasterEgg(navigateToDocument)
+                },
                 modifier = Modifier.background(MaterialTheme.colorScheme.background)
                     .padding(paddingValues),
                 navigateToAppearance = navigateToSettingsAppearance,
