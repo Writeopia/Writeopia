@@ -380,6 +380,7 @@ fun Routing.documentsRoute(
                     parentFolderId = parentFolderId,
                     title = request.title,
                     workspaceId = workspaceId,
+                    userId = userId,
                     icon = request.icon?.toModel(),
                     writeopiaDb = writeopiaDb,
                     embeddingService = embeddingService
@@ -456,6 +457,7 @@ fun Routing.documentsRoute(
                                 .copy(lastSyncedAt = Clock.System.now())
                         },
                         workspaceId = workspaceId,
+                        userId = userId,
                         writeopiaDb,
                         useAi,
                         embeddingService
@@ -500,6 +502,7 @@ fun Routing.documentsRoute(
                 val upsertedDocument = DocumentsService.upsertDocument(
                     document = documentModel,
                     workspaceId = workspaceId,
+                    userId = userId,
                     writeopiaDb = writeopiaDb,
                     embeddingService = embeddingService,
                 )
@@ -530,6 +533,7 @@ fun Routing.documentsRoute(
                 if (folderList.isNotEmpty()) {
                     val addedToHub = DocumentsService.receiveFolders(
                         folderList.map { folder -> folder.toModel() },
+                        userId,
                         writeopiaDb,
                         embeddingService,
                     )
@@ -843,6 +847,7 @@ fun Routing.documentsRoute(
                 val clonedDocuments = DocumentsService.cloneDocuments(
                     documentIds = request.documentIds,
                     workspaceId = workspaceId,
+                    userId = userId,
                     writeopiaDb = writeopiaDb,
                     useAi = useAi,
                     embeddingService = embeddingService
@@ -889,6 +894,7 @@ fun Routing.documentsRoute(
                     documents = request.documents,
                     targetFolderId = request.targetFolderId,
                     workspaceId = workspaceId,
+                    userId = userId,
                     summaryTitle = request.summaryTitle,
                     model = request.model,
                     ignoreSyncCheck = request.ignoreSyncCheck,
@@ -1155,6 +1161,7 @@ fun Routing.documentsRoute(
                 val response = DocumentsService.syncStorySteps(
                     documentId = documentId,
                     workspaceId = workspaceId,
+                    userId = userId,
                     request = request,
                     writeopiaDb = writeopiaDb,
                     embeddingService = embeddingService
@@ -1191,6 +1198,7 @@ fun Routing.documentsRoute(
                 val result = DocumentsService.describeLinkCard(
                     documentId = documentId,
                     workspaceId = workspaceId,
+                    userId = userId,
                     request = request,
                     describe = { url ->
                         val (answer, _) = genAiService.generateWithUrlContextAndUsage(

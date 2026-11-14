@@ -27,6 +27,7 @@ class StoryStepTombstoneTest {
 
     private val db = configureTestPersistence()
     private val workspaceId = "workspace-tombstones"
+    private val userId = "workspace-tombstones-user"
     private val documentId = "doc-tombstones"
     private val editedAt = 1_791_998_156_814L
 
@@ -59,7 +60,7 @@ class StoryStepTombstoneTest {
         db.saveDocument(document.copy(content = document.content.mapValues { (_, step) -> step.copy(lastUpdatedAt = editedAt + 1) }))
         assertEquals(listOf("title", "b"), stepIds())
 
-        DocumentsService.syncStorySteps(documentId, workspaceId, request(listOf(step("a", editedAt + 2))), db)
+        DocumentsService.syncStorySteps(documentId, workspaceId, userId, request(listOf(step("a", editedAt + 2))), db)
         assertEquals(listOf("title", "b"), stepIds())
     }
 
@@ -72,6 +73,7 @@ class StoryStepTombstoneTest {
         val response = DocumentsService.syncStorySteps(
             documentId,
             workspaceId,
+            userId,
             request(changes = emptyList(), deletions = listOf("b"), lastSync = editedAt),
             db
         )
@@ -148,6 +150,7 @@ class StoryStepTombstoneTest {
         DocumentsService.syncStorySteps(
             documentId,
             workspaceId,
+            userId,
             request(changes = emptyList(), deletions = listOf("elsewhere", "never-stored", "a"), lastSync = editedAt),
             db
         )

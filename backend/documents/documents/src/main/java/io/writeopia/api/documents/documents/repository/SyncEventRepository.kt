@@ -10,6 +10,8 @@ import kotlin.time.ExperimentalTime
  * Event types for sync operations.
  */
 object SyncEventType {
+    const val CREATE_DOCUMENT = "CREATE_DOCUMENT"
+    const val CREATE_FOLDER = "CREATE_FOLDER"
     const val DELETE_DOCUMENT = "DELETE_DOCUMENT"
     const val DELETE_FOLDER = "DELETE_FOLDER"
     const val MOVE_DOCUMENT = "MOVE_DOCUMENT"
