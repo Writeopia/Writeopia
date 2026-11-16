@@ -483,6 +483,51 @@ class DocumentationIntegrationTests {
     }
 
     @Test
+    fun `the workspace diff should not return deleted documents`() = testApplication {
+        application {
+            module(db, debugMode = true)
+        }
+
+        val client = defaultClient()
+
+        val workspaceId = Random.nextInt().toString()
+
+        val kept = DocumentApi(
+            id = "workspace_diff_kept",
+            title = "Kept",
+            workspaceId = workspaceId,
+            parentId = "parentId",
+            isLocked = false,
+            createdAt = 1000L,
+            lastUpdatedAt = 2000L,
+            lastSyncedAt = 4000
+        )
+        val deleted = kept.copy(id = "workspace_diff_deleted", title = "Deleted")
+
+        val sendResponse = client.post("/api/docs/workspace/document") {
+            contentType(ContentType.Application.Json)
+            setBody(SendDocumentsRequest(listOf(kept, deleted), workspaceId))
+        }
+        assertEquals(HttpStatusCode.OK, sendResponse.status)
+
+        // Soft deleted, as the delete route does.
+        db.deleteDocumentById(deleted.id)
+
+        val diffResponse = client.post("/api/docs/workspace/diff") {
+            contentType(ContentType.Application.Json)
+            setBody(WorkspaceDiffRequest(workspaceId = workspaceId, lastSync = 0))
+        }
+
+        assertEquals(HttpStatusCode.OK, diffResponse.status)
+        assertEquals(
+            listOf(kept.id),
+            diffResponse.body<WorkspaceDiffResponse>().documents.map { it.id }
+        )
+
+        db.deleteDocumentById(kept.id)
+    }
+
+    @Test
     fun `it should be possible to get folder contents with folders and documents`() =
         testApplication {
             application {
