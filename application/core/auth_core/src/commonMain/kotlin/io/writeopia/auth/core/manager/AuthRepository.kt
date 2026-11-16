@@ -61,6 +61,19 @@ interface AuthRepository : UserRepository {
 
     suspend fun saveWorkspace(workspace: Workspace)
 
+    /**
+     * The workspaces of the user saved by the last successful [cacheWorkspaces], to be shown
+     * before (or without) the backend answering. Their document count is unknown
+     * ([Workspace.UNKNOWN_DOCUMENT_COUNT]). Platforms that keep nothing on the device return none.
+     */
+    suspend fun getCachedWorkspaces(userId: String): List<Workspace> = emptyList()
+
+    /**
+     * Saves the workspaces the backend listed for the user. Known workspaces keep their sync state
+     * and selection, only the name is refreshed; the ones no longer listed (and not selected) go.
+     */
+    suspend fun cacheWorkspaces(userId: String, workspaces: List<Workspace>) {}
+
     suspend fun updateLastEventSync(workspaceId: String, lastEventSync: Long)
 
     suspend fun unselectAllWorkspaces()

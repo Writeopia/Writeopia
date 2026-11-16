@@ -17,6 +17,12 @@ final class ChooseWorkspaceViewModel {
 
     init(session: AppSession) {
         self.session = session
+        // The workspaces of the last time are there at once; `load()` refreshes them.
+        workspaces = Self.sorted(session.cachedWorkspaces())
+    }
+
+    private static func sorted(_ workspaces: [Workspace]) -> [Workspace] {
+        workspaces.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
 
     var selectedWorkspaceId: String? { session.workspace?.id }
@@ -25,9 +31,20 @@ final class ChooseWorkspaceViewModel {
         isLoading = true
         defer { isLoading = false }
 
+        let accountId = session.user?.id
+
         do {
-            workspaces = try await session.workspacesAPI.userWorkspaces()
-                .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+            let fresh = try await session.workspacesAPI.userWorkspaces()
+
+            // Signing out (or into another account) while the request ran: its answer belongs to
+            // the previous account and must neither be saved nor shown.
+            guard session.spaceType == .online,
+                  session.phase == .chooseWorkspace,
+                  session.user?.id == accountId
+            else { return }
+
+            session.cacheWorkspaces(fresh)
+            workspaces = Self.sorted(fresh)
             errorMessage = nil
 
             if session.user == nil, let user = try? await session.authAPI.currentUser() {
@@ -96,7 +113,15 @@ public struct ChooseWorkspaceView: View {
                     }
                 } header: {
                     if !viewModel.workspaces.isEmpty {
-                        Text("Your teams")
+                        HStack(spacing: 8) {
+                            Text("Your teams")
+                            // The list on screen may be the saved one: the backend is still asked.
+                            if viewModel.isLoading {
+                                ProgressView()
+                                    .controlSize(.small)
+                                    .accessibilityIdentifier("workspaces.refreshing")
+                            }
+                        }
                     }
                 }
             }

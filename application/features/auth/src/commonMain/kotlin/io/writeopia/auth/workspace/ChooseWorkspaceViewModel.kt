@@ -10,6 +10,7 @@ import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.auth.core.data.WorkspaceApi
 import io.writeopia.core.configuration.repository.ConfigurationRepository
 import io.writeopia.core.folders.repository.folder.NotesUseCase
+import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.sdk.serialization.data.DocumentApi
@@ -38,32 +39,67 @@ class ChooseWorkspaceViewModel(
     private val _workspacesState = MutableStateFlow<ResultData<List<Workspace>>>(ResultData.Idle())
     val workspacesState: StateFlow<ResultData<List<Workspace>>> = _workspacesState.asStateFlow()
 
+    private var loadGeneration = 0
+
     private val _createWorkspaceState = MutableStateFlow<ResultData<Unit>>(ResultData.Idle())
     val createWorkspaceState: StateFlow<ResultData<Unit>> = _createWorkspaceState.asStateFlow()
 
+    /**
+     * Shows the workspaces saved on the device right away ([ResultData.InProgress]: the list is
+     * there while the backend is still being asked) and replaces them with the backend's answer,
+     * which is saved for the next time. Without a connection the saved ones stay
+     * ([ResultData.Complete]); the error is only for when there is nothing to show.
+     */
     fun loadWorkspaces() {
+        // Retry, creating a workspace and the first load can overlap: only the last one counts.
+        val generation = ++loadGeneration
+        val isLatest = { generation == loadGeneration }
+
         viewModelScope.launch {
-            _workspacesState.value = ResultData.Loading()
+            val userId = getUserId()
 
-            try {
-                val result = workspaceApi.getAvailableWorkspaces()
+            val cached = if (userId != WriteopiaUser.DISCONNECTED) {
+                runCatching { authRepository.getCachedWorkspaces(userId) }.getOrDefault(emptyList())
+            } else {
+                emptyList()
+            }
 
-                _workspacesState.value = when (result) {
+            if (!isLatest()) return@launch
+
+            _workspacesState.value = if (cached.isEmpty()) {
+                ResultData.Loading()
+            } else {
+                ResultData.InProgress(cached)
+            }
+
+            val result = try {
+                when (val response = workspaceApi.getAvailableWorkspaces()) {
                     is ResultData.Complete -> {
-                        ResultData.Complete(result.data)
+                        if (isLatest() && userId != WriteopiaUser.DISCONNECTED) {
+                            runCatching { authRepository.cacheWorkspaces(userId, response.data) }
+                        }
+
+                        ResultData.Complete(response.data)
                     }
-                    is ResultData.Error -> {
-                        ResultData.Error(result.exception)
-                    }
-                    else -> {
-                        ResultData.Error()
-                    }
+                    is ResultData.Error -> cachedOrError(cached, response.exception)
+                    else -> cachedOrError(cached, null)
                 }
             } catch (e: Exception) {
-                _workspacesState.value = ResultData.Error(e)
+                cachedOrError(cached, e)
+            }
+
+            // A newer load is running (or ran): its state must not be overwritten by this one.
+            if (isLatest()) {
+                _workspacesState.value = result
             }
         }
     }
+
+    private fun cachedOrError(
+        cached: List<Workspace>,
+        exception: Exception?
+    ): ResultData<List<Workspace>> =
+        if (cached.isEmpty()) ResultData.Error(exception) else ResultData.Complete(cached)
 
     fun chooseWorkspace(workspace: Workspace, sideEffect: () -> Unit) {
         viewModelScope.launch {

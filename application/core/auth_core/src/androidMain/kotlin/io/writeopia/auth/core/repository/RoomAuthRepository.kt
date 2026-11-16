@@ -86,6 +86,15 @@ class RoomAuthRepository(
         workspaceCommonDao.insertWorkspace(workspace, true)
     }
 
+    override suspend fun getCachedWorkspaces(userId: String): List<Workspace> =
+        workspaceCommonDao.workspacesOfUser(userId)
+            .filter { it.id != Workspace.disconnectedWorkspace().id }
+            .map { it.copy(documentCount = Workspace.UNKNOWN_DOCUMENT_COUNT) }
+
+    override suspend fun cacheWorkspaces(userId: String, workspaces: List<Workspace>) {
+        workspaceCommonDao.cacheWorkspaces(userId, workspaces)
+    }
+
     override suspend fun unselectAllWorkspaces() {
         workspaceCommonDao.unselectAllWorkspaces()
     }
