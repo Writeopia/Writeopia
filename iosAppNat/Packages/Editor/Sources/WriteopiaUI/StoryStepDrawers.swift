@@ -646,6 +646,9 @@ struct CodeBlockDrawer: View {
                 .fill(WrColors.divider)
                 .frame(width: 1)
             StepTextView(step: step, manager: manager)
+                // Next to the gutter the Mac text view would keep its fallback width, so it takes
+                // the rest of the line like a paragraph does.
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }
@@ -668,6 +671,7 @@ struct CheckItemDrawer: View {
             .accessibilityLabel(step.checked == true ? "Checked" : "Unchecked")
 
             StepTextView(step: step, manager: manager)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }
@@ -685,6 +689,7 @@ struct UnorderedListItemDrawer: View {
                 .foregroundStyle(.secondary)
                 .frame(height: TextStyles.lineHeight(of: TextStyles.baseFont(for: step, family: manager.fontFamily)))
             StepTextView(step: step, manager: manager)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }
