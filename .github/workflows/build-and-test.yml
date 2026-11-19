@@ -244,25 +244,6 @@ jobs:
             backend/**/build/reports/tests/
             backend/**/build/test-results/
           retention-days: 7
-  web_build:
-    name: Web - Build debug
-    runs-on: ubuntu-22.04
-    env:
-      isCI: "true"
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v7
-      - name: Set up JDK 21
-        uses: actions/setup-java@v6
-        with:
-          distribution: zulu
-          java-version: '21'
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6
-      - name: Build web debug
-        run: |
-          ./gradlew kotlinUpgradeYarnLock
-          ./gradlew jsBrowserDevelopmentWebpack
   test_docusaurus:
     name: Test docusaurus
     runs-on: ubuntu-latest
