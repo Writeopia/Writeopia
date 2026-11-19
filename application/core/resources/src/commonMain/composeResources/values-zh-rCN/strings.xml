@@ -422,4 +422,17 @@
   <string name="settings_tag_delete_title">删除标签？</string>
   <string name="settings_tag_delete_message">将从所有带有“%1$s”的文档中移除该标签。</string>
   <string name="settings_tag_name_taken">已存在同名标签。</string>
+  <string name="paywall_title">订阅 Writeopia</string>
+  <string name="paywall_message">你的账户已准备就绪。要使用它，包括在设备间同步文档、云端 AI 和共享，需要订阅。</string>
+  <string name="paywall_price">每月 %1$s</string>
+  <string name="paywall_check_again">我已订阅，重新检查</string>
+  <string name="paywall_checking">正在检查你的订阅…</string>
+  <string name="paywall_error">无法检查你的订阅。请检查网络连接后重试。</string>
+  <string name="paywall_still_not_premium">尚未找到有效的订阅。</string>
+  <string name="paywall_free_title">想先试用一下吗？</string>
+  <string name="paywall_free_offline">离线空间免费，无需账户：你的文档保存在此设备上。</string>
+  <string name="paywall_use_offline">使用离线空间</string>
+  <string name="paywall_free_web">下载适用于桌面或手机的 Writeopia 应用，免费试用离线空间：无需账户，文档保存在你的设备上。</string>
+  <string name="paywall_download_apps">下载应用</string>
+  <string name="paywall_other_account">使用其他账户登录</string>
 </resources>

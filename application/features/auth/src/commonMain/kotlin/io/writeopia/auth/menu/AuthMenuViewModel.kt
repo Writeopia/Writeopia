@@ -109,6 +109,8 @@ class AuthMenuViewModel(
         val workspace = authRepository.getWorkspace()
         val status = when {
             workspace != null -> LoginStatus.ONLINE
+            // Signed in but never got past the paywall (the app was closed on it).
+            user.tier != Tier.PREMIUM -> LoginStatus.SUBSCRIPTION_REQUIRED
             else -> LoginStatus.CHOOSE_WORKSPACE
         }
         emit(status)

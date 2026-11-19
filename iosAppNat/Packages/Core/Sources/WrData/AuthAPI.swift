@@ -303,6 +303,12 @@ public final class AuthAPI {
         try await client.get("api/auth/user/current")
     }
 
+    /// Whether the signed in user is premium, with the price of the monthly subscription. The
+    /// source of truth for the paywall after signing in, rather than the tier of the login answer.
+    public func subscription() async throws -> SubscriptionStatus {
+        try await client.get("api/auth/subscription")
+    }
+
     /// Revokes the refresh token on the server and forgets the local tokens. Local tokens are
     /// cleared even when the server can't be reached.
     public func logout() async {

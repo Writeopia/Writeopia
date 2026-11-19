@@ -155,7 +155,7 @@ final class RegisterViewModel {
 
             switch result {
             case .loggedIn(let user):
-                self.session.loggedIn(user)
+                await self.session.loggedIn(user)
             case .emailNotConfirmed(let user):
                 self.session.needsEmailConfirmation(email: user.email)
             }

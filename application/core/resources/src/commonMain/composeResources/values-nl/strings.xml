@@ -422,4 +422,17 @@
   <string name="settings_tag_delete_title">Tag verwijderen?</string>
   <string name="settings_tag_delete_message">‘%1$s’ wordt verwijderd uit elk document dat hem draagt.</string>
   <string name="settings_tag_name_taken">Er bestaat al een tag met deze naam.</string>
+  <string name="paywall_title">Abonneer op Writeopia</string>
+  <string name="paywall_message">Je account is klaar. Om het te gebruiken, met je documenten gesynchroniseerd tussen apparaten, de cloud-AI en delen, is een abonnement nodig.</string>
+  <string name="paywall_price">%1$s per maand</string>
+  <string name="paywall_check_again">Ik heb een abonnement, opnieuw controleren</string>
+  <string name="paywall_checking">Je abonnement wordt gecontroleerd…</string>
+  <string name="paywall_error">Je abonnement kon niet worden gecontroleerd. Controleer je verbinding en probeer het opnieuw.</string>
+  <string name="paywall_still_not_premium">We hebben nog geen actief abonnement gevonden.</string>
+  <string name="paywall_free_title">Eerst uitproberen?</string>
+  <string name="paywall_free_offline">De offline ruimte is gratis en heeft geen account nodig: je documenten blijven op dit apparaat.</string>
+  <string name="paywall_use_offline">Offline ruimte gebruiken</string>
+  <string name="paywall_free_web">Download de Writeopia-app voor desktop of mobiel om de gratis offline ruimte te proberen: geen account nodig, je documenten blijven op je apparaat.</string>
+  <string name="paywall_download_apps">Apps downloaden</string>
+  <string name="paywall_other_account">Inloggen met een ander account</string>
 </resources>

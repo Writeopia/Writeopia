@@ -32,6 +32,7 @@ import io.writeopia.auth.forgotpassword.ForgotPasswordEmailScreen
 import io.writeopia.auth.forgotpassword.ForgotPasswordNewPasswordScreen
 import io.writeopia.auth.menu.AuthMenuScreen
 import io.writeopia.auth.menu.AuthMenuViewModel
+import io.writeopia.auth.paywall.PaywallScreen
 import io.writeopia.auth.register.RegisterPasswordScreen
 import io.writeopia.auth.register.RegisterScreen
 import io.writeopia.auth.spacechoice.LocalAiSetupScreen
@@ -84,6 +85,7 @@ fun NavGraphBuilder.startScreen(
                     }
 
                     LoginStatus.CHOOSE_WORKSPACE -> Destinations.CHOOSE_WORKSPACE.id
+                    LoginStatus.SUBSCRIPTION_REQUIRED -> Destinations.PAYWALL.id
                     LoginStatus.EMAIL_NOT_CONFIRMED -> Destinations.EMAIL_CONFIRM.id
                     LoginStatus.ONLINE, LoginStatus.OFFLINE_CHOSEN -> Destinations.MAIN_APP.id
                 }
@@ -161,7 +163,7 @@ fun NavGraphBuilder.authNavigation(
                 codeChanged = emailConfirmViewModel::codeChanged,
                 onConfirm = {
                     emailConfirmViewModel.onConfirm {
-                        navController.navigateToWorkspaceChoice()
+                        navController.navigateToPaywall()
                     }
                 },
                 onResend = emailConfirmViewModel::onResend,
@@ -203,6 +205,49 @@ fun NavGraphBuilder.authNavigation(
                 },
                 onOnlineSelected = {
                     navController.navigate(Destinations.AUTH_MENU_INNER_NAVIGATION.id)
+                }
+            )
+        }
+    }
+
+    // Right after signing in or signing up: a user who is not premium is asked to subscribe, or
+    // offered the free offline space.
+    composable(Destinations.PAYWALL.id) {
+        val paywallViewModel = authInjection.providePaywallViewModel()
+        val authMenuViewModel: AuthMenuViewModel = authInjection.provideAuthMenuViewModel()
+        val colorTheme by colorThemeOption.collectAsState()
+        val platform = LocalPlatform.current
+        var leaving by remember { mutableStateOf(false) }
+
+        WriteopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
+            PaywallScreen(
+                modifier = Modifier.background(WriteopiaTheme.colorScheme.globalBackground),
+                stateFlow = paywallViewModel.state,
+                isWeb = isWeb,
+                onPremium = navController::navigateToWorkspaceChoice,
+                onCheckAgain = paywallViewModel::checkAgain,
+                onUseOffline = {
+                    if (!leaving) {
+                        leaving = true
+                        paywallViewModel.signOut {
+                            // Same as choosing the offline space when the app is first opened.
+                            if (platform == PlatformType.DESKTOP) {
+                                authMenuViewModel.useOffline {
+                                    navController.navigateAndResetStack(Destinations.LOCAL_AI_SETUP.id)
+                                }
+                            } else {
+                                authMenuViewModel.useOffline(toAppNavigation)
+                            }
+                        }
+                    }
+                },
+                onOtherAccount = {
+                    if (!leaving) {
+                        leaving = true
+                        paywallViewModel.signOut {
+                            navController.navigateAndResetStack(Destinations.AUTH_MENU_INNER_NAVIGATION.id)
+                        }
+                    }
                 }
             )
         }
@@ -266,7 +311,7 @@ fun NavGraphBuilder.authNavigation(
                         if (emailConfirmationRequired) {
                             navController.navigateToEmailConfirm()
                         } else {
-                            navController.navigateToWorkspaceChoice()
+                            navController.navigateToPaywall()
                         }
                     },
                     navigateToAccountDeletionPending = navController::navigateToAccountDeletionPending
@@ -429,7 +474,7 @@ fun NavGraphBuilder.authNavigation(
                     onRegisterRequest = registerViewModel::onRegister,
                     // The email was verified before the account was created, so the new
                     // account is already active and signed in.
-                    onRegisterSuccess = navController::navigateToWorkspaceChoice,
+                    onRegisterSuccess = navController::navigateToPaywall,
                     navigateBack = navController::navigateUp
                 )
             }
@@ -549,6 +594,11 @@ fun NavController.navigateAndResetStack(
 
 fun NavController.navigateToApp() {
     navigateAndResetStack(Destinations.MAIN_APP.id)
+}
+
+/** Checks whether the user who just signed in is premium, before the workspaces. */
+fun NavController.navigateToPaywall() {
+    navigateAndResetStack(Destinations.PAYWALL.id)
 }
 
 fun NavController.navigateToWorkspaceChoice() {

@@ -422,4 +422,17 @@
   <string name="settings_tag_delete_title">¿Eliminar la etiqueta?</string>
   <string name="settings_tag_delete_message">“%1$s” se quitará de todos los documentos que la llevan.</string>
   <string name="settings_tag_name_taken">Ya existe una etiqueta con este nombre.</string>
+  <string name="paywall_title">Suscríbete a Writeopia</string>
+  <string name="paywall_message">Tu cuenta está lista. Para usarla, con tus documentos sincronizados entre dispositivos, la IA en la nube y el uso compartido, necesitas una suscripción.</string>
+  <string name="paywall_price">%1$s al mes</string>
+  <string name="paywall_check_again">Ya me suscribí, comprobar de nuevo</string>
+  <string name="paywall_checking">Comprobando tu suscripción…</string>
+  <string name="paywall_error">No se pudo comprobar tu suscripción. Revisa tu conexión e inténtalo de nuevo.</string>
+  <string name="paywall_still_not_premium">Todavía no encontramos una suscripción activa.</string>
+  <string name="paywall_free_title">¿Quieres probarlo antes?</string>
+  <string name="paywall_free_offline">El espacio sin conexión es gratuito y no necesita cuenta: tus documentos se quedan en este dispositivo.</string>
+  <string name="paywall_use_offline">Usar el espacio sin conexión</string>
+  <string name="paywall_free_web">Descarga la app de Writeopia para escritorio o móvil y prueba gratis el espacio sin conexión: sin cuenta, tus documentos se quedan en tu dispositivo.</string>
+  <string name="paywall_download_apps">Descargar las apps</string>
+  <string name="paywall_other_account">Iniciar sesión con otra cuenta</string>
 </resources>

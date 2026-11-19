@@ -422,4 +422,17 @@
   <string name="settings_tag_delete_title">Удалить тег?</string>
   <string name="settings_tag_delete_message">«%1$s» будет снят со всех документов, у которых он есть.</string>
   <string name="settings_tag_name_taken">Тег с таким названием уже есть.</string>
+  <string name="paywall_title">Оформите подписку на Writeopia</string>
+  <string name="paywall_message">Ваш аккаунт готов. Чтобы пользоваться им — синхронизацией документов между устройствами, облачным ИИ и совместным доступом, — нужна подписка.</string>
+  <string name="paywall_price">%1$s в месяц</string>
+  <string name="paywall_check_again">Я оформил подписку, проверить снова</string>
+  <string name="paywall_checking">Проверяем подписку…</string>
+  <string name="paywall_error">Не удалось проверить подписку. Проверьте подключение и попробуйте снова.</string>
+  <string name="paywall_still_not_premium">Активная подписка пока не найдена.</string>
+  <string name="paywall_free_title">Хотите сначала попробовать?</string>
+  <string name="paywall_free_offline">Офлайн-пространство бесплатно и не требует аккаунта: документы остаются на этом устройстве.</string>
+  <string name="paywall_use_offline">Использовать офлайн-пространство</string>
+  <string name="paywall_free_web">Скачайте приложение Writeopia для компьютера или телефона, чтобы бесплатно попробовать офлайн-пространство: без аккаунта, документы остаются на вашем устройстве.</string>
+  <string name="paywall_download_apps">Скачать приложения</string>
+  <string name="paywall_other_account">Войти в другой аккаунт</string>
 </resources>
