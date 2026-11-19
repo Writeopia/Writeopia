@@ -210,13 +210,11 @@ fun NavGraphBuilder.authNavigation(
         }
     }
 
-    // Right after signing in or signing up: a user who is not premium is asked to subscribe, or
-    // offered the free offline space.
+    // Right after signing in or signing up: a user who is not premium is asked to subscribe. Signing
+    // out leads back to the space choice, where the free offline space is.
     composable(Destinations.PAYWALL.id) {
         val paywallViewModel = authInjection.providePaywallViewModel()
-        val authMenuViewModel: AuthMenuViewModel = authInjection.provideAuthMenuViewModel()
         val colorTheme by colorThemeOption.collectAsState()
-        val platform = LocalPlatform.current
         var leaving by remember { mutableStateOf(false) }
 
         WriteopiaTheme(darkTheme = colorTheme.isDarkTheme()) {
@@ -226,26 +224,18 @@ fun NavGraphBuilder.authNavigation(
                 isWeb = isWeb,
                 onPremium = navController::navigateToWorkspaceChoice,
                 onCheckAgain = paywallViewModel::checkAgain,
-                onUseOffline = {
+                onSignOut = {
                     if (!leaving) {
                         leaving = true
                         paywallViewModel.signOut {
-                            // Same as choosing the offline space when the app is first opened.
-                            if (platform == PlatformType.DESKTOP) {
-                                authMenuViewModel.useOffline {
-                                    navController.navigateAndResetStack(Destinations.LOCAL_AI_SETUP.id)
-                                }
+                            // Back to choosing a space, like signing out from the settings. The
+                            // web has no offline space: its only choice is the login.
+                            val destination = if (isWeb) {
+                                Destinations.AUTH_MENU_INNER_NAVIGATION.id
                             } else {
-                                authMenuViewModel.useOffline(toAppNavigation)
+                                Destinations.WORKSPACE_TYPE_CHOICE.id
                             }
-                        }
-                    }
-                },
-                onOtherAccount = {
-                    if (!leaving) {
-                        leaving = true
-                        paywallViewModel.signOut {
-                            navController.navigateAndResetStack(Destinations.AUTH_MENU_INNER_NAVIGATION.id)
+                            navController.navigateAndResetStack(destination)
                         }
                     }
                 }

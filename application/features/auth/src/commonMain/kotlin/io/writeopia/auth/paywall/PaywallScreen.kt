@@ -5,16 +5,19 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -24,10 +27,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.resources.WrStrings
 import io.writeopia.theme.WriteopiaTheme
 import kotlinx.coroutines.flow.StateFlow
@@ -36,8 +41,9 @@ import kotlinx.coroutines.flow.StateFlow
 const val APPS_DOWNLOAD_URL = "https://writeopia.io/download"
 
 /**
- * Asks a user who signed in but is not premium to subscribe. The free alternative is the offline
- * space; on the web, which has none, the native apps are recommended instead.
+ * Asks a user who signed in but is not premium to subscribe. Signing out leads back to the space
+ * choice, where the free offline space is; on the web, which has none, the native apps are
+ * recommended instead.
  */
 @Composable
 fun PaywallScreen(
@@ -45,8 +51,7 @@ fun PaywallScreen(
     isWeb: Boolean,
     onPremium: () -> Unit,
     onCheckAgain: () -> Unit,
-    onUseOffline: () -> Unit,
-    onOtherAccount: () -> Unit,
+    onSignOut: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val state by stateFlow.collectAsState()
@@ -60,7 +65,7 @@ fun PaywallScreen(
             // Nothing to offer until the first answer: a premium user only sees this.
             CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
         } else {
-            PaywallContent(state, isWeb, onCheckAgain, onUseOffline, onOtherAccount)
+            PaywallContent(state, isWeb, onCheckAgain, onSignOut)
         }
     }
 }
@@ -70,8 +75,7 @@ private fun PaywallContent(
     state: PaywallState,
     isWeb: Boolean,
     onCheckAgain: () -> Unit,
-    onUseOffline: () -> Unit,
-    onOtherAccount: () -> Unit,
+    onSignOut: () -> Unit,
 ) {
     val shape = MaterialTheme.shapes.large
 
@@ -99,6 +103,10 @@ private fun PaywallContent(
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center
         )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Benefits()
 
         state.monthlyPrice?.let { price ->
             Spacer(modifier = Modifier.height(24.dp))
@@ -135,14 +143,57 @@ private fun PaywallContent(
             )
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
-
-        FreeAlternative(isWeb = isWeb, onUseOffline = onUseOffline)
+        if (isWeb) {
+            Spacer(modifier = Modifier.height(32.dp))
+            NativeAppsAlternative()
+        }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        TextButton(onClick = onOtherAccount) {
-            Text(WrStrings.paywallOtherAccount(), color = MaterialTheme.colorScheme.primary)
+        TextButton(onClick = onSignOut) {
+            Text(WrStrings.logout(), color = MaterialTheme.colorScheme.primary)
+        }
+    }
+}
+
+/** What the subscription brings: the reasons to subscribe. */
+@Composable
+private fun Benefits() {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Benefit(WrIcons.sync, WrStrings.paywallBenefitSync(), WrStrings.paywallBenefitSyncDesc())
+        Benefit(WrIcons.ai, WrStrings.paywallBenefitAi(), WrStrings.paywallBenefitAiDesc())
+        Benefit(WrIcons.group, WrStrings.paywallBenefitTeam(), WrStrings.paywallBenefitTeamDesc())
+        Benefit(WrIcons.cloudSync, WrStrings.paywallBenefitBackup(), WrStrings.paywallBenefitBackupDesc())
+    }
+}
+
+@Composable
+private fun Benefit(icon: ImageVector, title: String, description: String) {
+    Row(verticalAlignment = Alignment.Top) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(top = 2.dp).size(22.dp)
+        )
+
+        Spacer(modifier = Modifier.width(14.dp))
+
+        Column {
+            Text(
+                title,
+                color = MaterialTheme.colorScheme.onBackground,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                description,
+                color = WriteopiaTheme.colorScheme.textLighter,
+                style = MaterialTheme.typography.bodyMedium
+            )
         }
     }
 }
@@ -170,7 +221,7 @@ private fun CheckStatus(state: PaywallState) {
 }
 
 @Composable
-private fun FreeAlternative(isWeb: Boolean, onUseOffline: () -> Unit) {
+private fun NativeAppsAlternative() {
     val shape = MaterialTheme.shapes.large
     val uriHandler = LocalUriHandler.current
 
@@ -190,7 +241,7 @@ private fun FreeAlternative(isWeb: Boolean, onUseOffline: () -> Unit) {
         )
 
         Text(
-            if (isWeb) WrStrings.paywallFreeWeb() else WrStrings.paywallFreeOffline(),
+            WrStrings.paywallFreeWeb(),
             color = WriteopiaTheme.colorScheme.textLighter,
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center
@@ -200,12 +251,10 @@ private fun FreeAlternative(isWeb: Boolean, onUseOffline: () -> Unit) {
             modifier = Modifier
                 .border(1.dp, MaterialTheme.colorScheme.primary, shape)
                 .fillMaxWidth(),
-            onClick = {
-                if (isWeb) uriHandler.openUri(APPS_DOWNLOAD_URL) else onUseOffline()
-            }
+            onClick = { uriHandler.openUri(APPS_DOWNLOAD_URL) }
         ) {
             Text(
-                if (isWeb) WrStrings.paywallDownloadApps() else WrStrings.paywallUseOffline(),
+                WrStrings.paywallDownloadApps(),
                 color = MaterialTheme.colorScheme.primary
             )
         }

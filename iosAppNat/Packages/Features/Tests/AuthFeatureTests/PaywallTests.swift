@@ -86,23 +86,7 @@ private let loginJson = #"{"accessToken":"a","refreshToken":"r","writeopiaUser":
         #expect(session.phase == .chooseWorkspace)
     }
 
-    @Test func theOfflineSpaceSignsOutAndOpensThePrivateSpace() async {
-        let tokens = InMemoryTokenStore()
-        let (session, transport) = await signedIn(subscription: (200, freeJson), tokens: tokens)
-
-        await PaywallViewModel(session: session).useOfflineSpace()
-
-        #expect(transport.paths.last == "/api/auth/logout")
-        #expect(tokens.accessToken == nil)
-        #expect(session.user == nil)
-        #expect(session.subscription == nil)
-        #expect(session.spaceType == .offline)
-        #expect(session.workspace == .local)
-        #expect(session.phase == .ready)
-        #expect(!session.isOnline)
-    }
-
-    @Test func signingOutGoesBackToTheLogin() async {
+    @Test func signingOutGoesBackToTheSpaceChoice() async {
         let tokens = InMemoryTokenStore()
         let (session, _) = await signedIn(subscription: (200, freeJson), tokens: tokens)
 
@@ -110,8 +94,8 @@ private let loginJson = #"{"accessToken":"a","refreshToken":"r","writeopiaUser":
 
         #expect(tokens.accessToken == nil)
         #expect(session.user == nil)
-        #expect(session.spaceType == .online)
-        #expect(session.phase == .signedOut)
+        #expect(session.spaceType == nil)
+        #expect(session.phase == .spaceChoice)
     }
 
     @Test func relaunchingWithoutSubscriptionShowsThePaywallAgain() async {

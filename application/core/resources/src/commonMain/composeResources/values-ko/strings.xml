@@ -423,16 +423,21 @@
   <string name="settings_tag_delete_message">“%1$s” 태그가 붙은 모든 문서에서 제거됩니다.</string>
   <string name="settings_tag_name_taken">같은 이름의 태그가 이미 있습니다.</string>
   <string name="paywall_title">Writeopia 구독하기</string>
-  <string name="paywall_message">계정이 준비되었습니다. 기기 간 문서 동기화, 클라우드 AI, 공유를 사용하려면 구독이 필요합니다.</string>
+  <string name="paywall_message">계정이 준비되었습니다. 구독하면 Writeopia 클라우드의 모든 기능을 사용할 수 있습니다:</string>
   <string name="paywall_price">월 %1$s</string>
   <string name="paywall_check_again">구독했어요, 다시 확인</string>
   <string name="paywall_checking">구독을 확인하는 중…</string>
   <string name="paywall_error">구독을 확인할 수 없습니다. 연결을 확인하고 다시 시도하세요.</string>
   <string name="paywall_still_not_premium">아직 활성화된 구독을 찾지 못했습니다.</string>
   <string name="paywall_free_title">먼저 사용해 보시겠어요?</string>
-  <string name="paywall_free_offline">오프라인 공간은 무료이며 계정이 필요 없습니다. 문서는 이 기기에 저장됩니다.</string>
-  <string name="paywall_use_offline">오프라인 공간 사용</string>
   <string name="paywall_free_web">데스크톱 또는 모바일용 Writeopia 앱을 다운로드해 무료 오프라인 공간을 사용해 보세요. 계정이 필요 없고 문서는 기기에 저장됩니다.</string>
   <string name="paywall_download_apps">앱 다운로드</string>
-  <string name="paywall_other_account">다른 계정으로 로그인</string>
+  <string name="paywall_benefit_sync">모든 플랫폼에서 동기화</string>
+  <string name="paywall_benefit_sync_desc">컴퓨터에서 쓰고 휴대폰, 태블릿 또는 웹에서 이어서 작성하세요. 문서는 어디서나 항상 최신 상태입니다.</string>
+  <string name="paywall_benefit_ai">클라우드 AI</string>
+  <string name="paywall_benefit_ai_desc">글쓰기 제안, 텍스트 명령, 요약, 헤더 이미지까지. 설치할 것이 없습니다.</string>
+  <string name="paywall_benefit_team">팀과 함께 작업</string>
+  <string name="paywall_benefit_team_desc">워크스페이스를 공유하고 팀과 함께 작성하세요.</string>
+  <string name="paywall_benefit_backup">클라우드에 안전하게</string>
+  <string name="paywall_benefit_backup_desc">문서가 백업되므로 기기를 잃어도 아무것도 잃지 않습니다.</string>
 </resources>

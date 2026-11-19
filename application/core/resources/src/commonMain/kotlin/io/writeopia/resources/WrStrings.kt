@@ -183,11 +183,16 @@ import writeopia.application.core.resources.generated.resources.paywall_checking
 import writeopia.application.core.resources.generated.resources.paywall_error
 import writeopia.application.core.resources.generated.resources.paywall_still_not_premium
 import writeopia.application.core.resources.generated.resources.paywall_free_title
-import writeopia.application.core.resources.generated.resources.paywall_free_offline
-import writeopia.application.core.resources.generated.resources.paywall_use_offline
 import writeopia.application.core.resources.generated.resources.paywall_free_web
 import writeopia.application.core.resources.generated.resources.paywall_download_apps
-import writeopia.application.core.resources.generated.resources.paywall_other_account
+import writeopia.application.core.resources.generated.resources.paywall_benefit_sync
+import writeopia.application.core.resources.generated.resources.paywall_benefit_sync_desc
+import writeopia.application.core.resources.generated.resources.paywall_benefit_ai
+import writeopia.application.core.resources.generated.resources.paywall_benefit_ai_desc
+import writeopia.application.core.resources.generated.resources.paywall_benefit_team
+import writeopia.application.core.resources.generated.resources.paywall_benefit_team_desc
+import writeopia.application.core.resources.generated.resources.paywall_benefit_backup
+import writeopia.application.core.resources.generated.resources.paywall_benefit_backup_desc
 import writeopia.application.core.resources.generated.resources.create_your_account
 import writeopia.application.core.resources.generated.resources.dark_theme
 import writeopia.application.core.resources.generated.resources.decoration
@@ -798,19 +803,34 @@ object WrStrings {
     fun paywallFreeTitle() = stringResource(Res.string.paywall_free_title)
 
     @Composable
-    fun paywallFreeOffline() = stringResource(Res.string.paywall_free_offline)
-
-    @Composable
-    fun paywallUseOffline() = stringResource(Res.string.paywall_use_offline)
-
-    @Composable
     fun paywallFreeWeb() = stringResource(Res.string.paywall_free_web)
 
     @Composable
     fun paywallDownloadApps() = stringResource(Res.string.paywall_download_apps)
 
     @Composable
-    fun paywallOtherAccount() = stringResource(Res.string.paywall_other_account)
+    fun paywallBenefitSync() = stringResource(Res.string.paywall_benefit_sync)
+
+    @Composable
+    fun paywallBenefitSyncDesc() = stringResource(Res.string.paywall_benefit_sync_desc)
+
+    @Composable
+    fun paywallBenefitAi() = stringResource(Res.string.paywall_benefit_ai)
+
+    @Composable
+    fun paywallBenefitAiDesc() = stringResource(Res.string.paywall_benefit_ai_desc)
+
+    @Composable
+    fun paywallBenefitTeam() = stringResource(Res.string.paywall_benefit_team)
+
+    @Composable
+    fun paywallBenefitTeamDesc() = stringResource(Res.string.paywall_benefit_team_desc)
+
+    @Composable
+    fun paywallBenefitBackup() = stringResource(Res.string.paywall_benefit_backup)
+
+    @Composable
+    fun paywallBenefitBackupDesc() = stringResource(Res.string.paywall_benefit_backup_desc)
 
     @Composable
     fun startNow() = stringResource(Res.string.start_now)

@@ -423,16 +423,21 @@
   <string name="settings_tag_delete_message">将从所有带有“%1$s”的文档中移除该标签。</string>
   <string name="settings_tag_name_taken">已存在同名标签。</string>
   <string name="paywall_title">订阅 Writeopia</string>
-  <string name="paywall_message">你的账户已准备就绪。要使用它，包括在设备间同步文档、云端 AI 和共享，需要订阅。</string>
+  <string name="paywall_message">你的账户已准备就绪。订阅即可使用 Writeopia 云的全部功能：</string>
   <string name="paywall_price">每月 %1$s</string>
   <string name="paywall_check_again">我已订阅，重新检查</string>
   <string name="paywall_checking">正在检查你的订阅…</string>
   <string name="paywall_error">无法检查你的订阅。请检查网络连接后重试。</string>
   <string name="paywall_still_not_premium">尚未找到有效的订阅。</string>
   <string name="paywall_free_title">想先试用一下吗？</string>
-  <string name="paywall_free_offline">离线空间免费，无需账户：你的文档保存在此设备上。</string>
-  <string name="paywall_use_offline">使用离线空间</string>
   <string name="paywall_free_web">下载适用于桌面或手机的 Writeopia 应用，免费试用离线空间：无需账户，文档保存在你的设备上。</string>
   <string name="paywall_download_apps">下载应用</string>
-  <string name="paywall_other_account">使用其他账户登录</string>
+  <string name="paywall_benefit_sync">所有平台同步</string>
+  <string name="paywall_benefit_sync_desc">在电脑上写作，然后在手机、平板或网页上继续。你的文档在任何地方都保持最新。</string>
+  <string name="paywall_benefit_ai">云端 AI</string>
+  <string name="paywall_benefit_ai_desc">写作建议、文本指令、摘要和页眉图片，无需安装任何东西。</string>
+  <string name="paywall_benefit_team">团队协作</string>
+  <string name="paywall_benefit_team_desc">共享工作区，与团队一起写作。</string>
+  <string name="paywall_benefit_backup">云端安全保存</string>
+  <string name="paywall_benefit_backup_desc">你的文档已备份，即使丢失设备也不会丢失任何内容。</string>
 </resources>

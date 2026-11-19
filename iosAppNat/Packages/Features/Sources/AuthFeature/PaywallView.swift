@@ -49,18 +49,11 @@ final class PaywallViewModel {
         }
     }
 
-    /// Signs the online account out and opens the private space.
-    func useOfflineSpace() async {
-        isLeaving = true
-        defer { isLeaving = false }
-        await session.useOfflineSpaceInstead()
-    }
-
-    /// Signs out and goes back to the login screen.
+    /// Signs out and goes back to the space choice, like signing out from the settings.
     func signOut() async {
         isLeaving = true
         defer { isLeaving = false }
-        await session.signOutToLogin()
+        await session.logout()
     }
 }
 
@@ -109,6 +102,9 @@ private struct PaywallContent: View {
                 PaywallHeader(monthlyPrice: viewModel.monthlyPrice)
                     .padding(.bottom, 12)
 
+                PaywallBenefits()
+                    .padding(.bottom, 12)
+
                 PaywallMessages(viewModel: viewModel)
 
                 WrPrimaryButton("I've subscribed – check again", isLoading: viewModel.isChecking) {
@@ -117,9 +113,7 @@ private struct PaywallContent: View {
                 .disabled(viewModel.isChecking || viewModel.isLeaving)
                 .accessibilityIdentifier("paywall.checkAgain")
 
-                PaywallOfflineOption(viewModel: viewModel)
-
-                Button("Sign out and use another account") {
+                Button("Sign out") {
                     Task { await viewModel.signOut() }
                 }
                 .font(.callout.weight(.semibold))
@@ -144,7 +138,7 @@ private struct PaywallHeader: View {
             WrScreenHeader(
                 eyebrow: "Open space",
                 title: "Subscribe to use your cloud account",
-                subtitle: "Your Writeopia cloud account needs a subscription: syncing across devices, the cloud AI and team workspaces come with it."
+                subtitle: "Your account is ready. Subscribe to get everything the Writeopia cloud offers:"
             )
 
             if let monthlyPrice {
@@ -155,6 +149,60 @@ private struct PaywallHeader: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+/// What the subscription brings: the reasons to subscribe.
+private struct PaywallBenefits: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            PaywallBenefit(
+                systemImage: "arrow.triangle.2.circlepath",
+                title: "Sync across all platforms",
+                detail: "Write on your computer and keep going on your phone, tablet or the web. Your documents are always up to date, everywhere."
+            )
+            PaywallBenefit(
+                systemImage: "sparkles",
+                title: "Cloud AI",
+                detail: "Writing suggestions, commands on your text, summaries and header pictures, with nothing to install."
+            )
+            PaywallBenefit(
+                systemImage: "person.2",
+                title: "Work as a team",
+                detail: "Share workspaces and write together with your team."
+            )
+            PaywallBenefit(
+                systemImage: "lock.icloud",
+                title: "Safe in the cloud",
+                detail: "Your documents are backed up, so nothing is lost with a device."
+            )
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityIdentifier("paywall.benefits")
+    }
+}
+
+private struct PaywallBenefit: View {
+    let systemImage: String
+    let title: LocalizedStringKey
+    let detail: LocalizedStringKey
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 14) {
+            Image(systemName: systemImage)
+                .font(.title3)
+                .foregroundStyle(WrColors.accent)
+                .frame(width: 28)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                Text(detail)
+                    .font(.subheadline)
+                    .foregroundStyle(WrColors.textLighter)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
     }
 }
 
@@ -185,35 +233,5 @@ private struct PaywallMessages: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityIdentifier("paywall.stillFree")
         }
-    }
-}
-
-private struct PaywallOfflineOption: View {
-    let viewModel: PaywallViewModel
-
-    var body: some View {
-        Button {
-            Task { await viewModel.useOfflineSpace() }
-        } label: {
-            VStack(alignment: .leading, spacing: 6) {
-                Label("Try the free version – use the offline space", systemImage: "lock.shield")
-                    .font(.callout.weight(.semibold))
-                    .foregroundStyle(WrColors.textLight)
-                Text("Your documents stay on this device.")
-                    .font(.footnote)
-                    .foregroundStyle(WrColors.textLighter)
-            }
-            .padding(16)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(WrColors.surface, in: RoundedRectangle(cornerRadius: 16))
-            .overlay {
-                RoundedRectangle(cornerRadius: 16)
-                    .strokeBorder(WrColors.divider)
-            }
-            .contentShape(RoundedRectangle(cornerRadius: 16))
-        }
-        .buttonStyle(.plain)
-        .disabled(viewModel.isLeaving)
-        .accessibilityIdentifier("paywall.offline")
     }
 }

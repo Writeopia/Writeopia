@@ -423,16 +423,21 @@
   <string name="settings_tag_delete_message">「%1$s」は付いているすべてのドキュメントから外されます。</string>
   <string name="settings_tag_name_taken">この名前のタグはすでにあります。</string>
   <string name="paywall_title">Writeopia に登録</string>
-  <string name="paywall_message">アカウントの準備ができました。デバイス間のドキュメント同期、クラウド AI、共有を利用するには、サブスクリプションが必要です。</string>
+  <string name="paywall_message">アカウントの準備ができました。登録すると、Writeopia クラウドのすべてを利用できます：</string>
   <string name="paywall_price">月額 %1$s</string>
   <string name="paywall_check_again">登録しました。もう一度確認</string>
   <string name="paywall_checking">サブスクリプションを確認しています…</string>
   <string name="paywall_error">サブスクリプションを確認できませんでした。接続を確認して、もう一度お試しください。</string>
   <string name="paywall_still_not_premium">有効なサブスクリプションがまだ見つかりません。</string>
   <string name="paywall_free_title">まずは試してみますか？</string>
-  <string name="paywall_free_offline">オフラインスペースは無料で、アカウントは不要です。ドキュメントはこのデバイスに保存されます。</string>
-  <string name="paywall_use_offline">オフラインスペースを使う</string>
   <string name="paywall_free_web">デスクトップ版またはモバイル版の Writeopia アプリをダウンロードして、無料のオフラインスペースをお試しください。アカウント不要で、ドキュメントはお使いのデバイスに保存されます。</string>
   <string name="paywall_download_apps">アプリをダウンロード</string>
-  <string name="paywall_other_account">別のアカウントでサインイン</string>
+  <string name="paywall_benefit_sync">すべてのプラットフォームで同期</string>
+  <string name="paywall_benefit_sync_desc">パソコンで書いて、スマートフォン、タブレット、Web で続きを。ドキュメントはどこでも常に最新です。</string>
+  <string name="paywall_benefit_ai">クラウド AI</string>
+  <string name="paywall_benefit_ai_desc">文章の提案、テキストへのコマンド、要約、ヘッダー画像。インストールは不要です。</string>
+  <string name="paywall_benefit_team">チームで作業</string>
+  <string name="paywall_benefit_team_desc">ワークスペースを共有して、チームと一緒に書きましょう。</string>
+  <string name="paywall_benefit_backup">クラウドで安全に保管</string>
+  <string name="paywall_benefit_backup_desc">ドキュメントはバックアップされるので、デバイスを失っても何も失われません。</string>
 </resources>

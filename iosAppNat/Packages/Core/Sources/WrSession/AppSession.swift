@@ -454,21 +454,6 @@ public final class AppSession {
         return status
     }
 
-    /// From the paywall: signs the online account out and opens the private space, as if the
-    /// user had picked it on "Choose your space". The documents stay on this device.
-    public func useOfflineSpaceInstead() async {
-        await authAPI.logout()
-        clearOnlineSession()
-        chooseOfflineSpace()
-    }
-
-    /// From the paywall: signs out and goes back to the login screen, e.g. to use another account.
-    public func signOutToLogin() async {
-        await authAPI.logout()
-        setSpace(.online)
-        clearOnlineSession()
-    }
-
     public func needsEmailConfirmation(email: String) {
         preferences.set(email, for: .pendingEmail)
         phase = .emailConfirmation(email: email)

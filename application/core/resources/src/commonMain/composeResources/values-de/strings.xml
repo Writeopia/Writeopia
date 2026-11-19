@@ -423,16 +423,21 @@
   <string name="settings_tag_delete_message">„%1$s“ wird aus jedem Dokument entfernt, das es trägt.</string>
   <string name="settings_tag_name_taken">Es gibt bereits ein Tag mit diesem Namen.</string>
   <string name="paywall_title">Writeopia abonnieren</string>
-  <string name="paywall_message">Dein Konto ist bereit. Um es zu nutzen, mit auf allen Geräten synchronisierten Dokumenten, der Cloud-KI und dem Teilen, brauchst du ein Abonnement.</string>
+  <string name="paywall_message">Dein Konto ist bereit. Abonniere, um alles zu bekommen, was die Writeopia-Cloud bietet:</string>
   <string name="paywall_price">%1$s pro Monat</string>
   <string name="paywall_check_again">Ich habe abonniert, erneut prüfen</string>
   <string name="paywall_checking">Abonnement wird geprüft…</string>
   <string name="paywall_error">Dein Abonnement konnte nicht geprüft werden. Prüfe deine Verbindung und versuche es erneut.</string>
   <string name="paywall_still_not_premium">Wir haben noch kein aktives Abonnement gefunden.</string>
   <string name="paywall_free_title">Erst einmal ausprobieren?</string>
-  <string name="paywall_free_offline">Der Offline-Bereich ist kostenlos und braucht kein Konto: Deine Dokumente bleiben auf diesem Gerät.</string>
-  <string name="paywall_use_offline">Offline-Bereich nutzen</string>
   <string name="paywall_free_web">Lade die Writeopia-App für Desktop oder Mobilgeräte herunter, um den kostenlosen Offline-Bereich auszuprobieren: ohne Konto, deine Dokumente bleiben auf deinem Gerät.</string>
   <string name="paywall_download_apps">Apps herunterladen</string>
-  <string name="paywall_other_account">Mit einem anderen Konto anmelden</string>
+  <string name="paywall_benefit_sync">Synchronisierung auf allen Plattformen</string>
+  <string name="paywall_benefit_sync_desc">Schreibe am Computer und mach auf dem Handy, Tablet oder im Web weiter. Deine Dokumente sind überall aktuell.</string>
+  <string name="paywall_benefit_ai">Cloud-KI</string>
+  <string name="paywall_benefit_ai_desc">Schreibvorschläge, Befehle für deinen Text, Zusammenfassungen und Titelbilder, ohne etwas zu installieren.</string>
+  <string name="paywall_benefit_team">Im Team arbeiten</string>
+  <string name="paywall_benefit_team_desc">Teile Arbeitsbereiche und schreibe gemeinsam mit deinem Team.</string>
+  <string name="paywall_benefit_backup">Sicher in der Cloud</string>
+  <string name="paywall_benefit_backup_desc">Deine Dokumente werden gesichert, mit einem Gerät geht nichts verloren.</string>
 </resources>
