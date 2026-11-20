@@ -51,6 +51,14 @@ import WrStorage
         #expect(euros.formattedMonthlyPrice(locale: Locale(identifier: "de_DE"))?.contains("12,99") == true)
     }
 
+    @Test func thePriceFollowsTheMinorUnitOfItsCurrency() {
+        let yen = SubscriptionStatus(premium: false, monthlyPriceCents: 500, currency: "JPY")
+        #expect(yen.formattedMonthlyPrice(locale: Locale(identifier: "en_US")) == "¥500")
+
+        let dinars = SubscriptionStatus(premium: false, monthlyPriceCents: 1500, currency: "KWD")
+        #expect(dinars.formattedMonthlyPrice(locale: Locale(identifier: "en_US"))?.contains("1.500") == true)
+    }
+
     @Test func aBadCurrencyShowsNoPrice() {
         #expect(SubscriptionStatus(premium: false, monthlyPriceCents: 500, currency: nil).formattedMonthlyPrice() == nil)
         #expect(SubscriptionStatus(premium: false, monthlyPriceCents: 500, currency: "DOLLAR").formattedMonthlyPrice() == nil)

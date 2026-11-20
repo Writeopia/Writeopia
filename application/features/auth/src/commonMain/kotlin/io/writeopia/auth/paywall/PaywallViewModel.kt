@@ -21,6 +21,7 @@ import kotlinx.coroutines.launch
  * @property monthlyPrice The price of the subscription, formatted; null until it is known.
  * @property failed The check failed: the user can only retry, never go through.
  * @property stillNotPremium A check asked by the user ("check again") found no subscription yet.
+ * @property signOutFailed Signing out failed: the user is still signed in.
  */
 data class PaywallState(
     val checking: Boolean = true,
@@ -28,6 +29,7 @@ data class PaywallState(
     val monthlyPrice: String? = null,
     val failed: Boolean = false,
     val stillNotPremium: Boolean = false,
+    val signOutFailed: Boolean = false,
 )
 
 /**
@@ -87,31 +89,51 @@ class PaywallViewModel(
     /**
      * Signs the online account out on this device, for the offline space or another account.
      */
-    fun signOut(onSignedOut: () -> Unit) {
+    fun signOut(onFailed: () -> Unit = {}, onSignedOut: () -> Unit) {
+        // A late answer of the check must not store anything for the account leaving.
+        checkJob?.cancel()
+        _state.update { it.copy(checking = false, signOutFailed = false) }
+
         viewModelScope.launch {
             authRepository.unselectAllWorkspaces()
-            authRepository.logout()
-            onSignedOut()
+            if (authRepository.logout() is ResultData.Complete) {
+                onSignedOut()
+            } else {
+                _state.update { it.copy(signOutFailed = true) }
+                onFailed()
+            }
         }
     }
 }
 
+/** ISO 4217 currencies whose minor unit is not a hundredth: the number of decimals they have. */
+private val CURRENCY_DECIMALS: Map<String, Int> =
+    "BIF CLP DJF GNF ISK JPY KMF KRW PYG RWF UGX UYI VND VUV XAF XOF XPF".split(" ").associateWith { 0 } +
+        "BHD IQD JOD KWD LYD OMR TND".split(" ").associateWith { 3 }
+
 /**
- * Formats a price in the minor unit of [currency] (cents for USD), such as `$5.00` or `R$ 29.90`.
- * Common code has no locale-aware currency formatter, so the symbol of the most common currencies
- * is used and the ISO code otherwise.
+ * Formats a price in the minor unit of [currency] (cents for USD, yen for JPY), such as `$5.00`,
+ * `¥500` or `R$ 29.90`. Common code has no locale-aware currency formatter, so the symbol of the
+ * most common currencies is used and the ISO code otherwise.
  */
 internal fun formatPrice(cents: Long, currency: String): String {
-    val units = cents / 100
-    val minor = (cents % 100).toString().padStart(2, '0')
-    val amount = "$units.$minor"
+    val code = currency.uppercase()
+    val decimals = CURRENCY_DECIMALS[code] ?: 2
+    val amount = if (decimals == 0) {
+        cents.toString()
+    } else {
+        var divisor = 1L
+        repeat(decimals) { divisor *= 10 }
+        val minor = (cents % divisor).toString().padStart(decimals, '0')
+        "${cents / divisor}.$minor"
+    }
 
-    return when (currency.uppercase()) {
+    return when (code) {
         "USD" -> "$$amount"
         "EUR" -> "€$amount"
         "GBP" -> "£$amount"
-        "JPY" -> "¥$units"
+        "JPY" -> "¥$amount"
         "BRL" -> "R$ $amount"
-        else -> "$amount ${currency.uppercase()}"
+        else -> "$amount $code"
     }
 }

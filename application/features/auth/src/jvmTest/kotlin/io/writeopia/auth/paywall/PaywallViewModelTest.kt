@@ -11,9 +11,11 @@ import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.serialization.response.SubscriptionResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlin.test.AfterTest
@@ -47,6 +49,7 @@ class PaywallViewModelTest {
         authRepository = mockk(relaxed = true)
         authApi = mockk(relaxed = true)
         coEvery { authRepository.getUser() } returns user
+        coEvery { authRepository.logout() } returns ResultData.Complete(true)
     }
 
     @AfterTest
@@ -121,10 +124,50 @@ class PaywallViewModelTest {
     }
 
     @Test
+    fun `a failed sign out keeps the user on the paywall`() = runTest {
+        coEvery { authApi.subscription() } returns subscription(premium = false)
+        coEvery { authRepository.logout() } returns ResultData.Error(Exception("disk"))
+        val viewModel = PaywallViewModel(authRepository, authApi)
+        advanceUntilIdle()
+
+        var signedOut = false
+        var failed = false
+        viewModel.signOut(onFailed = { failed = true }) { signedOut = true }
+        advanceUntilIdle()
+
+        assertFalse(signedOut)
+        assertTrue(failed)
+        assertTrue(viewModel.state.value.signOutFailed)
+    }
+
+    @Test
+    fun `a check answering after the sign out stores nothing`() = runTest {
+        coEvery { authApi.subscription() } coAnswers {
+            delay(1_000)
+            subscription(premium = true)
+        }
+        val viewModel = PaywallViewModel(authRepository, authApi)
+        runCurrent()
+
+        viewModel.signOut {}
+        advanceUntilIdle()
+
+        assertFalse(viewModel.state.value.premium)
+        coVerify(exactly = 0) { authRepository.saveUser(any(), any()) }
+    }
+
+    @Test
     fun `prices are formatted with two decimals`() {
         assertEquals("$5.00", formatPrice(500, "USD"))
         assertEquals("€12.99", formatPrice(1299, "EUR"))
         assertEquals("R$ 29.90", formatPrice(2990, "BRL"))
         assertEquals("7.05 CHF", formatPrice(705, "CHF"))
+    }
+
+    @Test
+    fun `prices follow the minor unit of their currency`() {
+        assertEquals("¥500", formatPrice(500, "JPY"))
+        assertEquals("5000 KRW", formatPrice(5000, "KRW"))
+        assertEquals("1.500 KWD", formatPrice(1500, "KWD"))
     }
 }

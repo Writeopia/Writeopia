@@ -121,6 +121,20 @@ private let loginJson = #"{"accessToken":"a","refreshToken":"r","writeopiaUser":
         #expect(next.user?.isPremium == true)
     }
 
+    @Test func aStoredPremiumUserWithoutWorkspaceIsAskedAgainAtLaunch() async {
+        let tokens = InMemoryTokenStore()
+        let (first, _) = await signedIn(subscription: (200, premiumJson), tokens: tokens)
+        #expect(first.user?.isPremium == true)
+
+        // The stored tier isn't trusted: the paywall asks and lets a premium user through.
+        let transport = StubTransport(["/api/auth/subscription": (200, premiumJson)])
+        let next = AppSession(tokenStore: tokens, preferences: Preferences(defaults: defaults), transport: transport)
+        #expect(next.phase == .paywall)
+
+        await PaywallViewModel(session: next).start()
+        #expect(next.phase == .chooseWorkspace)
+    }
+
     @Test func aUserWithAWorkspaceOpensWithoutAsking() async {
         let tokens = InMemoryTokenStore()
         _ = await signedIn(subscription: (200, freeJson), tokens: tokens)

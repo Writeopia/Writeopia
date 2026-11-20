@@ -227,7 +227,7 @@ fun NavGraphBuilder.authNavigation(
                 onSignOut = {
                     if (!leaving) {
                         leaving = true
-                        paywallViewModel.signOut {
+                        paywallViewModel.signOut(onFailed = { leaving = false }) {
                             // Back to choosing a space, like signing out from the settings. The
                             // web has no offline space: its only choice is the login.
                             val destination = if (isWeb) {

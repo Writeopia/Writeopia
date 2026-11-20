@@ -201,6 +201,7 @@ private fun Benefit(icon: ImageVector, title: String, description: String) {
 @Composable
 private fun CheckStatus(state: PaywallState) {
     val message = when {
+        state.signOutFailed -> WrStrings.unknownError()
         state.checking -> WrStrings.paywallChecking()
         state.failed -> WrStrings.paywallError()
         state.stillNotPremium -> WrStrings.paywallStillNotPremium()
@@ -209,7 +210,7 @@ private fun CheckStatus(state: PaywallState) {
 
     Text(
         message,
-        color = if (state.failed && !state.checking) {
+        color = if (state.signOutFailed || (state.failed && !state.checking)) {
             MaterialTheme.colorScheme.error
         } else {
             WriteopiaTheme.colorScheme.textLighter

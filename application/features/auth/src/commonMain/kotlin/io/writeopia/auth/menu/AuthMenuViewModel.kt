@@ -13,7 +13,6 @@ import io.writeopia.auth.core.manager.LoginStatus
 import io.writeopia.common.utils.env.EnvUtils
 import io.writeopia.core.configuration.repository.ConfigurationRepository
 import io.writeopia.core.folders.repository.folder.NotesUseCase
-import io.writeopia.sdk.models.user.Tier
 import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.utils.map
@@ -109,9 +108,9 @@ class AuthMenuViewModel(
         val workspace = authRepository.getWorkspace()
         val status = when {
             workspace != null -> LoginStatus.ONLINE
-            // Signed in but never got past the paywall (the app was closed on it).
-            user.tier != Tier.PREMIUM -> LoginStatus.SUBSCRIPTION_REQUIRED
-            else -> LoginStatus.CHOOSE_WORKSPACE
+            // Signed in but never got past the paywall (the app was closed on it). The stored tier
+            // is not trusted: the paywall asks the backend and lets a premium user straight through.
+            else -> LoginStatus.SUBSCRIPTION_REQUIRED
         }
         emit(status)
     }
@@ -183,7 +182,7 @@ class AuthMenuViewModel(
 
                             authRepository.unselectAllUsers()
                             authRepository.saveUser(
-                                user = user.copy(tier = Tier.PREMIUM),
+                                user = user,
                                 selected = true
                             )
                             val accessToken = result.data.accessToken

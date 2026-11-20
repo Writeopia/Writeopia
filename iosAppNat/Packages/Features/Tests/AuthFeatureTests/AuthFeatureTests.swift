@@ -408,11 +408,20 @@ private func makeSession(
 
     @Test func switchingSpaceAndSigningInFromOffline() async {
         let tokens = InMemoryTokenStore(accessToken: "a", refreshToken: "r")
-        let (session, _) = makeSession(["/api/auth/logout": (200, "Logged out successfully")], tokens: tokens)
+        let (session, _) = makeSession(
+            [
+                "/api/auth/logout": (200, "Logged out successfully"),
+                "/api/auth/subscription": (200, premiumJson),
+            ],
+            tokens: tokens
+        )
         session.updateUser(premiumUser)
         session.chooseOfflineSpace()
 
+        // No workspace yet: the paywall asks the backend, the stored tier isn't trusted.
         session.signIn()
+        #expect(session.phase == .paywall)
+        await PaywallViewModel(session: session).start()
         #expect(session.phase == .chooseWorkspace)
 
         session.select(workspace: Workspace(id: "w1", userId: "u1", name: "Team", role: "ADMIN"))

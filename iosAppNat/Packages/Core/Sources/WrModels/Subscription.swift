@@ -7,8 +7,8 @@ public struct SubscriptionStatus: Decodable, Equatable, Sendable {
     public let premium: Bool
     /// "FREE" or "PREMIUM", like `User.tier`.
     public let tier: String?
-    /// The price of the monthly subscription in the smallest unit of `currency` over 100
-    /// (cents); nil when the backend didn't send it.
+    /// The price of the monthly subscription in the minor unit of `currency` (cents for USD,
+    /// yen for JPY); nil when the backend didn't send it.
     public let monthlyPriceCents: Int?
     /// ISO 4217 code, e.g. "USD".
     public let currency: String?
@@ -51,7 +51,13 @@ public struct SubscriptionStatus: Decodable, Equatable, Sendable {
               let code = currency?.trimmingCharacters(in: .whitespaces).uppercased(),
               code.count == 3, code.allSatisfy({ $0.isASCII && $0.isLetter })
         else { return nil }
-        let amount = Decimal(monthlyPriceCents) / 100
+        // The digits of the minor unit of the currency (2 for USD, 0 for JPY, 3 for KWD).
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.currencyCode = code
+        var divisor = Decimal(1)
+        for _ in 0..<formatter.maximumFractionDigits { divisor *= 10 }
+        let amount = Decimal(monthlyPriceCents) / divisor
         return amount.formatted(.currency(code: code).locale(locale))
     }
 }
