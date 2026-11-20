@@ -1,5 +1,5 @@
 [versions]
-coilVersion = "3.5.0"
+coilVersion = "3.6.2"
 googleGenai = "1.70.0"
 jlatexmath = "1.0.7"
 media3 = "1.11.0"
