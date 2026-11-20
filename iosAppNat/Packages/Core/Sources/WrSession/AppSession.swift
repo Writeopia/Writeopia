@@ -18,6 +18,9 @@ public final class AppSession {
         case emailConfirmation(email: String)
         /// Signed in, but no workspace (team) was selected.
         case chooseWorkspace
+        /// Signed in, but the backend didn't say yet that the user is premium (or said not):
+        /// the cloud account needs a subscription. The paywall offers the private space instead.
+        case paywall
         /// First-run setup of the private space (the Mac app): local AI, then the folder.
         case offlineSetup(OfflineSetupStep)
         /// The workspace just chosen is brought to the device before the documents are shown.
@@ -34,6 +37,9 @@ public final class AppSession {
     public private(set) var phase: Phase
     public private(set) var spaceType: SpaceType?
     public private(set) var user: User?
+    /// The last answer of the backend about the subscription of the signed in user; nil until
+    /// it was asked, e.g. at launch.
+    public private(set) var subscription: SubscriptionStatus?
     public private(set) var workspace: Workspace? {
         didSet { if oldValue?.id != workspace?.id { loadWorkspaceFolder() } }
     }
@@ -85,6 +91,12 @@ public final class AppSession {
     private var localDocuments: LocalDocumentsRepository
     @ObservationIgnored private let offlineSetupSteps: [OfflineSetupStep]
     @ObservationIgnored private var syncedDocuments: SyncedDocumentsRepository?
+    /// Where the app goes once the paywall learns the user is premium: the workspace picker
+    /// after signing in; nil to resolve it from what is stored, e.g. at launch.
+    @ObservationIgnored private var phaseAfterPaywall: Phase?
+    /// Bumped whenever the signed in account changes (sign in, sign out, expired session), so an
+    /// answer about the subscription of the previous account is dropped.
+    @ObservationIgnored private var sessionGeneration = 0
 
     public init(
         tokenStore: TokenStore = KeychainTokenStore(),
@@ -409,11 +421,43 @@ public final class AppSession {
 
     // MARK: - Auth
 
-    public func loggedIn(_ user: User) {
+    /// Asks the backend whether the user is premium before going on: the workspace picker when
+    /// so, the paywall when not or when the backend can't tell (never past it on an error).
+    public func loggedIn(_ user: User) async {
+        sessionGeneration += 1
         setUser(user)
         preferences.remove(.pendingEmail)
         setSpace(.online)
-        phase = .chooseWorkspace
+        subscription = nil
+        phaseAfterPaywall = .chooseWorkspace
+        do {
+            _ = try await checkSubscription()
+        } catch {
+            // The paywall shows the error and asks again.
+            if isOnline { phase = .paywall }
+        }
+    }
+
+    /// Asks the backend whether the signed in user is premium. Premium: the stored user is
+    /// marked premium (later launches don't ask again) and the app goes on past the paywall.
+    /// Not premium: the paywall. Throws when the backend can't tell, leaving the phase as is.
+    @discardableResult
+    public func checkSubscription() async throws -> SubscriptionStatus {
+        let generation = sessionGeneration
+        let status = try await authAPI.subscription()
+        // Signed out or signed in again while waiting: nothing to decide anymore.
+        guard isCurrent(generation) else { return status }
+
+        subscription = status
+        if status.premium {
+            await markPremium(tier: status.tier, generation: generation)
+            guard isCurrent(generation) else { return status }
+            phase = phaseAfterPaywall ?? resolvePhase(premiumConfirmed: true)
+            phaseAfterPaywall = nil
+        } else {
+            phase = .paywall
+        }
+        return status
     }
 
     public func needsEmailConfirmation(email: String) {
@@ -472,7 +516,10 @@ public final class AppSession {
     }
 
     private func clearOnlineSession() {
+        sessionGeneration += 1
         setUser(nil)
+        subscription = nil
+        phaseAfterPaywall = nil
         workspace = nil
         syncedDocuments = nil
         preferences.remove(.selectedWorkspace)
@@ -487,6 +534,23 @@ public final class AppSession {
     private func setSpace(_ space: SpaceType?) {
         spaceType = space
         preferences.set(space?.rawValue, for: .spaceType)
+    }
+
+    /// Whether the account that asked something of the backend in `generation` is still the one
+    /// signed in.
+    private func isCurrent(_ generation: Int) -> Bool {
+        generation == sessionGeneration && spaceType == .online && tokenStore.accessToken != nil
+    }
+
+    /// Stores the user as premium, fetching it first when the device has none stored. Nothing is
+    /// stored when the account changed meanwhile.
+    private func markPremium(tier: String?, generation: Int) async {
+        let premiumTier = tier.flatMap { $0.uppercased() == "PREMIUM" ? $0 : nil } ?? "PREMIUM"
+        if let user {
+            setUser(user.withTier(premiumTier))
+        } else if let current = try? await authAPI.currentUser(), isCurrent(generation) {
+            setUser(current.withTier(premiumTier))
+        }
     }
 
     private func setUser(_ user: User?) {
@@ -514,7 +578,9 @@ public final class AppSession {
         return (LocalDocumentsRepository(composeDatabase: LocalDocumentsRepository.composeDatabaseLocation), nil)
     }
 
-    private func resolvePhase() -> Phase {
+    /// `premiumConfirmed`: the backend just said the user is premium, even if the user couldn't
+    /// be stored with the tier.
+    private func resolvePhase(premiumConfirmed: Bool = false) -> Phase {
         switch spaceType {
         case nil:
             return .spaceChoice
@@ -528,8 +594,14 @@ public final class AppSession {
                 return .emailConfirmation(email: pendingEmail)
             }
             guard tokenStore.accessToken != nil else { return .signedOut }
-            guard let workspace, workspace.id != Workspace.localId else { return .chooseWorkspace }
-            return .ready
+            // A workspace is only chosen past the paywall: a user who has one is let in without
+            // asking (the app opens offline). One who signed in but never got past the paywall
+            // (the app was closed on it) sees it again; the stored tier isn't trusted, the paywall
+            // asks the backend and lets a premium user straight through. Same rule as the Compose
+            // app (`LoginStatus.SUBSCRIPTION_REQUIRED`).
+            if let workspace, workspace.id != Workspace.localId { return .ready }
+            guard premiumConfirmed else { return .paywall }
+            return .chooseWorkspace
         }
     }
 }

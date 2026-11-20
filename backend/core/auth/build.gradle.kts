@@ -34,6 +34,8 @@ dependencies {
     implementation(project(":backend:core:pubsub"))
 
     testImplementation(libs.ktor.server.tests)
+    testImplementation(libs.ktor.server.content.negotiation)
+    testImplementation(libs.ktor.serialization.json)
     testImplementation(libs.kotlin.test)
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)

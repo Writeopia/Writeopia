@@ -175,6 +175,24 @@ import writeopia.application.core.resources.generated.resources.terms_agree_and
 import writeopia.application.core.resources.generated.resources.privacy_policy
 import writeopia.application.core.resources.generated.resources.legal_load_error
 import writeopia.application.core.resources.generated.resources.legal_effective
+import writeopia.application.core.resources.generated.resources.paywall_title
+import writeopia.application.core.resources.generated.resources.paywall_message
+import writeopia.application.core.resources.generated.resources.paywall_price
+import writeopia.application.core.resources.generated.resources.paywall_check_again
+import writeopia.application.core.resources.generated.resources.paywall_checking
+import writeopia.application.core.resources.generated.resources.paywall_error
+import writeopia.application.core.resources.generated.resources.paywall_still_not_premium
+import writeopia.application.core.resources.generated.resources.paywall_free_title
+import writeopia.application.core.resources.generated.resources.paywall_free_web
+import writeopia.application.core.resources.generated.resources.paywall_download_apps
+import writeopia.application.core.resources.generated.resources.paywall_benefit_sync
+import writeopia.application.core.resources.generated.resources.paywall_benefit_sync_desc
+import writeopia.application.core.resources.generated.resources.paywall_benefit_ai
+import writeopia.application.core.resources.generated.resources.paywall_benefit_ai_desc
+import writeopia.application.core.resources.generated.resources.paywall_benefit_team
+import writeopia.application.core.resources.generated.resources.paywall_benefit_team_desc
+import writeopia.application.core.resources.generated.resources.paywall_benefit_backup
+import writeopia.application.core.resources.generated.resources.paywall_benefit_backup_desc
 import writeopia.application.core.resources.generated.resources.create_your_account
 import writeopia.application.core.resources.generated.resources.dark_theme
 import writeopia.application.core.resources.generated.resources.decoration
@@ -759,6 +777,60 @@ object WrStrings {
 
     @Composable
     fun legalEffective(date: String) = stringResource(Res.string.legal_effective, date)
+
+    @Composable
+    fun paywallTitle() = stringResource(Res.string.paywall_title)
+
+    @Composable
+    fun paywallMessage() = stringResource(Res.string.paywall_message)
+
+    @Composable
+    fun paywallPrice(price: String) = stringResource(Res.string.paywall_price, price)
+
+    @Composable
+    fun paywallCheckAgain() = stringResource(Res.string.paywall_check_again)
+
+    @Composable
+    fun paywallChecking() = stringResource(Res.string.paywall_checking)
+
+    @Composable
+    fun paywallError() = stringResource(Res.string.paywall_error)
+
+    @Composable
+    fun paywallStillNotPremium() = stringResource(Res.string.paywall_still_not_premium)
+
+    @Composable
+    fun paywallFreeTitle() = stringResource(Res.string.paywall_free_title)
+
+    @Composable
+    fun paywallFreeWeb() = stringResource(Res.string.paywall_free_web)
+
+    @Composable
+    fun paywallDownloadApps() = stringResource(Res.string.paywall_download_apps)
+
+    @Composable
+    fun paywallBenefitSync() = stringResource(Res.string.paywall_benefit_sync)
+
+    @Composable
+    fun paywallBenefitSyncDesc() = stringResource(Res.string.paywall_benefit_sync_desc)
+
+    @Composable
+    fun paywallBenefitAi() = stringResource(Res.string.paywall_benefit_ai)
+
+    @Composable
+    fun paywallBenefitAiDesc() = stringResource(Res.string.paywall_benefit_ai_desc)
+
+    @Composable
+    fun paywallBenefitTeam() = stringResource(Res.string.paywall_benefit_team)
+
+    @Composable
+    fun paywallBenefitTeamDesc() = stringResource(Res.string.paywall_benefit_team_desc)
+
+    @Composable
+    fun paywallBenefitBackup() = stringResource(Res.string.paywall_benefit_backup)
+
+    @Composable
+    fun paywallBenefitBackupDesc() = stringResource(Res.string.paywall_benefit_backup_desc)
 
     @Composable
     fun startNow() = stringResource(Res.string.start_now)

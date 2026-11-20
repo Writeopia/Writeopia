@@ -1047,6 +1047,71 @@
         }
       }
     },
+    "%@ per month" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ pro Monat"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ al mes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ par mois"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ al mese"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "月額 %@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "월 %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ per maand"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ por mês"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ в месяц"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "每月 %@"
+          }
+        }
+      }
+    },
     "A folder can't be moved into itself." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5922,6 +5987,71 @@
         }
       }
     },
+    "Checking your subscription…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Abo wird geprüft…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comprobando tu suscripción…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vérification de votre abonnement…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verifica dell'abbonamento in corso…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サブスクリプションを確認しています…"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "구독을 확인하는 중…"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je abonnement wordt gecontroleerd…"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verificando sua assinatura…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проверяем вашу подписку…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在检查你的订阅…"
+          }
+        }
+      }
+    },
     "Choose a local folder" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -6508,12 +6638,12 @@
       }
     },
     "Cloud AI" : {
-      "extractionState" : "stale",
+      "extractionState" : "manual",
       "localizations" : {
-        "de" : {
+        "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cloud-KI"
+            "value" : "IA na nuvem"
           }
         },
         "es" : {
@@ -6525,19 +6655,25 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "IA cloud"
+            "value" : "IA dans le cloud"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cloud-KI"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "AI cloud"
+            "value" : "IA nel cloud"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "クラウドAI"
+            "value" : "クラウド AI"
           }
         },
         "ko" : {
@@ -6550,12 +6686,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Cloud-AI"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "IA na Nuvem"
           }
         },
         "ru" : {
@@ -8778,6 +8908,136 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "我同意[服务条款](writeopia://legal/terms)和[隐私政策](writeopia://legal/privacy)"
+          }
+        }
+      }
+    },
+    "I've subscribed – check again" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ich habe abonniert – erneut prüfen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ya me suscribí – comprobar de nuevo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je me suis abonné – vérifier à nouveau"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mi sono abbonato – verifica di nuovo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "登録しました – もう一度確認"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "구독했어요 – 다시 확인"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ik heb een abonnement – opnieuw controleren"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Já assinei – verificar novamente"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Я оформил подписку – проверить снова"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "我已订阅 – 重新检查"
+          }
+        }
+      }
+    },
+    "Subscribe to use your cloud account" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abonniere, um dein Cloud-Konto zu nutzen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suscríbete para usar tu cuenta en la nube"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abonnez-vous pour utiliser votre compte cloud"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abbonati per usare il tuo account cloud"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "クラウドアカウントを使うにはサブスクリプションが必要です"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "클라우드 계정을 사용하려면 구독하세요"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neem een abonnement om je cloudaccount te gebruiken"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Assine para usar sua conta na nuvem"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Оформите подписку, чтобы пользоваться облачным аккаунтом"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "订阅后即可使用你的云端账户"
           }
         }
       }
@@ -29061,6 +29321,71 @@
         }
       }
     },
+    "This account doesn't have a subscription yet." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieses Konto hat noch kein Abo."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta cuenta todavía no tiene una suscripción."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce compte n'a pas encore d'abonnement."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo account non ha ancora un abbonamento."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このアカウントにはまだサブスクリプションがありません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 계정에는 아직 구독이 없습니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dit account heeft nog geen abonnement."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta conta ainda não tem uma assinatura."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "У этого аккаунта пока нет подписки."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此账户尚未订阅。"
+          }
+        }
+      }
+    },
     "This account is being deleted." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -32120,6 +32445,71 @@
         }
       }
     },
+    "We couldn't check your subscription." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Abo konnte nicht geprüft werden."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No pudimos comprobar tu suscripción."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de vérifier votre abonnement."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non è stato possibile verificare l'abbonamento."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サブスクリプションを確認できませんでした。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "구독을 확인할 수 없습니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We konden je abonnement niet controleren."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível verificar sua assinatura."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось проверить вашу подписку."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法检查你的订阅。"
+          }
+        }
+      }
+    },
     "We couldn't find what you were looking for." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -34781,6 +35171,526 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "你的团队"
+          }
+        }
+      }
+    },
+    "Your account is ready. Subscribe to get everything the Writeopia cloud offers:" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sua conta está pronta. Assine para ter tudo o que a nuvem do Writeopia oferece:"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu cuenta está lista. Suscríbete para tener todo lo que ofrece la nube de Writeopia:"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre compte est prêt. Abonnez-vous pour profiter de tout ce que le cloud Writeopia offre :"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Konto ist bereit. Abonniere, um alles zu bekommen, was die Writeopia-Cloud bietet:"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo account è pronto. Abbonati per avere tutto ciò che offre il cloud di Writeopia:"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アカウントの準備ができました。登録すると、Writeopia クラウドのすべてを利用できます："
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "계정이 준비되었습니다. 구독하면 Writeopia 클라우드의 모든 기능을 사용할 수 있습니다:"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je account is klaar. Neem een abonnement voor alles wat de Writeopia-cloud biedt:"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваш аккаунт готов. Оформите подписку, чтобы получить всё, что даёт облако Writeopia:"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的账户已准备就绪。订阅即可使用 Writeopia 云的全部功能："
+          }
+        }
+      }
+    },
+    "Sync across all platforms" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronização em todas as plataformas"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronización en todas las plataformas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronisation sur toutes les plateformes"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronisierung auf allen Plattformen"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sincronizzazione su tutte le piattaforme"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "すべてのプラットフォームで同期"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "모든 플랫폼에서 동기화"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Synchronisatie op alle platforms"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Синхронизация на всех платформах"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所有平台同步"
+          }
+        }
+      }
+    },
+    "Write on your computer and keep going on your phone, tablet or the web. Your documents are always up to date, everywhere." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escreva no computador e continue no celular, no tablet ou na web. Seus documentos estão sempre atualizados, em todo lugar."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escribe en tu ordenador y sigue en tu móvil, tu tableta o la web. Tus documentos siempre están al día, en todas partes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Écrivez sur votre ordinateur et continuez sur votre téléphone, votre tablette ou le web. Vos documents sont toujours à jour, partout."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schreibe am Computer und mach auf dem Handy, Tablet oder im Web weiter. Deine Dokumente sind überall aktuell."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scrivi sul computer e continua sul telefono, sul tablet o sul web. I tuoi documenti sono sempre aggiornati, ovunque."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "パソコンで書いて、スマートフォン、タブレット、Web で続きを。ドキュメントはどこでも常に最新です。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "컴퓨터에서 쓰고 휴대폰, 태블릿 또는 웹에서 이어서 작성하세요. 문서는 어디서나 항상 최신 상태입니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schrijf op je computer en ga verder op je telefoon, tablet of het web. Je documenten zijn overal altijd up-to-date."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пишите на компьютере и продолжайте на телефоне, планшете или в вебе. Ваши документы всегда актуальны, где бы вы ни были."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在电脑上写作，然后在手机、平板或网页上继续。你的文档在任何地方都保持最新。"
+          }
+        }
+      }
+    },
+    "Writing suggestions, commands on your text, summaries and header pictures, with nothing to install." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sugestões de escrita, comandos sobre o seu texto, resumos e imagens de cabeçalho, sem nada para instalar."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sugerencias de escritura, comandos sobre tu texto, resúmenes e imágenes de cabecera, sin instalar nada."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suggestions d'écriture, commandes sur votre texte, résumés et images d'en-tête, sans rien installer."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schreibvorschläge, Befehle für deinen Text, Zusammenfassungen und Titelbilder, ohne etwas zu installieren."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suggerimenti di scrittura, comandi sul tuo testo, riassunti e immagini di intestazione, senza installare nulla."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "文章の提案、テキストへのコマンド、要約、ヘッダー画像。インストールは不要です。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "글쓰기 제안, 텍스트 명령, 요약, 헤더 이미지까지. 설치할 것이 없습니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schrijfsuggesties, opdrachten op je tekst, samenvattingen en headerafbeeldingen, zonder iets te installeren."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подсказки при письме, команды для текста, краткие изложения и обложки — ничего не нужно устанавливать."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写作建议、文本指令、摘要和页眉图片，无需安装任何东西。"
+          }
+        }
+      }
+    },
+    "Work as a team" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trabalhe em equipe"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trabaja en equipo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Travaillez en équipe"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Im Team arbeiten"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lavora in team"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "チームで作業"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "팀과 함께 작업"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Werk samen als team"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Работайте в команде"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "团队协作"
+          }
+        }
+      }
+    },
+    "Share workspaces and write together with your team." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compartilhe espaços de trabalho e escreva junto com sua equipe."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comparte espacios de trabajo y escribe junto a tu equipo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partagez des espaces de travail et écrivez avec votre équipe."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Teile Arbeitsbereiche und schreibe gemeinsam mit deinem Team."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Condividi gli spazi di lavoro e scrivi insieme al tuo team."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ワークスペースを共有して、チームと一緒に書きましょう。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "워크스페이스를 공유하고 팀과 함께 작성하세요."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deel werkruimtes en schrijf samen met je team."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Делитесь рабочими пространствами и пишите вместе с командой."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共享工作区，与团队一起写作。"
+          }
+        }
+      }
+    },
+    "Safe in the cloud" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seguro na nuvem"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seguro en la nube"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En sécurité dans le cloud"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sicher in der Cloud"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Al sicuro nel cloud"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "クラウドで安全に保管"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "클라우드에 안전하게"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Veilig in de cloud"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "В безопасности в облаке"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "云端安全保存"
+          }
+        }
+      }
+    },
+    "Your documents are backed up, so nothing is lost with a device." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seus documentos têm backup, então nada se perde junto com um dispositivo."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus documentos tienen copia de seguridad: no se pierde nada aunque pierdas un dispositivo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vos documents sont sauvegardés : rien n'est perdu avec un appareil."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Dokumente werden gesichert, mit einem Gerät geht nichts verloren."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I tuoi documenti hanno un backup: non perdi nulla insieme a un dispositivo."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ドキュメントはバックアップされるので、デバイスを失っても何も失われません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "문서가 백업되므로 기기를 잃어도 아무것도 잃지 않습니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Er wordt een back-up van je documenten gemaakt, dus met een apparaat gaat niets verloren."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для документов создаются резервные копии, поэтому с потерей устройства ничего не пропадёт."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的文档已备份，即使丢失设备也不会丢失任何内容。"
           }
         }
       }

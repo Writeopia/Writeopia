@@ -10,7 +10,8 @@ import WrStorage
 final class StubTransport: HTTPTransport {
     private(set) var paths: [String] = []
     private(set) var bodies: [String] = []
-    private let routes: [String: (Int, String)]
+    /// Can be changed between calls, e.g. once the user subscribed.
+    var routes: [String: (Int, String)]
 
     init(_ routes: [String: (Int, String)]) {
         self.routes = routes
@@ -28,6 +29,10 @@ final class StubTransport: HTTPTransport {
 private let legalJson = #"{"type":"terms","version":"v1","effectiveDate":"2026-11-12","title":"Terms of Service","sections":[{"heading":"1. Agreement","body":"Hello"}]}"#
 
 private let userJson = #"{"id":"u1","email":"ana@writeopia.io","name":"Ana"}"#
+
+let premiumJson = #"{"premium":true,"tier":"PREMIUM","monthlyPriceCents":500,"currency":"USD"}"#
+let freeJson = #"{"premium":false,"tier":"FREE","monthlyPriceCents":500,"currency":"USD"}"#
+let premiumUser = User(id: "u1", email: "ana@writeopia.io", name: "Ana", tier: "PREMIUM")
 
 private func makeSession(
     _ routes: [String: (Int, String)] = [:],
@@ -121,7 +126,10 @@ private func makeSession(
     @Test func loginStoresTokensAndAsksForWorkspace() async {
         let tokens = InMemoryTokenStore()
         let (session, transport) = makeSession(
-            ["/api/auth/login": (200, #"{"accessToken":"a","refreshToken":"r","writeopiaUser":\#(userJson),"enabled":true}"#)],
+            [
+                "/api/auth/login": (200, #"{"accessToken":"a","refreshToken":"r","writeopiaUser":\#(userJson),"enabled":true}"#),
+                "/api/auth/subscription": (200, premiumJson),
+            ],
             tokens: tokens
         )
         session.chooseOnlineSpace()
@@ -133,9 +141,10 @@ private func makeSession(
         await viewModel.logIn()
 
         #expect(viewModel.errorMessage == nil)
-        #expect(transport.paths == ["/api/auth/login"])
+        #expect(transport.paths == ["/api/auth/login", "/api/auth/subscription"])
         #expect(tokens.accessToken == "a")
         #expect(session.user?.name == "Ana")
+        #expect(session.user?.isPremium == true)
         #expect(session.phase == .chooseWorkspace)
 
         // The workspace is brought to the device before the documents, like the Compose app.
@@ -151,12 +160,16 @@ private func makeSession(
         let defaults = UserDefaults(suiteName: "tests.\(UUID().uuidString)")!
         let tokens = InMemoryTokenStore(accessToken: "a", refreshToken: "r")
         let first = AppSession(tokenStore: tokens, preferences: Preferences(defaults: defaults), transport: StubTransport([:]))
+        first.updateUser(premiumUser)
         first.chooseOnlineSpace()
         first.select(workspace: Workspace(id: "w1", userId: "u1", name: "Team", role: "ADMIN"))
         #expect(first.phase == .syncingWorkspace)
 
-        let next = AppSession(tokenStore: tokens, preferences: Preferences(defaults: defaults), transport: StubTransport([:]))
+        let transport = StubTransport([:])
+        let next = AppSession(tokenStore: tokens, preferences: Preferences(defaults: defaults), transport: transport)
         #expect(next.phase == .ready)
+        // Premium users open offline: the backend isn't asked.
+        #expect(transport.paths.isEmpty)
     }
 
     @Test func workspaceSyncedOnlyLeavesTheSyncScreen() {
@@ -186,6 +199,7 @@ private func makeSession(
             "/api/auth/login": (200, #"{"accessToken":null,"refreshToken":null,"writeopiaUser":\#(userJson),"enabled":false}"#),
             "/api/auth/email/resend": (200, #"{"success":true,"message":"Confirmation email sent"}"#),
             "/api/auth/email/confirm": (200, #"{"accessToken":"a","refreshToken":"r","writeopiaUser":\#(userJson),"enabled":true}"#),
+            "/api/auth/subscription": (200, premiumJson),
         ])
         session.chooseOnlineSpace()
 
@@ -212,6 +226,7 @@ private func makeSession(
             "/api/auth/register/email/verify": (200, ok),
             "/api/auth/legal/terms": (200, legalJson),
             "/api/auth/register": (201, #"{"writeopiaUser":\#(userJson),"emailConfirmationRequired":false,"accessToken":"a","refreshToken":"r"}"#),
+            "/api/auth/subscription": (200, premiumJson),
         ], tokens: tokens)
         session.chooseOnlineSpace()
 
@@ -233,8 +248,8 @@ private func makeSession(
 
         await viewModel.register()
 
-        #expect(transport.paths.suffix(2) == ["/api/auth/legal/terms", "/api/auth/register"])
-        #expect(transport.bodies.last?.contains(#""acceptedLegalVersion":"v1""#) == true)
+        #expect(transport.paths.suffix(3) == ["/api/auth/legal/terms", "/api/auth/register", "/api/auth/subscription"])
+        #expect(transport.bodies.dropLast().last?.contains(#""acceptedLegalVersion":"v1""#) == true)
         #expect(tokens.accessToken == "a")
         #expect(session.phase == .chooseWorkspace)
     }
@@ -393,10 +408,20 @@ private func makeSession(
 
     @Test func switchingSpaceAndSigningInFromOffline() async {
         let tokens = InMemoryTokenStore(accessToken: "a", refreshToken: "r")
-        let (session, _) = makeSession(["/api/auth/logout": (200, "Logged out successfully")], tokens: tokens)
+        let (session, _) = makeSession(
+            [
+                "/api/auth/logout": (200, "Logged out successfully"),
+                "/api/auth/subscription": (200, premiumJson),
+            ],
+            tokens: tokens
+        )
+        session.updateUser(premiumUser)
         session.chooseOfflineSpace()
 
+        // No workspace yet: the paywall asks the backend, the stored tier isn't trusted.
         session.signIn()
+        #expect(session.phase == .paywall)
+        await PaywallViewModel(session: session).start()
         #expect(session.phase == .chooseWorkspace)
 
         session.select(workspace: Workspace(id: "w1", userId: "u1", name: "Team", role: "ADMIN"))

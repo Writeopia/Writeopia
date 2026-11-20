@@ -422,4 +422,22 @@
   <string name="settings_tag_delete_title">Delete tag?</string>
   <string name="settings_tag_delete_message">“%1$s” will be removed from every document that carries it.</string>
   <string name="settings_tag_name_taken">A tag with this name already exists.</string>
+  <string name="paywall_title">Subscribe to Writeopia</string>
+  <string name="paywall_message">Your account is ready. Subscribe to get everything the Writeopia cloud offers:</string>
+  <string name="paywall_price">%1$s per month</string>
+  <string name="paywall_check_again">I've subscribed, check again</string>
+  <string name="paywall_checking">Checking your subscription…</string>
+  <string name="paywall_error">Couldn't check your subscription. Check your connection and try again.</string>
+  <string name="paywall_still_not_premium">We couldn't find an active subscription yet.</string>
+  <string name="paywall_free_title">Want to try it first?</string>
+  <string name="paywall_free_web">Download the Writeopia app for desktop or mobile to try the free offline space: no account needed, your documents stay on your device.</string>
+  <string name="paywall_download_apps">Download the apps</string>
+  <string name="paywall_benefit_sync">Sync across all platforms</string>
+  <string name="paywall_benefit_sync_desc">Write on your computer and keep going on your phone, tablet or the web. Your documents are always up to date, everywhere.</string>
+  <string name="paywall_benefit_ai">Cloud AI</string>
+  <string name="paywall_benefit_ai_desc">Writing suggestions, commands on your text, summaries and header pictures, with nothing to install.</string>
+  <string name="paywall_benefit_team">Work as a team</string>
+  <string name="paywall_benefit_team_desc">Share workspaces and write together with your team.</string>
+  <string name="paywall_benefit_backup">Safe in the cloud</string>
+  <string name="paywall_benefit_backup_desc">Your documents are backed up, so nothing is lost with a device.</string>
 </resources>

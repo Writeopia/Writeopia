@@ -422,4 +422,22 @@
   <string name="settings_tag_delete_title">Eliminare il tag?</string>
   <string name="settings_tag_delete_message">“%1$s” verrà rimosso da tutti i documenti che lo hanno.</string>
   <string name="settings_tag_name_taken">Esiste già un tag con questo nome.</string>
+  <string name="paywall_title">Abbonati a Writeopia</string>
+  <string name="paywall_message">Il tuo account è pronto. Abbonati per avere tutto ciò che offre il cloud di Writeopia:</string>
+  <string name="paywall_price">%1$s al mese</string>
+  <string name="paywall_check_again">Mi sono abbonato, verifica di nuovo</string>
+  <string name="paywall_checking">Verifica dell'abbonamento…</string>
+  <string name="paywall_error">Impossibile verificare l'abbonamento. Controlla la connessione e riprova.</string>
+  <string name="paywall_still_not_premium">Non abbiamo ancora trovato un abbonamento attivo.</string>
+  <string name="paywall_free_title">Vuoi provarlo prima?</string>
+  <string name="paywall_free_web">Scarica l'app Writeopia per desktop o mobile per provare gratis lo spazio offline: senza account, i tuoi documenti restano sul tuo dispositivo.</string>
+  <string name="paywall_download_apps">Scarica le app</string>
+  <string name="paywall_benefit_sync">Sincronizzazione su tutte le piattaforme</string>
+  <string name="paywall_benefit_sync_desc">Scrivi sul computer e continua sul telefono, sul tablet o sul web. I tuoi documenti sono sempre aggiornati, ovunque.</string>
+  <string name="paywall_benefit_ai">IA nel cloud</string>
+  <string name="paywall_benefit_ai_desc">Suggerimenti di scrittura, comandi sul tuo testo, riassunti e immagini di intestazione, senza installare nulla.</string>
+  <string name="paywall_benefit_team">Lavora in team</string>
+  <string name="paywall_benefit_team_desc">Condividi gli spazi di lavoro e scrivi insieme al tuo team.</string>
+  <string name="paywall_benefit_backup">Al sicuro nel cloud</string>
+  <string name="paywall_benefit_backup_desc">I tuoi documenti hanno un backup: non perdi nulla insieme a un dispositivo.</string>
 </resources>

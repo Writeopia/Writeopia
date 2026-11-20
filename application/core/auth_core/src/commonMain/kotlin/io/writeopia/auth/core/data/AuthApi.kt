@@ -34,6 +34,7 @@ import io.writeopia.sdk.serialization.data.auth.UsernameAvailabilityResponse
 import io.writeopia.sdk.serialization.data.WriteopiaUserApi
 import io.writeopia.sdk.serialization.data.auth.ResetPasswordRequest
 import io.writeopia.sdk.serialization.response.LegalDocumentResponse
+import io.writeopia.sdk.serialization.response.SubscriptionResponse
 import io.writeopia.app.endpoints.EndPoints
 
 class AuthApi(
@@ -141,6 +142,23 @@ class AuthApi(
         }
     } catch (e: Exception) {
         println("isUsernameAvailable error: ${e.message}")
+        ResultData.Error(e)
+    }
+
+    /**
+     * Whether the signed-in user is premium, and the monthly price. Asked right after signing in
+     * or signing up: a user who is not premium sees the paywall.
+     */
+    suspend fun subscription(): ResultData<SubscriptionResponse> = try {
+        val response = client.get("$baseUrl/${EndPoints.subscription()}")
+
+        if (response.status.isSuccess()) {
+            ResultData.Complete(response.body<SubscriptionResponse>())
+        } else {
+            ResultData.Error(Exception("Subscription unavailable: ${response.status}"))
+        }
+    } catch (e: Exception) {
+        println("subscription error: ${e.message}")
         ResultData.Error(e)
     }
 

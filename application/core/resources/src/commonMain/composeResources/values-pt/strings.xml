@@ -422,4 +422,22 @@
   <string name="settings_tag_delete_title">Excluir tag?</string>
   <string name="settings_tag_delete_message">“%1$s” será removida de todos os documentos que a têm.</string>
   <string name="settings_tag_name_taken">Já existe uma tag com esse nome.</string>
+  <string name="paywall_title">Assine o Writeopia</string>
+  <string name="paywall_message">Sua conta está pronta. Assine para ter tudo o que a nuvem do Writeopia oferece:</string>
+  <string name="paywall_price">%1$s por mês</string>
+  <string name="paywall_check_again">Já assinei, verificar de novo</string>
+  <string name="paywall_checking">Verificando sua assinatura…</string>
+  <string name="paywall_error">Não foi possível verificar sua assinatura. Confira sua conexão e tente de novo.</string>
+  <string name="paywall_still_not_premium">Ainda não encontramos uma assinatura ativa.</string>
+  <string name="paywall_free_title">Quer experimentar antes?</string>
+  <string name="paywall_free_web">Baixe o app do Writeopia para desktop ou celular para experimentar o espaço offline gratuito: sem conta, seus documentos ficam no seu dispositivo.</string>
+  <string name="paywall_download_apps">Baixar os apps</string>
+  <string name="paywall_benefit_sync">Sincronização em todas as plataformas</string>
+  <string name="paywall_benefit_sync_desc">Escreva no computador e continue no celular, no tablet ou na web. Seus documentos estão sempre atualizados, em todo lugar.</string>
+  <string name="paywall_benefit_ai">IA na nuvem</string>
+  <string name="paywall_benefit_ai_desc">Sugestões de escrita, comandos sobre o seu texto, resumos e imagens de cabeçalho, sem nada para instalar.</string>
+  <string name="paywall_benefit_team">Trabalhe em equipe</string>
+  <string name="paywall_benefit_team_desc">Compartilhe espaços de trabalho e escreva junto com sua equipe.</string>
+  <string name="paywall_benefit_backup">Seguro na nuvem</string>
+  <string name="paywall_benefit_backup_desc">Seus documentos têm backup, então nada se perde junto com um dispositivo.</string>
 </resources>

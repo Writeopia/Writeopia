@@ -34,7 +34,7 @@ final class EmailConfirmationViewModel {
         do {
             switch try await session.authAPI.confirmEmail(email: email, code: code) {
             case .loggedIn(let user):
-                session.loggedIn(user)
+                await session.loggedIn(user)
             case .emailNotConfirmed:
                 errorMessage = AuthError.invalidCode.userMessage
             }

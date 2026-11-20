@@ -325,6 +325,8 @@ fun Routing.authRoute(
         }
     }
 
+    subscriptionRoute(writeopiaDb, debugMode)
+
     get("/api/auth/user/current") {
         val userId = call.getUserIdFromApiGateway(debugMode) ?: run {
             call.respond(HttpStatusCode.Unauthorized, "Token is not valid or has expired")

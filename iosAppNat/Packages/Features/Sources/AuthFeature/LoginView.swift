@@ -33,7 +33,7 @@ final class LoginViewModel {
         do {
             switch try await session.authAPI.login(email: email, password: password) {
             case .loggedIn(let user):
-                session.loggedIn(user)
+                await session.loggedIn(user)
             case .emailNotConfirmed(let user):
                 try? await session.authAPI.resendConfirmation(email: user.email)
                 session.needsEmailConfirmation(email: user.email)

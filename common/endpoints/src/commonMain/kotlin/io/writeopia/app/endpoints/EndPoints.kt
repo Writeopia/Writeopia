@@ -3,6 +3,9 @@ package io.writeopia.app.endpoints
 object EndPoints {
     fun localAiGenerate() = "generate"
 
+    /** GET whether the signed-in user is premium, and the price of the monthly subscription. */
+    fun subscription() = "api/auth/subscription"
+
     fun localAiModels() = "api/tags"
 
     fun introNotes() = "document/intro"

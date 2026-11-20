@@ -422,4 +422,22 @@
   <string name="settings_tag_delete_title">Supprimer l’étiquette ?</string>
   <string name="settings_tag_delete_message">« %1$s » sera retirée de tous les documents qui la portent.</string>
   <string name="settings_tag_name_taken">Une étiquette porte déjà ce nom.</string>
+  <string name="paywall_title">Abonnez-vous à Writeopia</string>
+  <string name="paywall_message">Votre compte est prêt. Abonnez-vous pour profiter de tout ce que le cloud Writeopia offre :</string>
+  <string name="paywall_price">%1$s par mois</string>
+  <string name="paywall_check_again">Je suis abonné, vérifier à nouveau</string>
+  <string name="paywall_checking">Vérification de votre abonnement…</string>
+  <string name="paywall_error">Impossible de vérifier votre abonnement. Vérifiez votre connexion et réessayez.</string>
+  <string name="paywall_still_not_premium">Nous n'avons pas encore trouvé d'abonnement actif.</string>
+  <string name="paywall_free_title">Envie d'essayer d'abord ?</string>
+  <string name="paywall_free_web">Téléchargez l'app Writeopia pour ordinateur ou mobile pour essayer gratuitement l'espace hors ligne : sans compte, vos documents restent sur votre appareil.</string>
+  <string name="paywall_download_apps">Télécharger les apps</string>
+  <string name="paywall_benefit_sync">Synchronisation sur toutes les plateformes</string>
+  <string name="paywall_benefit_sync_desc">Écrivez sur votre ordinateur et continuez sur votre téléphone, votre tablette ou le web. Vos documents sont toujours à jour, partout.</string>
+  <string name="paywall_benefit_ai">IA dans le cloud</string>
+  <string name="paywall_benefit_ai_desc">Suggestions d'écriture, commandes sur votre texte, résumés et images d'en-tête, sans rien installer.</string>
+  <string name="paywall_benefit_team">Travaillez en équipe</string>
+  <string name="paywall_benefit_team_desc">Partagez des espaces de travail et écrivez avec votre équipe.</string>
+  <string name="paywall_benefit_backup">En sécurité dans le cloud</string>
+  <string name="paywall_benefit_backup_desc">Vos documents sont sauvegardés : rien n'est perdu avec un appareil.</string>
 </resources>
