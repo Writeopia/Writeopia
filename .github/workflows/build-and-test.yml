@@ -26,8 +26,8 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
       - name: Ktlint
         run: ./gradlew ktlintCheck
-  mac_app_build:
-    name: Mac App Build
+  linux_app_build:
+    name: Linux App Build
     runs-on: ubuntu-22.04
     env:
       isCI: "true"
@@ -41,10 +41,8 @@ jobs:
           java-version: '21'
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
-      - name: Generate signed mac app
-        run: ./gradlew packageReleaseDmg
-        env:
-          SIGN_IDENTITY: ${{ secrets.SIGN_IDENTITY }}
+      - name: Generate linux app
+        run: ./gradlew packageReleaseDeb
   ui_jvm_tests:
     name: Jvm UI Compose tests
     runs-on: ubuntu-22.04

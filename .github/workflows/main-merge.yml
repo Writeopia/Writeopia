@@ -106,8 +106,8 @@ jobs:
           rm -f application/androidApp/google-services.json
           rm -f upload-keystore.jks
   desktop_build_and_test:
-    name: Desktop - Build, Test and Publish
-    runs-on: macos-14
+    name: Desktop - Build and Test
+    runs-on: ubuntu-22.04
     env:
       isCI: "true"
     steps:
@@ -120,14 +120,7 @@ jobs:
           java-version: '21'
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
-      - name: import certs
-        uses: apple-actions/import-codesign-certs@v7
-        with:
-          p12-file-base64: ${{ secrets.CERTIFICATES_P12 }}
-          p12-password: ${{ secrets.CERTIFICATES_P12_PASSWORD }}
-      - name: Generate signed mac app
-        run: ./gradlew packageReleaseDmg
-        env:
-          SIGN_IDENTITY: ${{ secrets.SIGN_IDENTITY }}
+      - name: Generate linux app
+        run: ./gradlew packageReleaseDeb
       - name: Main test
         run: ./gradlew jvmTest
