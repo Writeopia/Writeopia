@@ -1,13 +1,10 @@
 package io.writeopia.notemenu.ui.screen.menu
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -53,6 +50,8 @@ import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import io.writeopia.commonui.ScrollAwareTopBar
+import io.writeopia.commonui.splitForTopBar
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.resources.WrStrings
 import io.writeopia.common.utils.icons.WrIcons
@@ -178,11 +177,7 @@ internal fun MobileChooseNoteScreen(
     Box(modifier = scrollModifier) {
         Scaffold(
             topBar = {
-                AnimatedVisibility(
-                    visible = isToolbarVisible,
-                    enter = slideInVertically { -it },
-                    exit = slideOutVertically { -it }
-                ) {
+                ScrollAwareTopBar(visible = isToolbarVisible) {
                     TopBar(
                         titleState = chooseNoteViewModel.userName,
                         workspaceNameState = chooseNoteViewModel.workspaceName,
@@ -589,9 +584,13 @@ private fun Content(
     isWideLayout: Boolean,
     sideMenuContent: @Composable () -> Unit,
 ) {
+    // The notes scroll under the top bar when it fades away and under the system navigation bar:
+    // their space is given to the list.
+    val (outerPadding, contentTopPadding, contentBottomPadding) = paddingValues.splitForTopBar()
+
     Row(
         modifier = Modifier
-            .padding(paddingValues)
+            .padding(outerPadding)
             .fillMaxSize()
     ) {
         if (isWideLayout) {
@@ -600,23 +599,35 @@ private fun Content(
 
         Column(modifier = Modifier.weight(1F).fillMaxHeight()) {
             val folderPath by chooseNoteViewModel.folderPath.collectAsState()
-
-            // Only inside a folder: the root and the favorites have nowhere to go back to.
-            if (folderPath.isNotEmpty()) {
-                FolderBreadcrumb(
-                    path = folderPath,
-                    onSelect = { folder ->
-                        navigateToAncestor(
-                            folder?.let { NotesNavigation.Folder(it.id) } ?: NotesNavigation.Root
-                        )
-                    }
-                )
-            }
-
             val currentTag by chooseNoteViewModel.currentTag.collectAsState()
-            currentTag?.let { tag -> TagHeader(tag) }
 
             NotesCardsScreen(
+                contentTopPadding = contentTopPadding,
+                contentBottomPadding = contentBottomPadding,
+                // Scrolled with the notes, so it goes under the top bar with them.
+                header = if (folderPath.isNotEmpty() || currentTag != null) {
+                    {
+                        Column {
+                            // Only inside a folder: the root and the favorites have nowhere to
+                            // go back to.
+                            if (folderPath.isNotEmpty()) {
+                                FolderBreadcrumb(
+                                    path = folderPath,
+                                    onSelect = { folder ->
+                                        navigateToAncestor(
+                                            folder?.let { NotesNavigation.Folder(it.id) }
+                                                ?: NotesNavigation.Root
+                                        )
+                                    }
+                                )
+                            }
+
+                            currentTag?.let { tag -> TagHeader(tag) }
+                        }
+                    }
+                } else {
+                    null
+                },
                 showTapToStart = chooseNoteViewModel.currentFolderId == NotesNavigation.Root.id,
                 emptyMessage = if (currentTag != null) {
                     WrStrings.tagScreenEmpty()

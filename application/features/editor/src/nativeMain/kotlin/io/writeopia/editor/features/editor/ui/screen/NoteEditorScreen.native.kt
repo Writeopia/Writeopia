@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
@@ -47,6 +48,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.writeopia.commonui.ScrollAwareTopBar
+import io.writeopia.commonui.splitForTopBar
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.editor.features.editor.ui.search.MobileInDocumentSearchBar
 import io.writeopia.commonui.dialogs.confirmation.DeleteConfirmationDialog
@@ -122,11 +125,7 @@ internal fun NoteEditorScreen(
     Scaffold(
         modifier = modifier,
         topBar = {
-            AnimatedVisibility(
-                visible = isToolbarVisible,
-                enter = slideInVertically { -it },
-                exit = slideOutVertically { -it }
-            ) {
+            ScrollAwareTopBar(visible = isToolbarVisible) {
                 TopBar(
                     titleState = noteEditorViewModel.currentTitle,
                     editableState = noteEditorViewModel.isEditable,
@@ -139,20 +138,23 @@ internal fun NoteEditorScreen(
             }
         },
     ) { paddingValues ->
+        // The document scrolls under the top bar when it fades away: its space goes in the list.
+        val (outerPadding, contentTopPadding) = paddingValues.splitForTopBar()
+        val showInDocumentSearch by noteEditorViewModel.showSearchState.collectAsState()
         val bottomPadding by animateDpAsState(
             targetValue = if (isToolbarVisible) 80.dp else 8.dp,
             label = "bottomPadding"
         )
         val scrollModifier = if (nestedScrollConnection != null) {
             Modifier
-                .padding(top = paddingValues.calculateTopPadding())
+                .padding(top = outerPadding.calculateTopPadding())
                 .padding(bottom = bottomPadding)
                 .fillMaxSize()
                 .nestedScroll(nestedScrollConnection)
                 .imePadding()
         } else {
             Modifier
-                .padding(top = paddingValues.calculateTopPadding())
+                .padding(top = outerPadding.calculateTopPadding())
                 .padding(bottom = bottomPadding)
                 .fillMaxSize()
                 .imePadding()
@@ -164,7 +166,11 @@ internal fun NoteEditorScreen(
                     .background(MaterialTheme.colorScheme.background),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                MobileInDocumentSearchBar(noteEditorViewModel)
+                // Below the bar, which it would otherwise sit under.
+                MobileInDocumentSearchBar(
+                    noteEditorViewModel,
+                    modifier = Modifier.padding(top = contentTopPadding)
+                )
 
                 TextEditor(
                     isDarkTheme,
@@ -173,7 +179,10 @@ internal fun NoteEditorScreen(
                     Modifier.weight(1F).padding(horizontal = 6.dp),
                     keyFn = { drawStory -> drawStory.mobileKey },
                     onDocumentLinkClick = onDocumentLinkClick,
-                    onDrawingClick = onDrawingClick
+                    onDrawingClick = onDrawingClick,
+                    contentPadding = PaddingValues(
+                        top = if (showInDocumentSearch) 0.dp else contentTopPadding
+                    )
                 )
 
                 if (!isWideLayout) {

@@ -563,8 +563,6 @@ class WriteopiaStateManager(
         }
 
         _currentStory.value = writeopiaManager.mergeRequest(info, _currentStory.value)
-
-        // Todo: Add to backstack
     }
 
     /**

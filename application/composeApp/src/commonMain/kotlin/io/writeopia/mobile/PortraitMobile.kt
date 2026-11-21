@@ -16,6 +16,7 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -39,6 +40,7 @@ import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.NotesNavigationType
 import io.writeopia.common.utils.icons.WrIcons
+import io.writeopia.commonui.LocalScrollAwareState
 import io.writeopia.commonui.rememberScrollAwareState
 import io.writeopia.drawing.di.DrawingInjection
 import io.writeopia.editor.di.TextEditorInjector
@@ -112,37 +114,47 @@ fun PortraitMobile(
         BoxWithConstraints(modifier = modifier.fillMaxSize()) {
             val isWideScreen = maxWidth > maxHeight
 
-            Navigation(
-                isDarkTheme = colorTheme.isDarkTheme(),
-                startDestination = startDestination,
-                notesMenuInjection = notesMenuInjection,
-                sideMenuKmpInjector = sideMenuKmpInjector,
-                notesMenuWideLayout = isWideScreen,
-                navController = navController,
-                editorInjector = editorInjector,
-                drawingInjection = drawingInjection,
-                documentsGraphInjection = documentsGraphInjection,
-                // There is no side menu over the graph on mobile: the arrow is the way back, and
-                // its controls must sit above the overlaid bottom navigation bar.
-                graphNavigateBack = navController::navigateUp,
-                graphBottomBarPadding = if (scrollAwareState.isVisible && !isWideScreen) 80.dp else 0.dp,
-                graphTouchControls = true,
-                // In portrait Settings is a tab of the bottom bar, so it has no way back.
-                settingsAsTab = !isWideScreen,
-                selectedColorTheme = colorThemeState,
-                selectedAccentColor = accentColorState,
-                selectColorTheme = uiConfigViewModel::changeColorTheme,
-                selectAccentColor = uiConfigViewModel::changeAccentColor,
-                onDrawingSaved = onDrawingSaved,
-                searchInjection = searchInjector,
-                nestedScrollConnection = scrollAwareState.nestedScrollConnection,
-                isToolbarVisible = scrollAwareState.isVisible && !isWideScreen,
-                navigationBar = {},
-                builder = builder
-            )
+            // A screen just opened starts at its top, so its bars show, whatever the previous
+            // screen was scrolled to.
+            val navBackStackEntry by navController.currentBackStackEntryAsState()
+            LaunchedEffect(navBackStackEntry?.id) { scrollAwareState.show() }
+
+            // In portrait the top bars fade away with the scroll, over the content (like the
+            // YouTube app). The wide layout has no top bars over its lists.
+            CompositionLocalProvider(
+                LocalScrollAwareState provides scrollAwareState.takeIf { !isWideScreen }
+            ) {
+                Navigation(
+                    isDarkTheme = colorTheme.isDarkTheme(),
+                    startDestination = startDestination,
+                    notesMenuInjection = notesMenuInjection,
+                    sideMenuKmpInjector = sideMenuKmpInjector,
+                    notesMenuWideLayout = isWideScreen,
+                    navController = navController,
+                    editorInjector = editorInjector,
+                    drawingInjection = drawingInjection,
+                    documentsGraphInjection = documentsGraphInjection,
+                    // There is no side menu over the graph on mobile: the arrow is the way back, and
+                    // its controls must sit above the overlaid bottom navigation bar.
+                    graphNavigateBack = navController::navigateUp,
+                    graphBottomBarPadding = if (scrollAwareState.isVisible && !isWideScreen) 80.dp else 0.dp,
+                    graphTouchControls = true,
+                    // In portrait Settings is a tab of the bottom bar, so it has no way back.
+                    settingsAsTab = !isWideScreen,
+                    selectedColorTheme = colorThemeState,
+                    selectedAccentColor = accentColorState,
+                    selectColorTheme = uiConfigViewModel::changeColorTheme,
+                    selectAccentColor = uiConfigViewModel::changeAccentColor,
+                    onDrawingSaved = onDrawingSaved,
+                    searchInjection = searchInjector,
+                    nestedScrollConnection = scrollAwareState.nestedScrollConnection,
+                    isToolbarVisible = scrollAwareState.isVisible && !isWideScreen,
+                    navigationBar = {},
+                    builder = builder
+                )
+            }
 
             // Overlay navigation bar on top of content
-            val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = navBackStackEntry?.destination
             val navigationItems by navigationViewModel.selectedNavigation.collectAsState()
 

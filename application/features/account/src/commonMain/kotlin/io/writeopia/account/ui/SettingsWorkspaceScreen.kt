@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.resources.WrStrings
@@ -68,6 +69,10 @@ fun WorkspaceContentLinks(
 fun ScrollingSettingsPage(
     modifier: Modifier = Modifier,
     nestedScrollConnection: NestedScrollConnection? = null,
+    /** Space at the start of the scroll, for a top bar drawn over the page. */
+    contentTopPadding: Dp = 0.dp,
+    /** Space at the end of the scroll, for the system navigation bar drawn over the page. */
+    contentBottomPadding: Dp = 0.dp,
     content: @Composable () -> Unit
 ) {
     val scrollModifier = if (nestedScrollConnection != null) {
@@ -80,6 +85,7 @@ fun ScrollingSettingsPage(
         modifier = modifier.fillMaxSize()
             .then(scrollModifier)
             .verticalScroll(rememberScrollState())
+            .padding(top = contentTopPadding, bottom = contentBottomPadding)
             .padding(16.dp)
     ) {
         content()

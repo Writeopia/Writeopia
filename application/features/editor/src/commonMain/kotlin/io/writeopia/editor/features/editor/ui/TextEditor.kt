@@ -1,6 +1,7 @@
 package io.writeopia.editor.features.editor.ui
 
 import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -41,6 +42,8 @@ internal fun TextEditor(
     onDocumentLinkClick: (String) -> Unit,
     onDrawingClick: (StoryStep, String) -> Unit = { _, _ -> },
     listState: LazyListState = rememberLazyListState(),
+    /** Padding inside the scroll, as for a top bar drawn over the document. */
+    contentPadding: PaddingValues = PaddingValues(0.dp),
 ) {
     val storyState by noteEditorViewModel.toDrawWithDecoration.collectAsState()
     val editable by noteEditorViewModel.isEditable.collectAsState()
@@ -115,6 +118,7 @@ internal fun TextEditor(
 //    Box {
     WriteopiaEditor(
         modifier = modifier.widthIn(max = 850.dp),
+        contentPadding = contentPadding,
         editable = editable,
         listState = listState,
         keyFn = keyFn,

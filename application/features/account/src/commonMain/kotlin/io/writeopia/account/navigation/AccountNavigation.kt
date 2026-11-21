@@ -1,10 +1,7 @@
 package io.writeopia.account.navigation
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.PaddingValues
@@ -30,6 +27,8 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import io.writeopia.commonui.ScrollAwareTopBar
+import io.writeopia.commonui.splitForTopBar
 import io.writeopia.account.di.AccountMenuKmpInjector
 import io.writeopia.account.ui.AccountMenuScreen
 import io.writeopia.account.ui.ScrollingSettingsPage
@@ -167,11 +166,7 @@ fun NavGraphBuilder.accountMenuNavigation(
     ) {
         Scaffold(
             topBar = {
-                AnimatedVisibility(
-                    visible = isToolbarVisible,
-                    enter = slideInVertically { -it },
-                    exit = slideOutVertically { -it }
-                ) {
+                ScrollAwareTopBar(visible = isToolbarVisible) {
                     TopAppBar(
                         title = {
                             Text(
@@ -236,11 +231,7 @@ fun NavGraphBuilder.accountMenuNavigation(
 
         Scaffold(
             topBar = {
-                AnimatedVisibility(
-                    visible = isToolbarVisible,
-                    enter = slideInVertically { -it },
-                    exit = slideOutVertically { -it }
-                ) {
+                ScrollAwareTopBar(visible = isToolbarVisible) {
                     TopAppBar(
                         title = {
                             Text(
@@ -309,11 +300,7 @@ fun NavGraphBuilder.accountMenuNavigation(
 
         Scaffold(
             topBar = {
-                AnimatedVisibility(
-                    visible = isToolbarVisible,
-                    enter = slideInVertically { -it },
-                    exit = slideOutVertically { -it }
-                ) {
+                ScrollAwareTopBar(visible = isToolbarVisible) {
                     TopAppBar(
                         title = {
                             Text(
@@ -386,11 +373,7 @@ fun NavGraphBuilder.accountMenuNavigation(
 
         Scaffold(
             topBar = {
-                AnimatedVisibility(
-                    visible = isToolbarVisible,
-                    enter = slideInVertically { -it },
-                    exit = slideOutVertically { -it }
-                ) {
+                ScrollAwareTopBar(visible = isToolbarVisible) {
                     TopAppBar(
                         title = {
                             Text(
@@ -467,11 +450,7 @@ fun NavGraphBuilder.accountMenuNavigation(
 
         Scaffold(
             topBar = {
-                AnimatedVisibility(
-                    visible = isToolbarVisible,
-                    enter = slideInVertically { -it },
-                    exit = slideOutVertically { -it }
-                ) {
+                ScrollAwareTopBar(visible = isToolbarVisible) {
                     TopAppBar(
                         title = {
                             Text(
@@ -550,11 +529,7 @@ fun NavGraphBuilder.accountMenuNavigation(
 
         Scaffold(
             topBar = {
-                AnimatedVisibility(
-                    visible = isToolbarVisible,
-                    enter = slideInVertically { -it },
-                    exit = slideOutVertically { -it }
-                ) {
+                ScrollAwareTopBar(visible = isToolbarVisible) {
                     TopAppBar(
                         title = {
                             Text(
@@ -616,11 +591,7 @@ fun NavGraphBuilder.accountMenuNavigation(
     ) {
         Scaffold(
             topBar = {
-                AnimatedVisibility(
-                    visible = isToolbarVisible,
-                    enter = slideInVertically { -it },
-                    exit = slideOutVertically { -it }
-                ) {
+                ScrollAwareTopBar(visible = isToolbarVisible) {
                     TopAppBar(
                         title = {
                             Text(
@@ -677,11 +648,7 @@ fun NavGraphBuilder.accountMenuNavigation(
 
         Scaffold(
             topBar = {
-                AnimatedVisibility(
-                    visible = isToolbarVisible,
-                    enter = slideInVertically { -it },
-                    exit = slideOutVertically { -it }
-                ) {
+                ScrollAwareTopBar(visible = isToolbarVisible) {
                     TopAppBar(
                         title = {
                             Text(
@@ -760,11 +727,7 @@ fun NavGraphBuilder.accountMenuNavigation(
     ) {
         Scaffold(
             topBar = {
-                AnimatedVisibility(
-                    visible = isToolbarVisible,
-                    enter = slideInVertically { -it },
-                    exit = slideOutVertically { -it }
-                ) {
+                ScrollAwareTopBar(visible = isToolbarVisible) {
                     TopAppBar(
                         title = {
                             Text(
@@ -824,11 +787,7 @@ fun NavGraphBuilder.accountMenuNavigation(
 
         Scaffold(
             topBar = {
-                AnimatedVisibility(
-                    visible = isToolbarVisible,
-                    enter = slideInVertically { -it },
-                    exit = slideOutVertically { -it }
-                ) {
+                ScrollAwareTopBar(visible = isToolbarVisible) {
                     TopAppBar(
                         title = {
                             Text(
@@ -894,10 +853,14 @@ fun NavGraphBuilder.accountMenuNavigation(
             isToolbarVisible = isToolbarVisible,
             navigationClick = navigationClick
         ) { paddingValues ->
+            val (outerPadding, contentTopPadding, contentBottomPadding) = paddingValues.splitForTopBar()
+
             ScrollingSettingsPage(
                 modifier = Modifier.background(MaterialTheme.colorScheme.background)
-                    .padding(paddingValues),
+                    .padding(outerPadding),
                 nestedScrollConnection = nestedScrollConnection,
+                contentTopPadding = contentTopPadding,
+                contentBottomPadding = contentBottomPadding,
             ) {
                 SettingsHeaderImagesRoute()
             }
@@ -914,10 +877,14 @@ fun NavGraphBuilder.accountMenuNavigation(
             isToolbarVisible = isToolbarVisible,
             navigationClick = navigationClick
         ) { paddingValues ->
+            val (outerPadding, contentTopPadding, contentBottomPadding) = paddingValues.splitForTopBar()
+
             ScrollingSettingsPage(
                 modifier = Modifier.background(MaterialTheme.colorScheme.background)
-                    .padding(paddingValues),
+                    .padding(outerPadding),
                 nestedScrollConnection = nestedScrollConnection,
+                contentTopPadding = contentTopPadding,
+                contentBottomPadding = contentBottomPadding,
             ) {
                 SettingsTagsRoute()
             }
@@ -936,11 +903,7 @@ private fun SettingsScaffold(
 ) {
     Scaffold(
         topBar = {
-            AnimatedVisibility(
-                visible = isToolbarVisible,
-                enter = slideInVertically { -it },
-                exit = slideOutVertically { -it }
-            ) {
+            ScrollAwareTopBar(visible = isToolbarVisible) {
                 TopAppBar(
                     title = { Text(title, color = MaterialTheme.colorScheme.onPrimary) },
                     navigationIcon = {
