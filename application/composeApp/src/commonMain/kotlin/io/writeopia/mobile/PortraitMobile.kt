@@ -22,10 +22,14 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -174,8 +178,12 @@ fun PortraitMobile(
             // Hide the bottom navigation bar for every screen while in landscape (wide) mode.
             val showBottomBar = !isAuthScreen && !isWideScreen
 
+            // The bar hides by its whole height, which includes the system navigation bar under
+            // it: a fixed offset would leave a strip of it over the content at the bottom edge.
+            var navBarHeightPx by remember { mutableIntStateOf(0) }
+            val hiddenOffset = with(LocalDensity.current) { navBarHeightPx.toDp() }.coerceAtLeast(100.dp)
             val offsetY by animateDpAsState(
-                targetValue = if (scrollAwareState.isVisible && showBottomBar) 0.dp else 100.dp,
+                targetValue = if (scrollAwareState.isVisible && showBottomBar) 0.dp else hiddenOffset,
                 animationSpec = tween(durationMillis = 300),
                 label = "navBarOffset"
             )
@@ -185,6 +193,7 @@ fun PortraitMobile(
                     containerColor = MaterialTheme.colorScheme.background,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
+                        .onSizeChanged { size -> navBarHeightPx = size.height }
                         .offset { IntOffset(0, offsetY.roundToPx()) }
                 ) {
                     // The home and the favorites share the notes screen, so the route alone
