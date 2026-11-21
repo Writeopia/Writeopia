@@ -1,10 +1,7 @@
 package io.writeopia.features.notifications
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -28,6 +25,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
+import io.writeopia.commonui.ScrollAwareTopBar
 import io.writeopia.common.utils.icons.WrIcons
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -40,11 +38,7 @@ fun NotificationsScreen(
 ) {
     Scaffold(
         topBar = {
-            AnimatedVisibility(
-                visible = isToolbarVisible,
-                enter = slideInVertically { -it },
-                exit = slideOutVertically { -it }
-            ) {
+            ScrollAwareTopBar(visible = isToolbarVisible) {
                 TopAppBar(
                     title = {
                         Row(

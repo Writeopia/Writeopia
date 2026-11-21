@@ -50,6 +50,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.font.FontFamily
@@ -102,9 +103,30 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 const val DOCUMENT_ITEM_TEST_TAG = "DocumentItem_"
 const val ADD_NOTE_TEST_TAG = "addNote"
 
-/** Lets the list scroll past its last item, so it is not stuck at the bottom edge of the screen. */
-private val notesContentPadding =
-    PaddingValues(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 240.dp)
+/**
+ * Lets the list scroll past its last item, so it is not stuck at the bottom edge of the screen,
+ * and starts it [top] lower and ends it [bottom] higher, clear of the bars drawn over it.
+ */
+private fun notesContentPadding(top: Dp = 0.dp, bottom: Dp = 0.dp) =
+    PaddingValues(
+        start = NOTES_SIDE_PADDING,
+        top = 12.dp + top,
+        end = NOTES_SIDE_PADDING,
+        bottom = 240.dp + bottom
+    )
+
+private val NOTES_SIDE_PADDING = 12.dp
+
+/** The header of the lists spans the whole width, out of their side padding. */
+private fun Modifier.bleedOutOfNotesPadding(): Modifier = layout { measurable, constraints ->
+    val bleed = NOTES_SIDE_PADDING.roundToPx()
+    val width = constraints.maxWidth + bleed * 2
+    val placeable = measurable.measure(constraints.copy(minWidth = width, maxWidth = width))
+
+    layout(constraints.maxWidth, placeable.height) {
+        placeable.place(-bleed, 0)
+    }
+}
 
 @Composable
 fun NotesCardsScreen(
@@ -131,12 +153,31 @@ fun NotesCardsScreen(
     emptyMessage: String = "",
     /** Shows a button to create a note below [emptyMessage]. */
     showCreateNoteWhenEmpty: Boolean = false,
+    /**
+     * Space at the start of what scrolls, for a top bar drawn over the notes: they scroll under
+     * it instead of being cut at its edge.
+     */
+    contentTopPadding: Dp = 0.dp,
+    /** Space at the end of what scrolls, for the bars drawn over the bottom of the notes. */
+    contentBottomPadding: Dp = 0.dp,
+    /** Shown above the notes, full width, and scrolled with them. */
+    header: (@Composable () -> Unit)? = null,
 ) {
+    val contentPadding = notesContentPadding(contentTopPadding, contentBottomPadding)
+
     when (documents) {
         is ResultData.Complete -> {
             sharedTransitionScope.run {
-                Column(modifier = modifier) {
-                    val isEmpty = documents.data.documentUiList.isEmpty()
+                val isEmpty = documents.data.documentUiList.isEmpty()
+                // An empty screen doesn't scroll: the header and the message start below the bar.
+                val columnModifier = if (isEmpty) {
+                    modifier.padding(top = contentTopPadding, bottom = contentBottomPadding)
+                } else {
+                    modifier
+                }
+
+                Column(modifier = columnModifier) {
+                    if (isEmpty) header?.invoke()
 
                     if (isEmpty && !showTapToStart) {
                         EmptyMessage(
@@ -170,6 +211,8 @@ fun NotesCardsScreen(
                                     editFolder = editFolder,
                                     modifier = listModifier,
                                     showTapToStart = showTapToStart,
+                                    contentPadding = contentPadding,
+                                    header = header,
                                 )
                             }
 
@@ -190,6 +233,8 @@ fun NotesCardsScreen(
                                     editFolder = editFolder,
                                     modifier = listModifier,
                                     showTapToStart = showTapToStart,
+                                    contentPadding = contentPadding,
+                                    header = header,
                                 )
                             }
 
@@ -209,6 +254,8 @@ fun NotesCardsScreen(
                                     editFolder = editFolder,
                                     modifier = listModifier,
                                     showTapToStart = showTapToStart,
+                                    contentPadding = contentPadding,
+                                    header = header,
                                 )
                             }
                         }
@@ -222,18 +269,26 @@ fun NotesCardsScreen(
                 documents.exception?.printStackTrace()
             }
 
-            Box(modifier = modifier.fillMaxSize()) {
-                Text(
-                    modifier = Modifier.align(Alignment.Center),
-                    // stringResource(R.string.error_loading_notes)
-                    text = "Error!!"
-                )
+            // The header stays, so the folders above can still be reached.
+            Column(modifier = modifier.fillMaxSize().padding(top = contentTopPadding)) {
+                header?.invoke()
+
+                Box(modifier = Modifier.fillMaxSize()) {
+                    Text(
+                        modifier = Modifier.align(Alignment.Center),
+                        // stringResource(R.string.error_loading_notes)
+                        text = "Error!!"
+                    )
+                }
             }
         }
 
-        // Nothing is shown while the items load, as the screen is often still in its transition.
+        // Only the header is shown while the items load, as the screen is often still in its
+        // transition.
         is ResultData.Loading, is ResultData.Idle, is ResultData.InProgress -> {
-            Box(modifier = modifier.fillMaxSize())
+            Column(modifier = modifier.fillMaxSize().padding(top = contentTopPadding)) {
+                header?.invoke()
+            }
         }
     }
 
@@ -304,7 +359,8 @@ private fun LazyStaggeredGridNotes(
     moveRequest: (MenuItemUi, String) -> Unit,
     folderClick: (String) -> Unit,
     changeIcon: (String, String, Int, IconChange) -> Unit,
-    contentPadding: PaddingValues = notesContentPadding,
+    contentPadding: PaddingValues = notesContentPadding(),
+    header: (@Composable () -> Unit)? = null,
     onDragIconClick: (String) -> Unit,
     newNote: () -> Unit,
     editFolder: (MenuItemUi.FolderUi) -> Unit,
@@ -320,6 +376,12 @@ private fun LazyStaggeredGridNotes(
         verticalItemSpacing = spacing,
         contentPadding = contentPadding,
         content = {
+            if (header != null) {
+                item(span = StaggeredGridItemSpan.FullLine) {
+                    Box(modifier = Modifier.bleedOutOfNotesPadding()) { header() }
+                }
+            }
+
             if (showTapToStart) {
                 item(span = StaggeredGridItemSpan.FullLine) {
                     TapToStartButton(
@@ -386,7 +448,8 @@ private fun LazyGridNotes(
     moveRequest: (MenuItemUi, String) -> Unit,
     selectionListener: (String, Boolean) -> Unit,
     changeIcon: (String, String, Int, IconChange) -> Unit,
-    contentPadding: PaddingValues = notesContentPadding,
+    contentPadding: PaddingValues = notesContentPadding(),
+    header: (@Composable () -> Unit)? = null,
     onDragIconClick: (String) -> Unit,
     newNote: () -> Unit,
     editFolder: (MenuItemUi.FolderUi) -> Unit,
@@ -402,6 +465,12 @@ private fun LazyGridNotes(
         verticalArrangement = spacing,
         contentPadding = contentPadding,
         content = {
+            if (header != null) {
+                item(span = { GridItemSpan(this.maxLineSpan) }) {
+                    Box(modifier = Modifier.bleedOutOfNotesPadding()) { header() }
+                }
+            }
+
             if (showTapToStart) {
                 item(span = { GridItemSpan(this.maxLineSpan) }) {
                     TapToStartButton(
@@ -467,7 +536,8 @@ private fun LazyColumnNotes(
     selectionListener: (String, Boolean) -> Unit,
     moveRequest: (MenuItemUi, String) -> Unit,
     changeIcon: (String, String, Int, IconChange) -> Unit,
-    contentPadding: PaddingValues = notesContentPadding,
+    contentPadding: PaddingValues = notesContentPadding(),
+    header: (@Composable () -> Unit)? = null,
     onDragIconClick: (String) -> Unit,
     newNote: () -> Unit,
     editFolder: (MenuItemUi.FolderUi) -> Unit,
@@ -479,6 +549,12 @@ private fun LazyColumnNotes(
         verticalArrangement = Arrangement.spacedBy(6.dp),
         contentPadding = contentPadding,
         content = {
+            if (header != null) {
+                item {
+                    Box(modifier = Modifier.bleedOutOfNotesPadding()) { header() }
+                }
+            }
+
             if (showTapToStart) {
                 item {
                     TapToStartButton(

@@ -1,10 +1,7 @@
 package io.writeopia.features.search.navigation
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -31,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
+import io.writeopia.commonui.ScrollAwareTopBar
 import io.writeopia.common.utils.Destinations
 import io.writeopia.features.search.DocumentsSearchScreen
 import io.writeopia.features.search.di.SearchInjection
@@ -79,11 +77,7 @@ fun NavGraphBuilder.searchNavigation(
             Scaffold(
                 contentWindowInsets = WindowInsets.systemBars,
                 topBar = {
-                    AnimatedVisibility(
-                        visible = isToolbarVisible,
-                        enter = slideInVertically { -it },
-                        exit = slideOutVertically { -it }
-                    ) {
+                    ScrollAwareTopBar(visible = isToolbarVisible) {
                         TopAppBar(
                             title = {
                                 Text(
