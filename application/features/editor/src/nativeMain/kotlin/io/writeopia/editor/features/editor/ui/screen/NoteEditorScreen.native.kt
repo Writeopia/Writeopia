@@ -5,6 +5,7 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VisibilityThreshold
+import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -140,7 +141,12 @@ internal fun NoteEditorScreen(
     ) { paddingValues ->
         // The document scrolls under the top bar when it fades away: its space goes in the list.
         val (outerPadding, contentTopPadding) = paddingValues.splitForTopBar()
-        val showInDocumentSearch by noteEditorViewModel.showSearchState.collectAsState()
+        // The find bar keeps the space below the top bar until it has fully left, then the
+        // document takes it: switching when it starts to leave would make the text jump.
+        val searchBarState = remember {
+            MutableTransitionState(noteEditorViewModel.showSearchState.value)
+        }
+        val searchBarTakesSpace = searchBarState.currentState || searchBarState.targetState
         val bottomPadding by animateDpAsState(
             targetValue = if (isToolbarVisible) 80.dp else 8.dp,
             label = "bottomPadding"
@@ -169,7 +175,8 @@ internal fun NoteEditorScreen(
                 // Below the bar, which it would otherwise sit under.
                 MobileInDocumentSearchBar(
                     noteEditorViewModel,
-                    modifier = Modifier.padding(top = contentTopPadding)
+                    modifier = Modifier.padding(top = contentTopPadding),
+                    visibleState = searchBarState
                 )
 
                 TextEditor(
@@ -181,7 +188,7 @@ internal fun NoteEditorScreen(
                     onDocumentLinkClick = onDocumentLinkClick,
                     onDrawingClick = onDrawingClick,
                     contentPadding = PaddingValues(
-                        top = if (showInDocumentSearch) 0.dp else contentTopPadding
+                        top = if (searchBarTakesSpace) 0.dp else contentTopPadding
                     )
                 )
 

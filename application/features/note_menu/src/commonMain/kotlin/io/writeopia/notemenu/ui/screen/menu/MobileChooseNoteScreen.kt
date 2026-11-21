@@ -50,6 +50,7 @@ import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import io.writeopia.commonui.LocalScrollAwareState
 import io.writeopia.commonui.ScrollAwareTopBar
 import io.writeopia.commonui.splitForTopBar
 import io.writeopia.common.utils.NotesNavigation
@@ -69,6 +70,7 @@ import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
 import io.writeopia.notemenu.viewmodel.UserState
 import io.writeopia.notemenu.viewmodel.toNumberDesktop
 import io.writeopia.sdk.models.document.Folder
+import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.ui.draganddrop.target.DraggableScreen
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -132,6 +134,15 @@ internal fun MobileChooseNoteScreen(
     }
 
     val showFab by derivedStateOf { !editState && !hasSelectedNotes }
+
+    // An empty screen doesn't scroll, so nothing could bring back a top bar that faded while
+    // the notes were there (deleted or moved away): it shows again, as on a screen just opened.
+    val scrollAwareState = LocalScrollAwareState.current
+    val documents by chooseNoteViewModel.documentsState.collectAsState()
+    val isEmpty = (documents as? ResultData.Complete)?.data?.documentUiList?.isEmpty() == true
+    LaunchedEffect(isEmpty, scrollAwareState) {
+        if (isEmpty) scrollAwareState?.show()
+    }
 
     // The folder card of the previous screen explodes into this whole screen. The background
     // is drawn inside the shared bounds so it grows with the animation as a solid surface.

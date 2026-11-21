@@ -1,6 +1,7 @@
 package io.writeopia.editor.features.editor.ui.search
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -51,15 +52,22 @@ import io.writeopia.theme.WriteopiaTheme
 @Composable
 fun MobileInDocumentSearchBar(
     noteEditorViewModel: NoteEditorViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /**
+     * Follows the search shown by the view model: [MutableTransitionState.currentState] stays
+     * true until the bar has fully left, so the screen can tell when it no longer takes space.
+     */
+    visibleState: MutableTransitionState<Boolean> = remember { MutableTransitionState(false) }
 ) {
     val textState by noteEditorViewModel.searchText.collectAsState()
     val showSearch by noteEditorViewModel.showSearchState.collectAsState()
     val currentResultIndex by noteEditorViewModel.currentSearchIndexState.collectAsState()
     val totalResults by noteEditorViewModel.totalSearchResultsState.collectAsState()
 
+    LaunchedEffect(showSearch) { visibleState.targetState = showSearch }
+
     AnimatedVisibility(
-        showSearch,
+        visibleState = visibleState,
         modifier = modifier,
         enter = expandVertically() + fadeIn(),
         exit = shrinkVertically() + fadeOut()

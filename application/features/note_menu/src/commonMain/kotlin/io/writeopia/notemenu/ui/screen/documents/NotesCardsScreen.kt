@@ -269,18 +269,26 @@ fun NotesCardsScreen(
                 documents.exception?.printStackTrace()
             }
 
-            Box(modifier = modifier.fillMaxSize()) {
-                Text(
-                    modifier = Modifier.align(Alignment.Center),
-                    // stringResource(R.string.error_loading_notes)
-                    text = "Error!!"
-                )
+            // The header stays, so the folders above can still be reached.
+            Column(modifier = modifier.fillMaxSize().padding(top = contentTopPadding)) {
+                header?.invoke()
+
+                Box(modifier = Modifier.fillMaxSize()) {
+                    Text(
+                        modifier = Modifier.align(Alignment.Center),
+                        // stringResource(R.string.error_loading_notes)
+                        text = "Error!!"
+                    )
+                }
             }
         }
 
-        // Nothing is shown while the items load, as the screen is often still in its transition.
+        // Only the header is shown while the items load, as the screen is often still in its
+        // transition.
         is ResultData.Loading, is ResultData.Idle, is ResultData.InProgress -> {
-            Box(modifier = modifier.fillMaxSize())
+            Column(modifier = modifier.fillMaxSize().padding(top = contentTopPadding)) {
+                header?.invoke()
+            }
         }
     }
 
