@@ -14,6 +14,7 @@ actual object DrawConfigFactory {
         checkBoxItemVerticalPadding = 0,
         listItemStartPadding = 8,
         selectedColor = { WriteopiaTheme.colorScheme.selectedBg },
-        selectedBorderColor = { MaterialTheme.colorScheme.primary }
+        selectedBorderColor = { MaterialTheme.colorScheme.primary },
+        dividerColor = { WriteopiaTheme.colorScheme.dividerColor }
     )
 }

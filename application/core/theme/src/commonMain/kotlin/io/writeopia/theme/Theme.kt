@@ -160,7 +160,9 @@ fun WriteopiaTheme(
     val searchBackground = dynamicScheme?.surfaceContainerHigh
         ?: if (darkTheme) colors.surfaceVariant else colors.background
     val linkColor = if (darkTheme) Color(0xFF42A5F5) else Color.Blue
-    val dividerColor = if (darkTheme) Color(0xFF333333) else Color(0xFFDFDFDF)
+    // With dynamic colors the page is tinted, so the line takes the tinted outline.
+    val dividerColor = dynamicScheme?.outlineVariant
+        ?: if (darkTheme) Color(0xFF333333) else Color(0xFFDFDFDF)
     // With dynamic colors the sheets and menus are drawn on the (tinted) surface, so the buttons
     // need a higher surface to stand out from them.
     val defaultButton = dynamicScheme?.surfaceContainerHighest ?: colors.background
