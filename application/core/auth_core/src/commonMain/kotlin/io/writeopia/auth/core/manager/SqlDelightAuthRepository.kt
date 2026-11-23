@@ -2,6 +2,7 @@
 
 package io.writeopia.auth.core.manager
 
+import app.cash.sqldelight.async.coroutines.awaitAsList
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import io.writeopia.auth.core.utils.toModel
 import io.writeopia.common.utils.extensions.toBoolean
@@ -143,6 +144,37 @@ internal class SqlDelightAuthRepository(
                 icon_tint = null,
                 selected = workspace.selected.toLong(),
             )
+    }
+
+    override suspend fun getCachedWorkspaces(userId: String): List<Workspace> =
+        writeopiaDb?.workspaceEntityQueries
+            ?.selectWorkspacesByUser(userId)
+            ?.awaitAsList()
+            ?.filter { entity -> entity.id != Workspace.disconnectedWorkspace().id }
+            ?.map { entity ->
+                Workspace(
+                    id = entity.id,
+                    userId = entity.user_id,
+                    name = entity.name,
+                    lastSync = Instant.fromEpochMilliseconds(entity.last_synced_at),
+                    lastEventSync = entity.last_event_sync_at,
+                    selected = false,
+                    role = "",
+                    documentCount = Workspace.UNKNOWN_DOCUMENT_COUNT,
+                )
+            }
+            ?: emptyList()
+
+    override suspend fun cacheWorkspaces(userId: String, workspaces: List<Workspace>) {
+        val queries = writeopiaDb?.workspaceEntityQueries ?: return
+
+        queries.transaction {
+            workspaces.forEach { workspace ->
+                queries.upsertWorkspaceName(workspace.id, userId, workspace.name)
+            }
+
+            queries.deleteUnselectedOfUserNotIn(userId, workspaces.map { it.id })
+        }
     }
 
     override suspend fun updateLastEventSync(workspaceId: String, lastEventSync: Long) {
