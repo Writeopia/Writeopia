@@ -91,8 +91,10 @@ fun SwipeBox(
         }
     )
 
+    // The offset comes first so that everything the caller draws (background, clip, border) moves
+    // with the swipe, not only the content.
     Box(
-        modifier = modifier
+        modifier = Modifier
             .offset {
                 if (dragging) {
                     IntOffset(swipeOffset.roundToInt(), 0)
@@ -100,6 +102,7 @@ fun SwipeBox(
                     animatedOffset
                 }
             }
+            .then(modifier)
             .background(
                 colorAnimated,
                 shape = cornersShape

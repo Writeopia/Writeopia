@@ -77,6 +77,7 @@ import writeopia.application.core.resources.generated.resources.tag_screen_empty
 import writeopia.application.core.resources.generated.resources.folder_screen_create_note
 import writeopia.application.core.resources.generated.resources.folder_screen_empty
 import writeopia.application.core.resources.generated.resources.documents_graph
+import writeopia.application.core.resources.generated.resources.graph_section
 import writeopia.application.core.resources.generated.resources.untitled
 import writeopia.application.core.resources.generated.resources.undo
 import writeopia.application.core.resources.generated.resources.moved_item_to_folder
@@ -221,6 +222,7 @@ import writeopia.application.core.resources.generated.resources.favorite
 import writeopia.application.core.resources.generated.resources.favorites
 import writeopia.application.core.resources.generated.resources.folder
 import writeopia.application.core.resources.generated.resources.font
+import writeopia.application.core.resources.generated.resources.appearance
 import writeopia.application.core.resources.generated.resources.general
 import writeopia.application.core.resources.generated.resources.heading
 import writeopia.application.core.resources.generated.resources.highlight
@@ -730,7 +732,7 @@ object WrStrings {
     fun general() = stringResource(Res.string.general)
 
     @Composable
-    fun appearance() = stringResource(Res.string.general)
+    fun appearance() = stringResource(Res.string.appearance)
 
     @Composable
     fun account() = stringResource(Res.string.account)
@@ -1522,6 +1524,9 @@ object WrStrings {
 
     @Composable
     fun documentsGraph() = stringResource(Res.string.documents_graph)
+
+    @Composable
+    fun graphSection() = stringResource(Res.string.graph_section)
 
     @Composable
     fun documentTagAddDialogTitle() = stringResource(Res.string.document_tag_add_dialog_title)
