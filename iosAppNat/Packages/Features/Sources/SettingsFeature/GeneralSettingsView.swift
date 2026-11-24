@@ -10,6 +10,11 @@ struct GeneralSettingsView: View {
     /// Easter egg: called with the document about the writer of the version, ten taps on it.
     var onOpenDocument: ((WrDocument) -> Void)?
     @State private var versionTaps = 0
+    /// Hidden on the Mac: ten clicks on the space of an online workspace offer to erase its
+    /// local copy and bring it whole from the backend again.
+    @State private var spaceClicks = 0
+    @State private var showsResync = false
+    @State private var resyncError: String?
 
     /// The grouped form on every platform, like the other settings pages.
     var body: some View {
@@ -25,6 +30,24 @@ struct GeneralSettingsView: View {
         Task {
             guard let document = try? await EasterEggs.createVersionWriterDocument(in: repository) else { return }
             onOpenDocument?(document)
+        }
+    }
+
+    private func clickSpace() {
+        guard session.canResyncWorkspace else { return }
+        spaceClicks += 1
+        guard spaceClicks >= 10 else { return }
+        spaceClicks = 0
+        showsResync = true
+    }
+
+    private func resync() {
+        Task {
+            do {
+                try await session.eraseAndResyncWorkspace()
+            } catch {
+                resyncError = error.localizedDescription
+            }
         }
     }
 
@@ -69,9 +92,28 @@ struct GeneralSettingsView: View {
                     .contentShape(Rectangle())
                     .onTapGesture { tapVersion() }
                 LabeledContent("Space", value: session.spaceType == .online ? String(localized: "Open space") : String(localized: "Private space"))
+                    #if os(macOS)
+                    .contentShape(Rectangle())
+                    .onTapGesture { clickSpace() }
+                    #endif
             }
         }
         .navigationTitle("General")
+        .alert("Erase and resync the workspace?", isPresented: $showsResync) {
+            Button("Cancel", role: .cancel) {}
+            Button("Erase and resync", role: .destructive) { resync() }
+                .accessibilityIdentifier("general.resync.confirm")
+        } message: {
+            Text("Every document of this workspace will be removed from this device and downloaded again. Changes not synced yet will be lost.")
+        }
+        .alert(
+            "The workspace couldn't be erased",
+            isPresented: Binding(get: { resyncError != nil }, set: { if !$0 { resyncError = nil } })
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(resyncError ?? "")
+        }
     }
 }
 

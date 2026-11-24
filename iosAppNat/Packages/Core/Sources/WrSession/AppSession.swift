@@ -485,6 +485,21 @@ public final class AppSession {
         phase = .ready
     }
 
+    /// Whether the local copy of the current workspace can be erased and synced again: an
+    /// online workspace only, the private space has no other copy.
+    public var canResyncWorkspace: Bool {
+        documents is SyncedDocumentsRepository
+    }
+
+    /// Erases the local copy of the open workspace and brings it whole from the backend again,
+    /// through the same sync screen as after choosing the workspace. Changes not sent yet are lost.
+    public func eraseAndResyncWorkspace() async throws {
+        guard let synced = documents as? SyncedDocumentsRepository else { return }
+        try await synced.eraseLocalCopy()
+        documentsVersion += 1
+        phase = .syncingWorkspace
+    }
+
     /// Opens the workspace picker again, from Settings.
     public func changeWorkspace() {
         phase = .chooseWorkspace

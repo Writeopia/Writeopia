@@ -1161,6 +1161,30 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
         return Int((folders.first ?? 0) + (documents.first ?? 0))
     }
 
+    // MARK: - Reset
+
+    /// Erases every document, folder, step, tag and presentation of this database, with what was
+    /// still waiting to be sent (tombstones, favorites) and the sync watermarks, so the next
+    /// workspace sync brings the whole workspace again. The markers of the one-time migrations
+    /// and imports are kept: those must not run again. Changes not yet sent are lost.
+    public func eraseAll() throws {
+        try db.transaction {
+            for table in Self.contentTables {
+                try db.run("DELETE FROM \(table)")
+            }
+            for key in Self.syncMetaKeys {
+                try db.run("DELETE FROM meta WHERE key = ?", [.text(key)])
+            }
+        }
+    }
+
+    private static let contentTables = [
+        "story_step", "story_step_tombstone", "pending_favorite", "document", "folder",
+        "presentation_step", "presentation", "document_tag_link", "document_tag",
+    ]
+
+    private static let syncMetaKeys = ["step_deletions_synced_at", "workspace_contents_synced_at", "events_synced_at"]
+
     // MARK: - Meta
 
     private func meta(_ key: String) throws -> String? {
