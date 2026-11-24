@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -259,6 +260,7 @@ fun SearchInput(
     modifier: Modifier = Modifier,
     /** Puts the cursor in the field as it shows. */
     requestFocus: Boolean = false,
+    onFocusChange: (Boolean) -> Unit = {},
 ) {
     val focusRequester = remember { FocusRequester() }
     if (requestFocus) {
@@ -279,7 +281,10 @@ fun SearchInput(
 
         Box(modifier = Modifier.weight(1F)) {
             BasicTextField(
-                modifier = Modifier.fillMaxWidth().align(Alignment.Center).focusRequester(focusRequester),
+                modifier = Modifier.fillMaxWidth()
+                    .align(Alignment.Center)
+                    .focusRequester(focusRequester)
+                    .onFocusChanged { state -> onFocusChange(state.isFocused) },
                 value = search,
                 onValueChange = onSearchType,
                 singleLine = true,

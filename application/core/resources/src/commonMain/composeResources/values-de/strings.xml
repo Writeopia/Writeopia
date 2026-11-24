@@ -362,6 +362,7 @@
   <string name="folder_screen_empty">Dieser Ordner ist leer.</string>
   <string name="folder_screen_create_note">Notiz erstellen</string>
   <string name="documents_graph">Dokumentgraph</string>
+  <string name="graph_section">Graph</string>
   <string name="document_tag_add_dialog_title">Tag hinzufügen</string>
   <string name="document_tag_add_existing">Tag auswählen</string>
   <string name="document_tag_add_search">Tags suchen</string>

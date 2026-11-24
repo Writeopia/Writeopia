@@ -362,6 +362,7 @@
   <string name="folder_screen_empty">Esta carpeta está vacía.</string>
   <string name="folder_screen_create_note">Crear una nota</string>
   <string name="documents_graph">Grafo de documentos</string>
+  <string name="graph_section">Grafo</string>
   <string name="document_tag_add_dialog_title">Añadir una etiqueta</string>
   <string name="document_tag_add_existing">Elegir una etiqueta</string>
   <string name="document_tag_add_search">Buscar etiquetas</string>

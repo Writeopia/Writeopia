@@ -362,6 +362,7 @@
   <string name="folder_screen_empty">このフォルダは空です。</string>
   <string name="folder_screen_create_note">ノートを作成</string>
   <string name="documents_graph">ドキュメントグラフ</string>
+  <string name="graph_section">グラフ</string>
   <string name="document_tag_add_dialog_title">タグを追加</string>
   <string name="document_tag_add_existing">タグを選択</string>
   <string name="document_tag_add_search">タグを検索</string>

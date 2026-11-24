@@ -29,6 +29,7 @@ fun DocumentsSearchScreen(
     documentContentClick: (documentId: String, title: String, query: String) -> Unit = { id, title, _ ->
         documentClick(id, title)
     },
+    onSearchFocusChange: (Boolean) -> Unit = {},
 ) {
     val search by searchState.collectAsState()
 
@@ -53,7 +54,8 @@ fun DocumentsSearchScreen(
                         1.dp,
                         WriteopiaTheme.colorScheme.cardBorder,
                         shape = MaterialTheme.shapes.large
-                    )
+                    ),
+                onFocusChange = onSearchFocusChange,
             )
         }
     )

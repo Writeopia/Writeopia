@@ -298,8 +298,8 @@ private fun SortingSection(sortingSelected: (OrderBy) -> Unit, sortingState: Sta
 private fun Modifier.sortingOptionModifier(): Modifier = fillMaxWidth().padding(12.dp)
 
 /**
- * Editing, moving and deleting a folder. Without a folder ([folderTitle] null) there's nothing
- * to act on, so nothing is shown.
+ * Editing, moving and deleting a folder, under an "Actions" heading. Without a folder
+ * ([folderTitle] null) there's nothing to act on, so nothing is shown.
  */
 @Composable
 internal fun FolderSection(
@@ -310,7 +310,7 @@ internal fun FolderSection(
 ) {
     if (folderTitle == null) return
 
-    SectionText(text = folderTitle.ifBlank { "Folder" })
+    SectionText(text = WrStrings.actions())
 
     Column(
         modifier = Modifier
@@ -319,7 +319,7 @@ internal fun FolderSection(
             .clip(RoundedCornerShape(6.dp))
             .background(WriteopiaTheme.colorScheme.defaultButton)
     ) {
-        FolderAction(
+        MenuAction(
             text = "Edit folder",
             icon = WrIcons.edit,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -328,7 +328,7 @@ internal fun FolderSection(
 
         HorizontalDivider(color = WriteopiaTheme.colorScheme.highlight)
 
-        FolderAction(
+        MenuAction(
             text = "Move to…",
             icon = WrIcons.move,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -337,7 +337,7 @@ internal fun FolderSection(
 
         HorizontalDivider(color = WriteopiaTheme.colorScheme.highlight)
 
-        FolderAction(
+        MenuAction(
             text = "Delete folder",
             icon = WrIcons.delete,
             color = MaterialTheme.colorScheme.error,
@@ -347,7 +347,7 @@ internal fun FolderSection(
 }
 
 @Composable
-private fun FolderAction(
+private fun MenuAction(
     text: String,
     icon: ImageVector,
     color: Color,
@@ -406,23 +406,21 @@ private fun ArrangementOptions_Preview() {
 /** The way to the documents graph on phones, which have no side menu to offer it. */
 @Composable
 private fun GraphSection(onOpenGraph: () -> Unit) {
-    Spacer(modifier = Modifier.height(12.dp))
+    SectionText(text = WrStrings.graphSection())
 
-    androidx.compose.material3.TextButton(
-        onClick = onOpenGraph,
-        modifier = Modifier.fillMaxWidth().testTag("configurationsMenu.graph")
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = INNER_PADDING.dp)
+            .clip(RoundedCornerShape(6.dp))
+            .background(WriteopiaTheme.colorScheme.defaultButton)
+            .testTag("configurationsMenu.graph")
     ) {
-        androidx.compose.material3.Icon(
-            imageVector = WrIcons.chart,
-            contentDescription = null,
-            modifier = Modifier.size(18.dp)
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
+        MenuAction(
             text = WrStrings.documentsGraph(),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.weight(1f)
+            icon = WrIcons.chart,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            onClick = onOpenGraph,
         )
     }
 }
