@@ -441,4 +441,18 @@
   <string name="paywall_benefit_team_desc">Делитесь рабочими пространствами и пишите вместе с командой.</string>
   <string name="paywall_benefit_backup">В безопасности в облаке</string>
   <string name="paywall_benefit_backup_desc">Для документов создаются резервные копии, поэтому с потерей устройства ничего не пропадёт.</string>
+  <string name="cloud_sync_title">Синхронизация с %1$s</string>
+  <string name="cloud_sync_description">Храните личное пространство в своём %1$s и открывайте его на других устройствах. Бесплатно: документы попадают прямо в ваш аккаунт, а Writeopia видит там только свою скрытую папку.</string>
+  <string name="cloud_sync_connect">Подключить</string>
+  <string name="cloud_sync_connecting">Завершите в браузере…</string>
+  <string name="cloud_sync_disconnect">Отключить</string>
+  <string name="cloud_sync_sync_now">Синхронизировать</string>
+  <string name="cloud_sync_syncing">Синхронизация…</string>
+  <string name="cloud_sync_last_sync">Последняя синхронизация: %1$s</string>
+  <string name="cloud_sync_not_synced">Ещё не синхронизировано</string>
+  <string name="cloud_sync_error">Последняя синхронизация не удалась: %1$s</string>
+  <string name="cloud_sync_reconnect">Доступ к %1$s закончился. Подключитесь снова, чтобы продолжить синхронизацию.</string>
+  <string name="continue_with_google">Продолжить с Google</string>
+  <string name="google_signup_title">Выберите имя пользователя</string>
+  <string name="google_signup_message">%1$s впервые входит в Writeopia. Выберите имя пользователя, чтобы создать аккаунт.</string>
 </resources>

@@ -22,6 +22,8 @@ import io.writeopia.sdk.serialization.data.auth.EmailConfirmResponse
 import io.writeopia.sdk.serialization.data.auth.EmailResendRequest
 import io.writeopia.sdk.serialization.data.auth.ForgotPasswordRequest
 import io.writeopia.sdk.serialization.data.auth.ForgotPasswordResponse
+import io.writeopia.sdk.serialization.data.auth.GoogleLoginRequest
+import io.writeopia.sdk.serialization.data.auth.GoogleSignUpRequiredResponse
 import io.writeopia.sdk.serialization.data.auth.LoginRequest
 import io.writeopia.sdk.serialization.data.auth.ManageUserRequest
 import io.writeopia.sdk.serialization.data.auth.PasswordResetWithCodeRequest
@@ -175,6 +177,51 @@ class AuthApi(
         }
     } catch (e: Exception) {
         println("legalDocument error: ${e.message}")
+        ResultData.Error(e)
+    }
+
+    /**
+     * Signs in with a Google credential (an ID token or an OAuth authorization code). The backend
+     * verifies it with Google and answers with Writeopia's own tokens. A Google account with no
+     * Writeopia account answers [GoogleSignUpRequiredException]; sent again with a username and
+     * the legal version, it creates the account ([UsernameTakenException] when that name is taken).
+     */
+    suspend fun loginWithGoogle(request: GoogleLoginRequest): ResultData<AuthResponse> =
+        postGoogleLogin("$baseUrl/api/auth/login/google", request)
+
+    /**
+     * Web variant of [loginWithGoogle]: the backend stores the tokens in HttpOnly cookies and
+     * returns them as null in the body.
+     */
+    suspend fun loginWithGoogleWeb(request: GoogleLoginRequest): ResultData<AuthResponse> =
+        postGoogleLogin("$baseUrl/api/auth/login/google/web", request)
+
+    private suspend fun postGoogleLogin(url: String, request: GoogleLoginRequest): ResultData<AuthResponse> = try {
+        val httpResponse = client.post(url) {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
+
+        when {
+            httpResponse.status == HttpStatusCode.Forbidden ->
+                ResultData.Error(AccountDeletionPendingException())
+
+            httpResponse.status == HttpStatusCode.UnprocessableEntity ->
+                ResultData.Error(GoogleSignUpRequiredException(httpResponse.body<GoogleSignUpRequiredResponse>()))
+
+            httpResponse.status == HttpStatusCode.Conflict && request.username != null ->
+                ResultData.Error(UsernameTakenException())
+
+            httpResponse.status.isSuccess() ->
+                ResultData.Complete(httpResponse.body<AuthResponse>())
+
+            else -> {
+                val message = httpResponse.bodyAsText()
+                ResultData.Error(Exception(message.ifBlank { "Google login failed" }))
+            }
+        }
+    } catch (e: Exception) {
+        println("loginWithGoogle error: ${e.message}")
         ResultData.Error(e)
     }
 

@@ -64,6 +64,7 @@ kotlin {
                 implementation(project(":application:core:genai"))
                 implementation(project(":application:core:ai"))
                 implementation(project(":application:core:configuration"))
+                implementation(libs.kotlinx.datetime)
                 // The header pictures, drawn like in the editor.
                 implementation(project(":writeopia_ui"))
 

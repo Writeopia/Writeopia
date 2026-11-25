@@ -3,6 +3,17 @@ package io.writeopia.resources
 import androidx.compose.runtime.Composable
 import org.jetbrains.compose.resources.stringResource
 import writeopia.application.core.resources.generated.resources.Res
+import writeopia.application.core.resources.generated.resources.cloud_sync_title
+import writeopia.application.core.resources.generated.resources.cloud_sync_description
+import writeopia.application.core.resources.generated.resources.cloud_sync_connect
+import writeopia.application.core.resources.generated.resources.cloud_sync_connecting
+import writeopia.application.core.resources.generated.resources.cloud_sync_disconnect
+import writeopia.application.core.resources.generated.resources.cloud_sync_sync_now
+import writeopia.application.core.resources.generated.resources.cloud_sync_syncing
+import writeopia.application.core.resources.generated.resources.cloud_sync_last_sync
+import writeopia.application.core.resources.generated.resources.cloud_sync_not_synced
+import writeopia.application.core.resources.generated.resources.cloud_sync_error
+import writeopia.application.core.resources.generated.resources.cloud_sync_reconnect
 import writeopia.application.core.resources.generated.resources.accent_color
 import writeopia.application.core.resources.generated.resources.settings_workspace_content
 import writeopia.application.core.resources.generated.resources.settings_tags
@@ -134,6 +145,9 @@ import writeopia.application.core.resources.generated.resources.ai_provider_clou
 import writeopia.application.core.resources.generated.resources.ai_provider_local_hint
 import writeopia.application.core.resources.generated.resources.ai_provider_local_unconfigured_hint
 import writeopia.application.core.resources.generated.resources.ai_provider_local_unconfigured_offline_hint
+import writeopia.application.core.resources.generated.resources.continue_with_google
+import writeopia.application.core.resources.generated.resources.google_signup_message
+import writeopia.application.core.resources.generated.resources.google_signup_title
 import writeopia.application.core.resources.generated.resources.current_month_usage
 import writeopia.application.core.resources.generated.resources.error_loading_usage
 import writeopia.application.core.resources.generated.resources.input_tokens
@@ -1003,6 +1017,9 @@ object WrStrings {
     fun loginFailed() = stringResource(Res.string.login_failed)
 
     @Composable
+    fun continueWithGoogle() = stringResource(Res.string.continue_with_google)
+
+    @Composable
     fun registrationFailed() = stringResource(Res.string.registration_failed)
 
     @Composable
@@ -1701,4 +1718,43 @@ object WrStrings {
 
     @Composable
     fun settingsTagNameTaken() = stringResource(Res.string.settings_tag_name_taken)
+
+    @Composable
+    fun cloudSyncTitle(provider: String) = stringResource(Res.string.cloud_sync_title, provider)
+
+    @Composable
+    fun cloudSyncDescription(provider: String) = stringResource(Res.string.cloud_sync_description, provider)
+
+    @Composable
+    fun cloudSyncConnect() = stringResource(Res.string.cloud_sync_connect)
+
+    @Composable
+    fun cloudSyncConnecting() = stringResource(Res.string.cloud_sync_connecting)
+
+    @Composable
+    fun cloudSyncDisconnect() = stringResource(Res.string.cloud_sync_disconnect)
+
+    @Composable
+    fun cloudSyncSyncNow() = stringResource(Res.string.cloud_sync_sync_now)
+
+    @Composable
+    fun cloudSyncSyncing() = stringResource(Res.string.cloud_sync_syncing)
+
+    @Composable
+    fun cloudSyncLastSync(time: String) = stringResource(Res.string.cloud_sync_last_sync, time)
+
+    @Composable
+    fun cloudSyncNotSynced() = stringResource(Res.string.cloud_sync_not_synced)
+
+    @Composable
+    fun cloudSyncError(message: String) = stringResource(Res.string.cloud_sync_error, message)
+
+    @Composable
+    fun cloudSyncReconnect(provider: String) = stringResource(Res.string.cloud_sync_reconnect, provider)
+
+    @Composable
+    fun googleSignUpTitle() = stringResource(Res.string.google_signup_title)
+
+    @Composable
+    fun googleSignUpMessage(email: String) = stringResource(Res.string.google_signup_message, email)
 }

@@ -26,6 +26,7 @@ import io.writeopia.core.folders.sync.EventSync
 import io.writeopia.core.folders.sync.FolderSync
 import io.writeopia.core.folders.sync.SyncScope
 import io.writeopia.core.folders.sync.WorkspaceSync
+import io.writeopia.core.folders.sync.cloud.CloudSyncManager
 import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
 import io.writeopia.notemenu.ui.dto.NotesUi
 import io.writeopia.sdk.export.DocumentToJson
@@ -86,6 +87,8 @@ internal class ChooseNoteKmpViewModel(
     /** Syncs the whole workspace when the screen opens; null falls back to [folderSync]. */
     private val workspaceSync: WorkspaceSync? = null,
     private val syncScope: SyncScope = SyncScope.WORKSPACE,
+    /** The sync of the offline workspace with the user's own cloud storage; null where there is none. */
+    private val cloudSync: CloudSyncManager? = null,
     private val folderController: FolderStateController = FolderStateController.singleton(
         notesUseCase,
         authRepository,
@@ -478,9 +481,12 @@ internal class ChooseNoteKmpViewModel(
 
             // If backend sync succeeded, hard delete locally
             // If sync failed, items remain soft-deleted and will be retried during EventSync
-            if (syncSuccess) {
+            // The cloud sync of the offline workspace records the soft deleted items, then
+            // removes them: deleted here, the other devices' copies would bring them back.
+            if (syncSuccess && cloudSync?.isActive() != true) {
                 notesUseCase.hardDeleteNotes(selected, workspaceId)
             }
+            cloudSync?.requestSync()
         }
     }
 
@@ -718,6 +724,9 @@ internal class ChooseNoteKmpViewModel(
     }
 
     override fun syncFolderWithCloud() {
+        // The offline workspace with the user's own storage: a sync soon, if it's connected.
+        cloudSync?.requestSync()
+
         viewModelScope.launch(Dispatchers.Default) {
             // Refresh happens inside syncFolder
             val workspace = authRepository.getWorkspace()

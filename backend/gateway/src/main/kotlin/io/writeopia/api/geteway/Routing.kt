@@ -10,7 +10,10 @@ import io.writeopia.api.core.auth.routing.adminProtectedRoute
 import io.writeopia.api.core.auth.routing.authRoute
 import io.writeopia.api.core.auth.routing.cookieAuthRoute
 import io.writeopia.api.core.auth.routing.emailRoute
+import io.writeopia.api.core.auth.routing.googleAuthRoute
 import io.writeopia.api.core.auth.routing.passwordResetRoute
+import io.writeopia.api.core.auth.service.GoogleCodeExchanger
+import io.writeopia.api.core.auth.service.GoogleTokenVerifier
 import io.writeopia.api.core.workspaces.routing.workspaceRoute
 import io.writeopia.api.core.workspaces.service.WorkspaceService
 import io.writeopia.api.documents.documents.TutorialsService
@@ -32,7 +35,9 @@ fun Application.configureRouting(
     debugMode: Boolean = false,
     adminKey: String?,
     embedder: Embedder? = null,
-    embeddingStore: EmbeddingStore? = null
+    embeddingStore: EmbeddingStore? = null,
+    googleTokenVerifier: GoogleTokenVerifier,
+    googleCodeExchanger: GoogleCodeExchanger
 ) {
     val useCloudAi = System.getenv("WRITEOPIA_USE_CLOUD_AI")?.toBoolean() == true
     val genAiService = if (useCloudAi) GenAiService() else null
@@ -55,28 +60,42 @@ fun Application.configureRouting(
                 embeddingService = embeddingService
             )
 
-            authRoute(
-                writeopiaDb,
-                debugMode,
-                provisionWorkspaceForNewUser = { db, workspaceId, workspaceName, userId ->
+            val provisionWorkspaceForNewUser: (WriteopiaDbBackend, String, String, String) -> Unit =
+                { db, workspaceId, workspaceName, userId ->
                     WorkspaceService.createWorkspaceWithOwner(
                         workspaceId,
                         workspaceName,
                         userId,
                         db
                     )
-                },
-                onWorkspaceProvisioned = { userId, workspaceId ->
-                    TutorialsService.initializeTutorialsForUser(
-                        userId = userId,
-                        workspaceId = workspaceId,
-                        writeopiaDb = writeopiaDb
-                    )
                 }
+            val onWorkspaceProvisioned: (String, String) -> Unit = { userId, workspaceId ->
+                TutorialsService.initializeTutorialsForUser(
+                    userId = userId,
+                    workspaceId = workspaceId,
+                    writeopiaDb = writeopiaDb
+                )
+            }
+
+            authRoute(
+                writeopiaDb,
+                debugMode,
+                provisionWorkspaceForNewUser = provisionWorkspaceForNewUser,
+                onWorkspaceProvisioned = onWorkspaceProvisioned
             )
 
             // Web-specific auth routes using HttpOnly cookies
             cookieAuthRoute(writeopiaDb, debugMode)
+
+            // Sign in with Google (token-in-body and cookie variants)
+            googleAuthRoute(
+                writeopiaDb,
+                debugMode,
+                verifier = googleTokenVerifier,
+                exchanger = googleCodeExchanger,
+                provisionWorkspaceForNewUser = provisionWorkspaceForNewUser,
+                onWorkspaceProvisioned = onWorkspaceProvisioned
+            )
 
             workspaceRoute(
                 apiKey = adminKey,

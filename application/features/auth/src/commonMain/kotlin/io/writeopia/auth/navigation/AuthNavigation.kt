@@ -32,6 +32,8 @@ import io.writeopia.auth.forgotpassword.ForgotPasswordEmailScreen
 import io.writeopia.auth.forgotpassword.ForgotPasswordNewPasswordScreen
 import io.writeopia.auth.menu.AuthMenuScreen
 import io.writeopia.auth.menu.AuthMenuViewModel
+import io.writeopia.auth.menu.GoogleSignUpDialog
+import io.writeopia.auth.register.LegalDocumentDialog
 import io.writeopia.auth.paywall.PaywallScreen
 import io.writeopia.auth.register.RegisterPasswordScreen
 import io.writeopia.auth.register.RegisterScreen
@@ -294,6 +296,8 @@ fun NavGraphBuilder.authNavigation(
                     emailChanged = authMenuViewModel::emailChanged,
                     passwordChanged = authMenuViewModel::passwordChanged,
                     onLoginRequest = authMenuViewModel::onLoginRequest,
+                    onGoogleLoginRequest = authMenuViewModel::onGoogleLoginRequest,
+                    onGoogleSignInFailed = authMenuViewModel::onGoogleSignInFailed,
                     navigateToRegister = navController::navigateAuthRegister,
                     navigateToForgotPassword = navController::navigateToForgotPasswordEmail,
                     navigateUp = navController::navigateUp,
@@ -305,6 +309,26 @@ fun NavGraphBuilder.authNavigation(
                         }
                     },
                     navigateToAccountDeletionPending = navController::navigateToAccountDeletionPending
+                )
+
+                // The first sign-in of a Google account: the username and the Terms.
+                val googleSignUp by authMenuViewModel.googleSignUp.collectAsState()
+                googleSignUp?.let { signUp ->
+                    GoogleSignUpDialog(
+                        state = signUp,
+                        onUsernameChanged = authMenuViewModel::googleUsernameChanged,
+                        onTermsAcceptedChanged = authMenuViewModel::googleTermsAcceptedChanged,
+                        onOpenLegalDocument = authMenuViewModel::openLegalDocument,
+                        onConfirm = authMenuViewModel::confirmGoogleSignUp,
+                        onDismiss = authMenuViewModel::dismissGoogleSignUp,
+                    )
+                }
+
+                val legalDocument by authMenuViewModel.legalDocument.collectAsState()
+                LegalDocumentDialog(
+                    state = legalDocument,
+                    onRetry = authMenuViewModel::openLegalDocument,
+                    onDismiss = authMenuViewModel::closeLegalDocument,
                 )
             }
         }

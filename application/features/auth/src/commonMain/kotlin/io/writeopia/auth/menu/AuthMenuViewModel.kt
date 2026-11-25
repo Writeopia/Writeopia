@@ -8,6 +8,16 @@ import io.writeopia.LocalAiRepository
 import io.writeopia.api.LocalAiApi
 import io.writeopia.auth.core.data.AccountDeletionPendingException
 import io.writeopia.auth.core.data.AuthApi
+import io.writeopia.auth.core.data.GoogleSignUpRequiredException
+import io.writeopia.auth.core.data.UsernameTakenException
+import io.writeopia.auth.google.GoogleCredential
+import io.writeopia.auth.google.toRequest
+import io.writeopia.auth.register.LEGAL_TERMS
+import io.writeopia.auth.register.LegalDocumentState
+import io.writeopia.sdk.serialization.data.auth.AuthResponse
+import io.writeopia.sdk.serialization.data.auth.GoogleLoginRequest
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.auth.core.manager.LoginStatus
 import io.writeopia.common.utils.env.EnvUtils
@@ -164,54 +174,46 @@ class AuthMenuViewModel(
                     authApi.login(_email.value, _password.value)
                 }
 
-                _loginState.value = when (result) {
-                    is ResultData.Complete -> {
-                        val user = result.data.writeopiaUser.toModel()
+                _loginState.value = handleAuthResult(result)
+            } catch (e: Exception) {
+                delay(300)
+                _loginState.value = ResultData.Error(e)
+            }
+        }
+    }
 
-                        // Check if user is enabled (email confirmed)
-                        if (!result.data.enabled) {
-                            // User exists but email not confirmed
-                            authRepository.savePendingConfirmationEmail(user.email)
-                            _emailConfirmationRequired.value = true
-                            result.map { true }
-                        } else {
-                            _emailConfirmationRequired.value = false
-                            EnvUtils.getAdminKey()?.let { adminKey ->
-                                authApi.enableUser(user.email, adminKey)
-                            }
+    private val _googleSignUp = MutableStateFlow<GoogleSignUpState?>(null)
 
-                            authRepository.unselectAllUsers()
-                            authRepository.saveUser(
-                                user = user,
-                                selected = true
-                            )
-                            val accessToken = result.data.accessToken
-                            val refreshToken = result.data.refreshToken
-                            if (accessToken != null) {
-                                // Calculate expiry time (14 minutes from now as buffer)
-                                val expiresAt = Clock.System.now().toEpochMilliseconds() + (14 * 60 * 1000L)
-                                authRepository.saveTokens(
-                                    userId = user.id,
-                                    accessToken = accessToken,
-                                    refreshToken = refreshToken,
-                                    expiresAt = expiresAt
-                                )
-                            }
+    /** The first sign-in of a Google account: the username and the Terms to ask for. */
+    val googleSignUp = _googleSignUp.asStateFlow()
 
-                            result.map { true }
-                        }
-                    }
+    private val _legalDocument = MutableStateFlow<LegalDocumentState>(LegalDocumentState.Hidden)
+    val legalDocument = _legalDocument.asStateFlow()
+    private var legalJob: Job? = null
 
-                    is ResultData.Error -> {
-                        delay(300)
-                        _accountDeletionPending.value = result.exception is AccountDeletionPendingException
-                        result.map { false }
-                    }
+    /**
+     * Sends the credential obtained from the platform Google UI to the backend. The backend
+     * answers with the same payload as a password login, so the rest of the flow is shared; a
+     * Google account with no Writeopia account opens the sign-up step instead.
+     */
+    fun onGoogleLoginRequest(credential: GoogleCredential) {
+        _loginState.value = ResultData.Loading()
+        _accountDeletionPending.value = false
 
-                    else -> {
-                        delay(300)
-                        ResultData.Idle()
-                    }
+        viewModelScope.launch {
+            try {
+                val result = loginWithGoogle(credential.toRequest())
+                val signUp = (result as? ResultData.Error)?.exception as? GoogleSignUpRequiredException
+
+                if (signUp != null) {
+                    _googleSignUp.value = GoogleSignUpState(
+                        idToken = signUp.details.idToken,
+                        email = signUp.details.email,
+                        username = signUp.details.suggestedUsername,
+                    )
+                    _loginState.value = ResultData.Idle()
+                } else {
+                    _loginState.value = handleAuthResult(result)
                 }
             } catch (e: Exception) {
                 delay(300)
@@ -219,4 +221,157 @@ class AuthMenuViewModel(
             }
         }
     }
+
+    /** The platform Google UI failed before reaching the backend; surfaces the login error. */
+    fun onGoogleSignInFailed(error: Throwable) {
+        _accountDeletionPending.value = false
+        _loginState.value = ResultData.Error(error as? Exception ?: Exception(error))
+    }
+
+    fun googleUsernameChanged(username: String) {
+        _googleSignUp.value = _googleSignUp.value?.copy(username = username, error = null)
+    }
+
+    fun googleTermsAcceptedChanged(accepted: Boolean) {
+        _googleSignUp.value = _googleSignUp.value?.copy(termsAccepted = accepted)
+    }
+
+    fun dismissGoogleSignUp() {
+        _googleSignUp.value = null
+    }
+
+    /** Creates the account with the chosen username and the Terms as served now. */
+    fun confirmGoogleSignUp() {
+        val signUp = _googleSignUp.value ?: return
+        if (!signUp.canCreate) return
+        _googleSignUp.value = signUp.copy(inProgress = true, error = null)
+
+        viewModelScope.launch {
+            // The version of the texts the user agreed to is the one served right now: the
+            // backend refuses an older one.
+            val legalVersion = when (val legal = authApi.legalDocument(LEGAL_TERMS)) {
+                is ResultData.Complete -> legal.data.version
+                else -> {
+                    _googleSignUp.value = signUp.copy(error = GoogleSignUpError.FAILED)
+                    return@launch
+                }
+            }
+
+            val result = loginWithGoogle(
+                GoogleLoginRequest(
+                    idToken = signUp.idToken,
+                    username = signUp.username.trim(),
+                    acceptedLegalVersion = legalVersion,
+                )
+            )
+            val error = (result as? ResultData.Error)?.exception
+
+            when {
+                error is UsernameTakenException ->
+                    _googleSignUp.value = signUp.copy(error = GoogleSignUpError.USERNAME_TAKEN)
+
+                result is ResultData.Error && error !is AccountDeletionPendingException ->
+                    _googleSignUp.value = signUp.copy(error = GoogleSignUpError.FAILED)
+
+                else -> {
+                    _googleSignUp.value = null
+                    _loginState.value = handleAuthResult(result)
+                }
+            }
+        }
+    }
+
+    /** Loads and shows the `terms` or `privacy` document, from the sign-up step. */
+    fun openLegalDocument(type: String) {
+        legalJob?.cancel()
+        _legalDocument.value = LegalDocumentState.Loading(type)
+
+        legalJob = viewModelScope.launch {
+            val result = authApi.legalDocument(type)
+            ensureActive()
+
+            _legalDocument.value = when (result) {
+                is ResultData.Complete -> LegalDocumentState.Loaded(result.data)
+                else -> LegalDocumentState.Failed(type)
+            }
+        }
+    }
+
+    fun closeLegalDocument() {
+        legalJob?.cancel()
+        _legalDocument.value = LegalDocumentState.Hidden
+    }
+
+    private suspend fun loginWithGoogle(request: GoogleLoginRequest): ResultData<AuthResponse> =
+        if (authRepository.useWebLogin) {
+            authApi.loginWithGoogleWeb(request)
+        } else {
+            authApi.loginWithGoogle(request)
+        }
+
+    /** A login answer, by password or Google: the user and its tokens are kept, or the error shown. */
+    private suspend fun handleAuthResult(result: ResultData<AuthResponse>): ResultData<Boolean> =
+        when (result) {
+            is ResultData.Complete -> {
+                val user = result.data.writeopiaUser.toModel()
+
+                // Check if user is enabled (email confirmed)
+                if (!result.data.enabled) {
+                    // User exists but email not confirmed
+                    authRepository.savePendingConfirmationEmail(user.email)
+                    _emailConfirmationRequired.value = true
+                    result.map { true }
+                } else {
+                    _emailConfirmationRequired.value = false
+                    EnvUtils.getAdminKey()?.let { adminKey ->
+                        authApi.enableUser(user.email, adminKey)
+                    }
+
+                    authRepository.unselectAllUsers()
+                    authRepository.saveUser(
+                        user = user,
+                        selected = true
+                    )
+                    val accessToken = result.data.accessToken
+                    val refreshToken = result.data.refreshToken
+                    if (accessToken != null) {
+                        // Calculate expiry time (14 minutes from now as buffer)
+                        val expiresAt = Clock.System.now().toEpochMilliseconds() + (14 * 60 * 1000L)
+                        authRepository.saveTokens(
+                            userId = user.id,
+                            accessToken = accessToken,
+                            refreshToken = refreshToken,
+                            expiresAt = expiresAt
+                        )
+                    }
+
+                    result.map { true }
+                }
+            }
+
+            is ResultData.Error -> {
+                delay(300)
+                _accountDeletionPending.value = result.exception is AccountDeletionPendingException
+                result.map { false }
+            }
+
+            else -> {
+                delay(300)
+                ResultData.Idle()
+            }
+        }
+}
+
+enum class GoogleSignUpError { USERNAME_TAKEN, FAILED }
+
+/** The sign-up step of a first Google sign-in. */
+data class GoogleSignUpState(
+    val idToken: String,
+    val email: String,
+    val username: String,
+    val termsAccepted: Boolean = false,
+    val inProgress: Boolean = false,
+    val error: GoogleSignUpError? = null,
+) {
+    val canCreate: Boolean get() = termsAccepted && username.isNotBlank() && !inProgress
 }
