@@ -1,5 +1,6 @@
 package io.writeopia.editor.features.editor.viewmodel
 
+import androidx.lifecycle.viewModelScope
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -27,8 +28,10 @@ import io.writeopia.ui.keyboard.KeyboardEvent
 import io.writeopia.ui.manager.WriteopiaStateManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.job
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
@@ -70,8 +73,16 @@ class NoteEditorKmpViewModelAnalyticsTest {
         coEvery { authRepository.getWorkspace() } returns Workspace.disconnectedWorkspace()
     }
 
+    // The view models' coroutines run on real dispatchers and outlive the test unless stopped.
+    // Left running past resetMain, they fail on the missing Main dispatcher, and
+    // kotlinx-coroutines-test reports that against whichever runTest comes next in this JVM.
+    private val createdViewModels = mutableListOf<NoteEditorKmpViewModel>()
+
     @AfterTest
     fun tearDown() {
+        runBlocking {
+            createdViewModels.forEach { vm -> vm.viewModelScope.coroutineContext.job.cancelAndJoin() }
+        }
         Dispatchers.resetMain()
     }
 
@@ -97,7 +108,7 @@ class NoteEditorKmpViewModelAnalyticsTest {
         aiTaskManager = AiTaskManager(),
         documentTagRepository = documentTagRepository,
         analyticsTracker = analyticsTracker,
-    )
+    ).also(createdViewModels::add)
 
     // createNewDocument (used as setup in most tests below to get a loaded document) fires its
     // own document_created event synchronously, so waiting for "any event" isn't enough: every
