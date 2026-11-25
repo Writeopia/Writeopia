@@ -10,6 +10,7 @@ import io.writeopia.auth.email.EmailConfirmationPurpose
 import io.writeopia.auth.email.EmailConfirmationViewModel
 import io.writeopia.auth.forgotpassword.ForgotPasswordViewModel
 import io.writeopia.auth.menu.AuthMenuViewModel
+import io.writeopia.auth.paywall.PaywallViewModel
 import io.writeopia.auth.register.RegisterViewModel
 import io.writeopia.auth.register.ResetPasswordViewModel
 import io.writeopia.auth.spacechoice.LocalFolderSetupViewModel
@@ -69,6 +70,12 @@ class AuthInjection private constructor(
     ): EmailConfirmationViewModel = viewModel(viewModelStoreOwner = owner, key = REGISTRATION_EMAIL_KEY) {
         EmailConfirmationViewModel(authRepository, authApi, EmailConfirmationPurpose.REGISTRATION)
     }
+
+    @Composable
+    internal fun providePaywallViewModel(
+        authRepository: AuthRepository = authCoreInjection.provideAuthRepository(),
+        authApi: AuthApi = authCoreInjection.provideAuthApi()
+    ): PaywallViewModel = viewModel { PaywallViewModel(authRepository, authApi) }
 
     @Composable
     internal fun provideResetPasswordViewModel(

@@ -1,10 +1,56 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 plugins {
     kotlin("multiplatform")
     alias(libs.plugins.ktlint)
     alias(libs.plugins.androidMultiplatformLibrary)
     alias(libs.plugins.kotlinSerialization)
+}
+
+/*
+ * The OAuth client of the desktop app for the Google Drive sync, from the git-ignored
+ * local.properties of the repository root (googleDriveDesktopClientId, googleDriveDesktopClientSecret)
+ * or the environment (GOOGLE_DRIVE_DESKTOP_CLIENT_ID, GOOGLE_DRIVE_DESKTOP_CLIENT_SECRET, for CI).
+ * Without them the build works and the app offers no Google Drive sync.
+ */
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) file.inputStream().use(::load)
+}
+
+fun desktopConfig(property: String, environment: String): String =
+    providers.environmentVariable(environment).orNull?.takeIf { it.isNotBlank() }
+        ?: localProperties.getProperty(property).orEmpty()
+
+val googleDriveDesktopClientId = desktopConfig("googleDriveDesktopClientId", "GOOGLE_DRIVE_DESKTOP_CLIENT_ID")
+val googleDriveDesktopClientSecret =
+    desktopConfig("googleDriveDesktopClientSecret", "GOOGLE_DRIVE_DESKTOP_CLIENT_SECRET")
+val googleDriveConfigDir = layout.buildDirectory.dir("generated/googleDriveConfig/jvmMain/kotlin")
+
+val generateGoogleDriveDesktopConfig by tasks.registering {
+    inputs.property("clientId", googleDriveDesktopClientId)
+    inputs.property("clientSecret", googleDriveDesktopClientSecret)
+    outputs.dir(googleDriveConfigDir)
+
+    doLast {
+        val file = googleDriveConfigDir.get()
+            .file("io/writeopia/core/folders/sync/cloud/GoogleDriveDesktopConfig.kt")
+            .asFile
+        file.parentFile.mkdirs()
+        file.writeText(
+            """
+            |package io.writeopia.core.folders.sync.cloud
+            |
+            |// Generated from local.properties or the environment; see build.gradle.kts.
+            |internal object GoogleDriveDesktopConfig {
+            |    const val CLIENT_ID = "$googleDriveDesktopClientId"
+            |    const val CLIENT_SECRET = "$googleDriveDesktopClientSecret"
+            |}
+            |
+            """.trimMargin()
+        )
+    }
 }
 
 kotlin {
@@ -47,6 +93,7 @@ kotlin {
             dependencies {
                 implementation(project(":writeopia"))
                 implementation(project(":writeopia_models"))
+                implementation(project(":tutorials"))
                 implementation(project(":writeopia_ui"))
                 implementation(project(":plugins:writeopia_persistence_core"))
                 implementation(project(":plugins:writeopia_serialization"))
@@ -67,6 +114,10 @@ kotlin {
                 implementation(libs.ktor.client.core)
                 implementation(libs.kotlinx.serialization.json)
             }
+        }
+
+        val jvmMain by getting {
+            kotlin.srcDir(generateGoogleDriveDesktopConfig)
         }
 
         val jvmTest by getting {

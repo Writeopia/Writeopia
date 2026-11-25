@@ -36,6 +36,7 @@ import androidx.compose.ui.window.Dialog
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.editor.features.presentation.viewmodel.PresentationsController
 import io.writeopia.sdk.models.presentation.Presentation
+import io.writeopia.theme.WriteopiaTheme
 import kotlin.time.ExperimentalTime
 
 /**
@@ -90,7 +91,7 @@ fun PresentationsDialog(
                                 onOpen = { onOpen(presentation) },
                                 onDelete = { controller.delete(presentation) }
                             )
-                            HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant)
+                            HorizontalDivider(color = WriteopiaTheme.colorScheme.dividerColor)
                         }
                     }
                 }

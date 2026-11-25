@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.LocalPlatformContext
 import coil3.compose.SubcomposeAsyncImage
@@ -19,6 +20,8 @@ import io.writeopia.ui.model.DrawInfo
 
 class ImagePreviewDrawer(
     private val modifier: Modifier = Modifier,
+    /** The tallest the picture gets; cards of a fixed height pass less, to leave room for text. */
+    private val maxHeight: Dp = 200.dp,
 ) : StoryStepDrawer {
 
     @Composable
@@ -34,7 +37,7 @@ class ImagePreviewDrawer(
                 .clip(
                     shape = RoundedCornerShape(size = 12.dp)
                 ).fillMaxSize()
-                .heightIn(max = 200.dp),
+                .heightIn(max = maxHeight),
             loading = {
                 CircularProgressIndicator()
             },

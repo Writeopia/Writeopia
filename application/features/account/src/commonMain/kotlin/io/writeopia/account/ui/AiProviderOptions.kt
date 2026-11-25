@@ -119,7 +119,7 @@ private fun ProviderOption(
     Row(
         modifier = modifier
             .clip(MaterialTheme.shapes.medium)
-            .background(WriteopiaTheme.colorScheme.optionsSelector)
+            .background(WriteopiaTheme.colorScheme.optionButton)
             .border(border, MaterialTheme.shapes.medium)
             .clickable(onClick = onClick)
             .semantics { testTag = "$AI_PROVIDER_OPTION_TEST_TAG.$title" }

@@ -94,4 +94,22 @@ class DocumentToMarkdownTest {
 
         assertEquals(expected, DocumentToMarkdown.parse(content))
     }
+
+    @Test
+    fun equationsAreWrittenBetweenDoubleDollars() {
+        val content = mapOf(
+            Rank.at(0) to StoryStep(type = StoryTypes.TEXT.type, text = "Area"),
+            Rank.at(1) to StoryStep(
+                type = StoryTypes.EQUATION.type,
+                text = "\\int_0^1 x^2 dx",
+                url = "https://cdn/equation.png"
+            ),
+            Rank.at(2) to StoryStep(type = StoryTypes.EQUATION.type, text = ""),
+        )
+
+        val parsedContent = DocumentToMarkdown.parse(content, prettyPrint = false)
+
+        // The empty equation is left out, like any step without text.
+        assertEquals("Area\n$$\\int_0^1 x^2 dx$$\n", parsedContent)
+    }
 }

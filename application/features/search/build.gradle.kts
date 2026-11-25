@@ -50,6 +50,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
+                implementation(project(":application:core:common_ui"))
                 implementation(project(":writeopia"))
                 implementation(project(":writeopia_ui"))
                 implementation(project(":writeopia_models"))
@@ -90,6 +91,17 @@ kotlin {
 
         val jvmMain by getting {
             dependencies {
+            }
+        }
+
+        val jvmTest by getting {
+            dependencies {
+                implementation(libs.kotlin.test)
+                implementation(libs.kotlinx.coroutines.test)
+                implementation(libs.mockk)
+                implementation(libs.ktor.client.mock)
+                implementation(libs.ktor.client.content.negotiation)
+                implementation(libs.ktor.serialization.json)
             }
         }
     }

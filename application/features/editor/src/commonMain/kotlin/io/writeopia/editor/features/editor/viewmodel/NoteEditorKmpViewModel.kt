@@ -19,6 +19,7 @@ import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.genai.repository.GenAiRepository
 import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.sync.ContentLoadActivity
+import io.writeopia.core.folders.sync.DocumentSyncService
 import io.writeopia.core.presentations.PresentationsStore
 import io.writeopia.core.presentations.api.PresentationsApi
 import io.writeopia.editor.features.presentation.repository.CloudPresentationsSaver
@@ -29,7 +30,6 @@ import io.writeopia.common.utils.file.SaveImage
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.common.utils.toList
 import io.writeopia.core.folders.repository.folder.DocumentLoadUseCase
-import io.writeopia.core.folders.repository.InDocumentSearchRepository
 import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.core.folders.repository.tag.DocumentTagRepository
 import io.writeopia.editor.features.editor.copy.CopyManager
@@ -51,6 +51,7 @@ import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.document.DocumentTag
 import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
+import io.writeopia.sdk.models.document.PendingFavorite
 import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.span.Span
@@ -92,6 +93,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -99,6 +101,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import io.writeopia.ui.model.EquationEvent
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -133,12 +136,13 @@ class NoteEditorKmpViewModel(
     private val keyboardEventFlow: Flow<KeyboardEvent>,
     private val copyManager: CopyManager,
     private val authRepository: AuthRepository,
-    private val inDocumentSearchRepository: InDocumentSearchRepository,
     private val drawingSaveEvents: SharedFlow<DrawingSaveEvent>? = null,
     private val documentSyncManager: DocumentSyncManager = DocumentSyncManager.singleton(),
     private val documentLoadUseCase: DocumentLoadUseCase? = null,
     private val storyStepSyncApi: (suspend (StoryStepSyncRequest) -> StoryStepSyncResponse)? = null,
     private val documentsApi: DocumentsApi? = null,
+    /** Sends the favorites changed here; null where there is no backend. */
+    private val documentSyncService: DocumentSyncService? = null,
     private val aiTaskManager: AiTaskManager = AiTaskManager.singleton(),
     /** Picks the AI that answers, local or cloud, following the choice of the user in the settings. */
     private val aiClients: AiClients = AiClients(
@@ -270,6 +274,15 @@ class NoteEditorKmpViewModel(
         }
 
         viewModelScope.launch(Dispatchers.Default) {
+            writeopiaManager.equationEvents.collect { event ->
+                when (event) {
+                    is EquationEvent.Edit -> equationsController.edit(event.step, event.position)
+                    is EquationEvent.Render -> launch { equationsController.render(event.position, event.step.text ?: "") }
+                }
+            }
+        }
+
+        viewModelScope.launch(Dispatchers.Default) {
             keyboardEventFlow
                 .onEach { delay(60) }
                 .collect { event ->
@@ -387,11 +400,23 @@ class NoteEditorKmpViewModel(
 
 //    val selectionOfText = writeopiaManager.
 
+    /**
+     * The positions of the steps holding the words of the search, read from what is drawn: the
+     * text as it is now, saved or not, on every platform. The full-text index of the steps is
+     * for the global search; here a document is at most a few hundred steps.
+     */
     private val findsOfSearch: Flow<Set<String>> =
-        combine(writeopiaManager.documentInfo, searchText) { info, query ->
-            info.id to query
-        }.map { (documentId, query) ->
-            inDocumentSearchRepository.searchInDocument(query, documentId)
+        combine(writeopiaManager.toDraw, searchText) { drawState, query ->
+            if (query.isBlank()) {
+                emptySet()
+            } else {
+                drawState.stories
+                    .filter { drawStory ->
+                        val text = drawStory.storyStep.text
+                        !text.isNullOrEmpty() && FindInText.findInText(text, query).isNotEmpty()
+                    }
+                    .mapTo(mutableSetOf()) { drawStory -> drawStory.position }
+            }
         }
 
     /**
@@ -653,19 +678,23 @@ class NoteEditorKmpViewModel(
             searchText,
             showSearch,
             _currentSearchIndexState
-        ) { drawState, finds, query, showSearch, currentSearchIndex ->
-            if (finds.isEmpty() && showSearch) return@combine drawState.copy(focus = null)
-            if (finds.isEmpty()) return@combine drawState
+        ) { drawState, findsSet, query, showSearch, currentSearchIndex ->
+            if (findsSet.isEmpty()) {
+                _totalSearchResultsState.value = 0
+                return@combine if (showSearch) drawState.copy(focus = null) else drawState
+            }
 
+            // Sorted, the way searchInDocument counts them, so the active match is the same one.
+            val finds = findsSet.sorted()
             val mutableStories = drawState.stories.toMutableList()
-            val activeFindPosition =
-                if (finds.size > currentSearchIndex) finds.elementAt(currentSearchIndex) else null
+            // An edit can take matches away: the active one stays within the ones left.
+            val activeIndex = currentSearchIndex.coerceIn(0, finds.lastIndex)
+            if (activeIndex != currentSearchIndex) _currentSearchIndexState.value = activeIndex
+            val activeFindPosition = finds[activeIndex]
             _totalSearchResultsState.value = finds.size
 
-            if (activeFindPosition != null) {
-                val index = mutableStories.indexOfFirst { it.position == activeFindPosition }
-                if (index != -1) writeopiaManager.scrollToPosition(index)
-            }
+            val activeIndexInDraw = mutableStories.indexOfFirst { it.position == activeFindPosition }
+            if (activeIndexInDraw != -1) writeopiaManager.scrollToPosition(activeIndexInDraw)
 
             finds.forEach { position ->
                 val realPosition = mutableStories.indexOfFirst { it.position == position }
@@ -777,6 +806,10 @@ class NoteEditorKmpViewModel(
     /** The pictures of the workspace, fetched again each time the header menu opens. */
     private fun loadHeaderImages() {
         headerImagesController.load()
+    }
+
+    override fun onHeaderImageInstructions(instructions: String) {
+        headerImagesController.setInstructions(instructions)
     }
 
     override fun generateHeaderImage() {
@@ -927,22 +960,7 @@ class NoteEditorKmpViewModel(
             workspaceIdFlow = writeopiaManager.workspaceIdFlow,
             commentConversationsFlow = writeopiaManager.commentConversations,
             documentTagIdsFlow = writeopiaManager.documentTagIds,
-            documentTracker = OnUpdateDocumentTracker(
-                documentRepository,
-                onStoryStepUpdate = { storyStep, position ->
-                    inDocumentSearchRepository.insertForFts(storyStep, documentId, position)
-                },
-                onDocumentUpdate = { doc ->
-                    doc.content
-                        .forEach { (position, storyStep) ->
-                            inDocumentSearchRepository.insertForFts(
-                                storyStep,
-                                documentId,
-                                position
-                            )
-                        }
-                }
-            )
+            documentTracker = OnUpdateDocumentTracker(documentRepository)
         )
 
         // Also register for backend sync if the API is available and the workspace is connected
@@ -1098,6 +1116,40 @@ class NoteEditorKmpViewModel(
         _editHeader.value = false
     }
 
+    // Equations: the "..." dialog of a drawing and the LaTeX dialog of an equation.
+
+    private val equationsController = EquationsController(
+        scope = viewModelScope,
+        resolveEquations = { aiClients.equations() },
+        isEditable = { isEditable.value },
+        stepAt = { position -> writeopiaManager.currentStory.value.stories[position] },
+        positionOf = { stepId ->
+            writeopiaManager.currentStory.value.stories.entries.firstOrNull { (_, step) -> step.id == stepId }?.key
+        },
+        setEquation = writeopiaManager::setEquation,
+        enqueueTask = { id, description, execution ->
+            aiTaskManager.enqueueTask(id = id, type = AiTaskType.EQUATION, description = description, execution = execution)
+        },
+        taskIdPrefix = { "editor-${writeopiaManager.documentInfo.value.id}" },
+    )
+
+    override val drawingOptions: StateFlow<DrawingOptionsState?> = equationsController.drawingOptions
+    override val convertingDrawingIds: StateFlow<Set<String>> = equationsController.convertingDrawingIds
+    override val equationEdition: StateFlow<EquationEditionState?> = equationsController.edition
+
+    override fun onDrawingOptionsClick(step: StoryStep, position: String) =
+        equationsController.openDrawingOptions(step, position)
+
+    override fun dismissDrawingOptions() = equationsController.dismissDrawingOptions()
+
+    override fun convertDrawingToEquation() = equationsController.convertDrawing()
+
+    override fun onEquationLatexChange(latex: String) = equationsController.onLatexChange(latex)
+
+    override fun saveEquation() = equationsController.saveEdition()
+
+    override fun dismissEquationEdition() = equationsController.dismissEdition()
+
     override fun onMoreOptionsClick() {
         _showGlobalMenu.value = !_showGlobalMenu.value
     }
@@ -1189,32 +1241,40 @@ class NoteEditorKmpViewModel(
     override fun toggleFavorite() {
         writeopiaManager.toggleFavoriteDocument()
 
-        val documentId = writeopiaManager.documentInfo.value.id
+        val info = writeopiaManager.documentInfo.value
         val previous = favoriteSyncJob
         favoriteSyncJob = viewModelScope.launch(Dispatchers.Default) {
+            // The record first, whatever happens to the screen: the sync takes it from there.
+            withContext(NonCancellable) { recordFavoriteChange(info.id, info.isFavorite) }
             // One request at a time, or two quick toggles could reach the backend in the wrong
-            // order. What goes is the state at the time of sending: the user's last word.
+            // order. The record is the user's last word either way.
             previous?.join()
-            val info = writeopiaManager.documentInfo.value
-            if (info.id == documentId) sendFavoriteToBackend(documentId, info.isFavorite)
+            sendPendingFavorites()
         }
     }
 
     /**
      * The backend keeps the favorite documents per user, behind their own endpoint: the
-     * favorite saved with the document's metadata doesn't reach it. Sent right away like the
-     * documents list does; a failure leaves the favorite here only until it is toggled again,
-     * since the next sync takes the backend's favorites.
+     * favorite saved with the document's metadata doesn't reach it. The change is recorded for
+     * the sync ([PendingFavorite]) and sent right away; what can't be sent stays recorded, and
+     * the next sync sends it instead of taking the backend's favorite for the document.
      */
-    private suspend fun sendFavoriteToBackend(documentId: String, favorite: Boolean) {
-        val api = documentsApi ?: return
+    private suspend fun recordFavoriteChange(documentId: String, favorite: Boolean) {
+        val workspace = authRepository.getWorkspace() ?: return
+        if (workspace.id == Workspace.disconnectedWorkspace().id) return
+
+        documentRepository.savePendingFavorites(
+            listOf(PendingFavorite(documentId, workspace.id, favorite, Clock.System.now().toEpochMilliseconds()))
+        )
+    }
+
+    private suspend fun sendPendingFavorites() {
+        val syncService = documentSyncService ?: return
         if (!authRepository.isLoggedIn()) return
         if (authRepository.getUser().tier != Tier.PREMIUM) return
 
         val workspace = authRepository.getWorkspace() ?: return
-        if (workspace.id == Workspace.disconnectedWorkspace().id) return
-
-        api.favoriteDocument(documentId = documentId, favorite = favorite, workspaceId = workspace.id)
+        syncService.sendPendingFavorites(workspace.id)
     }
 
     override fun changeFontFamily(font: Font) {

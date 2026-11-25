@@ -19,6 +19,9 @@ public final class AppSession {
         case emailConfirmation(email: String)
         /// Signed in, but no workspace (team) was selected.
         case chooseWorkspace
+        /// Signed in, but the backend didn't say yet that the user is premium (or said not):
+        /// the cloud account needs a subscription. The paywall offers the private space instead.
+        case paywall
         /// First-run setup of the private space (the Mac app): local AI, then the folder.
         case offlineSetup(OfflineSetupStep)
         /// The workspace just chosen is brought to the device before the documents are shown.
@@ -35,9 +38,18 @@ public final class AppSession {
     public private(set) var phase: Phase
     public private(set) var spaceType: SpaceType?
     public private(set) var user: User?
-    public private(set) var workspace: Workspace?
+    /// The last answer of the backend about the subscription of the signed in user; nil until
+    /// it was asked, e.g. at launch.
+    public private(set) var subscription: SubscriptionStatus?
+    public private(set) var workspace: Workspace? {
+        didSet { if oldValue?.id != workspace?.id { loadWorkspaceFolder() } }
+    }
     /// Folder the user picked for the private space; nil for the default location.
     public private(set) var privateSpaceFolder: URL?
+    /// The folder of the computer the current workspace is saved to and synced with as JSON
+    /// files, like the local folder of the Compose desktop app; nil until the user picks one.
+    /// Each workspace has its own.
+    public private(set) var workspaceFolder: URL?
     /// Bumped when the private space moves, so screens holding a repository reload.
     public private(set) var documentsVersion = 0
     /// Whether a document is opening or a folder expanding, for the spinner by the folders of the side menu.
@@ -81,6 +93,12 @@ public final class AppSession {
     private var localDocuments: LocalDocumentsRepository
     @ObservationIgnored private let offlineSetupSteps: [OfflineSetupStep]
     @ObservationIgnored private var syncedDocuments: SyncedDocumentsRepository?
+    /// Where the app goes once the paywall learns the user is premium: the workspace picker
+    /// after signing in; nil to resolve it from what is stored, e.g. at launch.
+    @ObservationIgnored private var phaseAfterPaywall: Phase?
+    /// Bumped whenever the signed in account changes (sign in, sign out, expired session), so an
+    /// answer about the subscription of the previous account is dropped.
+    @ObservationIgnored private var sessionGeneration = 0
 
     public init(
         tokenStore: TokenStore = KeychainTokenStore(),
@@ -135,6 +153,7 @@ public final class AppSession {
         // The private space promises "no telemetry"; only the open space is tracked, and only
         // once cold start has resolved which one this is.
         analytics.setEnabled(spaceType == .online)
+        loadWorkspaceFolder()
 
         client.onSessionExpired = { [weak self] in
             self?.sessionExpired()
@@ -256,6 +275,13 @@ public final class AppSession {
         return WritingAgentAPI(client: client)
     }
 
+    /// The equations of the cloud (reading a drawing, rendering LaTeX); nil outside an online
+    /// workspace, since only the backend reads and renders them.
+    public var equations: EquationAPI? {
+        guard isOnline, let workspace, workspace.id != Workspace.localId else { return nil }
+        return EquationAPI(client: client)
+    }
+
     /// The header pictures of the current workspace, drawn by the cloud; nil outside an online
     /// workspace, since only the backend draws and keeps them.
     public var headerImages: HeaderImagesAPI? {
@@ -322,6 +348,65 @@ public final class AppSession {
         documentsVersion += 1
     }
 
+    // MARK: - Workspace folder
+
+    /// Saves the current workspace to its folder and syncs it with it; nil while there is no
+    /// workspace.
+    public var workspaceFolderSync: WorkspaceFolderSync? {
+        guard let workspace, let store = documents as? WorkspaceFolderStore else { return nil }
+        return WorkspaceFolderSync(store: store, workspaceId: workspace.id)
+    }
+
+    /// Keeps the files of the current workspace in `url`, a folder the user picked, or in no
+    /// folder with nil. Nothing is written until the user saves or syncs.
+    public func setWorkspaceFolder(_ url: URL?) throws {
+        guard let workspace else { return }
+        var bookmarks = workspaceFolderBookmarks
+        if let url {
+            let bookmark = try PrivateSpaceFolder.bookmark(for: url)
+            guard let resolved = PrivateSpaceFolder.resolve(bookmark) else { throw PrivateSpaceFolder.UnreadableFolder() }
+            bookmarks[workspace.id] = bookmark
+            releaseWorkspaceFolder()
+            workspaceFolder = resolved.url
+        } else {
+            bookmarks[workspace.id] = nil
+            releaseWorkspaceFolder()
+        }
+        workspaceFolderBookmarks = bookmarks
+    }
+
+    private var workspaceFolderBookmarks: [String: Data] {
+        get { preferences.codable([String: Data].self, .workspaceFolderBookmarks) ?? [:] }
+        set { preferences.setCodable(newValue.isEmpty ? nil : newValue, for: .workspaceFolderBookmarks) }
+    }
+
+    /// The folder saved for the current workspace, or none when it can't be opened anymore
+    /// (the bookmark is then forgotten, like the private space folder).
+    private func loadWorkspaceFolder() {
+        releaseWorkspaceFolder()
+        guard let workspace else { return }
+        var bookmarks = workspaceFolderBookmarks
+        guard let bookmark = bookmarks[workspace.id] else { return }
+        guard let resolved = PrivateSpaceFolder.resolve(bookmark) else {
+            bookmarks[workspace.id] = nil
+            workspaceFolderBookmarks = bookmarks
+            return
+        }
+        if resolved.isStale, let fresh = try? PrivateSpaceFolder.bookmark(for: resolved.url) {
+            bookmarks[workspace.id] = fresh
+            workspaceFolderBookmarks = bookmarks
+        }
+        workspaceFolder = resolved.url
+    }
+
+    /// Lets go of the folder's security scope, taken by `PrivateSpaceFolder.resolve`.
+    private func releaseWorkspaceFolder() {
+        #if os(macOS)
+        workspaceFolder?.stopAccessingSecurityScopedResource()
+        #endif
+        workspaceFolder = nil
+    }
+
     public func chooseOnlineSpace() {
         setSpace(.online)
         phase = resolvePhase()
@@ -343,11 +428,43 @@ public final class AppSession {
 
     // MARK: - Auth
 
-    public func loggedIn(_ user: User) {
+    /// Asks the backend whether the user is premium before going on: the workspace picker when
+    /// so, the paywall when not or when the backend can't tell (never past it on an error).
+    public func loggedIn(_ user: User) async {
+        sessionGeneration += 1
         setUser(user)
         preferences.remove(.pendingEmail)
         setSpace(.online)
-        phase = .chooseWorkspace
+        subscription = nil
+        phaseAfterPaywall = .chooseWorkspace
+        do {
+            _ = try await checkSubscription()
+        } catch {
+            // The paywall shows the error and asks again.
+            if isOnline { phase = .paywall }
+        }
+    }
+
+    /// Asks the backend whether the signed in user is premium. Premium: the stored user is
+    /// marked premium (later launches don't ask again) and the app goes on past the paywall.
+    /// Not premium: the paywall. Throws when the backend can't tell, leaving the phase as is.
+    @discardableResult
+    public func checkSubscription() async throws -> SubscriptionStatus {
+        let generation = sessionGeneration
+        let status = try await authAPI.subscription()
+        // Signed out or signed in again while waiting: nothing to decide anymore.
+        guard isCurrent(generation) else { return status }
+
+        subscription = status
+        if status.premium {
+            await markPremium(tier: status.tier, generation: generation)
+            guard isCurrent(generation) else { return status }
+            phase = phaseAfterPaywall ?? resolvePhase(premiumConfirmed: true)
+            phaseAfterPaywall = nil
+        } else {
+            phase = .paywall
+        }
+        return status
     }
 
     public func needsEmailConfirmation(email: String) {
@@ -373,6 +490,21 @@ public final class AppSession {
     public func workspaceSynced() {
         guard phase == .syncingWorkspace else { return }
         phase = .ready
+    }
+
+    /// Whether the local copy of the current workspace can be erased and synced again: an
+    /// online workspace only, the private space has no other copy.
+    public var canResyncWorkspace: Bool {
+        documents is SyncedDocumentsRepository
+    }
+
+    /// Erases the local copy of the open workspace and brings it whole from the backend again,
+    /// through the same sync screen as after choosing the workspace. Changes not sent yet are lost.
+    public func eraseAndResyncWorkspace() async throws {
+        guard let synced = documents as? SyncedDocumentsRepository else { return }
+        try await synced.eraseLocalCopy()
+        documentsVersion += 1
+        phase = .syncingWorkspace
     }
 
     /// Opens the workspace picker again, from Settings.
@@ -406,7 +538,10 @@ public final class AppSession {
     }
 
     private func clearOnlineSession() {
+        sessionGeneration += 1
         setUser(nil)
+        subscription = nil
+        phaseAfterPaywall = nil
         workspace = nil
         syncedDocuments = nil
         preferences.remove(.selectedWorkspace)
@@ -422,6 +557,23 @@ public final class AppSession {
         spaceType = space
         preferences.set(space?.rawValue, for: .spaceType)
         analytics.setEnabled(space == .online)
+    }
+
+    /// Whether the account that asked something of the backend in `generation` is still the one
+    /// signed in.
+    private func isCurrent(_ generation: Int) -> Bool {
+        generation == sessionGeneration && spaceType == .online && tokenStore.accessToken != nil
+    }
+
+    /// Stores the user as premium, fetching it first when the device has none stored. Nothing is
+    /// stored when the account changed meanwhile.
+    private func markPremium(tier: String?, generation: Int) async {
+        let premiumTier = tier.flatMap { $0.uppercased() == "PREMIUM" ? $0 : nil } ?? "PREMIUM"
+        if let user {
+            setUser(user.withTier(premiumTier))
+        } else if let current = try? await authAPI.currentUser(), isCurrent(generation) {
+            setUser(current.withTier(premiumTier))
+        }
     }
 
     private func setUser(_ user: User?) {
@@ -449,7 +601,9 @@ public final class AppSession {
         return (LocalDocumentsRepository(composeDatabase: LocalDocumentsRepository.composeDatabaseLocation), nil)
     }
 
-    private func resolvePhase() -> Phase {
+    /// `premiumConfirmed`: the backend just said the user is premium, even if the user couldn't
+    /// be stored with the tier.
+    private func resolvePhase(premiumConfirmed: Bool = false) -> Phase {
         switch spaceType {
         case nil:
             return .spaceChoice
@@ -463,8 +617,14 @@ public final class AppSession {
                 return .emailConfirmation(email: pendingEmail)
             }
             guard tokenStore.accessToken != nil else { return .signedOut }
-            guard let workspace, workspace.id != Workspace.localId else { return .chooseWorkspace }
-            return .ready
+            // A workspace is only chosen past the paywall: a user who has one is let in without
+            // asking (the app opens offline). One who signed in but never got past the paywall
+            // (the app was closed on it) sees it again; the stored tier isn't trusted, the paywall
+            // asks the backend and lets a premium user straight through. Same rule as the Compose
+            // app (`LoginStatus.SUBSCRIPTION_REQUIRED`).
+            if let workspace, workspace.id != Workspace.localId { return .ready }
+            guard premiumConfirmed else { return .paywall }
+            return .chooseWorkspace
         }
     }
 }

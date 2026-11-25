@@ -5,7 +5,8 @@ import Observation
 /// so the editor can be tested without the network.
 public protocol HeaderImageServing: AnyObject {
     /// Draws a header for a document, charged to the user. The result is the URL of a candidate.
-    func generateHeaderImage(documentTitle: String, documentText: String) async throws -> String
+    /// [instructions] is what the user asks of the picture, empty for nothing.
+    func generateHeaderImage(documentTitle: String, documentText: String, instructions: String) async throws -> String
     /// The URLs of the approved pictures of the workspace, the newest first.
     func headerImages() async throws -> [String]
     /// Keeps an approved picture with the pictures of the workspace.
@@ -34,6 +35,8 @@ public final class HeaderImagesModel {
     /// Keeping the candidate failed; it stays, to approve again. The message, when there is one.
     public private(set) var saveFailed = false
     public private(set) var saveError: String?
+    /// What the user wrote to personalise the picture; sent with each drawing.
+    public var instructions = ""
 
     @ObservationIgnored private let service: HeaderImageServing
     @ObservationIgnored private let documentTitle: () -> String
@@ -53,6 +56,9 @@ public final class HeaderImagesModel {
         self.onApproved = onApproved
     }
 
+    /// The most the backend reads of the instructions; the Compose app cuts at the same size.
+    public static let instructionsLimit = 500
+
     public var isGenerating: Bool { generation == .generating }
 
     /// Fetches the pictures of the workspace again, each time the header menu opens.
@@ -70,11 +76,12 @@ public final class HeaderImagesModel {
         saveError = nil
         let title = documentTitle()
         let text = documentText()
+        let asked = String(instructions.trimmingCharacters(in: .whitespacesAndNewlines).prefix(Self.instructionsLimit))
 
         generationTask = Task { [weak self, service] in
             let result: HeaderImageGeneration
             do {
-                result = .candidate(try await service.generateHeaderImage(documentTitle: title, documentText: text))
+                result = .candidate(try await service.generateHeaderImage(documentTitle: title, documentText: text, instructions: asked))
             } catch {
                 result = .failed(error.localizedDescription)
             }

@@ -11,6 +11,9 @@ import io.writeopia.sdk.serialization.request.HeaderImageGenerateRequest
 object ImagePrompt {
     const val DOCUMENT_LIMIT = 20_000
 
+    /** The most the backend reads of what the user asks of a header picture. */
+    const val INSTRUCTIONS_LIMIT = 500
+
     fun forParagraph(request: AiImageRequest): String {
         val title = request.documentTitle.trim()
         val document = request.documentText.trim().take(DOCUMENT_LIMIT)
@@ -37,6 +40,7 @@ object ImagePrompt {
     fun forHeader(request: HeaderImageGenerateRequest): String {
         val title = request.documentTitle.trim()
         val document = request.documentText.trim().take(DOCUMENT_LIMIT)
+        val instructions = request.instructions.trim().take(INSTRUCTIONS_LIMIT)
 
         return buildString {
             append("Create a wide cover image for the header of a document")
@@ -46,6 +50,10 @@ object ImagePrompt {
             append("in the middle and the composition simple, with calm colors and no small details. ")
             append("Do not write any text, letters, numbers or watermarks in the image. ")
             append("Capture the subject and the mood of the whole document, not one detail of it.")
+            if (instructions.isNotEmpty()) {
+                append("\n\nThe user asks for this in the picture, follow it where it does not conflict ")
+                append("with the rules above: ").append(instructions)
+            }
             if (document.isNotEmpty()) append("\n\nDocument:\n").append(document)
         }
     }

@@ -21,7 +21,7 @@ class DocumentMerger {
      * The merge logic:
      * - StorySteps only in local → keep local
      * - StorySteps only in backend → keep backend
-     * - StorySteps in both → compare lastUpdatedAt, keep newer (local wins on tie or null timestamps)
+     * - StorySteps in both → compare lastUpdatedAt, keep newer (local wins on a tie; a local step without a timestamp counts as the oldest)
      * - Document metadata uses the newer document's metadata
      *
      * @param localDocument The document from the local database (can be null)
@@ -123,8 +123,10 @@ class DocumentMerger {
                 localEntry == null && backendEntry != null -> backendEntry
                 localEntry != null && backendEntry == null -> localEntry
                 localEntry != null && backendEntry != null -> {
-                    // Both exist - compare lastUpdatedAt, local wins on tie or null
-                    val localTimestamp = localEntry.second.lastUpdatedAt ?: Long.MAX_VALUE
+                    // Both exist - compare lastUpdatedAt, local wins on a tie. A step without a
+                    // stamp (saved before stamps existed) counts as the oldest, as when sending;
+                    // as the newest it could never receive a change made on another device.
+                    val localTimestamp = localEntry.second.lastUpdatedAt ?: 0L
                     val backendTimestamp = backendEntry.second.lastUpdatedAt ?: 0L
 
                     if (localTimestamp >= backendTimestamp) {

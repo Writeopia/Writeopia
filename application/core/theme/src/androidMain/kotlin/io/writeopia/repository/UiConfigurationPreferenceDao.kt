@@ -23,7 +23,7 @@ class UiConfigurationPreferenceDao(
         UiConfigurationEntity(
             "disconnected_user",
             ColorThemeOption.SYSTEM.theme,
-            AccentColor.PURPLE.id,
+            AccentColor.DYNAMIC.id,
             Font.SYSTEM.label
         )
     )
@@ -48,8 +48,8 @@ class UiConfigurationPreferenceDao(
             ) ?: ColorThemeOption.SYSTEM.theme,
             accentColor = sharedPreferences.getString(
                 ACCENT_COLOR_OPTION,
-                AccentColor.PURPLE.id
-            ) ?: AccentColor.PURPLE.id,
+                AccentColor.DYNAMIC.id
+            ) ?: AccentColor.DYNAMIC.id,
             font = sharedPreferences.getString(
                 FONT_OPTION,
                 Font.SYSTEM.label

@@ -55,7 +55,10 @@ import io.writeopia.sdk.models.user.WriteopiaUser
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.utils.map
 import io.writeopia.sdk.models.workspace.Workspace
+import io.writeopia.core.folders.usecase.VersionEasterEggUseCase
+import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.sdk.network.injector.WriteopiaConnectionInjector
+import io.writeopia.common.utils.Destinations
 import io.writeopia.ui.keyboard.KeyboardEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -118,6 +121,9 @@ class GlobalShellKmpViewModel(
 
     private val _showSearchDialog = MutableStateFlow(false)
     override val showSearchDialog: StateFlow<Boolean> = _showSearchDialog.asStateFlow()
+
+    /** The route on screen, to tell whether the search shortcut is ours. Null until known. */
+    private val currentRoute = MutableStateFlow<String?>(null)
 
     private val _logoutInProgress = MutableStateFlow(false)
     override val logoutInProgress: StateFlow<Boolean> = _logoutInProgress.asStateFlow()
@@ -362,7 +368,9 @@ class GlobalShellKmpViewModel(
                 ?.collect { event ->
                     when (event) {
                         KeyboardEvent.SEARCH -> {
-                            showSearch()
+                            // Only on the documents menu: in the editor the shortcut searches
+                            // inside the document, and the other screens have no search.
+                            if (isDocumentsMenuRoute(currentRoute.value)) showSearch()
                         }
 
                         else -> {}
@@ -488,8 +496,23 @@ class GlobalShellKmpViewModel(
         _showSettingsState.value = false
     }
 
+    override fun createVersionEasterEgg(onCreated: (id: String, title: String) -> Unit) {
+        viewModelScope.launch {
+            val document = VersionEasterEggUseCase(
+                documentRepository = RepositoryInjector.singleton().provideDocumentRepository(),
+                authRepository = authRepository,
+            ).create()
+
+            onCreated(document.id, document.title)
+        }
+    }
+
     override fun showSearch() {
         _showSearchDialog.value = true
+    }
+
+    override fun onDestinationChanged(route: String?) {
+        currentRoute.value = route
     }
 
     override fun hideSearch() {
@@ -880,4 +903,10 @@ class GlobalShellKmpViewModel(
     }
 
     private suspend fun getUserId(): String = authRepository.getUser().id
+
+    companion object {
+        /** True for the documents menu (the notes of a folder, the root, the favorites). */
+        fun isDocumentsMenuRoute(route: String?): Boolean =
+            route?.startsWith(Destinations.CHOOSE_NOTE.id) == true
+    }
 }

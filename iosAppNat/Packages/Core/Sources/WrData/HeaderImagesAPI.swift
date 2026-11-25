@@ -15,14 +15,15 @@ public final class HeaderImagesAPI {
     }
 
     /// Draws a header for a document. The result is the URL of a candidate, not yet approved.
-    public func generateHeaderImage(documentTitle: String, documentText: String) async throws -> String {
+    public func generateHeaderImage(documentTitle: String, documentText: String, instructions: String = "") async throws -> String {
         let response: HeaderImageGenerateResponse = try await client.send(
             .post,
             "api/ai/header-image",
             body: HeaderImageGenerateRequest(
                 workspaceId: workspaceId,
                 documentTitle: documentTitle,
-                documentText: documentText
+                documentText: documentText,
+                instructions: instructions
             )
         )
         guard let url = response.imageUrl, !url.isEmpty else {
@@ -35,6 +36,23 @@ public final class HeaderImagesAPI {
     public func headerImages() async throws -> [String] {
         let response: HeaderImagesResponse = try await client.get(path)
         return response.images.map(\.url)
+    }
+
+    /// The approved pictures of the workspace with their ids, the newest first, to manage them.
+    public func pictures() async throws -> [HeaderImage] {
+        let response: HeaderImagesResponse = try await client.get(path)
+        return response.images
+    }
+
+    /// Takes a picture out of the pictures of the workspace. The documents that already use it
+    /// as their header keep it, since it stays on the CDN. A picture already gone (deleted from
+    /// another device) counts as deleted.
+    public func deleteHeaderImage(id: String) async throws {
+        do {
+            try await client.perform(.delete, "\(path)/\(id)")
+        } catch APIError.notFound {
+            return
+        }
     }
 
     /// Keeps an approved picture with the pictures of the workspace.

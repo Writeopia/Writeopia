@@ -87,11 +87,14 @@ LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
 WHERE document_entity.parent_document_id = ? AND last_synced > ? AND workspace_id = ? AND deleted = FALSE
 ORDER BY position;
 
+-- Deleted documents are left out, like in every other listing: the diff has what was added
+-- or changed, and a deletion reaches the clients as a sync event. The deleted flag isn't sent,
+-- so a deleted document here would show as a live one on a device that had never seen it.
 selectWithContentByWorkspaceIdAfterTime:
 SELECT *
 FROM document_entity
 LEFT JOIN story_step_entity ON document_entity.id=story_step_entity.document_id
-WHERE last_synced > ? AND workspace_id = ?
+WHERE last_synced > ? AND workspace_id = ? AND deleted = FALSE
 ORDER BY position;
 
 selectWithContentById:

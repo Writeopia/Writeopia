@@ -179,6 +179,36 @@ class OnUpdateDocumentTrackerTest {
     }
 
     @Test
+    fun lineEditionShouldKeepTheFavoriteInTheMetadata() = runTest {
+        val sourceDocument = sourceDocument(emptyList()).copy(favorite = true)
+        val recorder = RecordingDocumentUpdate()
+        val tracker = OnUpdateDocumentTracker(recorder)
+        val (position, step) = sourceDocument.content.entries.first()
+
+        val job = launch {
+            tracker.saveOnStoryChanges(
+                MutableStateFlow(
+                    StoryState(
+                        stories = sourceDocument.content,
+                        lastEdit = LastEdit.LineEdition(position, step.copy(text = "hello again")),
+                    ) to sourceDocument.info()
+                ),
+                MutableStateFlow(sourceDocument.workspaceId),
+                MutableStateFlow(emptyMap()),
+            )
+        }
+
+        val persisted = withTimeout(1_000) { recorder.savedMetadata.await() }
+        job.cancel()
+
+        // The row is replaced whole: a metadata save without the favorite would unmark the document.
+        assertEquals(true, persisted.favorite)
+        assertEquals(sourceDocument.id, persisted.id)
+        assertEquals(sourceDocument.workspaceId, persisted.workspaceId)
+        assertEquals(true, persisted.lastUpdatedAt > sourceDocument.lastUpdatedAt)
+    }
+
+    @Test
     fun bulkDeletionShouldDeleteTheStepsAndSaveTheOnesItChanged() = runTest {
         val sourceDocument = sourceDocument(emptyList())
         val recorder = RecordingDocumentUpdate()
@@ -248,6 +278,7 @@ class OnUpdateDocumentTrackerTest {
 
     private class RecordingDocumentUpdate : DocumentUpdate {
         val savedDocument = CompletableDeferred<Document>()
+        val savedMetadata = CompletableDeferred<Document>()
         val savedSteps = CompletableDeferred<List<Pair<String, StoryStep>>>()
         val deletedStepIds = mutableListOf<String>()
 
@@ -255,7 +286,9 @@ class OnUpdateDocumentTrackerTest {
             if (!savedDocument.isCompleted) savedDocument.complete(document)
         }
 
-        override suspend fun saveDocumentMetadata(document: Document) = Unit
+        override suspend fun saveDocumentMetadata(document: Document) {
+            if (!savedMetadata.isCompleted) savedMetadata.complete(document)
+        }
 
         override suspend fun saveStoryStep(
             storyStep: StoryStep,

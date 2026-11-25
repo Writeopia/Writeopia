@@ -6,6 +6,7 @@ import io.writeopia.sdk.model.document.DocumentInfo
 import io.writeopia.sdk.model.document.info
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.story.StoryStep
+import io.writeopia.sdk.models.document.PendingFavorite
 import io.writeopia.sdk.models.story.StoryStepTombstone
 import io.writeopia.sdk.repository.DocumentRepository
 import kotlinx.coroutines.flow.Flow
@@ -21,6 +22,9 @@ class InMemoryDocumentRepository : DocumentRepository {
 
     /** The steps deleted here and not yet sent, by step id. */
     private val tombstones: MutableMap<String, StoryStepTombstone> = mutableMapOf()
+
+    /** The favorites changed here and not yet sent, by document id. */
+    private val pendingFavorites: MutableMap<String, PendingFavorite> = mutableMapOf()
 
     // Holds documents grouped by parentId for reactive updates
     private val documentsGroupedByParentIdFlow = MutableStateFlow<Map<String, List<Document>>>(emptyMap())
@@ -146,6 +150,18 @@ class InMemoryDocumentRepository : DocumentRepository {
 
     override suspend fun deleteStoryStepTombstones(stepIds: Collection<String>) {
         stepIds.forEach(tombstones::remove)
+    }
+
+    override suspend fun loadPendingFavorites(workspaceId: String): List<PendingFavorite> =
+        pendingFavorites.values.filter { change -> change.workspaceId == workspaceId }
+
+    override suspend fun savePendingFavorites(changes: Collection<PendingFavorite>) {
+        changes.forEach { change -> pendingFavorites[change.documentId] = change }
+    }
+
+    override suspend fun deletePendingFavorite(change: PendingFavorite) {
+        val stored = pendingFavorites[change.documentId] ?: return
+        if (stored.changedAt <= change.changedAt) pendingFavorites.remove(change.documentId)
     }
 
     override suspend fun deleteStoryStepsByIds(stepIds: Collection<String>, workspaceId: String) {

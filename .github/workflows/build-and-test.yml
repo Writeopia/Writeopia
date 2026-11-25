@@ -26,8 +26,8 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
       - name: Ktlint
         run: ./gradlew ktlintCheck
-  mac_app_build:
-    name: Mac App Build
+  linux_app_build:
+    name: Linux App Build
     runs-on: ubuntu-22.04
     env:
       isCI: "true"
@@ -41,10 +41,8 @@ jobs:
           java-version: '21'
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
-      - name: Generate signed mac app
-        run: ./gradlew packageReleaseDmg
-        env:
-          SIGN_IDENTITY: ${{ secrets.SIGN_IDENTITY }}
+      - name: Generate linux app
+        run: ./gradlew packageReleaseDeb
   ui_jvm_tests:
     name: Jvm UI Compose tests
     runs-on: ubuntu-22.04
@@ -228,6 +226,8 @@ jobs:
           :backend:gateway:test
           :backend:core:ai:test
           :backend:core:auth:test
+          :backend:core:email:test
+          :backend:core:equation:test
           :backend:core:genai_service:test
           :backend:documents:documents:test
           :backend:editor:api_editor_socket:test
@@ -242,25 +242,6 @@ jobs:
             backend/**/build/reports/tests/
             backend/**/build/test-results/
           retention-days: 7
-  web_build:
-    name: Web - Build debug
-    runs-on: ubuntu-22.04
-    env:
-      isCI: "true"
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v7
-      - name: Set up JDK 21
-        uses: actions/setup-java@v6
-        with:
-          distribution: zulu
-          java-version: '21'
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v6
-      - name: Build web debug
-        run: |
-          ./gradlew kotlinUpgradeYarnLock
-          ./gradlew jsBrowserDevelopmentWebpack
   test_docusaurus:
     name: Test docusaurus
     runs-on: ubuntu-latest

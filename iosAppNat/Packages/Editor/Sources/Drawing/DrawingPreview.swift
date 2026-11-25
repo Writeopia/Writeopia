@@ -6,9 +6,15 @@ import WrDesign
 public struct DrawingPreview: View {
     private let drawing: DrawingData?
     private let onTap: () -> Void
+    /// The "..." of the drawing: the app opens its options (convert to an equation). Nil hides it.
+    private let onOptions: (() -> Void)?
+    /// The cloud AI is reading the drawing; a progress covers the preview.
+    private let isConverting: Bool
 
-    public init(json: String?, onTap: @escaping () -> Void) {
+    public init(json: String?, isConverting: Bool = false, onOptions: (() -> Void)? = nil, onTap: @escaping () -> Void) {
         drawing = DrawingData.fromJson(json)
+        self.isConverting = isConverting
+        self.onOptions = onOptions
         self.onTap = onTap
     }
 
@@ -24,6 +30,30 @@ public struct DrawingPreview: View {
                 .contentShape(RoundedRectangle(cornerRadius: 12))
         }
         .buttonStyle(.plain)
+        .overlay {
+            if isConverting {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(WrColors.systemBackground.opacity(0.6))
+                    .overlay { ProgressView() }
+            }
+        }
+        // Over the button, so the Mac gets the click: a button inside the button wouldn't.
+        .overlay(alignment: .topTrailing) {
+            if let onOptions, !isConverting {
+                Button(action: onOptions) {
+                    Image(systemName: "ellipsis")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .frame(width: 28, height: 28)
+                        .background(.regularMaterial, in: Circle())
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .padding(8)
+                .accessibilityLabel("Drawing options")
+                .accessibilityIdentifier("drawing.options")
+            }
+        }
         .padding(.vertical, 4)
         .accessibilityLabel("Drawing")
         .accessibilityHint("Opens the drawing")

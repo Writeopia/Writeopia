@@ -44,6 +44,8 @@ fun Application.configureRouting(
 
         appVersionRoute()
 
+        legalRoute()
+
         // JWKS (JSON Web Key Set) endpoint for ESPv2 JWT validation
         // ESPv2 uses this to get the public key for JWT signature verification
         jwksRouting()

@@ -33,6 +33,9 @@ import io.writeopia.sdk.serialization.data.auth.TokenRefreshResponse
 import io.writeopia.sdk.serialization.data.auth.UsernameAvailabilityResponse
 import io.writeopia.sdk.serialization.data.WriteopiaUserApi
 import io.writeopia.sdk.serialization.data.auth.ResetPasswordRequest
+import io.writeopia.sdk.serialization.response.LegalDocumentResponse
+import io.writeopia.sdk.serialization.response.SubscriptionResponse
+import io.writeopia.app.endpoints.EndPoints
 
 class AuthApi(
     private val clientProvider: () -> HttpClient,
@@ -142,6 +145,39 @@ class AuthApi(
         ResultData.Error(e)
     }
 
+    /**
+     * Whether the signed-in user is premium, and the monthly price. Asked right after signing in
+     * or signing up: a user who is not premium sees the paywall.
+     */
+    suspend fun subscription(): ResultData<SubscriptionResponse> = try {
+        val response = client.get("$baseUrl/${EndPoints.subscription()}")
+
+        if (response.status.isSuccess()) {
+            ResultData.Complete(response.body<SubscriptionResponse>())
+        } else {
+            ResultData.Error(Exception("Subscription unavailable: ${response.status}"))
+        }
+    } catch (e: Exception) {
+        println("subscription error: ${e.message}")
+        ResultData.Error(e)
+    }
+
+    /**
+     * The Terms of Service (`terms`) or Privacy Policy (`privacy`). Public and cached by the CDN.
+     */
+    suspend fun legalDocument(type: String): ResultData<LegalDocumentResponse> = try {
+        val response = client.get("$baseUrl/api/${EndPoints.legalDocument(type)}")
+
+        if (response.status.isSuccess()) {
+            ResultData.Complete(response.body<LegalDocumentResponse>())
+        } else {
+            ResultData.Error(Exception("Legal document $type unavailable: ${response.status}"))
+        }
+    } catch (e: Exception) {
+        println("legalDocument error: ${e.message}")
+        ResultData.Error(e)
+    }
+
     suspend fun register(
         name: String,
         email: String,
@@ -149,6 +185,7 @@ class AuthApi(
         password: String,
         username: String,
         verificationCode: String,
+        acceptedLegalVersion: String,
     ): ResultData<RegisterResponse> = try {
         val response = client.post("$baseUrl/api/auth/register") {
             contentType(ContentType.Application.Json)
@@ -160,6 +197,7 @@ class AuthApi(
                     workspaceName = workspaceName,
                     password = password,
                     verificationCode = verificationCode,
+                    acceptedLegalVersion = acceptedLegalVersion,
                 )
             )
         }

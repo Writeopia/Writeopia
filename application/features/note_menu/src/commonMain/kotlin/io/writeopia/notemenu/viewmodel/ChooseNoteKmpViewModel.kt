@@ -23,10 +23,12 @@ import io.writeopia.core.configuration.models.NotesArrangement
 import io.writeopia.core.configuration.repository.ConfigurationRepository
 import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.repository.folder.NotesUseCase
+import io.writeopia.core.folders.sync.DocumentSyncService
 import io.writeopia.core.folders.sync.EventSync
 import io.writeopia.core.folders.sync.FolderSync
 import io.writeopia.core.folders.sync.SyncScope
 import io.writeopia.core.folders.sync.WorkspaceSync
+import io.writeopia.core.folders.sync.cloud.CloudSyncManager
 import io.writeopia.models.interfaces.configuration.WorkspaceConfigRepository
 import io.writeopia.notemenu.ui.dto.NotesUi
 import io.writeopia.sdk.export.DocumentToJson
@@ -76,6 +78,8 @@ internal class ChooseNoteKmpViewModel(
     private val notesConfig: ConfigurationRepository,
     private val authRepository: AuthRepository,
     private val documentsApi: DocumentsApi,
+    /** Sends the favorites changed here; what it can't send stays recorded for the sync. */
+    private val documentSyncService: DocumentSyncService,
     private val localAiRepository: LocalAiRepository? = null,
     private val selectionState: StateFlow<Boolean>,
     private val keyboardEventFlow: Flow<KeyboardEvent>,
@@ -85,6 +89,8 @@ internal class ChooseNoteKmpViewModel(
     /** Syncs the whole workspace when the screen opens; null falls back to [folderSync]. */
     private val workspaceSync: WorkspaceSync? = null,
     private val syncScope: SyncScope = SyncScope.WORKSPACE,
+    /** The sync of the offline workspace with the user's own cloud storage; null where there is none. */
+    private val cloudSync: CloudSyncManager? = null,
     private val folderController: FolderStateController = FolderStateController.singleton(
         notesUseCase,
         authRepository,
@@ -478,9 +484,12 @@ internal class ChooseNoteKmpViewModel(
 
             // If backend sync succeeded, hard delete locally
             // If sync failed, items remain soft-deleted and will be retried during EventSync
-            if (syncSuccess) {
+            // The cloud sync of the offline workspace records the soft deleted items, then
+            // removes them: deleted here, the other devices' copies would bring them back.
+            if (syncSuccess && cloudSync?.isActive() != true) {
                 notesUseCase.hardDeleteNotes(selected, workspaceId)
             }
+            cloudSync?.requestSync()
         }
     }
 
@@ -552,26 +561,16 @@ internal class ChooseNoteKmpViewModel(
     }
 
     /**
-     * Only the documents of the workspace open now are sent: the selection was made in the
-     * workspace listed when it was shown, and the request names the current one.
+     * Sends the favorites changed here that the backend doesn't have yet. Only the workspace
+     * open now: the selection was made in the workspace listed when it was shown. What can't
+     * be sent stays recorded, and the next sync sends it.
      */
-    private suspend fun syncFavoriteToBackend(documents: List<Document>, favorite: Boolean) {
+    private suspend fun sendPendingFavorites() {
         if (!authRepository.isLoggedIn()) return
         if (authRepository.getUser().tier != Tier.PREMIUM) return
 
         val workspace = authRepository.getWorkspace() ?: return
-        // Skip sync for offline/disconnected workspace
-        if (workspace.id == Workspace.disconnectedWorkspace().id) return
-
-        documents
-            .filter { document -> document.workspaceId == workspace.id }
-            .forEach { document ->
-                documentsApi.favoriteDocument(
-                    documentId = document.id,
-                    favorite = favorite,
-                    workspaceId = workspace.id
-                )
-            }
+        documentSyncService.sendPendingFavorites(workspace.id)
     }
 
     override fun favoriteSelectedNotes() {
@@ -581,19 +580,18 @@ internal class ChooseNoteKmpViewModel(
             ?.data
             ?.filter { item -> selectedIds.contains(item.id) }
         val allFavorites = selectedItems?.all { item -> item.favorite } ?: false
-        // The backend keeps the favorite documents per user, behind their own endpoint. A
-        // folder's favorite is part of the folder: the change makes it outdated, and the next
-        // sync sends it.
-        val documents = selectedItems.orEmpty().filterIsInstance<Document>()
 
+        // The backend keeps the favorite documents per user, behind their own endpoint: the
+        // use case records the change, sent right away. A folder's favorite is part of the
+        // folder: the change makes it outdated, and the next sync sends it.
         viewModelScope.launch(Dispatchers.Default) {
+            val workspaceId = getWorkspaceId()
             if (allFavorites) {
-                notesUseCase.unFavoriteDocuments(selectedIds)
-                syncFavoriteToBackend(documents, favorite = false)
+                notesUseCase.unFavoriteDocuments(selectedIds, workspaceId)
             } else {
-                notesUseCase.favoriteDocuments(selectedIds)
-                syncFavoriteToBackend(documents, favorite = true)
+                notesUseCase.favoriteDocuments(selectedIds, workspaceId)
             }
+            sendPendingFavorites()
         }
     }
 
@@ -729,6 +727,9 @@ internal class ChooseNoteKmpViewModel(
     }
 
     override fun syncFolderWithCloud() {
+        // The offline workspace with the user's own storage: a sync soon, if it's connected.
+        cloudSync?.requestSync()
+
         viewModelScope.launch(Dispatchers.Default) {
             // Refresh happens inside syncFolder
             val workspace = authRepository.getWorkspace()

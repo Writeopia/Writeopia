@@ -1,6 +1,6 @@
 import Foundation
 
-/// A folder the user picked for the private space, kept across launches as a security-scoped
+/// A folder the user picked (for the private space, or to save a workspace to), kept across launches as a security-scoped
 /// bookmark so the sandboxed Mac app can open it again.
 public enum PrivateSpaceFolder {
     public struct UnreadableFolder: Error {

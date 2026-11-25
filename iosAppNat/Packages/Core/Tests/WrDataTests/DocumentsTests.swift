@@ -60,8 +60,26 @@ import WrStorage
         _ = try await repository.createDocument(title: "Groceries", parentId: Folder.rootId)
 
         #expect(try await repository.search(query: "grocer").map(\.title) == ["Groceries"])
+        #expect(try await repository.search(query: "GROCER").map(\.title) == ["Groceries"])
         #expect(try await repository.search(query: "free place").map(\.title) == ["Welcome!"])
+        // Every word is needed, in the same step; a word inside another doesn't count.
+        #expect(try await repository.search(query: "free missing").isEmpty)
+        #expect(try await repository.search(query: "rocer").isEmpty)
         #expect(try await repository.search(query: "  ").isEmpty)
+        #expect(try await repository.search(query: "!!!").isEmpty)
+    }
+
+    @Test func foldsTheCaseOfAccentedLetters() async throws {
+        let repository = LocalDocumentsRepository(directory: directory)
+        _ = try await repository.createDocument(title: "Ótimas ideias", parentId: Folder.rootId)
+        let note = try await repository.createDocument(title: "Notas", parentId: Folder.rootId)
+        var edited = note
+        edited.content = [StoryStep(type: .text, text: "Reunião Às nove", position: Rank.first)]
+        try await repository.save(edited)
+
+        #expect(try await repository.search(query: "ótimas").map(\.title) == ["Ótimas ideias"])
+        #expect(try await repository.search(query: "REUNIÃO às").map(\.title) == ["Notas"])
+        #expect(try await repository.search(query: "ótimas notas").isEmpty)
     }
 }
 

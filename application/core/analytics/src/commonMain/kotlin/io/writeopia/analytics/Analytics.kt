@@ -13,7 +13,7 @@ interface AnalyticsTracker {
     fun setEnabled(enabled: Boolean)
 }
 
-// Only the web and Android targets actually send events to PostHog; every other platform is a no-op.
+// Only the desktop (JVM) and Android targets send events to PostHog; every other target is a no-op.
 expect object Analytics : AnalyticsTracker {
     override fun capture(event: String, properties: Map<String, Any?>)
 

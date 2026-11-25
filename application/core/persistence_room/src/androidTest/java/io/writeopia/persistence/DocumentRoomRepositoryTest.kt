@@ -54,6 +54,7 @@ class DocumentRoomRepositoryTest {
             database,
             database.documentTagLinkDao(),
             database.storyStepTombstoneDao(),
+            database.pendingFavoriteDao(),
         )
         documentRepositoryTests = DocumentRepositoryTests(documentRepository)
     }
@@ -97,6 +98,11 @@ class DocumentRoomRepositoryTest {
     @Test
     fun stepsDeletedElsewhereGoWithoutTombstone() = runTest {
         documentRepositoryTests.stepsDeletedElsewhereGoWithoutTombstone()
+    }
+
+    @Test
+    fun aFavoriteChangedHereStaysPendingUntilTheBackendHasIt() = runTest {
+        documentRepositoryTests.aFavoriteChangedHereStaysPendingUntilTheBackendHasIt()
     }
 
     @Test

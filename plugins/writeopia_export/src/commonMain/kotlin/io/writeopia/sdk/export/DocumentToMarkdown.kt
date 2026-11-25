@@ -119,6 +119,9 @@ object DocumentToMarkdown : DocumentWriter {
                 ContentAdd.NOTHING to "[${markdownLinkLabel(label)}](${markdownLinkDestination(url)})"
             }
 
+            StoryTypes.EQUATION.type.number ->
+                ContentAdd.NOTHING to storyStep.text?.takeIf { it.isNotBlank() }?.let { latex -> "$$$latex$$" }
+
             else -> ContentAdd.NOTHING to storyStep.text
         }
 

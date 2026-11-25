@@ -3,6 +3,7 @@ coilVersion = "3.5.0"
 posthogAndroid = "3.72.9"
 posthogJava = "1.2.0"
 googleGenai = "1.70.0"
+jlatexmath = "1.0.7"
 media3 = "1.11.0"
 espressoCore = "3.7.0"
 firebaseAdmin = "9.10.0"
@@ -67,6 +68,7 @@ google-cloud-storage = { module = "com.google.cloud:google-cloud-storage" }
 google-cloud-run = { module = "com.google.cloud:google-cloud-run" }
 google-cloud-pubsub = { module = "com.google.cloud:google-cloud-pubsub" }
 google-genai = { module = "com.google.genai:google-genai", version.ref = "googleGenai" }
+jlatexmath = { module = "org.scilab.forge:jlatexmath", version.ref = "jlatexmath" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
 kotlin-coroutines-reactor = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactor", version.ref = "kotlinxCoroutines" }

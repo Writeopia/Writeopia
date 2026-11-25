@@ -17,6 +17,7 @@ import io.writeopia.api.ai.config.AiConfig
 import io.writeopia.api.ai.model.AiRequestResult
 import io.writeopia.api.ai.repository.getAiUsageSummary
 import io.writeopia.api.ai.service.AiService
+import io.writeopia.api.equation.EquationService
 import io.writeopia.api.genai.model.AiGenerateRequest
 import io.writeopia.api.genai.model.AiGenerateResponse
 import io.writeopia.api.genai.model.TokenUsage
@@ -29,6 +30,7 @@ import io.writeopia.api.typesafe.service.CommandIntentService
 import io.writeopia.api.typesafe.service.FolderSuggestionsService
 import io.writeopia.api.typesafe.service.TagSuggestionsService
 import io.writeopia.api.typesafe.service.WritingSuggestionsService
+import io.writeopia.buckets.GcpBucketEquationImageStorage
 import io.writeopia.buckets.GcpBucketHeaderImageStorage
 import io.writeopia.buckets.GcpBucketImageStorageService
 import io.writeopia.connection.logger
@@ -99,6 +101,13 @@ fun Routing.aiRoute(
 
     // The header pictures of the documents, drawn by Gemini and served by the CDN.
     headerImageRoute(genAiService, GcpBucketHeaderImageStorage, debugMode, writeopiaDb)
+
+    // Equations: Gemini reads the one in a drawing, JLaTeXMath draws it, the CDN serves it.
+    equationRoute(
+        EquationService(genAiService, GcpBucketEquationImageStorage, debugMode),
+        debugMode,
+        writeopiaDb
+    )
 
     authenticate("auth-jwt", optional = debugMode) {
         get("/api/ai/status") {

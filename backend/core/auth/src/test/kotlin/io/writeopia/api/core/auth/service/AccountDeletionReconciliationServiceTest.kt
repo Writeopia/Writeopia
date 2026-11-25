@@ -2,7 +2,7 @@ package io.writeopia.api.core.auth.service
 
 import io.writeopia.api.core.auth.configureTestPersistence
 import io.writeopia.api.core.auth.models.AccountDeletion
-import io.writeopia.api.core.auth.models.AccountDeletionEventTypes
+import io.writeopia.pubsub.AccountDeletionEventTypes
 import io.writeopia.api.core.auth.models.UserStatus
 import io.writeopia.api.core.auth.repository.getAccountDeletionByUserId
 import io.writeopia.api.core.auth.repository.getUserById

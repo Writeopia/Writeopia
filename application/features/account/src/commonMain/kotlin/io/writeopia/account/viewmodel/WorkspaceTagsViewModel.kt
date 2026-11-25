@@ -1,0 +1,138 @@
+@file:OptIn(ExperimentalTime::class, ExperimentalCoroutinesApi::class)
+
+package io.writeopia.account.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import io.writeopia.core.folders.repository.tag.DocumentTagRepository
+import io.writeopia.sdk.models.document.DocumentTag
+import io.writeopia.sdk.models.utils.ResultData
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
+
+/**
+ * The tag catalogue of the workspace, to create, edit and delete tags. Every change is stored
+ * locally first and sent to the backend right away; when sending fails, the workspace sync sends
+ * it later, like the tags created in the editor. A deleted tag is a tombstone, so the removal
+ * reaches the other devices, and the documents stop showing it.
+ */
+class WorkspaceTagsController(
+    private val scope: CoroutineScope,
+    private val tagRepository: DocumentTagRepository,
+    private val workspaceId: suspend () -> String,
+    /** Sends tags to the backend; an error outside an online workspace. */
+    private val sendTags: suspend (List<DocumentTag>, String) -> ResultData<Unit>,
+) {
+    /**
+     * One change at a time: each is stored and sent before the next starts, so a slow answer can
+     * never mark a newer local change as synced.
+     */
+    private val mutex = Mutex()
+
+    /** The live tags of the workspace, by name. */
+    val tags: Flow<List<DocumentTag>> = flow { emit(workspaceId()) }
+        .flatMapLatest { workspaceId -> tagRepository.listenForTags(workspaceId) }
+
+    fun createTag(name: String, description: String) {
+        if (name.isBlank()) return
+
+        scope.launch {
+            mutex.withLock {
+                val workspaceId = workspaceId()
+                // A creation queued behind another may have the same name: checked again here.
+                if (isNameTaken(tagRepository.getTagsForWorkspace(workspaceId), name)) return@withLock
+
+                val tag = DocumentTag.create(name, description, workspaceId)
+                tagRepository.upsertTag(tag)
+                send(tag.id)
+            }
+        }
+    }
+
+    fun editTag(id: String, name: String, description: String) {
+        if (name.isBlank()) return
+
+        scope.launch {
+            mutex.withLock {
+                val tag = tagRepository.getTagById(id)?.takeIf { tag -> !tag.deleted } ?: return@withLock
+                val edited = tag.copy(
+                    name = name.trim(),
+                    description = description.trim(),
+                    lastUpdatedAt = Clock.System.now()
+                )
+                if (edited.name == tag.name && edited.description == tag.description) return@withLock
+                if (isNameTaken(tagRepository.getTagsForWorkspace(tag.workspaceId), edited.name, exceptId = id)) {
+                    return@withLock
+                }
+
+                tagRepository.upsertTag(edited)
+                send(id)
+            }
+        }
+    }
+
+    fun deleteTag(id: String) {
+        scope.launch {
+            mutex.withLock {
+                tagRepository.softDeleteTag(id, workspaceId())
+                send(id)
+            }
+        }
+    }
+
+    /**
+     * Sends the stored copy of the tag, the latest one, and marks it synced once the backend has
+     * it, unless it changed again meanwhile. Called under [mutex].
+     */
+    private suspend fun send(id: String) {
+        val tag = tagRepository.getTagById(id) ?: return
+        val result = try {
+            sendTags(listOf(tag), tag.workspaceId)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            ResultData.Error(e)
+        }
+
+        if (result !is ResultData.Complete) return
+
+        val stored = tagRepository.getTagById(tag.id) ?: return
+        if (stored.lastUpdatedAt <= tag.lastUpdatedAt) {
+            tagRepository.upsertTag(stored.copy(lastSyncedAt = maxOf(Clock.System.now(), stored.lastUpdatedAt)))
+        }
+    }
+
+    companion object {
+        /** Whether another tag of [tags] already has [name], ignoring case and spaces around it. */
+        fun isNameTaken(tags: List<DocumentTag>, name: String, exceptId: String? = null): Boolean {
+            val wanted = name.trim()
+            return wanted.isNotEmpty() &&
+                tags.any { tag -> tag.id != exceptId && tag.name.trim().equals(wanted, ignoreCase = true) }
+        }
+    }
+}
+
+class WorkspaceTagsViewModel(
+    tagRepository: DocumentTagRepository,
+    workspaceId: suspend () -> String,
+    sendTags: suspend (List<DocumentTag>, String) -> ResultData<Unit>,
+) : ViewModel() {
+    private val controller = WorkspaceTagsController(viewModelScope, tagRepository, workspaceId, sendTags)
+
+    val tags: Flow<List<DocumentTag>> = controller.tags
+
+    fun createTag(name: String, description: String) = controller.createTag(name, description)
+
+    fun editTag(id: String, name: String, description: String) = controller.editTag(id, name, description)
+
+    fun deleteTag(id: String) = controller.deleteTag(id)
+}

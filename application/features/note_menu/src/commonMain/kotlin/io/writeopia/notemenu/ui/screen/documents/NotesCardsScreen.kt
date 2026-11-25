@@ -48,9 +48,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.font.FontFamily
@@ -103,9 +103,30 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 const val DOCUMENT_ITEM_TEST_TAG = "DocumentItem_"
 const val ADD_NOTE_TEST_TAG = "addNote"
 
-/** Lets the list scroll past its last item, so it is not stuck at the bottom edge of the screen. */
-private val notesContentPadding =
-    PaddingValues(start = 12.dp, top = 12.dp, end = 12.dp, bottom = 240.dp)
+/**
+ * Lets the list scroll past its last item, so it is not stuck at the bottom edge of the screen,
+ * and starts it [top] lower and ends it [bottom] higher, clear of the bars drawn over it.
+ */
+private fun notesContentPadding(top: Dp = 0.dp, bottom: Dp = 0.dp) =
+    PaddingValues(
+        start = NOTES_SIDE_PADDING,
+        top = 12.dp + top,
+        end = NOTES_SIDE_PADDING,
+        bottom = 240.dp + bottom
+    )
+
+private val NOTES_SIDE_PADDING = 12.dp
+
+/** The header of the lists spans the whole width, out of their side padding. */
+private fun Modifier.bleedOutOfNotesPadding(): Modifier = layout { measurable, constraints ->
+    val bleed = NOTES_SIDE_PADDING.roundToPx()
+    val width = constraints.maxWidth + bleed * 2
+    val placeable = measurable.measure(constraints.copy(minWidth = width, maxWidth = width))
+
+    layout(constraints.maxWidth, placeable.height) {
+        placeable.place(-bleed, 0)
+    }
+}
 
 @Composable
 fun NotesCardsScreen(
@@ -132,12 +153,31 @@ fun NotesCardsScreen(
     emptyMessage: String = "",
     /** Shows a button to create a note below [emptyMessage]. */
     showCreateNoteWhenEmpty: Boolean = false,
+    /**
+     * Space at the start of what scrolls, for a top bar drawn over the notes: they scroll under
+     * it instead of being cut at its edge.
+     */
+    contentTopPadding: Dp = 0.dp,
+    /** Space at the end of what scrolls, for the bars drawn over the bottom of the notes. */
+    contentBottomPadding: Dp = 0.dp,
+    /** Shown above the notes, full width, and scrolled with them. */
+    header: (@Composable () -> Unit)? = null,
 ) {
+    val contentPadding = notesContentPadding(contentTopPadding, contentBottomPadding)
+
     when (documents) {
         is ResultData.Complete -> {
             sharedTransitionScope.run {
-                Column(modifier = modifier) {
-                    val isEmpty = documents.data.documentUiList.isEmpty()
+                val isEmpty = documents.data.documentUiList.isEmpty()
+                // An empty screen doesn't scroll: the header and the message start below the bar.
+                val columnModifier = if (isEmpty) {
+                    modifier.padding(top = contentTopPadding, bottom = contentBottomPadding)
+                } else {
+                    modifier
+                }
+
+                Column(modifier = columnModifier) {
+                    if (isEmpty) header?.invoke()
 
                     if (isEmpty && !showTapToStart) {
                         EmptyMessage(
@@ -171,6 +211,8 @@ fun NotesCardsScreen(
                                     editFolder = editFolder,
                                     modifier = listModifier,
                                     showTapToStart = showTapToStart,
+                                    contentPadding = contentPadding,
+                                    header = header,
                                 )
                             }
 
@@ -191,6 +233,8 @@ fun NotesCardsScreen(
                                     editFolder = editFolder,
                                     modifier = listModifier,
                                     showTapToStart = showTapToStart,
+                                    contentPadding = contentPadding,
+                                    header = header,
                                 )
                             }
 
@@ -210,6 +254,8 @@ fun NotesCardsScreen(
                                     editFolder = editFolder,
                                     modifier = listModifier,
                                     showTapToStart = showTapToStart,
+                                    contentPadding = contentPadding,
+                                    header = header,
                                 )
                             }
                         }
@@ -223,18 +269,26 @@ fun NotesCardsScreen(
                 documents.exception?.printStackTrace()
             }
 
-            Box(modifier = modifier.fillMaxSize()) {
-                Text(
-                    modifier = Modifier.align(Alignment.Center),
-                    // stringResource(R.string.error_loading_notes)
-                    text = "Error!!"
-                )
+            // The header stays, so the folders above can still be reached.
+            Column(modifier = modifier.fillMaxSize().padding(top = contentTopPadding)) {
+                header?.invoke()
+
+                Box(modifier = Modifier.fillMaxSize()) {
+                    Text(
+                        modifier = Modifier.align(Alignment.Center),
+                        // stringResource(R.string.error_loading_notes)
+                        text = "Error!!"
+                    )
+                }
             }
         }
 
-        // Nothing is shown while the items load, as the screen is often still in its transition.
+        // Only the header is shown while the items load, as the screen is often still in its
+        // transition.
         is ResultData.Loading, is ResultData.Idle, is ResultData.InProgress -> {
-            Box(modifier = modifier.fillMaxSize())
+            Column(modifier = modifier.fillMaxSize().padding(top = contentTopPadding)) {
+                header?.invoke()
+            }
         }
     }
 
@@ -305,7 +359,8 @@ private fun LazyStaggeredGridNotes(
     moveRequest: (MenuItemUi, String) -> Unit,
     folderClick: (String) -> Unit,
     changeIcon: (String, String, Int, IconChange) -> Unit,
-    contentPadding: PaddingValues = notesContentPadding,
+    contentPadding: PaddingValues = notesContentPadding(),
+    header: (@Composable () -> Unit)? = null,
     onDragIconClick: (String) -> Unit,
     newNote: () -> Unit,
     editFolder: (MenuItemUi.FolderUi) -> Unit,
@@ -321,6 +376,12 @@ private fun LazyStaggeredGridNotes(
         verticalItemSpacing = spacing,
         contentPadding = contentPadding,
         content = {
+            if (header != null) {
+                item(span = StaggeredGridItemSpan.FullLine) {
+                    Box(modifier = Modifier.bleedOutOfNotesPadding()) { header() }
+                }
+            }
+
             if (showTapToStart) {
                 item(span = StaggeredGridItemSpan.FullLine) {
                     TapToStartButton(
@@ -387,7 +448,8 @@ private fun LazyGridNotes(
     moveRequest: (MenuItemUi, String) -> Unit,
     selectionListener: (String, Boolean) -> Unit,
     changeIcon: (String, String, Int, IconChange) -> Unit,
-    contentPadding: PaddingValues = notesContentPadding,
+    contentPadding: PaddingValues = notesContentPadding(),
+    header: (@Composable () -> Unit)? = null,
     onDragIconClick: (String) -> Unit,
     newNote: () -> Unit,
     editFolder: (MenuItemUi.FolderUi) -> Unit,
@@ -403,6 +465,12 @@ private fun LazyGridNotes(
         verticalArrangement = spacing,
         contentPadding = contentPadding,
         content = {
+            if (header != null) {
+                item(span = { GridItemSpan(this.maxLineSpan) }) {
+                    Box(modifier = Modifier.bleedOutOfNotesPadding()) { header() }
+                }
+            }
+
             if (showTapToStart) {
                 item(span = { GridItemSpan(this.maxLineSpan) }) {
                     TapToStartButton(
@@ -425,10 +493,12 @@ private fun LazyGridNotes(
                             animatedVisibilityScope = animatedVisibilityScope,
                             onDocumentClick,
                             selectionListener,
-                            previewDrawers(isDarkTheme),
+                            previewDrawers(isDarkTheme, imageMaxHeight = GRID_CARD_IMAGE_MAX_HEIGHT),
                             position = i,
                             { onDragIconClick(menuItem.documentId) },
-                            modifier = Modifier.animateItem()
+                            // Fixed height, like the grid cards of the native apps: a long
+                            // document is clipped instead of stretching its card (and its row).
+                            modifier = Modifier.animateItem().height(GRID_CARD_HEIGHT)
                         )
                     }
 
@@ -446,6 +516,7 @@ private fun LazyGridNotes(
                             position = i,
                             editFolder = editFolder,
                             onDragIconClick = { onDragIconClick(menuItem.documentId) },
+                            modifier = Modifier.animateItem().height(GRID_CARD_HEIGHT),
                         )
                     }
                 }
@@ -465,7 +536,8 @@ private fun LazyColumnNotes(
     selectionListener: (String, Boolean) -> Unit,
     moveRequest: (MenuItemUi, String) -> Unit,
     changeIcon: (String, String, Int, IconChange) -> Unit,
-    contentPadding: PaddingValues = notesContentPadding,
+    contentPadding: PaddingValues = notesContentPadding(),
+    header: (@Composable () -> Unit)? = null,
     onDragIconClick: (String) -> Unit,
     newNote: () -> Unit,
     editFolder: (MenuItemUi.FolderUi) -> Unit,
@@ -477,6 +549,12 @@ private fun LazyColumnNotes(
         verticalArrangement = Arrangement.spacedBy(6.dp),
         contentPadding = contentPadding,
         content = {
+            if (header != null) {
+                item {
+                    Box(modifier = Modifier.bleedOutOfNotesPadding()) { header() }
+                }
+            }
+
             if (showTapToStart) {
                 item {
                     TapToStartButton(
@@ -546,7 +624,7 @@ private fun FolderItem(
 
     // The card grows into the folder screen and the title flies into its toolbar.
     val cardModifier = with(sharedTransitionScope) {
-        shadowModifier().sharedBounds(
+        Modifier.padding(2.dp).sharedBounds(
             rememberSharedContentState(key = FolderSharedKeys.card(folderId)),
             animatedVisibilityScope = animatedVisibilityScope,
             resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds
@@ -581,7 +659,7 @@ private fun FolderItem(
 
             // Like the folder cards of the native apps: an accent border and tint, and the icon
             // crossfading into the move icon.
-            val accent = MaterialTheme.colorScheme.primary
+            val accent = WriteopiaTheme.colorScheme.accentForeground
             val borderColor by animateColorAsState(
                 targetValue = if (isDropTarget) accent else accent.copy(alpha = 0F),
                 label = "folderDropBorder"
@@ -592,7 +670,6 @@ private fun FolderItem(
                     isDropTarget -> accent.copy(alpha = 0.15F)
                         .compositeOver(WriteopiaTheme.colorScheme.cardBg)
 
-                    folderUi.selected -> WriteopiaTheme.colorScheme.selectedBg
                     else -> WriteopiaTheme.colorScheme.cardBg
                 },
                 label = "folderDropBackground"
@@ -603,8 +680,9 @@ private fun FolderItem(
             SwipeBox(
                 modifier = modifier
                     .fillMaxWidth()
-                    .background(WriteopiaTheme.colorScheme.cardPlaceHolderBackground)
                     .clip(MaterialTheme.shapes.large)
+                    .background(WriteopiaTheme.colorScheme.cardBg)
+                    .cardBorder(folderUi.selected)
                     .border(width = 2.dp, color = borderColor, shape = MaterialTheme.shapes.large)
                     .clickable {
                         folderClick(folderUi.documentId)
@@ -616,7 +694,7 @@ private fun FolderItem(
                 cornersShape = MaterialTheme.shapes.large,
                 defaultColor = WriteopiaTheme.colorScheme.cardBg,
                 activeColor = bgColor,
-                activeBorderColor = MaterialTheme.colorScheme.primary
+                activeBorderColor = WriteopiaTheme.colorScheme.accentForeground
             ) {
                 DragCardTarget(
                     modifier = Modifier.clip(MaterialTheme.shapes.large),
@@ -636,7 +714,7 @@ private fun FolderItem(
                     ) {
                         var showIconsOptions by remember { mutableStateOf(false) }
                         val tint = folderUi.icon?.tint?.let(::Color)
-                            ?: MaterialTheme.colorScheme.primary
+                            ?: WriteopiaTheme.colorScheme.accentForeground
 
                         Crossfade(
                             targetState = if (isDropTarget) {
@@ -678,6 +756,8 @@ private fun FolderItem(
                                 }
                             )
                         }
+
+                        Spacer(modifier = Modifier.height(6.dp))
 
                         Text(
                             modifier = Modifier.padding(horizontal = 12.dp).then(titleModifier),
@@ -746,15 +826,12 @@ private fun DocumentItem(
     val titleFallback = "untitled"
 //        stringResource(R.string.untitled)
 
-    val backgroundColor = if (documentUi.selected) {
-        WriteopiaTheme.colorScheme.selectedBg
-    } else {
-        WriteopiaTheme.colorScheme.cardBg
-    }
+    // Selection is shown by the border, the background stays the same.
+    val backgroundColor = WriteopiaTheme.colorScheme.cardBg
 
     sharedTransitionScope.run {
         SelectableByDrag(
-            shadowModifier().sharedBounds(
+            Modifier.padding(2.dp).sharedBounds(
                 rememberSharedContentState(key = "noteInit${documentUi.documentId}"),
                 animatedVisibilityScope = animatedVisibilityScope,
                 resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds
@@ -770,7 +847,8 @@ private fun DocumentItem(
                 modifier = modifier
                     .fillMaxWidth()
                     .clip(MaterialTheme.shapes.large)
-                    .background(WriteopiaTheme.colorScheme.cardPlaceHolderBackground)
+                    .background(WriteopiaTheme.colorScheme.cardBg)
+                    .cardBorder(documentUi.selected)
                     .clickable {
                         documentClick(
                             documentUi.documentId,
@@ -910,7 +988,10 @@ private fun NoNotesScreen() {
 }
 
 @Composable
-private fun previewDrawers(isDarkTheme: Boolean): Map<Int, StoryStepDrawer> {
+private fun previewDrawers(
+    isDarkTheme: Boolean,
+    imageMaxHeight: Dp = 200.dp
+): Map<Int, StoryStepDrawer> {
     val unOrderedListItemPreviewDrawer = UnOrderedListItemPreviewDrawer(isDarkTheme = true)
 
     return mapOf(
@@ -925,20 +1006,36 @@ private fun previewDrawers(isDarkTheme: Boolean): Map<Int, StoryStepDrawer> {
         StoryTypes.DOCUMENT_LINK.type.number to DocumentLinkPreviewDrawer(),
         StoryTypes.LINK_CARD.type.number to LinkCardPreviewDrawer(),
         StoryTypes.UNORDERED_LIST_ITEM.type.number to unOrderedListItemPreviewDrawer,
-        StoryTypes.IMAGE.type.number to ImagePreviewDrawer(),
+        StoryTypes.IMAGE.type.number to ImagePreviewDrawer(maxHeight = imageMaxHeight),
         StoryTypes.AI_ANSWER.type.number to AiAnswerPreviewDrawer(),
         StoryTypes.VIDEO.type.number to VideoPreviewDrawer()
     )
 }
 
+/** Documents and folders of the grid share it: a document is never taller than a folder. */
+private val GRID_CARD_HEIGHT = 170.dp
+
+/** A picture in a grid card leaves room for the text under it. */
+private val GRID_CARD_IMAGE_MAX_HEIGHT = 50.dp
+
+/**
+ * The card outline: one dynamic color when idle and another one when selected. It is part of the
+ * swiped card (not of the box around it), so it moves with the card when swiping to select.
+ */
 @Composable
-private fun shadowModifier(): Modifier =
-    Modifier.padding(4.dp)
-        .shadow(
-            8.dp,
-            shape = MaterialTheme.shapes.large,
-            spotColor = WriteopiaTheme.colorScheme.cardShadow
-        )
+private fun Modifier.cardBorder(selected: Boolean): Modifier {
+    val colors = WriteopiaTheme.colorScheme
+    val color by animateColorAsState(
+        targetValue = if (selected) colors.cardBorderSelected else colors.cardBorder,
+        label = "cardBorder"
+    )
+
+    return this.border(
+        width = if (selected) 3.dp else 1.dp,
+        color = color,
+        shape = MaterialTheme.shapes.large
+    )
+}
 
 @Composable
 private fun TapToStartButton(
@@ -966,6 +1063,11 @@ private fun TapToStartButton(
             .background(
                 WriteopiaTheme.colorScheme.cardBg,
                 MaterialTheme.shapes.large
+            )
+            .border(
+                width = 1.dp,
+                color = WriteopiaTheme.colorScheme.cardBorder,
+                shape = MaterialTheme.shapes.large
             )
             .clip(MaterialTheme.shapes.large)
             .clickable(onClick = newNote)

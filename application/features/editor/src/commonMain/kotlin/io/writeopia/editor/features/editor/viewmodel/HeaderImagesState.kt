@@ -7,6 +7,8 @@ data class HeaderImagesState(
     /** The approved pictures of the workspace, the newest first. */
     val images: List<String> = emptyList(),
     val generation: HeaderImageGeneration = HeaderImageGeneration.Idle,
+    /** What the user wrote to personalise the picture; sent with each drawing. */
+    val instructions: String = "",
 )
 
 /** A header the AI draws, shown to the user to approve or to draw again. */

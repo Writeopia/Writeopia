@@ -76,10 +76,10 @@ fun UserSearchScreen(
         OutlinedTextField(
             value = query,
             onValueChange = onSearchQueryChange,
-            label = { Text(WrStrings.searchByEmail()) },
+            label = { Text(WrStrings.searchByUsername()) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Email,
+                keyboardType = KeyboardType.Text,
                 imeAction = ImeAction.Search
             ),
             modifier = Modifier.fillMaxWidth()
@@ -137,7 +137,7 @@ fun UserSearchScreen(
                 // Initial state, show hint
                 if (query.isEmpty()) {
                     Text(
-                        text = WrStrings.enterEmailToSearch(),
+                        text = WrStrings.enterUsernameToSearch(),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
                     )
@@ -211,7 +211,7 @@ private fun SearchResultItem(
             .fillMaxWidth()
             .padding(vertical = 4.dp)
             .clip(MaterialTheme.shapes.medium)
-            .background(WriteopiaTheme.colorScheme.optionsSelector)
+            .background(WriteopiaTheme.colorScheme.optionButton)
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically

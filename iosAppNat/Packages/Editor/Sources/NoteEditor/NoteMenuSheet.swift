@@ -70,6 +70,12 @@ struct NoteMenuSheet: View {
                         }
                     }
                     .accessibilityIdentifier("menu.icon")
+
+                    WrSheetRow("Find in document", systemImage: "magnifyingglass") {
+                        dismiss()
+                        withAnimation(.snappy) { viewModel.showSearch() }
+                    }
+                    .accessibilityIdentifier("menu.search")
                 }
 
                 Section("Font") {

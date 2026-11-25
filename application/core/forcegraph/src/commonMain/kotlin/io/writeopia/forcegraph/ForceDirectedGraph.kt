@@ -136,8 +136,10 @@ fun BoxWithConstraintsScope.ForceDirectedGraph(
         measureLabels(textMeasurer, nodes, highlightedTextStyle)
     }
 
+    // The highlighted names are drawn larger, so their hit area is larger too.
     fun labelRect(node: Node): Rect? {
-        val size = fadedLabels[node.id]?.size ?: return null
+        val highlighted = node.id == hoveredNodeId || node.showName
+        val size = (if (highlighted) highlightedLabels else fadedLabels)[node.id]?.size ?: return null
         return Rect(labelTopLeft(node), Size(size.width.toFloat(), size.height.toFloat()))
     }
 
@@ -148,6 +150,20 @@ fun BoxWithConstraintsScope.ForceDirectedGraph(
             val dy = node.y - point.y
 
             sqrt(dx * dx + dy * dy) < radius
+        }
+    }
+
+    /**
+     * The node under [position], by its dot or by its name. Names are drawn after the dots and
+     * the highlighted ones last, so the name on top wins when two overlap.
+     */
+    fun nodeOrLabelAt(position: Offset, radius: Float): Node? {
+        nodeAt(position, radius)?.let { return it }
+
+        val point = toGraphSpace(position)
+        val (highlighted, faded) = nodes.partition { node -> node.id == hoveredNodeId || node.showName }
+        return (highlighted.asReversed() + faded.asReversed()).firstOrNull { node ->
+            labelRect(node)?.contains(point) == true
         }
     }
 
@@ -196,12 +212,7 @@ fun BoxWithConstraintsScope.ForceDirectedGraph(
 
                             PointerEventType.Move, PointerEventType.Enter -> {
                                 val position = event.changes.firstOrNull()?.position ?: continue
-                                val point = toGraphSpace(position)
-                                hoveredNodeId = (
-                                    nodeAt(position, HOVER_RADIUS) ?: nodes.firstOrNull { node ->
-                                        labelRect(node)?.contains(point) == true
-                                    }
-                                )?.id
+                                hoveredNodeId = nodeOrLabelAt(position, HOVER_RADIUS)?.id
                             }
 
                             PointerEventType.Exit -> hoveredNodeId = null
@@ -214,7 +225,8 @@ fun BoxWithConstraintsScope.ForceDirectedGraph(
             .pointerInput(nodes) {
                 detectTapGestures(
                     onTap = { offset ->
-                        nodeAt(offset, 20F)?.also { onNodeSelected(it.id) }
+                        // The name is as good a target as the dot.
+                        nodeOrLabelAt(offset, 20F)?.also { onNodeSelected(it.id) }
                     }
                 )
             }

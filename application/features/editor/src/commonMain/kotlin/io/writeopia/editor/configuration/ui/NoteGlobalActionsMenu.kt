@@ -37,6 +37,7 @@ import io.writeopia.editor.features.editor.ui.desktop.edit.menu.FavoriteButton
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.FontOptions
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.LockButton
 import io.writeopia.editor.features.editor.ui.desktop.edit.menu.MoveToButton
+import io.writeopia.editor.features.editor.ui.desktop.edit.menu.SearchButton
 import io.writeopia.editor.features.editor.ui.tags.DocumentTagChipsRow
 import io.writeopia.model.Font
 import io.writeopia.resources.WrStrings
@@ -68,6 +69,8 @@ internal fun NoteGlobalActionsMenu(
     onAddTagClick: () -> Unit = {},
     onRemoveTagClick: (String) -> Unit = {},
     onIconClick: () -> Unit = {},
+    /** Opens the search inside the document. */
+    onSearchClick: () -> Unit = {},
 ) {
     Box(
         modifier = Modifier
@@ -96,21 +99,21 @@ internal fun NoteGlobalActionsMenu(
             Spacer(modifier = Modifier.height(4.dp))
 
             Row {
-                MoveToButton(onMoveToClick, modifier = Modifier.weight(1F))
+                DocumentIconButton(isOpen = false, onIconClick, modifier = Modifier.weight(1F))
 
                 Spacer(modifier = Modifier.width(4.dp))
 
-                DeleteButton(onDeleteClick, modifier = Modifier.weight(1F))
+                SearchButton(onSearchClick, modifier = Modifier.weight(1F))
             }
 
             Spacer(modifier = Modifier.height(4.dp))
 
             Row {
-                DocumentIconButton(isOpen = false, onIconClick, modifier = Modifier.weight(1F))
+                MoveToButton(onMoveToClick, modifier = Modifier.weight(1F))
 
                 Spacer(modifier = Modifier.width(4.dp))
 
-                Spacer(modifier = Modifier.weight(1F))
+                DeleteButton(onDeleteClick, modifier = Modifier.weight(1F))
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -138,7 +141,7 @@ internal fun NoteGlobalActionsMenu(
                 changeFontFamily = changeFontFamily,
                 selectedState = selectedState,
                 selectedColor = WriteopiaTheme.colorScheme.highlight,
-                defaultColor = MaterialTheme.colorScheme.background
+                defaultColor = WriteopiaTheme.colorScheme.defaultButton
             )
 
             if (showPresentation) {
@@ -268,7 +271,7 @@ private fun ShareButton(
             .alpha(if (enabled) 1F else DISABLED_ALPHA)
             .clip(RoundedCornerShape(6.dp))
             .clickable(enabled = enabled, onClick = onClick)
-            .background(MaterialTheme.colorScheme.background)
+            .background(WriteopiaTheme.colorScheme.defaultButton)
             // The height of the lock button, so all the buttons of the menu match
             .padding(horizontal = 8.dp, vertical = verticalPaddingCommonButton().dp),
         text = text,

@@ -54,6 +54,7 @@ import io.writeopia.navigation.Navigation
 import io.writeopia.navigation.notes.navigateToFolder
 import io.writeopia.navigation.notes.navigateToNoteMobile
 import io.writeopia.navigation.notes.navigateToNoteWithPresentation
+import io.writeopia.navigation.notes.navigateToNoteWithSearch
 import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
 import io.writeopia.notemenu.di.NotesMenuInjection
 import io.writeopia.notemenu.di.NotesMenuKmpInjection
@@ -71,7 +72,6 @@ import io.writeopia.ui.keyboard.KeyboardEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.launch
 
 @Composable
 fun DesktopApp(
@@ -137,8 +137,10 @@ fun DesktopApp(
         globalShellViewModel.init()
     }
 
-    coroutineScope.launch {
+    // Scoped to the composition: one collector, cancelled when the app leaves the screen.
+    LaunchedEffect(navigationController, globalShellViewModel) {
         navigationController.currentBackStackEntryFlow.collect { navEntry ->
+            globalShellViewModel.onDestinationChanged(navEntry.destination.route)
             val navigationType = navEntry.savedStateHandle.get<String?>(NAVIGATION_TYPE)
             val navigationPath = navEntry.savedStateHandle.get<String?>(NAVIGATION_PATH)
             if (navigationType != null && navigationPath != null) {
@@ -152,7 +154,7 @@ fun DesktopApp(
 
     WriteopiaTheme(
         darkTheme = colorTheme.isDarkTheme(),
-        accentColor = accentColor ?: AccentColor.PURPLE
+        accentColor = accentColor ?: AccentColor.DYNAMIC
     ) {
         val density = LocalDensity.current
         val globalBackground = WriteopiaTheme.colorScheme.globalBackground
@@ -332,6 +334,12 @@ fun DesktopApp(
                                     userSearchResults = globalShellViewModel.userSearchResults,
                                     onUserSearchQueryChange = globalShellViewModel::onUserSearchQueryChange,
                                     onUserSuggestionSelect = globalShellViewModel::onUserSuggestionSelect,
+                                    onVersionEasterEgg = {
+                                        globalShellViewModel.createVersionEasterEgg { id, title ->
+                                            globalShellViewModel.hideSettings()
+                                            navigationController.navigateToNoteMobile(id, title)
+                                        }
+                                    },
                                 )
                             }
 
@@ -351,7 +359,8 @@ fun DesktopApp(
                                     onDismissRequest = globalShellViewModel::hideSearch,
                                     documentClick = navigationController::navigateToNoteMobile,
                                     onFolderClick = navigationController::navigateToFolder,
-                                    presentationClick = navigationController::navigateToNoteWithPresentation
+                                    presentationClick = navigationController::navigateToNoteWithPresentation,
+                                    documentContentClick = navigationController::navigateToNoteWithSearch
                                 )
                             }
 

@@ -6,6 +6,7 @@ import io.writeopia.sdk.model.document.DocumentInfo
 import io.writeopia.sdk.model.document.info
 import io.writeopia.sdk.models.document.Document
 import io.writeopia.sdk.models.story.StoryStep
+import io.writeopia.sdk.models.document.PendingFavorite
 import io.writeopia.sdk.models.story.StoryStepTombstone
 import io.writeopia.sdk.search.DocumentSearch
 import io.writeopia.sdk.repository.DocumentRepository
@@ -149,6 +150,17 @@ class SqlDelightDocumentRepository(
 
     override suspend fun deleteStoryStepTombstones(stepIds: Collection<String>) {
         documentSqlDao.deleteStoryStepTombstones(stepIds)
+    }
+
+    override suspend fun loadPendingFavorites(workspaceId: String): List<PendingFavorite> =
+        documentSqlDao.loadPendingFavorites(workspaceId)
+
+    override suspend fun savePendingFavorites(changes: Collection<PendingFavorite>) {
+        documentSqlDao.savePendingFavorites(changes)
+    }
+
+    override suspend fun deletePendingFavorite(change: PendingFavorite) {
+        documentSqlDao.deletePendingFavorite(change)
     }
 
     override suspend fun deleteStoryStepsByIds(stepIds: Collection<String>, workspaceId: String) {

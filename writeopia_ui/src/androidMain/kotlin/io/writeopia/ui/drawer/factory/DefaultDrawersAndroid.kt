@@ -37,7 +37,6 @@ object DefaultDrawersAndroid : DrawersFactory {
         receiveExternalFile: (List<ExternalFile>, String) -> Unit,
         onDocumentLinkClick: (String) -> Unit,
         linkLeadingIcon: ImageVector?,
-        equationToImageUrl: String?,
         customDrawers: Map<Int, StoryStepDrawer>
     ): Map<Int, StoryStepDrawer> {
         val commonDrawers = CommonDrawers.create(
@@ -55,7 +54,6 @@ object DefaultDrawersAndroid : DrawersFactory {
                 isEmptyErase = DefaultDrawersAndroid::emptyErase
             ),
             fontFamily = fontFamily,
-            equationToImageUrl = equationToImageUrl,
             headerEndContent = { storyStep, drawInfo, _ ->
                 val isTitle = storyStep.tags.any { it.tag.isTitle() }
                 val isCollapsed by lazy { storyStep.tags.any { it.tag == Tag.COLLAPSED } }

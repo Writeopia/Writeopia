@@ -44,6 +44,9 @@ class WorkspaceApi(
 
     private val workspaceUsersCache = MutableStateFlow<ResultData<List<String>>>(ResultData.Idle())
 
+    /** The workspace whose users are in [workspaceUsersCache], so another one never reuses them. */
+    private var cachedUsersWorkspaceId: String? = null
+
     suspend fun addUserToWorkspace(
         workspaceId: String,
         username: String
@@ -102,32 +105,26 @@ class WorkspaceApi(
         workspaceId: String,
         forceRefresh: Boolean = false
     ): StateFlow<ResultData<List<String>>> {
-        val cache = workspaceUsersCache.value
+        val cache = cachedUsers(workspaceId)
 
         if (!forceRefresh && cache is ResultData.Complete) {
             return workspaceUsersCache
         }
 
-        try {
-            workspaceUsersCache.value = ResultData.Loading()
-
-            val response = client.get("$baseUrl/api/workspace/$workspaceId/users")
-
-            val users = response.body<List<WorkspaceUserApi>>().map { it.name }
-
-            workspaceUsersCache.value = ResultData.Complete(users)
-        } catch (e: Exception) {
-            if (cache !is ResultData.Complete) {
-                workspaceUsersCache.value = ResultData.Error(e)
-            }
-        }
+        loadUsers(workspaceId, cache)
 
         return workspaceUsersCache
     }
 
     suspend fun refreshUsersInWorkspace(workspaceId: String) {
-        val cache = workspaceUsersCache.value
+        loadUsers(workspaceId, cachedUsers(workspaceId))
+    }
 
+    /** The cached users when they are the ones of [workspaceId]; otherwise nothing is cached. */
+    private fun cachedUsers(workspaceId: String): ResultData<List<String>> =
+        if (cachedUsersWorkspaceId == workspaceId) workspaceUsersCache.value else ResultData.Idle()
+
+    private suspend fun loadUsers(workspaceId: String, cache: ResultData<List<String>>) {
         try {
             workspaceUsersCache.value = ResultData.Loading()
 
@@ -136,9 +133,11 @@ class WorkspaceApi(
             val users = response.body<List<WorkspaceUserApi>>().map { it.name }
 
             workspaceUsersCache.value = ResultData.Complete(users)
+            cachedUsersWorkspaceId = workspaceId
         } catch (e: Exception) {
             if (cache !is ResultData.Complete) {
                 workspaceUsersCache.value = ResultData.Error(e)
+                cachedUsersWorkspaceId = workspaceId
             }
         }
     }

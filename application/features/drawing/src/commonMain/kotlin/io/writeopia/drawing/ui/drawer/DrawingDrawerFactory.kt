@@ -22,6 +22,8 @@ object DrawingDrawerFactory {
         onSelected: (Boolean, String) -> Unit = { _, _ -> },
         onDragStart: () -> Unit = {},
         onDragStop: () -> Unit = {},
+        onOptionsClick: ((StoryStep, String) -> Unit)? = null,
+        convertingIds: () -> Set<String> = { emptySet() },
     ): Map<Int, StoryStepDrawer> {
         return mapOf(
             StoryTypes.DRAWING.type.number to DrawingPreviewDrawer(
@@ -30,7 +32,9 @@ object DrawingDrawerFactory {
                 drawConfig = drawConfig,
                 onSelected = onSelected,
                 onDragStart = onDragStart,
-                onDragStop = onDragStop
+                onDragStop = onDragStop,
+                onOptionsClick = onOptionsClick,
+                convertingIds = convertingIds
             )
         )
     }

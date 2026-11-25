@@ -16,6 +16,11 @@ public struct User: Codable, Equatable, Hashable, Sendable {
 
     public var isPremium: Bool { tier?.uppercased() == "PREMIUM" }
 
+    /// The same user on another tier, e.g. once the backend says the user subscribed.
+    public func withTier(_ tier: String?) -> User {
+        User(id: id, email: email, name: name, tier: tier)
+    }
+
     /// "Premium", "Free", or nil when the backend didn't say (older versions don't send it).
     public var planName: String? {
         switch tier?.uppercased() {

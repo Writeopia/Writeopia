@@ -10,7 +10,6 @@ import io.writeopia.core.configuration.di.AppConfigurationInjector
 import io.writeopia.core.configuration.di.UiConfigurationCoreInjector
 import io.writeopia.core.folders.di.DocumentTagsInjector
 import io.writeopia.core.folders.di.FoldersInjector
-import io.writeopia.core.folders.di.InDocumentSearchInjection
 import io.writeopia.core.folders.di.WorkspaceInjection
 import io.writeopia.di.LocalAiInjection
 import io.writeopia.genai.di.GenAiInjection
@@ -66,8 +65,6 @@ class EditorKmpInjector private constructor(
         AppConfigurationInjector.singleton(),
     private val localAiInjection: LocalAiInjection? = null,
     private val genAiInjection: GenAiInjection? = null,
-    private val inDocumentSearchInjection: InDocumentSearchInjection =
-        InDocumentSearchInjection.singleton(),
     private val workspaceInjection: WorkspaceInjection =
         WorkspaceInjection.singleton(),
     private val imageUploader: ImageUploader? = null,
@@ -77,9 +74,10 @@ class EditorKmpInjector private constructor(
     private val writingAgentStartsCollapsed: Boolean = false,
 ) : TextEditorInjector {
 
-    // SharedFlow for drawing save events - ViewModel subscribes to this
-    private val _drawingSaveEvents = MutableSharedFlow<DrawingSaveEvent>(replay = 0)
-    val drawingSaveEvents: SharedFlow<DrawingSaveEvent> = _drawingSaveEvents.asSharedFlow()
+    // Drawing save events - the editor ViewModel subscribes to this. The flow is shared by every
+    // injector: on Android a rotation recreates the activity and with it the injector, while the
+    // editor's ViewModel survives still collecting the flow it got first.
+    val drawingSaveEvents: SharedFlow<DrawingSaveEvent> = sharedDrawingSaveEvents.asSharedFlow()
 
     private fun provideDocumentRepository(): DocumentRepository =
         repositoryInjection.provideDocumentRepository()
@@ -123,13 +121,13 @@ class EditorKmpInjector private constructor(
             copyManager = copyManager,
             workspaceConfigRepository = appConfigurationInjector.provideWorkspaceConfigRepository(),
             authRepository = authCoreInjection.provideAuthRepository(),
-            inDocumentSearchRepository = inDocumentSearchInjection.provideInDocumentSearchRepo(),
             drawingSaveEvents = drawingSaveEvents,
             documentLoadUseCase = workspaceInjection.provideDocumentLoadUseCase(),
             storyStepSyncApi = { request ->
                 connectionInjection.storyStepSyncApi().syncStorySteps(request)
             },
             documentsApi = workspaceInjection.provideDocumentsApi(),
+            documentSyncService = workspaceInjection.provideDocumentSyncService(),
             presentationsApi = workspaceInjection.providePresentationsApi(),
             presentationsStore = WriteopiaDbInjector.singleton()?.database?.let { db ->
                 PresentationSqlStore(db.presentationEntityQueries, db.presentationStepEntityQueries)
@@ -202,11 +200,13 @@ class EditorKmpInjector private constructor(
             documentRepository.saveStoryStep(storyStep, position, documentId)
 
             // Emit event to notify ViewModel to update in-memory state
-            _drawingSaveEvents.emit(DrawingSaveEvent(documentId, storyStep, position))
+            sharedDrawingSaveEvents.emit(DrawingSaveEvent(documentId, storyStep, position))
         }
     }
 
     companion object {
+        private val sharedDrawingSaveEvents = MutableSharedFlow<DrawingSaveEvent>(replay = 0)
+
         fun mobile(
             connectionInjector: WriteopiaConnectionInjector =
                 WriteopiaConnectionInjector.singleton(),

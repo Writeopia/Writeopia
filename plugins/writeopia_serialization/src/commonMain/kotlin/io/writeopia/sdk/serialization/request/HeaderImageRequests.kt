@@ -12,6 +12,8 @@ data class HeaderImageGenerateRequest(
     val documentTitle: String = "",
     /** The text of the whole document, as context. The backend cuts it when too long. */
     val documentText: String = "",
+    /** What the user asks of the picture, in their words. Empty when they asked for nothing. */
+    val instructions: String = "",
 )
 
 /** A generated header the user approved, to keep with the pictures of the workspace. */

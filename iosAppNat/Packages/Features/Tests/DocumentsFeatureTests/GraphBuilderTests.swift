@@ -72,4 +72,35 @@ import WrModels
         }.min() ?? 0
         #expect(closest > GraphSimulation.collisionDistance * 0.9)
     }
+
+    @Test func manyNodesStartSpreadOverTheViewport() {
+        let simulation = GraphSimulation(size: CGSize(width: 1000, height: 1000))
+        let documents = (0..<60).map { GraphNodeData(id: "d\($0)", label: "d\($0)", kind: .document) }
+        simulation.load(
+            nodes: documents,
+            links: (0..<59).map { GraphLinkData(source: "d\($0)", target: "d\($0 + 1)") }
+        )
+
+        let nodes = simulation.nodes
+        for node in nodes {
+            #expect((50...950).contains(node.x) && (50...950).contains(node.y))
+        }
+        let xs = nodes.map(\.x)
+        let ys = nodes.map(\.y)
+        #expect((xs.max() ?? 0) - (xs.min() ?? 0) > 800)
+        #expect((ys.max() ?? 0) - (ys.min() ?? 0) > 800)
+
+        let closest = nodes.indices.flatMap { i in
+            (i + 1..<nodes.count).map { j in hypot(nodes[i].x - nodes[j].x, nodes[i].y - nodes[j].y) }
+        }.min() ?? 0
+        #expect(closest > 70)
+    }
+
+    @Test func aSingleNodeStartsAtTheCentre() {
+        let simulation = GraphSimulation(size: CGSize(width: 1000, height: 600))
+        simulation.load(nodes: [GraphNodeData(id: "x", label: "x", kind: .folder)], links: [])
+
+        #expect(abs(simulation.nodes[0].x - 500) < 0.01)
+        #expect(abs(simulation.nodes[0].y - 300) < 0.01)
+    }
 }

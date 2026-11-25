@@ -30,7 +30,7 @@ class UiConfigurationKmpViewModel(
     ): StateFlow<AccentColor?> =
         uiConfigurationSqlDelightRepository.listenForUiConfiguration("disconnected_user", viewModelScope)
             .map { uiConfiguration ->
-                uiConfiguration?.accentColor ?: AccentColor.PURPLE
+                uiConfiguration?.accentColor ?: AccentColor.DYNAMIC
             }.stateIn(viewModelScope, SharingStarted.Lazily, null)
 
     override fun changeColorTheme(colorThemeOption: ColorThemeOption) {

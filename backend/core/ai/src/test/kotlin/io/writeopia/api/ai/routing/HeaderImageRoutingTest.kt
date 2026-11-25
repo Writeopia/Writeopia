@@ -2,6 +2,7 @@ package io.writeopia.api.ai.routing
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
+import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
@@ -198,6 +199,52 @@ class HeaderImageRoutingTest {
         setUpApp()
 
         val response = client.get("/${EndPoints.workspaceHeaderImages(otherWorkspaceId)}") {
+            header(HttpHeaders.Authorization, "Bearer ${token()}")
+        }
+
+        assertEquals(HttpStatusCode.Forbidden, response.status)
+    }
+
+    @Test
+    fun `a deleted header leaves the pictures of the workspace`() = testApplication {
+        setUpApp()
+        val kept = "https://cdn.test/header-images/$workspaceId/kept.png"
+        val removed = "https://cdn.test/header-images/$workspaceId/removed.png"
+
+        listOf(kept, removed).forEach { url ->
+            client.post("/${EndPoints.workspaceHeaderImages(workspaceId)}") {
+                header(HttpHeaders.Authorization, "Bearer ${token()}")
+                contentType(ContentType.Application.Json)
+                setBody(json.encodeToString(HeaderImageSaveRequest(url)))
+            }
+        }
+
+        val removedId = db.workspaceHeaderImageEntityQueries.selectByWorkspaceAndUrl(workspaceId, removed)
+            .executeAsOne()
+            .id
+
+        val deleted = client.delete("/${EndPoints.workspaceHeaderImage(workspaceId, removedId)}") {
+            header(HttpHeaders.Authorization, "Bearer ${token()}")
+        }
+        assertEquals(HttpStatusCode.NoContent, deleted.status)
+
+        val response = client.get("/${EndPoints.workspaceHeaderImages(workspaceId)}") {
+            header(HttpHeaders.Authorization, "Bearer ${token()}")
+        }
+        val images = json.decodeFromString<HeaderImagesResponse>(response.bodyAsText()).images
+        assertEquals(listOf(kept), images.map { it.url })
+
+        val again = client.delete("/${EndPoints.workspaceHeaderImage(workspaceId, removedId)}") {
+            header(HttpHeaders.Authorization, "Bearer ${token()}")
+        }
+        assertEquals(HttpStatusCode.NotFound, again.status)
+    }
+
+    @Test
+    fun `a header is only deleted by members of its workspace`() = testApplication {
+        setUpApp()
+
+        val response = client.delete("/${EndPoints.workspaceHeaderImage(otherWorkspaceId, "any-id")}") {
             header(HttpHeaders.Authorization, "Bearer ${token()}")
         }
 

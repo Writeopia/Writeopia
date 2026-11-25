@@ -27,6 +27,7 @@ import io.github.kdroidfilter.platformtools.darkmodedetector.windows.setWindowsA
 import io.writeopia.account.ui.AccountDeletionStartedScreen
 import io.writeopia.analytics.Analytics
 import io.writeopia.auth.core.di.setupBearerTokenHandler
+import io.writeopia.core.folders.di.CloudSyncInjection
 import io.writeopia.auth.navigation.authNavigation
 import io.writeopia.auth.navigation.navigateToApp
 import io.writeopia.auth.navigation.startScreen
@@ -244,6 +245,11 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                 )
                 WritingAgentInjection.initialize(baseUrl = "https://writeopia.io")
 
+                // The offline workspace with the user's Google Drive, once the database is open.
+                LaunchedEffect(Unit) {
+                    CloudSyncInjection.singleton().manager.start(coroutineScope)
+                }
+
                 val uiConfigurationInjector = UiConfigurationInjector.singleton()
 
                 val uiConfigurationViewModel = uiConfigurationInjector
@@ -259,7 +265,7 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
 
                 WriteopiaTheme(
                     darkTheme = colorTheme.value.isDarkTheme(),
-                    accentColor = accentColor ?: AccentColor.PURPLE
+                    accentColor = accentColor ?: AccentColor.DYNAMIC
                 ) {
                     Box(
                         modifier = Modifier

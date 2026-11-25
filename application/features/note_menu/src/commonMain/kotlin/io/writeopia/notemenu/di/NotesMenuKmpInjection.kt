@@ -14,6 +14,7 @@ import io.writeopia.core.configuration.repository.ConfigurationRepository
 import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.core.folders.di.DocumentTagsInjector
 import io.writeopia.core.folders.di.FoldersInjector
+import io.writeopia.core.folders.di.CloudSyncInjection
 import io.writeopia.core.folders.di.WorkspaceInjection
 import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.core.folders.repository.folder.NotesUseCase
@@ -70,7 +71,8 @@ class NotesMenuKmpInjection private constructor(
         FolderStateController.singleton(
             provideNotesUseCase(),
             authCoreInjection.provideAuthRepository(),
-            provideDocumentsApi()
+            provideDocumentsApi(),
+            CloudSyncInjection.singleton().manager,
         )
 
     private fun provideDocumentsApi() =
@@ -127,6 +129,7 @@ class NotesMenuKmpInjection private constructor(
             notesConfig = notesConfig,
             authRepository = authCoreInjection.provideAuthRepository(),
             documentsApi = provideDocumentsApi(),
+            documentSyncService = WorkspaceInjection.singleton().provideDocumentSyncService(),
             localAiRepository = localAiRepository,
             selectionState = selectionState,
             notesNavigation = notesNavigation,
@@ -137,6 +140,7 @@ class NotesMenuKmpInjection private constructor(
             folderSync = provideDocumentSync(),
             eventSync = provideEventSync(),
             workspaceSync = WorkspaceInjection.singleton().provideWorkspaceSync(),
+            cloudSync = CloudSyncInjection.singleton().manager,
         )
 
     @Composable

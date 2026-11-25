@@ -27,6 +27,9 @@ import io.writeopia.account.navigation.navigateToSettingsAccount
 import io.writeopia.account.navigation.navigateToSettingsAi
 import io.writeopia.account.navigation.navigateToSettingsAppearance
 import io.writeopia.account.navigation.navigateToSettingsCloudAi
+import io.writeopia.account.navigation.navigateToSettingsHeaderImages
+import io.writeopia.account.navigation.navigateToSettingsTags
+import io.writeopia.account.navigation.navigateToSettingsWorkspace
 import io.writeopia.account.navigation.navigateToSettingsTeams
 import io.writeopia.account.navigation.navigateToUserAdd
 import io.writeopia.account.navigation.navigateToUserEdit
@@ -56,12 +59,15 @@ import io.writeopia.navigation.notes.navigateToAccount
 import io.writeopia.navigation.notes.navigateToFolder
 import io.writeopia.navigation.notes.navigateToNewNote
 import io.writeopia.navigation.notes.navigateToNote
+import io.writeopia.navigation.notes.navigateToNoteMobile
 import io.writeopia.navigation.notes.navigateToNoteWithPresentation
+import io.writeopia.navigation.notes.navigateToNoteWithSearch
 import io.writeopia.navigation.presentation.navigateToPresentation
 import io.writeopia.navigation.search.navigateToSearch
 import io.writeopia.notemenu.di.NotesMenuInjection
 import io.writeopia.notemenu.navigation.navigateToNotes
 import io.writeopia.notemenu.navigation.notesMenuNavigation
+import io.writeopia.notemenu.viewmodel.FolderStateController
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -240,13 +246,24 @@ fun Navigation(
                 resetPassword = {
                     navController.navigate(Destinations.AUTH_RESET_PASSWORD.id)
                 },
+                navigateToAccountDeletionStarted = {
+                    FolderStateController.clearInstance()
+
+                    navController.navigate(Destinations.ACCOUNT_DELETION_STARTED.id) {
+                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                    }
+                },
                 navigationClick = navController::navigateUp,
                 showSettingsBackArrow = !settingsAsTab,
                 navigateToSettingsTeams = navController::navigateToSettingsTeams,
                 navigateToSettingsAppearance = navController::navigateToSettingsAppearance,
                 navigateToSettingsAccount = navController::navigateToSettingsAccount,
                 navigateToSettingsAi = navController::navigateToSettingsAi,
+                navigateToDocument = navController::navigateToNoteMobile,
                 navigateToSettingsCloudAi = navController::navigateToSettingsCloudAi,
+                navigateToSettingsWorkspace = navController::navigateToSettingsWorkspace,
+                navigateToSettingsHeaderImages = navController::navigateToSettingsHeaderImages,
+                navigateToSettingsTags = navController::navigateToSettingsTags,
                 navigateToWorkspaceUsers = navController::navigateToWorkspaceUsers,
                 navigateToUserSearch = navController::navigateToUserSearch,
                 navigateToUserAdd = navController::navigateToUserAdd,
@@ -262,7 +279,8 @@ fun Navigation(
                 selectedAccentColor = selectedAccentColor,
                 selectColorTheme = selectColorTheme,
                 selectAccentColor = selectAccentColor,
-                isToolbarVisible = isToolbarVisible
+                isToolbarVisible = isToolbarVisible,
+                nestedScrollConnection = nestedScrollConnection
             )
 
             if (searchInjection != null) {
@@ -271,6 +289,7 @@ fun Navigation(
                     navigateToDocument = navController::navigateToNote,
                     navigateToFolder = navController::navigateToFolder,
                     navigateToPresentation = navController::navigateToNoteWithPresentation,
+                    navigateToDocumentWithSearch = navController::navigateToNoteWithSearch,
                     navigationClick = navController::navigateUp,
                     nestedScrollConnection = nestedScrollConnection,
                     isToolbarVisible = isToolbarVisible,

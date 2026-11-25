@@ -21,6 +21,9 @@ enum class Destinations(val id: String, val root: String) {
     SETTINGS_ACCOUNT("settings_account", "Settings"),
     SETTINGS_AI("settings_ai", "Settings"),
     SETTINGS_CLOUD_AI("settings_cloud_ai", "Settings"),
+    SETTINGS_WORKSPACE("settings_workspace", "Settings"),
+    SETTINGS_HEADER_IMAGES("settings_header_images", "Settings"),
+    SETTINGS_TAGS("settings_tags", "Settings"),
 
     AUTH_MENU_INNER_NAVIGATION("auth_menu_inner_navigation", "Home"),
     AUTH_REGISTER("auth_register", "Home"),
@@ -32,6 +35,7 @@ enum class Destinations(val id: String, val root: String) {
     FORGOT_PASSWORD_CODE("forgot_password_code", "Home"),
     FORGOT_PASSWORD_NEW_PASSWORD("forgot_password_new_password", "Home"),
 
+    PAYWALL("paywall", "Home"),
     CHOOSE_WORKSPACE("choose_workspace", "Home"),
     WORKSPACE_SYNC("workspace_sync", "Home"),
     WORKSPACE_TYPE_CHOICE("workspace_type_choice", "Home"),

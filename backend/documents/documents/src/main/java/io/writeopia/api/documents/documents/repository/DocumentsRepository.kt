@@ -8,6 +8,7 @@ import io.writeopia.sdk.models.sorting.OrderBy
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sql.WriteopiaDbBackend
 import io.writeopia.databse.HikariCp
+import io.writeopia.databse.search.StoryStepSearchStore
 import io.writeopia.databse.tombstone.StoryStepTombstoneStore
 
 private var documentSqlDao: DocumentSqlBeDao? = null
@@ -32,6 +33,12 @@ fun WriteopiaDbBackend.storyStepTombstones(): StoryStepTombstoneStore =
     tombstoneStore ?: StoryStepTombstoneStore(HikariCp.driver()).also { tombstoneStore = it }
 
 private var tombstoneStore: StoryStepTombstoneStore? = null
+
+/** The full-text search over the text of the story steps. */
+fun WriteopiaDbBackend.storyStepSearch(): StoryStepSearchStore =
+    searchStore ?: StoryStepSearchStore(HikariCp.driver()).also { searchStore = it }
+
+private var searchStore: StoryStepSearchStore? = null
 
 fun WriteopiaDbBackend.saveDocument(vararg documents: Document) {
     val dao = getDocumentDaoFn()

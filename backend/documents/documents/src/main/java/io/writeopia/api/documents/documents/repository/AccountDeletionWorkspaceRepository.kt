@@ -97,4 +97,5 @@ fun WriteopiaDbBackend.removeUserFromWorkspaceContents(userId: String, workspace
 fun WriteopiaDbBackend.sweepRemainingUserAccountData(userId: String) {
     this.userFavoriteEntityQueries.deleteByUser(userId)
     this.workspaceTutorialStatusQueries.deleteByUser(userId)
+    this.userLegalAcceptanceQueries.deleteByUser(userId)
 }

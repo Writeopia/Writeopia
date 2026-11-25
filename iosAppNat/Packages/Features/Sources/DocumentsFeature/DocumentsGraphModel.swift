@@ -105,6 +105,8 @@ public final class GraphSimulation {
     static let linkDistance: CGFloat = 100
     static let chargeStrength: CGFloat = 12000
     static let collisionDistance: CGFloat = 64
+    /// π(3 − √5): the angle between neighbours on a sunflower spiral.
+    private static let goldenAngle = CGFloat.pi * (3 - sqrt(5))
 
     public private(set) var nodes: [GraphNode] = []
     public private(set) var links: [(source: GraphNode, target: GraphNode)] = []
@@ -117,20 +119,36 @@ public final class GraphSimulation {
     /// Replaces the graph; nodes that were there keep their place, so switching back doesn't jump.
     public func load(nodes data: [GraphNodeData], links linkData: [GraphLinkData]) {
         let previous = Dictionary(nodes.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-        nodes = data.map { item in
+        var fresh: [Int] = []
+        nodes = data.enumerated().map { index, item in
             if let old = previous[item.id] {
                 return GraphNode(data: item, x: old.x, y: old.y)
             }
-            return GraphNode(
-                data: item,
-                x: CGFloat.random(in: 0.3...0.7) * size.width,
-                y: CGFloat.random(in: 0.3...0.7) * size.height
-            )
+            fresh.append(index)
+            return GraphNode(data: item, x: 0, y: 0)
         }
+        spread(fresh)
         let byId = Dictionary(nodes.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         links = linkData.compactMap { link in
             guard let source = byId[link.source], let target = byId[link.target] else { return nil }
             return (source, target)
+        }
+    }
+
+    /// Spreads the new nodes over 90% of the viewport on a golden-angle spiral, so the first frame
+    /// shows the whole graph instead of a clump, and close nodes don't start on top of each other.
+    private func spread(_ fresh: [Int]) {
+        guard !fresh.isEmpty, !nodes.isEmpty else { return }
+        if nodes.count == 1 {
+            nodes[0].x = size.width / 2
+            nodes[0].y = size.height / 2
+            return
+        }
+        for index in fresh {
+            let angle = CGFloat(index) * Self.goldenAngle
+            let radius = sqrt((CGFloat(index) + 0.5) / CGFloat(nodes.count))
+            nodes[index].x = size.width / 2 + cos(angle) * radius * size.width * 0.45
+            nodes[index].y = size.height / 2 + sin(angle) * radius * size.height * 0.45
         }
     }
 

@@ -1,5 +1,6 @@
 package io.writeopia.theme
 
+import androidx.compose.material3.ColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
@@ -10,7 +11,10 @@ data class DynamicAccentColors(
     val lightPrimary: Color,
     val lightSecondary: Color,
     val darkPrimary: Color,
-    val darkSecondary: Color
+    val darkSecondary: Color,
+    /** The whole system schemes, used to tint the background and the surfaces. */
+    val lightScheme: ColorScheme? = null,
+    val darkScheme: ColorScheme? = null
 )
 
 /**

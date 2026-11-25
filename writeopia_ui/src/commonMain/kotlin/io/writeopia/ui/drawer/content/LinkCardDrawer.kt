@@ -164,7 +164,7 @@ class LinkCardDrawer(
                                 .testTag("LinkCard_${drawInfo.position}")
                                 .padding(vertical = 4.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                                 .clickable(enabled = url.isNotBlank()) {
                                     val click = onClick
                                     if (click != null) click(url) else uriHandler.openUri(url)

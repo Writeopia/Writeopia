@@ -3,6 +3,7 @@ package io.writeopia.persistence.room
 import androidx.room.migration.Migration
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.execSQL
+import io.writeopia.sdk.persistence.entity.story.StoryStepFtsTriggers
 
 val MIGRATION_29_30 = object : Migration(29, 30) {
     override fun migrate(connection: SQLiteConnection) {
@@ -238,3 +239,40 @@ val MIGRATION_37_38 = object : Migration(37, 38) {
         connection.execSQL("ALTER TABLE DOCUMENT_ENTITY_TABLE ADD COLUMN icon_tint INTEGER")
     }
 }
+
+/**
+ * The favorites changed here that the backend has not been told about yet, one row per
+ * document (PendingFavoriteEntity in the persistence plugin).
+ */
+val MIGRATION_38_39 = object : Migration(38, 39) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL(
+            """
+            CREATE TABLE IF NOT EXISTS PENDING_FAVORITE_TABLE (
+                document_id TEXT NOT NULL,
+                workspace_id TEXT NOT NULL,
+                favorite INTEGER NOT NULL,
+                changed_at INTEGER NOT NULL,
+                PRIMARY KEY(document_id)
+            )
+            """.trimIndent()
+        )
+    }
+}
+
+/**
+ * The full-text index of the story steps (StoryStepFtsEntity in the persistence plugin), for
+ * the global search to find words inside the documents, like the SQLDelight database. Created
+ * as Room creates it, then filled from the steps; the triggers keep it complete from then on.
+ */
+val MIGRATION_39_40 = object : Migration(39, 40) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL(STORY_STEP_FTS_CREATE)
+        StoryStepFtsTriggers.rebuild().forEach(connection::execSQL)
+        StoryStepFtsTriggers.create().forEach(connection::execSQL)
+    }
+}
+
+/** What Room generates for StoryStepFtsEntity (`createAllTables`), word for word, so the schema check passes. */
+private const val STORY_STEP_FTS_CREATE =
+    "CREATE VIRTUAL TABLE IF NOT EXISTS `STORY_STEP_FTS_TABLE` USING FTS4(`text` TEXT NOT NULL, `id` TEXT NOT NULL, `document_id` TEXT NOT NULL, `position` TEXT NOT NULL, tokenize=unicode61, notindexed=`id`, notindexed=`document_id`, notindexed=`position`)"

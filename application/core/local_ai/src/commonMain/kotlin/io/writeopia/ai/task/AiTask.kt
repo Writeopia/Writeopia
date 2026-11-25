@@ -7,7 +7,10 @@ enum class AiTaskType {
     MODEL_DOWNLOAD,
 
     /** The description of the page of a link card, written by the backend AI. */
-    LINK_DESCRIPTION
+    LINK_DESCRIPTION,
+
+    /** The equation the backend AI reads in a drawing. */
+    EQUATION
 }
 
 enum class AiTaskStatus {

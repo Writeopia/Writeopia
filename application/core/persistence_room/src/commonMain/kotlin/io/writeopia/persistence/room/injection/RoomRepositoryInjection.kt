@@ -17,6 +17,7 @@ class RoomRepositoryInjection private constructor(
             database,
             database.documentTagLinkDao(),
             database.storyStepTombstoneDao(),
+            database.pendingFavoriteDao(),
         )
 
     companion object {

@@ -50,7 +50,6 @@ object DefaultDrawersDesktop : DrawersFactory {
         receiveExternalFile: (List<ExternalFile>, String) -> Unit,
         onDocumentLinkClick: (String) -> Unit,
         linkLeadingIcon: ImageVector?,
-        equationToImageUrl: String?,
         customDrawers: Map<Int, StoryStepDrawer>
     ): Map<Int, StoryStepDrawer> {
         val textToolbox: @Composable (Boolean) -> Unit = @Composable { hasSelection ->
@@ -79,7 +78,6 @@ object DefaultDrawersDesktop : DrawersFactory {
             fontFamily = fontFamily,
             onDocumentLinkClick = onDocumentLinkClick,
             receiveExternalFile = receiveExternalFile,
-            equationToImageUrl = equationToImageUrl,
             textToolbox = textToolbox,
             linkLeadingIcon = linkLeadingIcon,
             spellChecker = spellChecker,

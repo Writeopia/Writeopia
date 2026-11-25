@@ -3,6 +3,7 @@ package io.writeopia.genai.api
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.HttpRequestBuilder
+import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.preparePost
@@ -17,6 +18,9 @@ import io.writeopia.app.dto.ai.AiCommandIntentResponse
 import io.writeopia.app.dto.ai.AiCommandRequest
 import io.writeopia.app.dto.ai.AiImageRequest
 import io.writeopia.app.dto.ai.AiImageResponse
+import io.writeopia.app.dto.ai.EquationRecognizeRequest
+import io.writeopia.app.dto.ai.EquationRenderRequest
+import io.writeopia.app.dto.ai.EquationResponse
 import io.writeopia.sdk.serialization.response.HeaderImageApi
 import io.writeopia.sdk.serialization.request.HeaderImageGenerateRequest
 import io.writeopia.sdk.serialization.response.HeaderImageGenerateResponse
@@ -204,6 +208,36 @@ class GenAiApi(
         ResultData.Error(e)
     }
 
+    /**
+     * Asks the backend to read the equation in a drawing. The answer carries its LaTeX and the
+     * CDN URL of its picture; a drawing without mathematics is an error.
+     */
+    suspend fun recognizeEquation(request: EquationRecognizeRequest): ResultData<EquationResponse> =
+        equationCall(EndPoints.aiEquationRecognize(), request)
+
+    /** Asks the backend to render LaTeX to a picture. The answer carries the CDN URL. */
+    suspend fun renderEquation(request: EquationRenderRequest): ResultData<EquationResponse> =
+        equationCall(EndPoints.aiEquationRender(), request)
+
+    private suspend inline fun <reified T> equationCall(endpoint: String, request: T): ResultData<EquationResponse> =
+        try {
+            val response = client.post("$baseUrl/$endpoint") {
+                contentType(ContentType.Application.Json)
+                setBody(request)
+            }
+            val body = response.body<EquationResponse>()
+
+            if (body.latex != null && body.imageUrl != null) {
+                ResultData.Complete(body)
+            } else {
+                ResultData.Error(GenAiException(body.error ?: "The equation could not be read (${response.status})"))
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            ResultData.Error(e)
+        }
+
     /** Asks the backend to draw a header for a document. The answer carries its CDN URL. */
     suspend fun generateHeaderImage(request: HeaderImageGenerateRequest): ResultData<String> = try {
         val response = client.post("$baseUrl/${EndPoints.aiHeaderImage()}") {
@@ -232,6 +266,25 @@ class GenAiApi(
             ResultData.Complete(response.body<HeaderImagesResponse>().images)
         } else {
             ResultData.Error(GenAiException("The header pictures could not be loaded (${response.status})"))
+        }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        ResultData.Error(e)
+    }
+
+    /**
+     * Takes the picture [imageId] out of the pictures of [workspaceId]. The documents that use it
+     * as their header keep showing it.
+     */
+    suspend fun deleteHeaderImage(workspaceId: String, imageId: String): ResultData<Unit> = try {
+        val response = client.delete("$baseUrl/${EndPoints.workspaceHeaderImage(workspaceId, imageId)}")
+
+        if (response.status.isSuccess() || response.status.value == 404) {
+            // Gone already, maybe deleted from another device: the workspace no longer has it.
+            ResultData.Complete(Unit)
+        } else {
+            ResultData.Error(GenAiException("The header picture could not be deleted (${response.status})"))
         }
     } catch (e: CancellationException) {
         throw e

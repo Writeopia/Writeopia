@@ -10,6 +10,12 @@ public struct FocusRequest: Equatable {
     public let cursor: Int
 }
 
+/// Asks the editor to bring a step into view, without taking the keyboard from where it is.
+public struct ScrollRequest: Equatable {
+    public let id = UUID()
+    public let stepId: String
+}
+
 /// Text selected (or the cursor, when `start == end`) inside a step. Offsets are UTF-16.
 public struct StepSelection: Equatable {
     public let stepId: String
@@ -69,6 +75,12 @@ public final class WriteopiaStateManager {
     @ObservationIgnored public var onLinkCardCreated: ((StoryStep) -> Void)?
     /// Link cards whose description is being written; their drawer says so.
     public private(set) var describingLinkStepIds: Set<String> = []
+    /// Drawings the cloud AI is reading into equations; their preview shows a progress.
+    public var convertingDrawingStepIds: Set<String> = []
+    /// Equations whose picture the backend is rendering; their drawer shows a progress.
+    public var renderingEquationStepIds: Set<String> = []
+    /// The pencil of an equation (its context menu): the app opens the dialog that edits the LaTeX.
+    @ObservationIgnored public var onEquationEdit: ((StoryStep) -> Void)?
     @ObservationIgnored let writeopiaManager: WriteopiaManager
     @ObservationIgnored private let focusHandler = FocusHandler()
     @ObservationIgnored private let backstack = SnapshotBackstackManager()
@@ -88,9 +100,105 @@ public final class WriteopiaStateManager {
     /// Step types drawn by the app through `CustomStepDrawers` (drawings, for instance).
     public var customDrawableTypes: Set<Int> = []
 
-    /// What the editor draws, spaces included.
+    /// What the editor draws, spaces included. While a search is open, the steps holding its
+    /// words carry highlight spans over them: yellow, green on the active match. The spans are
+    /// only drawn, never part of the document.
     public var toDraw: [DrawStory] {
-        StepsModifier.modify(currentStory, dragPosition: dragPosition, extraTypes: customDrawableTypes)
+        let drawn = StepsModifier.modify(currentStory, dragPosition: dragPosition, extraTypes: customDrawableTypes)
+        guard !searchTerms.isEmpty else { return drawn }
+
+        let active = activeSearchStepId
+        return drawn.map { draw in
+            guard let text = draw.storyStep.text, searchTerms.occurs(in: text) else { return draw }
+            let span = draw.id == active ? Span.highlightGreen : Span.highlightYellow
+            var step = draw.storyStep
+            step.spans += searchTerms.ranges(in: text).map { range in
+                SpanInfo(start: range.location, end: range.location + range.length, span: span.rawValue)
+            }
+            return DrawStory(id: draw.id, storyStep: step, position: draw.position, block: draw.block, insideBlock: draw.insideBlock)
+        }
+    }
+
+    // MARK: - Search in the document
+
+    /// The words searched in the document, as typed; empty when no search is open.
+    public private(set) var searchQuery = ""
+    /// `searchQuery` as the matches are found: its words, every one required, inside other
+    /// words too, ignoring case (`SearchTerms.occurs`).
+    public private(set) var searchTerms = SearchTerms("")
+    /// Which of `searchMatches` is the active one (drawn green, scrolled to).
+    public private(set) var searchIndex = 0
+    /// Set when the editor should bring a step into view; see `scrollRequestHandled`.
+    public private(set) var scrollRequest: ScrollRequest?
+
+    /// The steps holding the words of the search, in the order of the document.
+    public var searchMatches: [String] {
+        guard !searchTerms.isEmpty else { return [] }
+        return currentStory.sortedStories
+            .filter { step in step.text.map(searchTerms.occurs(in:)) == true }
+            .map(\.id)
+    }
+
+    /// `searchIndex` within the matches there are now: an edit, an undo or a redo can take
+    /// matches away under it. Zero without matches.
+    public var currentSearchIndex: Int {
+        let count = searchMatches.count
+        return count == 0 ? 0 : min(searchIndex, count - 1)
+    }
+
+    /// The step of the active match, when there is one.
+    public var activeSearchStepId: String? {
+        let matches = searchMatches
+        return matches.isEmpty ? nil : matches[currentSearchIndex]
+    }
+
+    /// Searches `query` in the document. The active match is the first one at or after the
+    /// cursor, so a search continues from where the user is; the first one without a cursor.
+    public func search(_ query: String) {
+        searchQuery = query
+        searchTerms = SearchTerms(query)
+        let matches = searchMatches
+        guard !matches.isEmpty else {
+            searchIndex = 0
+            return
+        }
+
+        let cursorPosition = textSelection.flatMap { find($0.stepId)?.0 } ?? ""
+        let positions = Dictionary(currentStory.stories.map { ($0.value.id, $0.key) }, uniquingKeysWith: { first, _ in first })
+        searchIndex = matches.firstIndex { id in (positions[id] ?? "") >= cursorPosition } ?? 0
+        scrollToActiveMatch()
+    }
+
+    public func nextSearchResult() {
+        let total = searchMatches.count
+        guard total > 0 else { return }
+        searchIndex = (currentSearchIndex + 1) % total
+        scrollToActiveMatch()
+    }
+
+    public func previousSearchResult() {
+        let total = searchMatches.count
+        guard total > 0 else { return }
+        searchIndex = (currentSearchIndex - 1 + total) % total
+        scrollToActiveMatch()
+    }
+
+    /// Ends the search: no more highlights.
+    public func clearSearch() {
+        searchQuery = ""
+        searchTerms = SearchTerms("")
+        searchIndex = 0
+    }
+
+    public func scrollRequestHandled(_ request: ScrollRequest) {
+        if scrollRequest?.id == request.id {
+            scrollRequest = nil
+        }
+    }
+
+    private func scrollToActiveMatch() {
+        guard let stepId = activeSearchStepId else { return }
+        scrollRequest = ScrollRequest(stepId: stepId)
     }
 
     public var title: String { writeopiaManager.title(currentStory) }
@@ -107,6 +215,9 @@ public final class WriteopiaStateManager {
     public func loadDocument(_ document: WrDocument) {
         currentStory = writeopiaManager.loadDocument(document)
         focusRequest = nil
+        scrollRequest = nil
+        // The matches of a search left open follow the new content.
+        if !searchTerms.isEmpty { search(searchQuery) }
         dismissSlashCommands()
         clearHistory()
     }
@@ -915,6 +1026,18 @@ public final class WriteopiaStateManager {
         var state = writeopiaManager.addAtPosition(step, after: lastPosition, state: currentStory)
         state.focus = nil
         commit(state)
+    }
+
+    /// Makes the step with `stepId` the equation `latex`, shown as the picture at `imageUrl` (nil
+    /// while there is none), like `setEquation` of the SDK manager. A drawing converted to an
+    /// equation goes through here, so undo brings the drawing back.
+    public func setEquation(stepId: String, latex: String, imageUrl: String?) {
+        guard isEditable, var step = step(withId: stepId) else { return }
+        step.type = .equation
+        step.text = latex
+        step.url = imageUrl
+        step.path = nil
+        commit(writeopiaManager.replaceStep(step, state: currentStory))
     }
 
     /// Replaces the text of a step, keeping its type and position (e.g. an edited drawing).

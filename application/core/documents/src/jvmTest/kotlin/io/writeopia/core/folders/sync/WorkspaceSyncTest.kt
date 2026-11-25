@@ -134,6 +134,7 @@ class WorkspaceSyncTest {
 
         coVerify { documentSyncService.syncDocuments(listOf(edited), workspaceId) }
         coVerify { documentsApi.sendFolders(listOf(movedFolder), workspaceId) }
+        coVerify { documentSyncService.receiveFavorites(workspaceId) }
     }
 
     @Test

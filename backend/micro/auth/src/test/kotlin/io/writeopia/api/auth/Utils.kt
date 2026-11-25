@@ -5,6 +5,7 @@ import io.ktor.client.plugins.cookies.HttpCookies
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.testing.ApplicationTestBuilder
 import io.writeopia.api.core.auth.repository.upsertEmailVerification
+import io.writeopia.api.core.auth.legal.LegalDocuments
 import io.writeopia.sdk.serialization.data.auth.RegisterRequest
 import io.writeopia.sdk.serialization.json.writeopiaJson
 import io.writeopia.sql.WriteopiaDbBackend
@@ -54,5 +55,6 @@ fun WriteopiaDbBackend.verifiedRegisterRequest(
         workspaceName = workspaceName,
         password = password,
         verificationCode = TEST_VERIFICATION_CODE,
+        acceptedLegalVersion = LegalDocuments.VERSION,
     )
 }

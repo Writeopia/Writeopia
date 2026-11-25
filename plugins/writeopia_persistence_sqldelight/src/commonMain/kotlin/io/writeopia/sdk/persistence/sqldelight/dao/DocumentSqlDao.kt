@@ -12,6 +12,7 @@ import io.writeopia.sdk.models.link.DocumentLink
 import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.sdk.models.story.Decoration
 import io.writeopia.sdk.models.story.StoryStep
+import io.writeopia.sdk.models.document.PendingFavorite
 import io.writeopia.sdk.models.story.StoryStepTombstone
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.story.TagInfo
@@ -24,6 +25,7 @@ import io.writeopia.sdk.sql.DocumentEntityQueries
 import io.writeopia.sdk.sql.DocumentTagLinkEntityQueries
 import io.writeopia.sdk.sql.StoryStepEntity
 import io.writeopia.sdk.sql.StoryStepEntityQueries
+import io.writeopia.sdk.sql.PendingFavoriteEntityQueries
 import io.writeopia.sdk.sql.StoryStepTombstoneEntityQueries
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -35,6 +37,7 @@ class DocumentSqlDao(
     private val commentQueries: CommentEntityQueries?,
     private val documentTagLinkQueries: DocumentTagLinkEntityQueries? = null,
     private val storyStepTombstoneQueries: StoryStepTombstoneEntityQueries? = null,
+    private val pendingFavoriteQueries: PendingFavoriteEntityQueries? = null,
 ) : DocumentSearch {
 
     @Deprecated("Pass CommentEntityQueries to preserve comment loading.")
@@ -284,6 +287,33 @@ class DocumentSqlDao(
         stepIds.distinct().chunked(SQLITE_IDS_PER_QUERY).forEach { batch ->
             storyStepTombstoneQueries?.deleteByStepIds(batch)
         }
+    }
+
+    suspend fun loadPendingFavorites(workspaceId: String): List<PendingFavorite> =
+        pendingFavoriteQueries?.selectByWorkspaceId(workspaceId)
+            ?.awaitAsList()
+            ?.map { entity ->
+                PendingFavorite(
+                    documentId = entity.document_id,
+                    workspaceId = entity.workspace_id,
+                    favorite = entity.favorite == 1L,
+                    changedAt = entity.changed_at
+                )
+            }
+            ?: emptyList()
+
+    suspend fun savePendingFavorites(changes: Collection<PendingFavorite>) {
+        val queries = pendingFavoriteQueries ?: return
+        if (changes.isEmpty()) return
+        queries.transaction {
+            changes.forEach { change ->
+                queries.insert(change.documentId, change.workspaceId, if (change.favorite) 1L else 0L, change.changedAt)
+            }
+        }
+    }
+
+    suspend fun deletePendingFavorite(change: PendingFavorite) {
+        pendingFavoriteQueries?.deleteUpTo(change.documentId, change.changedAt)
     }
 
     /** Removes steps deleted on the backend. No tombstone: the backend has one already. */

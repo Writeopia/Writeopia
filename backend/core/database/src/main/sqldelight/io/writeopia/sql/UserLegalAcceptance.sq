@@ -1,0 +1,26 @@
+-- Which version of the Terms of Service and the Privacy Policy a user accepted, and when:
+-- the proof of consent given at sign-up. One row per document and version, so a new version
+-- adds rows instead of replacing the old ones.
+CREATE TABLE user_legal_acceptance (
+  user_id TEXT NOT NULL,
+  -- 'terms' or 'privacy'
+  document_type TEXT NOT NULL,
+  version TEXT NOT NULL,
+  accepted_at BIGINT NOT NULL,
+  PRIMARY KEY (user_id, document_type, version)
+);
+
+insert:
+INSERT INTO user_legal_acceptance(user_id, document_type, version, accepted_at)
+VALUES (?, ?, ?, ?)
+ON CONFLICT (user_id, document_type, version) DO NOTHING;
+
+selectByUser:
+SELECT *
+FROM user_legal_acceptance
+WHERE user_id = ?
+ORDER BY accepted_at, document_type;
+
+deleteByUser:
+DELETE FROM user_legal_acceptance
+WHERE user_id = ?;

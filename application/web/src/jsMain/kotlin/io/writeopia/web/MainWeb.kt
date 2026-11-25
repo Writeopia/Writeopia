@@ -21,7 +21,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import io.writeopia.account.ui.AccountDeletionStartedScreen
-import io.writeopia.analytics.Analytics
 import io.writeopia.auth.core.di.setupBearerTokenHandler
 import io.writeopia.auth.navigation.authNavigation
 import io.writeopia.auth.navigation.startScreen
@@ -55,8 +54,6 @@ import org.jetbrains.compose.resources.configureWebResources
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalResourceApi::class)
 fun main() {
-    Analytics.setup()
-
     // Configure web resources to use absolute paths from the domain root.
     // This is required for client-side routing (e.g., /site/{documentId}) where
     // relative paths would incorrectly resolve based on the current URL path.
@@ -111,7 +108,7 @@ fun CreateSiteView(documentId: String) {
 
     WriteopiaTheme(
         darkTheme = colorThemeValue.isDarkTheme(),
-        accentColor = accentColorValue ?: AccentColor.PURPLE
+        accentColor = accentColorValue ?: AccentColor.DYNAMIC
     ) {
         SiteScreen(
             documentId = documentId,
@@ -164,7 +161,7 @@ fun CreateAppInMemory() {
     CompositionLocalProvider(LocalPlatform provides PlatformType.WEB) {
         WriteopiaTheme(
             darkTheme = colorTheme.value.isDarkTheme(),
-            accentColor = accentColorValue ?: AccentColor.PURPLE
+            accentColor = accentColorValue ?: AccentColor.DYNAMIC
         ) {
             Box(
                 modifier = Modifier

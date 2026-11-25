@@ -39,7 +39,7 @@ data class DrawConfig(
     val listItemItemVerticalPadding: Int = 8,
     val selectedColor: @Composable () -> Color = { MaterialTheme.colorScheme.primary },
     val selectedBorderColor: @Composable () -> Color = { MaterialTheme.colorScheme.primary },
-    val dividerColor: @Composable () -> Color = { MaterialTheme.colorScheme.surfaceVariant },
+    val dividerColor: @Composable () -> Color = { MaterialTheme.colorScheme.outlineVariant },
     val codeBlockBackgroundColor: @Composable () -> Color = { MaterialTheme.colorScheme.surfaceContainerHighest },
     val cardHighlightBackgroundColor: @Composable () -> Color = { MaterialTheme.colorScheme.surfaceContainerHigh },
     val cardHighlightBorderColor: @Composable () -> Color = { MaterialTheme.colorScheme.surfaceVariant },

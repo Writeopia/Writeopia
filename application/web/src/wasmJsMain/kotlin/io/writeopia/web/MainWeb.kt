@@ -11,7 +11,6 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.ComposeViewport
 import androidx.navigation.compose.rememberNavController
-import io.writeopia.analytics.Analytics
 import io.writeopia.auth.core.di.setupBearerTokenHandler
 import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.configuration.LocalPlatform
@@ -29,8 +28,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun main() {
-    Analytics.setup()
-
     ComposeViewport("composeApp") {
         ImageLoadConfig.configImageLoad()
         CreateAppInMemory()

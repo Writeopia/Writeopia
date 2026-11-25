@@ -75,7 +75,7 @@ fun UserAddScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(MaterialTheme.shapes.medium)
-                .background(WriteopiaTheme.colorScheme.optionsSelector)
+                .background(WriteopiaTheme.colorScheme.optionButton)
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -203,7 +203,7 @@ private fun RoleOption(
                 if (selected) {
                     MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
                 } else {
-                    WriteopiaTheme.colorScheme.optionsSelector
+                    WriteopiaTheme.colorScheme.optionButton
                 }
             )
             .clickable(onClick = onClick)

@@ -15,7 +15,9 @@ actual fun getDynamicAccentColors(): DynamicAccentColors? = if (Build.VERSION.SD
         lightPrimary = lightScheme.primary,
         lightSecondary = lightScheme.secondary,
         darkPrimary = darkScheme.primary,
-        darkSecondary = darkScheme.secondary
+        darkSecondary = darkScheme.secondary,
+        lightScheme = lightScheme,
+        darkScheme = darkScheme
     )
 } else {
     null

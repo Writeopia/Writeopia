@@ -1,6 +1,7 @@
 package io.writeopia.editor.features.editor.ui
 
 import androidx.compose.foundation.gestures.animateScrollBy
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -10,12 +11,15 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.drawing.ui.drawer.DrawingPreviewDrawer
 import io.writeopia.editor.configuration.ui.DrawConfigFactory
+import io.writeopia.editor.features.editor.ui.dialogs.DrawingOptionsDialog
+import io.writeopia.editor.features.editor.ui.dialogs.EquationEditDialog
 import io.writeopia.editor.features.editor.viewmodel.NoteEditorViewModel
 import io.writeopia.model.Font
 import io.writeopia.resources.WrStrings
@@ -33,11 +37,13 @@ internal fun TextEditor(
     drawersFactory: DrawersFactory,
     modifier: Modifier = Modifier,
     keyFn: (DrawStory) -> Int = { drawStory ->
-        drawStory.desktopKey + (drawStory.cursor?.position?.toInt() ?: 0)
+        drawStory.desktopKey + (drawStory.cursor?.position?.hashCode() ?: 0)
     },
     onDocumentLinkClick: (String) -> Unit,
     onDrawingClick: (StoryStep, String) -> Unit = { _, _ -> },
     listState: LazyListState = rememberLazyListState(),
+    /** Padding inside the scroll, as for a top bar drawn over the document. */
+    contentPadding: PaddingValues = PaddingValues(0.dp),
 ) {
     val storyState by noteEditorViewModel.toDrawWithDecoration.collectAsState()
     val editable by noteEditorViewModel.isEditable.collectAsState()
@@ -70,6 +76,8 @@ internal fun TextEditor(
     val isEditable by noteEditorViewModel.isEditable.collectAsState()
     val drawConfig = remember { DrawConfigFactory.getDrawConfig() }
 
+    val convertingDrawingIds by noteEditorViewModel.convertingDrawingIds.collectAsState()
+    val convertingDrawingIdsState = rememberUpdatedState(convertingDrawingIds)
     val drawingPreviewDrawer = remember(onDrawingClick) {
         DrawingPreviewDrawer(
             onDrawingClick = onDrawingClick,
@@ -77,7 +85,29 @@ internal fun TextEditor(
             drawConfig = drawConfig,
             onSelected = noteEditorViewModel.writeopiaManager::onSelected,
             onDragStart = noteEditorViewModel.writeopiaManager::onDragStart,
-            onDragStop = noteEditorViewModel.writeopiaManager::onDragStop
+            onDragStop = noteEditorViewModel.writeopiaManager::onDragStop,
+            onOptionsClick = noteEditorViewModel::onDrawingOptionsClick,
+            convertingIds = { convertingDrawingIdsState.value }
+        )
+    }
+
+    // The dialogs of the drawings and equations live here, shared by every platform's screen.
+    val drawingOptions by noteEditorViewModel.drawingOptions.collectAsState()
+    drawingOptions?.let { options ->
+        DrawingOptionsDialog(
+            state = options,
+            onConvertToEquation = noteEditorViewModel::convertDrawingToEquation,
+            onDismiss = noteEditorViewModel::dismissDrawingOptions
+        )
+    }
+
+    val equationEdition by noteEditorViewModel.equationEdition.collectAsState()
+    equationEdition?.let { edition ->
+        EquationEditDialog(
+            state = edition,
+            onLatexChange = noteEditorViewModel::onEquationLatexChange,
+            onSave = noteEditorViewModel::saveEquation,
+            onDismiss = noteEditorViewModel::dismissEquationEdition
         )
     }
 //
@@ -88,6 +118,7 @@ internal fun TextEditor(
 //    Box {
     WriteopiaEditor(
         modifier = modifier.widthIn(max = 850.dp),
+        contentPadding = contentPadding,
         editable = editable,
         listState = listState,
         keyFn = keyFn,
@@ -103,7 +134,6 @@ internal fun TextEditor(
             receiveExternalFile = noteEditorViewModel::receiveExternalFile,
             onDocumentLinkClick = onDocumentLinkClick,
             linkLeadingIcon = WrIcons.pageStyle,
-            equationToImageUrl = "https://latex.codecogs.com/png.latex?\\Large&space;x=",
             customDrawers = mapOf(
                 StoryTypes.DRAWING.type.number to drawingPreviewDrawer
             )

@@ -48,8 +48,10 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation(project(":writeopia_models"))
+                implementation(project(":plugins:writeopia_persistence_core"))
                 implementation(project(":writeopia"))
                 implementation(project(":plugins:writeopia_serialization"))
+                implementation(project(":plugins:writeopia_network"))
                 implementation(project(":application:core:utils"))
                 implementation(project(":application:core:auth_core"))
                 implementation(project(":common:endpoints"))
@@ -62,6 +64,9 @@ kotlin {
                 implementation(project(":application:core:genai"))
                 implementation(project(":application:core:ai"))
                 implementation(project(":application:core:configuration"))
+                implementation(libs.kotlinx.datetime)
+                // The header pictures, drawn like in the editor.
+                implementation(project(":writeopia_ui"))
 
                 //
 
@@ -81,6 +86,13 @@ kotlin {
 
         val jvmMain by getting {
             dependencies {
+            }
+        }
+
+        val jvmTest by getting {
+            dependencies {
+                implementation(libs.kotlin.test)
+                implementation(libs.kotlinx.coroutines.test)
             }
         }
     }

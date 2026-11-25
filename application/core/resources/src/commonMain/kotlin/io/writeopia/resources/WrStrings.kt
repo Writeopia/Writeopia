@@ -3,7 +3,46 @@ package io.writeopia.resources
 import androidx.compose.runtime.Composable
 import org.jetbrains.compose.resources.stringResource
 import writeopia.application.core.resources.generated.resources.Res
+import writeopia.application.core.resources.generated.resources.cloud_sync_title
+import writeopia.application.core.resources.generated.resources.cloud_sync_description
+import writeopia.application.core.resources.generated.resources.cloud_sync_connect
+import writeopia.application.core.resources.generated.resources.cloud_sync_connecting
+import writeopia.application.core.resources.generated.resources.cloud_sync_disconnect
+import writeopia.application.core.resources.generated.resources.cloud_sync_sync_now
+import writeopia.application.core.resources.generated.resources.cloud_sync_syncing
+import writeopia.application.core.resources.generated.resources.cloud_sync_last_sync
+import writeopia.application.core.resources.generated.resources.cloud_sync_not_synced
+import writeopia.application.core.resources.generated.resources.cloud_sync_error
+import writeopia.application.core.resources.generated.resources.cloud_sync_reconnect
 import writeopia.application.core.resources.generated.resources.accent_color
+import writeopia.application.core.resources.generated.resources.settings_workspace_content
+import writeopia.application.core.resources.generated.resources.settings_tags
+import writeopia.application.core.resources.generated.resources.settings_header_images
+import writeopia.application.core.resources.generated.resources.settings_header_images_description
+import writeopia.application.core.resources.generated.resources.settings_header_images_empty
+import writeopia.application.core.resources.generated.resources.settings_header_images_offline
+import writeopia.application.core.resources.generated.resources.settings_header_images_failed
+import writeopia.application.core.resources.generated.resources.settings_header_image_delete_title
+import writeopia.application.core.resources.generated.resources.settings_header_image_delete_message
+import writeopia.application.core.resources.generated.resources.settings_header_image_delete_failed
+import writeopia.application.core.resources.generated.resources.settings_tags_description
+import writeopia.application.core.resources.generated.resources.settings_tags_empty
+import writeopia.application.core.resources.generated.resources.settings_tag_new
+import writeopia.application.core.resources.generated.resources.settings_tag_edit
+import writeopia.application.core.resources.generated.resources.settings_tag_delete_title
+import writeopia.application.core.resources.generated.resources.settings_tag_delete_message
+import writeopia.application.core.resources.generated.resources.settings_tag_name_taken
+import writeopia.application.core.resources.generated.resources.drawing_options_title
+import writeopia.application.core.resources.generated.resources.drawing_convert_to_equation
+import writeopia.application.core.resources.generated.resources.drawing_convert_explanation
+import writeopia.application.core.resources.generated.resources.drawing_converting
+import writeopia.application.core.resources.generated.resources.drawing_convert_failed
+import writeopia.application.core.resources.generated.resources.drawing_convert_retry
+import writeopia.application.core.resources.generated.resources.equation_cloud_ai_unavailable
+import writeopia.application.core.resources.generated.resources.equation_edit_title
+import writeopia.application.core.resources.generated.resources.equation_latex_hint
+import writeopia.application.core.resources.generated.resources.equation_rendering
+import writeopia.application.core.resources.generated.resources.equation_render_failed
 import writeopia.application.core.resources.generated.resources.workspace_sync_title
 import writeopia.application.core.resources.generated.resources.workspace_sync_message
 import writeopia.application.core.resources.generated.resources.workspace_sync_in_background
@@ -49,6 +88,7 @@ import writeopia.application.core.resources.generated.resources.tag_screen_empty
 import writeopia.application.core.resources.generated.resources.folder_screen_create_note
 import writeopia.application.core.resources.generated.resources.folder_screen_empty
 import writeopia.application.core.resources.generated.resources.documents_graph
+import writeopia.application.core.resources.generated.resources.graph_section
 import writeopia.application.core.resources.generated.resources.untitled
 import writeopia.application.core.resources.generated.resources.undo
 import writeopia.application.core.resources.generated.resources.moved_item_to_folder
@@ -141,11 +181,36 @@ import writeopia.application.core.resources.generated.resources.confirmation_del
 import writeopia.application.core.resources.generated.resources.content
 import writeopia.application.core.resources.generated.resources.copy_note
 import writeopia.application.core.resources.generated.resources.create_account
+import writeopia.application.core.resources.generated.resources.terms_agree_prefix
+import writeopia.application.core.resources.generated.resources.terms_of_service
+import writeopia.application.core.resources.generated.resources.terms_agree_and
+import writeopia.application.core.resources.generated.resources.privacy_policy
+import writeopia.application.core.resources.generated.resources.legal_load_error
+import writeopia.application.core.resources.generated.resources.legal_effective
+import writeopia.application.core.resources.generated.resources.paywall_title
+import writeopia.application.core.resources.generated.resources.paywall_message
+import writeopia.application.core.resources.generated.resources.paywall_price
+import writeopia.application.core.resources.generated.resources.paywall_check_again
+import writeopia.application.core.resources.generated.resources.paywall_checking
+import writeopia.application.core.resources.generated.resources.paywall_error
+import writeopia.application.core.resources.generated.resources.paywall_still_not_premium
+import writeopia.application.core.resources.generated.resources.paywall_free_title
+import writeopia.application.core.resources.generated.resources.paywall_free_web
+import writeopia.application.core.resources.generated.resources.paywall_download_apps
+import writeopia.application.core.resources.generated.resources.paywall_benefit_sync
+import writeopia.application.core.resources.generated.resources.paywall_benefit_sync_desc
+import writeopia.application.core.resources.generated.resources.paywall_benefit_ai
+import writeopia.application.core.resources.generated.resources.paywall_benefit_ai_desc
+import writeopia.application.core.resources.generated.resources.paywall_benefit_team
+import writeopia.application.core.resources.generated.resources.paywall_benefit_team_desc
+import writeopia.application.core.resources.generated.resources.paywall_benefit_backup
+import writeopia.application.core.resources.generated.resources.paywall_benefit_backup_desc
 import writeopia.application.core.resources.generated.resources.create_your_account
 import writeopia.application.core.resources.generated.resources.dark_theme
 import writeopia.application.core.resources.generated.resources.decoration
 import writeopia.application.core.resources.generated.resources.delete
 import writeopia.application.core.resources.generated.resources.delete_account
+import writeopia.application.core.resources.generated.resources.delete_account_failed
 import writeopia.application.core.resources.generated.resources.dismiss
 import writeopia.application.core.resources.generated.resources.document
 import writeopia.application.core.resources.generated.resources.download_model
@@ -168,6 +233,7 @@ import writeopia.application.core.resources.generated.resources.favorite
 import writeopia.application.core.resources.generated.resources.favorites
 import writeopia.application.core.resources.generated.resources.folder
 import writeopia.application.core.resources.generated.resources.font
+import writeopia.application.core.resources.generated.resources.appearance
 import writeopia.application.core.resources.generated.resources.general
 import writeopia.application.core.resources.generated.resources.heading
 import writeopia.application.core.resources.generated.resources.highlight
@@ -293,11 +359,11 @@ import writeopia.application.core.resources.generated.resources.create_workspace
 import writeopia.application.core.resources.generated.resources.create
 import writeopia.application.core.resources.generated.resources.create_workspace_failed
 import writeopia.application.core.resources.generated.resources.add_user_to_workspace
-import writeopia.application.core.resources.generated.resources.search_by_email
+import writeopia.application.core.resources.generated.resources.search_by_username
 import writeopia.application.core.resources.generated.resources.enter_at_least_2_chars
 import writeopia.application.core.resources.generated.resources.no_users_found
 import writeopia.application.core.resources.generated.resources.failed_to_search_users
-import writeopia.application.core.resources.generated.resources.enter_email_to_search
+import writeopia.application.core.resources.generated.resources.enter_username_to_search
 import writeopia.application.core.resources.generated.resources.select_role
 import writeopia.application.core.resources.generated.resources.role_editor_description
 import writeopia.application.core.resources.generated.resources.role_admin_description
@@ -362,6 +428,7 @@ import writeopia.application.core.resources.generated.resources.header_title
 import writeopia.application.core.resources.generated.resources.header_colors
 import writeopia.application.core.resources.generated.resources.header_images
 import writeopia.application.core.resources.generated.resources.header_generate_image
+import writeopia.application.core.resources.generated.resources.header_image_instructions_hint
 import writeopia.application.core.resources.generated.resources.header_generating_image
 import writeopia.application.core.resources.generated.resources.header_use_image
 import writeopia.application.core.resources.generated.resources.header_try_another
@@ -676,7 +743,7 @@ object WrStrings {
     fun general() = stringResource(Res.string.general)
 
     @Composable
-    fun appearance() = stringResource(Res.string.general)
+    fun appearance() = stringResource(Res.string.appearance)
 
     @Composable
     fun account() = stringResource(Res.string.account)
@@ -705,6 +772,78 @@ object WrStrings {
 
     @Composable
     fun createAccount() = stringResource(Res.string.create_account)
+
+    @Composable
+    fun termsAgreePrefix() = stringResource(Res.string.terms_agree_prefix)
+
+    @Composable
+    fun termsOfService() = stringResource(Res.string.terms_of_service)
+
+    @Composable
+    fun termsAgreeAnd() = stringResource(Res.string.terms_agree_and)
+
+    @Composable
+    fun privacyPolicy() = stringResource(Res.string.privacy_policy)
+
+    @Composable
+    fun legalLoadError() = stringResource(Res.string.legal_load_error)
+
+    @Composable
+    fun legalEffective(date: String) = stringResource(Res.string.legal_effective, date)
+
+    @Composable
+    fun paywallTitle() = stringResource(Res.string.paywall_title)
+
+    @Composable
+    fun paywallMessage() = stringResource(Res.string.paywall_message)
+
+    @Composable
+    fun paywallPrice(price: String) = stringResource(Res.string.paywall_price, price)
+
+    @Composable
+    fun paywallCheckAgain() = stringResource(Res.string.paywall_check_again)
+
+    @Composable
+    fun paywallChecking() = stringResource(Res.string.paywall_checking)
+
+    @Composable
+    fun paywallError() = stringResource(Res.string.paywall_error)
+
+    @Composable
+    fun paywallStillNotPremium() = stringResource(Res.string.paywall_still_not_premium)
+
+    @Composable
+    fun paywallFreeTitle() = stringResource(Res.string.paywall_free_title)
+
+    @Composable
+    fun paywallFreeWeb() = stringResource(Res.string.paywall_free_web)
+
+    @Composable
+    fun paywallDownloadApps() = stringResource(Res.string.paywall_download_apps)
+
+    @Composable
+    fun paywallBenefitSync() = stringResource(Res.string.paywall_benefit_sync)
+
+    @Composable
+    fun paywallBenefitSyncDesc() = stringResource(Res.string.paywall_benefit_sync_desc)
+
+    @Composable
+    fun paywallBenefitAi() = stringResource(Res.string.paywall_benefit_ai)
+
+    @Composable
+    fun paywallBenefitAiDesc() = stringResource(Res.string.paywall_benefit_ai_desc)
+
+    @Composable
+    fun paywallBenefitTeam() = stringResource(Res.string.paywall_benefit_team)
+
+    @Composable
+    fun paywallBenefitTeamDesc() = stringResource(Res.string.paywall_benefit_team_desc)
+
+    @Composable
+    fun paywallBenefitBackup() = stringResource(Res.string.paywall_benefit_backup)
+
+    @Composable
+    fun paywallBenefitBackupDesc() = stringResource(Res.string.paywall_benefit_backup_desc)
 
     @Composable
     fun startNow() = stringResource(Res.string.start_now)
@@ -750,6 +889,9 @@ object WrStrings {
 
     @Composable
     fun deleteAccount() = stringResource(Res.string.delete_account)
+
+    @Composable
+    fun deleteAccountFailed() = stringResource(Res.string.delete_account_failed)
 
     @Composable
     fun areYouSure() = stringResource(Res.string.are_you_sure)
@@ -954,7 +1096,7 @@ object WrStrings {
     fun addUserToWorkspace(workspaceName: String) = stringResource(Res.string.add_user_to_workspace, workspaceName)
 
     @Composable
-    fun searchByEmail() = stringResource(Res.string.search_by_email)
+    fun searchByUsername() = stringResource(Res.string.search_by_username)
 
     @Composable
     fun enterAtLeast2Chars() = stringResource(Res.string.enter_at_least_2_chars)
@@ -966,7 +1108,7 @@ object WrStrings {
     fun failedToSearchUsers() = stringResource(Res.string.failed_to_search_users)
 
     @Composable
-    fun enterEmailToSearch() = stringResource(Res.string.enter_email_to_search)
+    fun enterUsernameToSearch() = stringResource(Res.string.enter_username_to_search)
 
     @Composable
     fun selectRole() = stringResource(Res.string.select_role)
@@ -1395,6 +1537,9 @@ object WrStrings {
     fun documentsGraph() = stringResource(Res.string.documents_graph)
 
     @Composable
+    fun graphSection() = stringResource(Res.string.graph_section)
+
+    @Composable
     fun documentTagAddDialogTitle() = stringResource(Res.string.document_tag_add_dialog_title)
 
     @Composable
@@ -1446,6 +1591,9 @@ object WrStrings {
     fun headerGenerateImage() = stringResource(Res.string.header_generate_image)
 
     @Composable
+    fun headerImageInstructionsHint() = stringResource(Res.string.header_image_instructions_hint)
+
+    @Composable
     fun headerGeneratingImage() = stringResource(Res.string.header_generating_image)
 
     @Composable
@@ -1480,4 +1628,121 @@ object WrStrings {
 
     @Composable
     fun workspaceSyncContinue() = stringResource(Res.string.workspace_sync_continue)
+
+    @Composable
+    fun drawingOptionsTitle() = stringResource(Res.string.drawing_options_title)
+
+    @Composable
+    fun drawingConvertToEquation() = stringResource(Res.string.drawing_convert_to_equation)
+
+    @Composable
+    fun drawingConvertExplanation() = stringResource(Res.string.drawing_convert_explanation)
+
+    @Composable
+    fun drawingConverting() = stringResource(Res.string.drawing_converting)
+
+    @Composable
+    fun drawingConvertFailed() = stringResource(Res.string.drawing_convert_failed)
+
+    @Composable
+    fun drawingConvertRetry() = stringResource(Res.string.drawing_convert_retry)
+
+    @Composable
+    fun equationCloudAiUnavailable() = stringResource(Res.string.equation_cloud_ai_unavailable)
+
+    @Composable
+    fun equationEditTitle() = stringResource(Res.string.equation_edit_title)
+
+    @Composable
+    fun equationLatexHint() = stringResource(Res.string.equation_latex_hint)
+
+    @Composable
+    fun equationRendering() = stringResource(Res.string.equation_rendering)
+
+    @Composable
+    fun equationRenderFailed() = stringResource(Res.string.equation_render_failed)
+
+    @Composable
+    fun settingsWorkspaceContent() = stringResource(Res.string.settings_workspace_content)
+
+    @Composable
+    fun settingsTags() = stringResource(Res.string.settings_tags)
+
+    @Composable
+    fun settingsHeaderImages() = stringResource(Res.string.settings_header_images)
+
+    @Composable
+    fun settingsHeaderImagesDescription() = stringResource(Res.string.settings_header_images_description)
+
+    @Composable
+    fun settingsHeaderImagesEmpty() = stringResource(Res.string.settings_header_images_empty)
+
+    @Composable
+    fun settingsHeaderImagesOffline() = stringResource(Res.string.settings_header_images_offline)
+
+    @Composable
+    fun settingsHeaderImagesFailed() = stringResource(Res.string.settings_header_images_failed)
+
+    @Composable
+    fun settingsHeaderImageDeleteTitle() = stringResource(Res.string.settings_header_image_delete_title)
+
+    @Composable
+    fun settingsHeaderImageDeleteMessage() = stringResource(Res.string.settings_header_image_delete_message)
+
+    @Composable
+    fun settingsHeaderImageDeleteFailed() = stringResource(Res.string.settings_header_image_delete_failed)
+
+    @Composable
+    fun settingsTagsDescription() = stringResource(Res.string.settings_tags_description)
+
+    @Composable
+    fun settingsTagsEmpty() = stringResource(Res.string.settings_tags_empty)
+
+    @Composable
+    fun settingsTagNew() = stringResource(Res.string.settings_tag_new)
+
+    @Composable
+    fun settingsTagEdit() = stringResource(Res.string.settings_tag_edit)
+
+    @Composable
+    fun settingsTagDeleteTitle() = stringResource(Res.string.settings_tag_delete_title)
+
+    @Composable
+    fun settingsTagDeleteMessage(name: String) = stringResource(Res.string.settings_tag_delete_message, name)
+
+    @Composable
+    fun settingsTagNameTaken() = stringResource(Res.string.settings_tag_name_taken)
+
+    @Composable
+    fun cloudSyncTitle(provider: String) = stringResource(Res.string.cloud_sync_title, provider)
+
+    @Composable
+    fun cloudSyncDescription(provider: String) = stringResource(Res.string.cloud_sync_description, provider)
+
+    @Composable
+    fun cloudSyncConnect() = stringResource(Res.string.cloud_sync_connect)
+
+    @Composable
+    fun cloudSyncConnecting() = stringResource(Res.string.cloud_sync_connecting)
+
+    @Composable
+    fun cloudSyncDisconnect() = stringResource(Res.string.cloud_sync_disconnect)
+
+    @Composable
+    fun cloudSyncSyncNow() = stringResource(Res.string.cloud_sync_sync_now)
+
+    @Composable
+    fun cloudSyncSyncing() = stringResource(Res.string.cloud_sync_syncing)
+
+    @Composable
+    fun cloudSyncLastSync(time: String) = stringResource(Res.string.cloud_sync_last_sync, time)
+
+    @Composable
+    fun cloudSyncNotSynced() = stringResource(Res.string.cloud_sync_not_synced)
+
+    @Composable
+    fun cloudSyncError(message: String) = stringResource(Res.string.cloud_sync_error, message)
+
+    @Composable
+    fun cloudSyncReconnect(provider: String) = stringResource(Res.string.cloud_sync_reconnect, provider)
 }

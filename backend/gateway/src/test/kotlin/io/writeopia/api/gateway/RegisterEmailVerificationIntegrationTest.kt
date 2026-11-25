@@ -9,7 +9,9 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.server.testing.testApplication
+import io.writeopia.api.core.auth.legal.LegalDocuments
 import io.writeopia.api.core.auth.models.UserStatus
+import io.writeopia.api.core.auth.repository.legalAcceptancesOf
 import io.writeopia.api.core.auth.repository.deleteEmailVerification
 import io.writeopia.api.core.auth.repository.deleteUserByEmail
 import io.writeopia.api.core.auth.repository.getEmailVerification
@@ -40,13 +42,18 @@ class RegisterEmailVerificationIntegrationTest {
 
     private fun randomEmail() = "verify_${Random.nextInt(1_000_000)}@gmail.com"
 
-    private fun registerRequest(email: String, code: String?) = RegisterRequest(
+    private fun registerRequest(
+        email: String,
+        code: String?,
+        legalVersion: String? = LegalDocuments.VERSION,
+    ) = RegisterRequest(
         name = "Name",
         email = email,
         username = "user_${Random.nextInt(1_000_000)}",
         workspaceName = "workspace name",
         password = password,
         verificationCode = code,
+        acceptedLegalVersion = legalVersion,
     )
 
     @Test
@@ -78,7 +85,16 @@ class RegisterEmailVerificationIntegrationTest {
                 assertNotNull(body.accessToken)
                 assertNotNull(body.refreshToken)
 
-                assertEquals(UserStatus.ACTIVE, db.getUserByEmail(email)?.status)
+                val user = assertNotNull(db.getUserByEmail(email))
+                assertEquals(UserStatus.ACTIVE, user.status)
+
+                // The acceptance of both documents is stored with the account.
+                val acceptances = db.legalAcceptancesOf(user.id)
+                assertEquals(
+                    setOf(LegalDocuments.TERMS, LegalDocuments.PRIVACY),
+                    acceptances.map { it.document_type }.toSet()
+                )
+                assertTrue(acceptances.all { it.version == LegalDocuments.VERSION && it.accepted_at > 0 })
                 // The code is consumed by the registration.
                 assertNull(db.getEmailVerification(email))
 
@@ -94,6 +110,33 @@ class RegisterEmailVerificationIntegrationTest {
             } finally {
                 db.deleteUserByEmail(email)
                 db.deleteEmailVerification(email)
+            }
+        }
+
+    @Test
+    fun `registering without accepting the terms is rejected and creates nothing`() =
+        testApplication {
+            application { module(db, debugMode = true) }
+
+            val client = defaultClient()
+
+            listOf(null, "", "1999-01-01").forEach { version ->
+                val email = randomEmail()
+
+                try {
+                    client.sendRegisterCode(email)
+                    val code = assertNotNull(db.getEmailVerification(email)).code
+
+                    val response = client.register(registerRequest(email, code, legalVersion = version))
+
+                    assertEquals(HttpStatusCode.BadRequest, response.status)
+                    assertNull(db.getUserByEmail(email))
+                    // The code is still good for a retry that accepts the terms.
+                    assertNotNull(db.getEmailVerification(email))
+                } finally {
+                    db.deleteUserByEmail(email)
+                    db.deleteEmailVerification(email)
+                }
             }
         }
 

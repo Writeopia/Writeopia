@@ -33,3 +33,28 @@ public struct AiUsage: Codable, Equatable, Sendable {
         return min(max(Double(totalTokens) / Double(quota), 0), 1)
     }
 }
+
+/// An equation read in a drawing or rendered from LaTeX: the LaTeX and the CDN URL of its picture,
+/// or why there is none. Mirrors `EquationResponse` of the backend.
+public struct EquationResponse: Codable, Equatable, Sendable {
+    public let latex: String?
+    public let imageUrl: String?
+    public let error: String?
+
+    public init(latex: String?, imageUrl: String?, error: String? = nil) {
+        self.latex = latex
+        self.imageUrl = imageUrl
+        self.error = error
+    }
+}
+
+/// An equation with its picture, like `Equation` of the Kotlin app.
+public struct Equation: Equatable, Sendable {
+    public let latex: String
+    public let imageUrl: String
+
+    public init(latex: String, imageUrl: String) {
+        self.latex = latex
+        self.imageUrl = imageUrl
+    }
+}

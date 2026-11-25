@@ -3,6 +3,8 @@ package io.writeopia.drawing.ui.components
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -11,11 +13,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -183,6 +190,186 @@ fun DrawingToolbar(
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+/**
+ * Landscape version of the toolbar: a vertical rail on the side with Save/Cancel on top,
+ * the tools below and Color/Size sections that expand and shrink inline.
+ * The whole rail can also be shrunk to a single handle.
+ */
+@Composable
+fun DrawingSideToolbar(
+    currentTool: DrawingTool,
+    currentColor: Int,
+    strokeWidth: Float,
+    canUndo: Boolean,
+    colors: List<Int>,
+    strokeWidths: List<Float>,
+    onToolSelected: (DrawingTool) -> Unit,
+    onColorSelected: (Int) -> Unit,
+    onStrokeWidthSelected: (Float) -> Unit,
+    onUndo: () -> Unit,
+    onClear: () -> Unit,
+    onSave: () -> Unit,
+    onCancel: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var railOpen by remember { mutableStateOf(true) }
+    var showColors by remember { mutableStateOf(false) }
+    var showStrokeWidths by remember { mutableStateOf(false) }
+
+    Row(
+        modifier = modifier
+            .fillMaxHeight()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxHeight()
+                .width(24.dp)
+                .clickable { railOpen = !railOpen },
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = if (railOpen) "›" else "‹",
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+
+        AnimatedVisibility(
+            visible = railOpen,
+            enter = expandHorizontally(),
+            exit = shrinkHorizontally()
+        ) {
+            Column(
+                modifier = Modifier
+                    .width(96.dp)
+                    .fillMaxHeight()
+                    .verticalScroll(rememberScrollState())
+                    .padding(vertical = 8.dp, horizontal = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Button(onClick = onSave, modifier = Modifier.fillMaxWidth()) {
+                    Text("Save", maxLines = 1)
+                }
+                OutlinedButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) {
+                    Text("Cancel", maxLines = 1)
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                val buttonModifier = Modifier.fillMaxWidth()
+
+                ToolButton(
+                    icon = { Icon(WrIcons.file, contentDescription = "Pen", tint = it) },
+                    label = "Pen",
+                    isSelected = currentTool == DrawingTool.PEN,
+                    onClick = { onToolSelected(DrawingTool.PEN) },
+                    modifier = buttonModifier
+                )
+                ToolButton(
+                    icon = { Icon(WrIcons.highlight, contentDescription = "Highlighter", tint = it) },
+                    label = "Highlight",
+                    isSelected = currentTool == DrawingTool.HIGHLIGHTER,
+                    onClick = { onToolSelected(DrawingTool.HIGHLIGHTER) },
+                    modifier = buttonModifier
+                )
+                ToolButton(
+                    icon = { Icon(WrIcons.transparent, contentDescription = "Eraser", tint = it) },
+                    label = "Eraser",
+                    isSelected = currentTool == DrawingTool.ERASER,
+                    onClick = { onToolSelected(DrawingTool.ERASER) },
+                    modifier = buttonModifier
+                )
+
+                ColorToggleButton(
+                    currentColor = currentColor,
+                    isExpanded = showColors,
+                    onClick = {
+                        showColors = !showColors
+                        if (showColors) showStrokeWidths = false
+                    },
+                    modifier = buttonModifier
+                )
+                AnimatedVisibility(
+                    visible = showColors,
+                    enter = expandVertically(),
+                    exit = shrinkVertically()
+                ) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    ) {
+                        colors.chunked(2).forEach { rowColors ->
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                rowColors.forEach { color ->
+                                    ColorButton(
+                                        color = color,
+                                        isSelected = currentColor == color,
+                                        onClick = { onColorSelected(color) }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                StrokeWidthToggleButton(
+                    currentStrokeWidth = strokeWidth,
+                    currentColor = currentColor,
+                    isExpanded = showStrokeWidths,
+                    onClick = {
+                        showStrokeWidths = !showStrokeWidths
+                        if (showStrokeWidths) showColors = false
+                    },
+                    modifier = buttonModifier
+                )
+                AnimatedVisibility(
+                    visible = showStrokeWidths,
+                    enter = expandVertically(),
+                    exit = shrinkVertically()
+                ) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    ) {
+                        strokeWidths.chunked(2).forEach { rowWidths ->
+                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                rowWidths.forEach { width ->
+                                    StrokeWidthButton(
+                                        strokeWidth = width,
+                                        isSelected = strokeWidth == width,
+                                        currentColor = currentColor,
+                                        onClick = { onStrokeWidthSelected(width) }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                ToolButton(
+                    icon = { Icon(WrIcons.undo, contentDescription = "Undo", tint = it) },
+                    label = "Undo",
+                    isSelected = false,
+                    enabled = canUndo,
+                    onClick = onUndo,
+                    modifier = buttonModifier
+                )
+                ToolButton(
+                    icon = { Icon(WrIcons.delete, contentDescription = "Clear", tint = it) },
+                    label = "Clear",
+                    isSelected = false,
+                    onClick = onClear,
+                    modifier = buttonModifier
+                )
             }
         }
     }

@@ -63,6 +63,7 @@ import io.writeopia.common.utils.icons.all.User
 import io.writeopia.common.utils.icons.all.Users
 import io.writeopia.common.utils.icons.all.WandSparkles
 import io.writeopia.common.utils.icons.all.X
+import io.writeopia.common.utils.icons.all.Tag
 import io.writeopia.common.utils.icons.all.Zap
 import io.writeopia.common.utils.icons.all.highlighter
 import com.composables.GlobeCheck
@@ -182,6 +183,8 @@ object WrIcons {
     val lock = Lock
 
     val image = Image
+
+    val tag = Tag
 
     val zap = Zap
 

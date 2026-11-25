@@ -1,0 +1,4 @@
+<resources>
+  <string name="title">Заголовок</string>
+  <string name="ai_generated">Создано ИИ</string>
+</resources>

@@ -6,11 +6,30 @@ public struct HeaderImageGenerateRequest: Encodable, Equatable, Sendable {
     public let workspaceId: String
     public let documentTitle: String
     public let documentText: String
+    /// What the user asks of the picture, in their words; empty for nothing.
+    public let instructions: String
 
-    public init(workspaceId: String, documentTitle: String = "", documentText: String = "") {
+    public init(workspaceId: String, documentTitle: String = "", documentText: String = "", instructions: String = "") {
         self.workspaceId = workspaceId
         self.documentTitle = documentTitle
         self.documentText = documentText
+        self.instructions = instructions
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case workspaceId, documentTitle, documentText, instructions
+    }
+
+    /// `instructions` is left out when empty, like the Kotlin client leaves out its defaults, so a
+    /// backend that doesn't know the field yet still accepts the request.
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(workspaceId, forKey: .workspaceId)
+        try container.encode(documentTitle, forKey: .documentTitle)
+        try container.encode(documentText, forKey: .documentText)
+        if !instructions.isEmpty {
+            try container.encode(instructions, forKey: .instructions)
+        }
     }
 }
 

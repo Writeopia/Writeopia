@@ -8,13 +8,13 @@ plugins {
 
 // The PostHog project token isn't a build secret (PostHog's client tokens are write-only and
 // meant to ship inside the app), but it's still generated instead of hardcoded so it can be
-// rotated without touching source, and isn't duplicated across every platform target.
+// rotated without touching source, and isn't duplicated across the JVM and Android targets.
 val generatePostHogConfig by tasks.registering {
     val tokenProvider = providers.gradleProperty("writeopia.posthog.projectToken")
         .orElse(providers.environmentVariable("WR_POSTHOG_PROJECT_TOKEN"))
         .orElse("")
     // Declared as an input (not just read inside doLast) so Gradle reruns this task -
-    // and regenerates the constant for all four targets - when the token changes, instead
+    // and regenerates the constant for both targets - when the token changes, instead
     // of treating it as up-to-date because only the output directory is tracked.
     inputs.property("posthogProjectToken", tokenProvider)
 
@@ -88,24 +88,14 @@ kotlin {
             }
         }
 
-        val jsMain by getting {
-            kotlin.srcDir(generatePostHogConfig)
-        }
-
-        val wasmJsMain by getting {
-            kotlin.srcDir(generatePostHogConfig)
-        }
-
-        val nativeMain by creating {
+        // The Compose web app is no longer shipped (the web client is the React app), and iOS
+        // has the native app with its own tracker: these targets only need to compile.
+        val noopMain by creating {
             dependsOn(commonMain)
         }
 
-        val iosArm64Main by getting {
-            dependsOn(nativeMain)
-        }
-
-        val iosSimulatorArm64Main by getting {
-            dependsOn(nativeMain)
+        listOf("jsMain", "wasmJsMain", "iosArm64Main", "iosSimulatorArm64Main").forEach { name ->
+            getByName(name).dependsOn(noopMain)
         }
     }
 }

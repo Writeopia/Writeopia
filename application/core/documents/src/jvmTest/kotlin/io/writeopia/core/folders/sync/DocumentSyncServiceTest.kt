@@ -8,6 +8,7 @@ import io.mockk.coVerify
 import io.mockk.mockk
 import io.writeopia.core.folders.api.DocumentsApi
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.document.PendingFavorite
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.models.utils.ResultData
@@ -53,14 +54,119 @@ class DocumentSyncServiceTest {
 
     @Test
     fun `the favorites become the backend's, wherever the documents are`() = runBlocking {
-        val favoriteHere = storeDocument(step("a", 10)).copy(favorite = true).also { repository.saveDocumentMetadata(it) }
-        val favoriteElsewhere = storeDocument(step("b", 10))
+        val favoriteHere = storeDocument(step("a", 10), lastSyncedAt = 10, lastUpdatedAt = 10)
+            .copy(favorite = true).also { repository.saveDocumentMetadata(it) }
+        val favoriteElsewhere = storeDocument(step("b", 10), lastSyncedAt = 10, lastUpdatedAt = 10)
         coEvery { documentsApi.getUserFavorites(workspaceId) } returns ResultData.Complete(listOf(favoriteElsewhere.id))
 
         assertTrue(service.receiveFavorites(workspaceId))
 
         assertFalse(repository.loadDocumentById(favoriteHere.id, workspaceId)!!.favorite)
         assertTrue(repository.loadDocumentById(favoriteElsewhere.id, workspaceId)!!.favorite)
+        // Nothing changed here: nothing to tell the backend.
+        coVerify(exactly = 0) { documentsApi.favoriteDocument(any(), any(), any()) }
+    }
+
+    @Test
+    fun `an edited document takes the backend's favorite like any other`() = runBlocking {
+        // Edited here since it was last sent, its favorite untouched here: unfavorited on
+        // another device, it is unfavorited here too.
+        val edited = storeDocument(step("a", 20), lastSyncedAt = 10, lastUpdatedAt = 20)
+            .copy(favorite = true).also { repository.saveDocumentMetadata(it) }
+        coEvery { documentsApi.getUserFavorites(workspaceId) } returns ResultData.Complete(emptyList())
+
+        assertTrue(service.receiveFavorites(workspaceId))
+
+        assertFalse(repository.loadDocumentById(edited.id, workspaceId)!!.favorite)
+        coVerify(exactly = 0) { documentsApi.favoriteDocument(any(), any(), any()) }
+    }
+
+    @Test
+    fun `a favorite changed here is kept and sent while the backend doesn't have it`() = runBlocking {
+        // Both in sync, both with a favorite changed here that never reached the backend (a
+        // cancelled request, a document that wasn't there yet).
+        val favoritedHere = storeDocument(step("a", 10), lastSyncedAt = 10, lastUpdatedAt = 10)
+            .copy(favorite = true).also { repository.saveDocumentMetadata(it) }
+        val unfavoritedHere = storeDocument(step("b", 10), lastSyncedAt = 10, lastUpdatedAt = 10)
+        repository.savePendingFavorites(listOf(pending(favoritedHere, true), pending(unfavoritedHere, false)))
+        coEvery { documentsApi.getUserFavorites(workspaceId) } returns ResultData.Complete(listOf(unfavoritedHere.id))
+        coEvery { documentsApi.favoriteDocument(any(), any(), workspaceId) } returns ResultData.Complete(Unit)
+
+        assertTrue(service.receiveFavorites(workspaceId))
+
+        assertTrue(repository.loadDocumentById(favoritedHere.id, workspaceId)!!.favorite)
+        assertFalse(repository.loadDocumentById(unfavoritedHere.id, workspaceId)!!.favorite)
+        coVerify { documentsApi.favoriteDocument(favoritedHere.id, true, workspaceId) }
+        coVerify { documentsApi.favoriteDocument(unfavoritedHere.id, false, workspaceId) }
+        // The backend has them now: nothing is pending.
+        assertTrue(repository.loadPendingFavorites(workspaceId).isEmpty())
+    }
+
+    @Test
+    fun `a favorite the backend already has is forgotten without a request`() = runBlocking {
+        val favoritedHere = storeDocument(step("a", 10), lastSyncedAt = 10, lastUpdatedAt = 10)
+            .copy(favorite = true).also { repository.saveDocumentMetadata(it) }
+        repository.savePendingFavorites(listOf(pending(favoritedHere, true)))
+        coEvery { documentsApi.getUserFavorites(workspaceId) } returns ResultData.Complete(listOf(favoritedHere.id))
+
+        assertTrue(service.receiveFavorites(workspaceId))
+
+        assertTrue(repository.loadDocumentById(favoritedHere.id, workspaceId)!!.favorite)
+        assertTrue(repository.loadPendingFavorites(workspaceId).isEmpty())
+        coVerify(exactly = 0) { documentsApi.favoriteDocument(any(), any(), any()) }
+    }
+
+    @Test
+    fun `a favorite changed here that can't be sent stays recorded, and goes with the next sync`() = runBlocking {
+        val favoritedHere = storeDocument(step("a", 10), lastSyncedAt = 10, lastUpdatedAt = 10)
+            .copy(favorite = true).also { repository.saveDocumentMetadata(it) }
+        repository.savePendingFavorites(listOf(pending(favoritedHere, true)))
+        coEvery { documentsApi.getUserFavorites(workspaceId) } returns ResultData.Complete(emptyList())
+        coEvery { documentsApi.favoriteDocument(any(), any(), workspaceId) } returns ResultData.Error()
+
+        assertTrue(service.receiveFavorites(workspaceId))
+
+        assertTrue(repository.loadDocumentById(favoritedHere.id, workspaceId)!!.favorite)
+        assertEquals(listOf(favoritedHere.id), repository.loadPendingFavorites(workspaceId).map { it.documentId })
+
+        // The backend is back.
+        coEvery { documentsApi.favoriteDocument(any(), any(), workspaceId) } returns ResultData.Complete(Unit)
+
+        assertTrue(service.receiveFavorites(workspaceId))
+
+        assertTrue(repository.loadDocumentById(favoritedHere.id, workspaceId)!!.favorite)
+        assertTrue(repository.loadPendingFavorites(workspaceId).isEmpty())
+        coVerify(exactly = 2) { documentsApi.favoriteDocument(favoritedHere.id, true, workspaceId) }
+    }
+
+    @Test
+    fun `the pending favorites are sent and forgotten, except the ones the backend refuses`() = runBlocking {
+        val sent = storeDocument(step("a", 10)).copy(favorite = true).also { repository.saveDocumentMetadata(it) }
+        val refused = storeDocument(step("b", 10)).copy(favorite = true).also { repository.saveDocumentMetadata(it) }
+        repository.savePendingFavorites(listOf(pending(sent, true), pending(refused, true)))
+        coEvery { documentsApi.favoriteDocument(sent.id, true, workspaceId) } returns ResultData.Complete(Unit)
+        coEvery { documentsApi.favoriteDocument(refused.id, true, workspaceId) } returns ResultData.Error()
+
+        service.sendPendingFavorites(workspaceId)
+
+        assertEquals(listOf(refused.id), repository.loadPendingFavorites(workspaceId).map { it.documentId })
+        // Sending only: the backend's list is not asked for.
+        coVerify(exactly = 0) { documentsApi.getUserFavorites(any()) }
+    }
+
+    @Test
+    fun `a favorite changed again while being sent stays recorded`() = runBlocking {
+        val document = storeDocument(step("a", 10)).copy(favorite = true).also { repository.saveDocumentMetadata(it) }
+        repository.savePendingFavorites(listOf(pending(document, true, changedAt = 10)))
+        coEvery { documentsApi.favoriteDocument(document.id, true, workspaceId) } coAnswers {
+            // Unfavorited while the request was on its way.
+            repository.savePendingFavorites(listOf(pending(document, false, changedAt = 20)))
+            ResultData.Complete(Unit)
+        }
+
+        service.sendPendingFavorites(workspaceId)
+
+        assertEquals(listOf(pending(document, false, changedAt = 20)), repository.loadPendingFavorites(workspaceId))
     }
 
     @Test
@@ -254,6 +360,26 @@ class DocumentSyncServiceTest {
     }
 
     @Test
+    fun `a received document doesn't change the favorite, which comes apart`() = runBlocking {
+        val favoriteHere = storeDocument(step("a", 5), lastSyncedAt = 10, lastUpdatedAt = 10)
+            .copy(favorite = true).also { repository.saveDocumentMetadata(it) }
+        val plainHere = storeDocument(step("b", 5), lastSyncedAt = 10, lastUpdatedAt = 10)
+
+        // The listing carries the column of the document, not this user's favorite.
+        service.mergeReceivedDocument(
+            favoriteHere.copy(title = "Renamed elsewhere", favorite = false, lastUpdatedAt = Instant.fromEpochMilliseconds(20))
+        )
+        service.mergeReceivedDocument(
+            plainHere.copy(title = "Renamed elsewhere", favorite = true, lastUpdatedAt = Instant.fromEpochMilliseconds(20))
+        )
+
+        val storedFavorite = repository.loadDocumentById(favoriteHere.id, workspaceId)!!
+        assertEquals("Renamed elsewhere", storedFavorite.title)
+        assertTrue(storedFavorite.favorite)
+        assertFalse(repository.loadDocumentById(plainHere.id, workspaceId)!!.favorite)
+    }
+
+    @Test
     fun `a received document never brings back a step deleted here`() = runBlocking {
         val local = storeDocument(step("a", 5), step("b", 5), lastSyncedAt = 10, lastUpdatedAt = 10)
         repository.deleteStoryStep("b", local.id)
@@ -325,6 +451,9 @@ class DocumentSyncServiceTest {
 
     private fun step(id: String, lastUpdatedAt: Long, text: String = id) =
         StoryStep(id = id, type = StoryTypes.TEXT.type, text = text, lastUpdatedAt = lastUpdatedAt)
+
+    private fun pending(document: Document, favorite: Boolean, changedAt: Long = 0) =
+        PendingFavorite(documentId = document.id, workspaceId = workspaceId, favorite = favorite, changedAt = changedAt)
 
     private fun document(id: String, vararg steps: StoryStep, lastSyncedAt: Long? = null, lastUpdatedAt: Long = 0) =
         Document(

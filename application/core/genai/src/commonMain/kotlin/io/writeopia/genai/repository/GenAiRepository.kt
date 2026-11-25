@@ -3,7 +3,11 @@ package io.writeopia.genai.repository
 import io.writeopia.app.dto.ai.AiCommandIntentResponse
 import io.writeopia.app.dto.ai.AiCommandRequest
 import io.writeopia.app.dto.ai.AiImageRequest
+import io.writeopia.app.dto.ai.EquationRecognizeRequest
+import io.writeopia.app.dto.ai.EquationRenderRequest
+import io.writeopia.app.dto.ai.EquationResponse
 import io.writeopia.sdk.serialization.request.HeaderImageGenerateRequest
+import io.writeopia.sdk.serialization.response.HeaderImageApi
 import io.writeopia.sdk.ai.AiClient
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.genai.api.GenAiApi
@@ -116,6 +120,14 @@ class GenAiRepository(
     fun streamCommand(request: AiCommandRequest): Flow<ResultData<String>> =
         genAiApi.streamCommand(request.copy(model = request.model ?: defaultModel))
 
+    /** The equation the backend reads in the strokes of [drawingJson], with the picture of it. */
+    suspend fun recognizeEquation(drawingJson: String): ResultData<EquationResponse> =
+        genAiApi.recognizeEquation(EquationRecognizeRequest(drawingJson))
+
+    /** The picture of [latex], rendered by the backend. */
+    suspend fun renderEquation(latex: String): ResultData<EquationResponse> =
+        genAiApi.renderEquation(EquationRenderRequest(latex))
+
     /**
      * A picture for [paragraph], drawn by the backend with the whole document as context. The
      * result is the URL of the picture, already stored with the user's media.
@@ -145,9 +157,12 @@ class GenAiRepository(
     suspend fun generateHeaderImage(
         workspaceId: String,
         documentTitle: String,
-        documentText: String
+        documentText: String,
+        instructions: String = ""
     ): ResultData<String> =
-        genAiApi.generateHeaderImage(HeaderImageGenerateRequest(workspaceId, documentTitle, documentText))
+        genAiApi.generateHeaderImage(
+            HeaderImageGenerateRequest(workspaceId, documentTitle, documentText, instructions)
+        )
 
     /** The URLs of the header pictures of [workspaceId], the newest first. */
     suspend fun headerImages(workspaceId: String): ResultData<List<String>> =
@@ -156,6 +171,14 @@ class GenAiRepository(
             is ResultData.Error -> ResultData.Error(result.exception)
             else -> ResultData.Error()
         }
+
+    /** The header pictures of [workspaceId] with their ids, the newest first. */
+    suspend fun headerImagesWithIds(workspaceId: String): ResultData<List<HeaderImageApi>> =
+        genAiApi.headerImages(workspaceId)
+
+    /** Takes the picture [imageId] out of the pictures of [workspaceId]. */
+    suspend fun deleteHeaderImage(workspaceId: String, imageId: String): ResultData<Unit> =
+        genAiApi.deleteHeaderImage(workspaceId, imageId)
 
     /** Keeps an approved header picture with the pictures of [workspaceId]. */
     suspend fun saveHeaderImage(workspaceId: String, imageUrl: String): ResultData<Unit> =

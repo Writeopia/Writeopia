@@ -47,6 +47,18 @@ fun FavoriteButton(isFavorite: StateFlow<Boolean>, clickListener: () -> Unit, mo
     )
 }
 
+/** Opens the search inside the document, like Cmd/Ctrl+F on desktop. */
+@Composable
+fun SearchButton(clickListener: () -> Unit, modifier: Modifier = Modifier) {
+    CommonButton(
+        modifier = modifier,
+        icon = WrIcons.search,
+        iconDescription = WrStrings.search(),
+        text = WrStrings.search(),
+        clickListener = clickListener
+    )
+}
+
 @Composable
 fun DeleteButton(clickListener: () -> Unit, modifier: Modifier = Modifier) {
     CommonButton(

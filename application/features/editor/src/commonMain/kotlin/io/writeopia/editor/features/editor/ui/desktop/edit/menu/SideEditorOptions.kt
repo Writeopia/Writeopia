@@ -132,6 +132,8 @@ fun SideEditorOptions(
     documentIconState: StateFlow<MenuItem.Icon?> = MutableStateFlow(null),
     onDocumentIconSelect: (String, Int) -> Unit = { _, _ -> },
     onRemoveDocumentIcon: () -> Unit = {},
+    /** Opens the search inside the document, like Cmd/Ctrl+F. */
+    onSearchClick: () -> Unit = {},
 ) {
     val menuType by sideMenuTabState.collectAsState()
 
@@ -185,6 +187,7 @@ fun SideEditorOptions(
                                 documentIconState = documentIconState,
                                 onDocumentIconSelect = onDocumentIconSelect,
                                 onRemoveDocumentIcon = onRemoveDocumentIcon,
+                                onSearchClick = onSearchClick,
                             )
                         }
 
@@ -411,6 +414,7 @@ private fun PageOptions(
     documentIconState: StateFlow<MenuItem.Icon?> = MutableStateFlow(null),
     onDocumentIconSelect: (String, Int) -> Unit = { _, _ -> },
     onRemoveDocumentIcon: () -> Unit = {},
+    onSearchClick: () -> Unit = {},
 ) {
     val currentPlatform = LocalPlatform.current
     var showIconPicker by remember { mutableStateOf(false) }
@@ -457,6 +461,9 @@ private fun PageOptions(
         Spacer(modifier = Modifier.height(4.dp))
 
         MoveToButton(moveButtonClick, modifier = Modifier.fillMaxWidth())
+        Spacer(modifier = Modifier.height(4.dp))
+
+        SearchButton(onSearchClick, modifier = Modifier.fillMaxWidth())
         Spacer(modifier = Modifier.height(4.dp))
 
         DocumentIconButton(

@@ -67,7 +67,7 @@ class WorkspaceHandlerImpl(
         coroutineScope.launch {
             _userSearchQuery.collectLatest { rawQuery ->
                 if (!shouldSearchUsers) return@collectLatest
-                val workspaceId = _selectedWorkspaceId.value ?: return@collectLatest
+                val workspaceId = selectedWorkspaceId() ?: return@collectLatest
                 val query = rawQuery.trim().removePrefix("@")
                 if (query.length < 2) {
                     _userSearchResults.value = ResultData.Idle()
@@ -86,15 +86,29 @@ class WorkspaceHandlerImpl(
     }
 
     private val _selectedWorkspaceId = MutableStateFlow<String?>(null)
+
+    /**
+     * The workspace being managed. Until the user picks one, the first available workspace is
+     * selected, so the management screen never opens without a workspace.
+     */
     override val selectedWorkspace: Flow<Workspace?> by lazy {
         combine(_availableWorkspaces, _selectedWorkspaceId) { workspacesResult, selectedId ->
-            if (workspacesResult is ResultData.Complete) {
-                workspacesResult.data.firstOrNull { it.id == selectedId }
-            } else {
-                null
-            }
+            selectedWorkspaceOrFirst(workspacesResult, selectedId)
         }
     }
+
+    private fun selectedWorkspaceOrFirst(
+        workspacesResult: ResultData<List<Workspace>>,
+        selectedId: String?
+    ): Workspace? {
+        if (workspacesResult !is ResultData.Complete) return null
+        val workspaces = workspacesResult.data
+
+        return workspaces.firstOrNull { it.id == selectedId } ?: workspaces.firstOrNull()
+    }
+
+    private fun selectedWorkspaceId(): String? =
+        selectedWorkspaceOrFirst(_availableWorkspaces.value, _selectedWorkspaceId.value)?.id
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override val usersOfSelectedWorkspace: Flow<ResultData<List<String>>> =
@@ -144,17 +158,11 @@ class WorkspaceHandlerImpl(
     }
 
     override fun selectWorkspaceToManage(workspaceId: String) {
-        val currentSelected = _selectedWorkspaceId.value
-
         shouldSearchUsers = false
         _userSearchQuery.value = ""
         _userSearchResults.value = ResultData.Idle()
 
-        if (currentSelected == workspaceId) {
-            _selectedWorkspaceId.value = null
-        } else {
-            _selectedWorkspaceId.value = workspaceId
-        }
+        _selectedWorkspaceId.value = workspaceId
     }
 
     override fun syncWorkspace() {
@@ -187,7 +195,7 @@ class WorkspaceHandlerImpl(
         _userSearchResults.value = ResultData.Idle()
 
         coroutineScope.launch {
-            val workspaceId = _selectedWorkspaceId.value
+            val workspaceId = selectedWorkspaceId()
 
             if (workspaceId != null) {
                 val result = workspaceApi.addUserToWorkspace(workspaceId, cleanUsername)

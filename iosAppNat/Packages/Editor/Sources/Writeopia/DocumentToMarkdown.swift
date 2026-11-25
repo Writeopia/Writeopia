@@ -46,6 +46,10 @@ public enum DocumentToMarkdown {
             let url = step.url ?? ""
             let label = (step.text ?? "").isEmpty ? url : step.text!
             return "[\(linkLabel(label))](\(linkDestination(url)))"
+        case StoryType.equation.number:
+            // Math between double dollars, like the Kotlin export.
+            let latex = (step.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            return latex.isEmpty ? nil : "$$\(latex)$$"
         default:
             return step.text
         }

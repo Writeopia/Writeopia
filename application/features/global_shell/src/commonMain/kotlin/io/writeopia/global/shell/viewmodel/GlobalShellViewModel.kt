@@ -103,6 +103,9 @@ interface GlobalShellViewModel : FolderController, LocalAiConfigController {
 
     fun hideSettings()
 
+    /** Easter egg: creates the document about the writer of the version and reports it. */
+    fun createVersionEasterEgg(onCreated: (id: String, title: String) -> Unit)
+
     fun saveMenuWidth()
 
     fun moveSideMenu(width: Float)
@@ -110,6 +113,13 @@ interface GlobalShellViewModel : FolderController, LocalAiConfigController {
     fun showSearch()
 
     fun hideSearch()
+
+    /**
+     * The route the navigation is showing, so the search shortcut (Cmd/Ctrl+F) opens the global
+     * search only on the documents menu: elsewhere the shortcut belongs to the screen (the editor
+     * searches inside the document).
+     */
+    fun onDestinationChanged(route: String?)
 
     fun changeWorkspaceLocalPath(path: String)
 

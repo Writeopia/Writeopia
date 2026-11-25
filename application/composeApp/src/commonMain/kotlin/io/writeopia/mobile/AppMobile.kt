@@ -1,6 +1,7 @@
 package io.writeopia.mobile
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
@@ -32,6 +33,7 @@ fun AppMobile(
     colorThemeState: StateFlow<ColorThemeOption?>,
     accentColorState: StateFlow<AccentColor?>,
     navController: NavHostController,
+    onBackgroundColor: (Color) -> Unit = {},
 ) {
     val drawingInjection = DrawingInjection()
 
@@ -39,6 +41,7 @@ fun AppMobile(
         PortraitMobile(
             startDestination = Destinations.START_APP.id,
             navController = navController,
+            onBackgroundColor = onBackgroundColor,
             searchInjector = searchInjection,
             uiConfigViewModel = uiConfigurationViewModel,
             notesMenuInjection = notesMenuInjection,

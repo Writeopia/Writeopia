@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalTime::class)
-
 package io.writeopia.ui.manager
 
 import io.writeopia.sdk.utils.iterables.Rank
@@ -52,6 +50,7 @@ import io.writeopia.ui.edition.TextCommandHandler
 import io.writeopia.ui.extensions.toSelectionMetadata
 import io.writeopia.ui.keyboard.KeyboardEvent
 import io.writeopia.ui.model.DrawState
+import io.writeopia.ui.model.EquationEvent
 import io.writeopia.ui.model.DrawStory
 import io.writeopia.ui.model.LinkCardCreation
 import io.writeopia.ui.image.ImageUploader
@@ -85,7 +84,7 @@ import kotlin.time.Instant
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.time.ExperimentalTime
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * This is the entry class of the framework. It follows the Controller pattern, redirecting all the
@@ -171,19 +170,14 @@ class WriteopiaStateManager(
                             }
 
                             KeyboardEvent.EQUATION -> {
-                                // Add method that changes based on type and changes either the current
-                                // position or the selected ones
+                                // The current line becomes an equation of its text; the app
+                                // renders the picture when the Render event arrives.
                                 getCurrentStory()?.let { story ->
-                                    val position = currentPosition() ?: return@let
+                                    val position = currentPosition()
+                                    val equation = story.copy(type = StoryTypes.EQUATION.type, url = null)
 
-                                    changeStoryState(
-                                        Action.StoryStateChange(
-                                            storyStep = story.copy(
-                                                type = StoryTypes.EQUATION.type
-                                            ),
-                                            position
-                                        )
-                                    )
+                                    changeStoryState(Action.StoryStateChange(storyStep = equation, position))
+                                    _equationEvents.tryEmit(EquationEvent.Render(equation, position))
                                 }
                             }
 
@@ -262,6 +256,14 @@ class WriteopiaStateManager(
      * ask the backend for a description of each page.
      */
     val linkCardCreated: SharedFlow<LinkCardCreation> = _linkCardCreated.asSharedFlow()
+
+    private val _equationEvents = MutableSharedFlow<EquationEvent>(extraBufferCapacity = 16)
+
+    /**
+     * What the equation steps need from the app: a picture of their LaTeX, rendered by the
+     * backend, or the dialog to edit it. See [EquationEvent].
+     */
+    val equationEvents: SharedFlow<EquationEvent> = _equationEvents.asSharedFlow()
 
     /**
      * Tracks the anchor position for keyboard-based multi-line selection.
@@ -376,7 +378,7 @@ class WriteopiaStateManager(
                 }
             }
 
-            if (!onEditPositions.isNotEmpty()) {
+            if (onEditPositions.isEmpty()) {
                 val selectionPos = storyState.selection.position
                 val step = storyState.stories[selectionPos]
 
@@ -561,8 +563,6 @@ class WriteopiaStateManager(
         }
 
         _currentStory.value = writeopiaManager.mergeRequest(info, _currentStory.value)
-
-        // Todo: Add to backstack
     }
 
     /**
@@ -593,15 +593,29 @@ class WriteopiaStateManager(
         clearSelection()
     }
 
+    /** The pencil of an equation: the app opens the dialog that edits its LaTeX. */
     fun onEquationEdition(position: String) {
+        if (!isEditable) return
         getStory(position)?.let { storyStep ->
-            changeStoryState(
-                stateChange = Action.StoryStateChange(
-                    storyStep.copy(type = StoryTypes.TEXT.type),
-                    position
-                )
-            )
+            _equationEvents.tryEmit(EquationEvent.Edit(storyStep, position))
         }
+    }
+
+    /**
+     * Makes the step at [position] the equation [latex], shown as the picture at [imageUrl] (null
+     * while there is none). A drawing converted to an equation goes through here, so undo brings
+     * the drawing back.
+     */
+    fun setEquation(position: String, latex: String, imageUrl: String?) {
+        if (!isEditable) return
+        val storyStep = getStory(position) ?: return
+
+        changeStoryState(
+            Action.StoryStateChange(
+                storyStep.copy(type = StoryTypes.EQUATION.type, text = latex, url = imageUrl, path = null),
+                position
+            )
+        )
     }
 
     /**
@@ -1165,7 +1179,7 @@ class WriteopiaStateManager(
         coroutineScope.launch {
             // It is necessary to delay the stop dragging event to wait for the move request to
             // be received.
-            delay(100)
+            delay(100.milliseconds)
             isDragging.value = false
         }
     }
@@ -1320,8 +1334,7 @@ class WriteopiaStateManager(
                     }
             }
             .sortedWith(compareBy<SpanInfo> { it.start }.thenBy { it.end })
-            .mapNotNull { it.extra }
-            .firstOrNull()
+            .firstNotNullOfOrNull { it.extra }
             ?: return null
 
         return _commentConversations.value[conversationId]
@@ -1535,7 +1548,7 @@ class WriteopiaStateManager(
 
     fun addImage(imagePath: String, position: String? = null) {
         if (!isEditable) return
-        (position ?: currentPosition())?.let { pos ->
+        (position ?: currentPosition()).let { pos ->
             val story = getStory(pos)
 
             if (story != null) {
@@ -1576,7 +1589,7 @@ class WriteopiaStateManager(
                         }
 
                         // Upload in background
-                        val result = imageUploader!!.uploadImage(imagePath)
+                        val result = imageUploader.uploadImage(imagePath)
 
                         // Replace with final image
                         val currentStory = getStory(imagePosition)
@@ -2236,7 +2249,7 @@ class WriteopiaStateManager(
             // The lines changed outside changeStoryState: the same single change must apply again.
             lastStateChange = null
         } else {
-            val position = currentPosition() ?: return
+            val position = currentPosition()
             val currentStory = getStory(position)
 
             currentStory?.let { storyStep ->
@@ -2460,7 +2473,7 @@ class WriteopiaStateManager(
     fun addSpreadsheet(columnCount: Int) {
         if (!isEditable) return
 
-        val position = currentPosition() ?: return
+        val position = currentPosition()
         val currentStep = _currentStory.value.stories[position]
 
         val (targetPosition, insertMode) = getTitleProtectedPosition(
@@ -2653,10 +2666,10 @@ class WriteopiaStateManager(
 
     private fun getStories() = _currentStory.value.stories
 
-    private fun currentPosition(): String? =
+    private fun currentPosition(): String =
         _currentStory.value.focus ?: _currentStory.value.selection.position
 
-    private fun getCurrentStory(): StoryStep? = currentPosition()?.let(::getStory)
+    private fun getCurrentStory(): StoryStep? = currentPosition().let(::getStory)
 
     private fun selectAll() {
         keyboardSelectionAnchor = null

@@ -11,8 +11,12 @@ final class HeaderImagesService: HeaderImageServing {
         self.api = api
     }
 
-    func generateHeaderImage(documentTitle: String, documentText: String) async throws -> String {
-        try await api.generateHeaderImage(documentTitle: documentTitle, documentText: documentText)
+    func generateHeaderImage(documentTitle: String, documentText: String, instructions: String) async throws -> String {
+        try await api.generateHeaderImage(
+            documentTitle: documentTitle,
+            documentText: documentText,
+            instructions: instructions
+        )
     }
 
     func headerImages() async throws -> [String] {

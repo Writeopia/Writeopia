@@ -5,6 +5,7 @@ package io.writeopia.libraries.dbtests
 import io.writeopia.sdk.utils.iterables.Rank
 import io.writeopia.sdk.models.comment.Comment
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.document.PendingFavorite
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.models.sorting.OrderBy
 import io.writeopia.sdk.models.span.Span
@@ -495,6 +496,32 @@ class DocumentRepositoryTests(private val documentRepository: DocumentRepository
         // Once the backend has the deletion, the tombstone goes.
         documentRepository.deleteStoryStepTombstones(listOf(deleted.id))
         assertTrue(documentRepository.loadStoryStepTombstones(document.workspaceId).isEmpty())
+    }
+
+    /**
+     * A favorite changed here is recorded for the sync until the backend has it: one record per
+     * document, the latest change, and a send that began before a newer change doesn't drop it.
+     */
+    suspend fun aFavoriteChangedHereStaysPendingUntilTheBackendHasIt() {
+        val workspaceId = "workspace-pending-favorite"
+        val first = PendingFavorite(documentId = "doc", workspaceId = workspaceId, favorite = true, changedAt = 10)
+        val elsewhere = PendingFavorite(documentId = "other", workspaceId = "another-workspace", favorite = true, changedAt = 10)
+        documentRepository.savePendingFavorites(listOf(first, elsewhere))
+
+        assertEquals(listOf(first), documentRepository.loadPendingFavorites(workspaceId))
+
+        // Changed again: the latest change is the record.
+        val second = first.copy(favorite = false, changedAt = 20)
+        documentRepository.savePendingFavorites(listOf(second))
+        assertEquals(listOf(second), documentRepository.loadPendingFavorites(workspaceId))
+
+        // The send of the first change ends now: the newer record stays.
+        documentRepository.deletePendingFavorite(first)
+        assertEquals(listOf(second), documentRepository.loadPendingFavorites(workspaceId))
+
+        documentRepository.deletePendingFavorite(second)
+        assertTrue(documentRepository.loadPendingFavorites(workspaceId).isEmpty())
+        assertEquals(listOf(elsewhere), documentRepository.loadPendingFavorites(elsewhere.workspaceId))
     }
 
     /** A step deleted elsewhere goes without a tombstone, and only inside its workspace. */

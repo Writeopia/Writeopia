@@ -48,6 +48,8 @@ public struct NoteEditorView: View {
     @State private var showPublish = false
     @State private var showPremium = false
     @State private var drawingTarget: DrawingTarget?
+    /// The drawing whose options ("...") are open.
+    @State private var drawingOptionsStepId: String?
     /// The image picker opened by the writing agent when the cloud can't draw.
     @State private var showAgentImagePicker = false
     @State private var agentImageItem: PhotosPickerItem?
@@ -79,7 +81,9 @@ public struct NoteEditorView: View {
         writingAgent: WritingAgentServing? = nil,
         imageGenerator: AiImageGenerating? = nil,
         headerImages: HeaderImagesAPI? = nil,
+        equations: EquationServing? = nil,
         loadActivity: ContentLoadActivity? = nil,
+        searchQuery: String? = nil,
         rootTitle: String = String(localized: "Documents"),
         openDocumentLink: @escaping (DocumentLink) -> Void = { _ in }
     ) {
@@ -94,7 +98,9 @@ public struct NoteEditorView: View {
             writingAgent: writingAgent,
             imageGenerator: imageGenerator,
             headerImages: headerImages.map(HeaderImagesService.init(api:)),
-            loadActivity: loadActivity
+            equations: equations,
+            loadActivity: loadActivity,
+            searchQuery: searchQuery
         ))
         fallbackTitle = title
         self.rootTitle = rootTitle
@@ -102,17 +108,24 @@ public struct NoteEditorView: View {
     }
 
     /// Drawings in the document, like `DrawingPreviewDrawer` of the Compose app: tap to edit,
-    /// long press to delete.
+    /// "..." or long press for the options (convert to an equation, delete).
     private var customDrawers: [Int: CustomStepDrawer] {
         [
             StoryType.drawing.number: { step in
                 AnyView(
-                    DrawingPreview(json: step.text) {
+                    DrawingPreview(
+                        json: step.text,
+                        isConverting: viewModel.writeopiaManager.convertingDrawingStepIds.contains(step.id),
+                        onOptions: viewModel.isLocked ? nil : { drawingOptionsStepId = step.id }
+                    ) {
                         guard !viewModel.isLocked else { return }
                         drawingTarget = DrawingTarget(stepId: step.id, drawing: DrawingData.fromJson(step.text))
                     }
                     .contextMenu {
                         if !viewModel.isLocked {
+                            Button("Convert to equation", systemImage: "function") {
+                                viewModel.convertDrawingToEquation(stepId: step.id)
+                            }
                             Button("Delete drawing", systemImage: "trash", role: .destructive) {
                                 viewModel.writeopiaManager.removeStep(stepId: step.id)
                             }
@@ -121,6 +134,51 @@ public struct NoteEditorView: View {
                 )
             },
         ]
+    }
+
+    /// The options of a drawing and the LaTeX dialog of an equation, like the dialogs of `TextEditor`
+    /// in the Compose app.
+    private func equationDialogs(_ content: some View) -> some View {
+        content
+            .confirmationDialog(
+                "Drawing",
+                isPresented: Binding(get: { drawingOptionsStepId != nil }, set: { if !$0 { drawingOptionsStepId = nil } }),
+                titleVisibility: .visible
+            ) {
+                if let stepId = drawingOptionsStepId {
+                    Button("Convert to equation") { viewModel.convertDrawingToEquation(stepId: stepId) }
+                    Button("Delete drawing", role: .destructive) { viewModel.writeopiaManager.removeStep(stepId: stepId) }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                // Two literals, not one ternary: a literal is a localized key, a `String` is not.
+                if viewModel.canConvertToEquation {
+                    Text("The cloud AI reads the strokes and writes the equation in their place. Uses your AI tokens.")
+                } else {
+                    Text("Sign in to an online workspace to convert drawings with the cloud AI.")
+                }
+            }
+            .alert(
+                "Edit equation",
+                isPresented: Binding(get: { viewModel.equationEdition != nil }, set: { if !$0 { viewModel.equationEdition = nil } })
+            ) {
+                TextField(
+                    "LaTeX, like \\frac{a}{b} or x^2",
+                    text: Binding(get: { viewModel.equationEdition?.latex ?? "" }, set: { viewModel.equationEdition?.latex = $0 })
+                )
+                .autocorrectionDisabled()
+                Button("Save") { viewModel.saveEquation() }
+                    .disabled((viewModel.equationEdition?.latex ?? "").trimmingCharacters(in: .whitespaces).isEmpty)
+                Button("Cancel", role: .cancel) { viewModel.equationEdition = nil }
+            }
+            .alert(
+                "Could not make the equation",
+                isPresented: Binding(get: { viewModel.equationError != nil }, set: { if !$0 { viewModel.equationError = nil } })
+            ) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(viewModel.equationError ?? "")
+            }
     }
 
     /// Image files dropped on the editor are added where the cursor is, like the Compose app.
@@ -198,12 +256,21 @@ public struct NoteEditorView: View {
             .disabled(!viewModel.hasLoaded || !viewModel.isAiAvailable || viewModel.isLocked || viewModel.isAiRunning)
 
             Button("Stop AI") {
+                if viewModel.isSearchVisible {
+                    withAnimation(.snappy) { viewModel.hideSearch() }
+                    return
+                }
                 viewModel.cancelAi()
                 viewModel.dismissAiSuggestions()
                 withAnimation(.snappy) { manager.clearLineSelection() }
             }
             .keyboardShortcut(.escape, modifiers: [])
-            .disabled(!viewModel.isAiRunning && !manager.hasAiSuggestions && !manager.hasSelectedLines)
+            .disabled(!viewModel.isSearchVisible && !viewModel.isAiRunning && !manager.hasAiSuggestions && !manager.hasSelectedLines)
+
+            // Cmd+F here finds inside the document; the global search takes it on the documents menu.
+            Button("Find") { withAnimation(.snappy) { viewModel.showSearch() } }
+                .keyboardShortcut("f", modifiers: .command)
+                .disabled(!viewModel.hasLoaded)
 
             Button("Bold") { manager.toggleSpan(.bold) }
                 .keyboardShortcut("b", modifiers: .command)
@@ -322,7 +389,7 @@ public struct NoteEditorView: View {
             .overlay(alignment: .top) { aiRunningChip }
             .animation(.snappy, value: viewModel.isAiRunning)
             .animation(.snappy, value: viewModel.writingAgent?.executor.activity)
-        return lifecycle(drawingEditor(alerts(sheets(chrome(writingAgentDialogs(content))))))
+        return lifecycle(drawingEditor(equationDialogs(alerts(sheets(chrome(writingAgentDialogs(content)))))))
     }
 
     /// The editor once the document is loaded; an error or a spinner before.
@@ -335,6 +402,7 @@ public struct NoteEditorView: View {
                 .overlay(alignment: .bottomTrailing) { writingSuggestions }
                 .overlay(alignment: .bottom) { aiCommandField }
                 .safeAreaInset(edge: .bottom, spacing: 0) { bottomMenu }
+                .safeAreaInset(edge: .top, spacing: 0) { searchBar }
                 .overlay(alignment: .trailing) { sideOptions }
         } else if let errorMessage = viewModel.errorMessage {
             ContentUnavailableView {
@@ -413,19 +481,33 @@ public struct NoteEditorView: View {
         }
     }
 
-    /// The chip that says the AI, or the writing agent, is working.
+    /// The search inside the document, while it is open (Cmd+F, or a document the global search
+    /// found by its words). Above the text, so no match hides under it.
+    @ViewBuilder
+    private var searchBar: some View {
+        if viewModel.isSearchVisible {
+            InDocumentSearchBar(viewModel: viewModel)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .transition(.move(edge: .top).combined(with: .opacity))
+        }
+    }
+
+    /// The chip that says the AI, or the writing agent, is working. Under the find bar while
+    /// that one is open, so neither hides the other.
     @ViewBuilder
     private var aiRunningChip: some View {
         if viewModel.isAiRunning {
             AiRunningChip { viewModel.cancelAi() }
-                .padding(.top, 8)
+                .padding(.top, chipTopPadding)
                 .transition(.move(edge: .top).combined(with: .opacity))
         } else if let activity = viewModel.writingAgent?.executor.activity {
             AiRunningChip(label: activity) { viewModel.writingAgent?.executor.cancel() }
-                .padding(.top, 8)
+                .padding(.top, chipTopPadding)
                 .transition(.move(edge: .top).combined(with: .opacity))
         }
     }
+
+    private var chipTopPadding: CGFloat { viewModel.isSearchVisible ? InDocumentSearchBar.height + 8 : 8 }
 
     /// The dialogs and the error of the writing agent, and the image picker it opens.
     private func writingAgentDialogs(_ content: some View) -> some View {

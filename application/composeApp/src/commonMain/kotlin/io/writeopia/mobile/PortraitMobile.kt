@@ -16,14 +16,20 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.graphics.Color
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -38,6 +44,7 @@ import io.writeopia.common.utils.Destinations
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.common.utils.NotesNavigationType
 import io.writeopia.common.utils.icons.WrIcons
+import io.writeopia.commonui.LocalScrollAwareState
 import io.writeopia.commonui.rememberScrollAwareState
 import io.writeopia.drawing.di.DrawingInjection
 import io.writeopia.editor.di.TextEditorInjector
@@ -61,6 +68,7 @@ import io.writeopia.notemenu.navigation.NoteMenuDestiny
 import io.writeopia.notemenu.navigation.navigateBackToNotes
 import io.writeopia.notemenu.navigation.navigateToNotes
 import io.writeopia.theme.WriteopiaTheme
+import io.writeopia.theme.accentWithContrast
 import io.writeopia.viewmodel.UiConfigurationViewModel
 
 @Composable
@@ -74,6 +82,7 @@ fun PortraitMobile(
     navigationViewModel: NavigationViewModel,
     drawingInjection: DrawingInjection? = null,
     onDrawingSaved: (String, String, DrawingData) -> Unit = { _, _, _ -> },
+    onBackgroundColor: (Color) -> Unit = {},
     modifier: Modifier = Modifier,
     builder: NavGraphBuilder.() -> Unit
 ) {
@@ -101,42 +110,55 @@ fun PortraitMobile(
 
     WriteopiaTheme(
         darkTheme = colorTheme.isDarkTheme(),
-        accentColor = accentColor ?: AccentColor.PURPLE
+        accentColor = accentColor ?: AccentColor.DYNAMIC
     ) {
+        val appBackground = WriteopiaTheme.colorScheme.globalBackground
+        SideEffect { onBackgroundColor(appBackground) }
+
         BoxWithConstraints(modifier = modifier.fillMaxSize()) {
             val isWideScreen = maxWidth > maxHeight
 
-            Navigation(
-                isDarkTheme = colorTheme.isDarkTheme(),
-                startDestination = startDestination,
-                notesMenuInjection = notesMenuInjection,
-                sideMenuKmpInjector = sideMenuKmpInjector,
-                notesMenuWideLayout = isWideScreen,
-                navController = navController,
-                editorInjector = editorInjector,
-                drawingInjection = drawingInjection,
-                documentsGraphInjection = documentsGraphInjection,
-                // There is no side menu over the graph on mobile: the arrow is the way back, and
-                // its controls must sit above the overlaid bottom navigation bar.
-                graphNavigateBack = navController::navigateUp,
-                graphBottomBarPadding = if (scrollAwareState.isVisible && !isWideScreen) 80.dp else 0.dp,
-                graphTouchControls = true,
-                // In portrait Settings is a tab of the bottom bar, so it has no way back.
-                settingsAsTab = !isWideScreen,
-                selectedColorTheme = colorThemeState,
-                selectedAccentColor = accentColorState,
-                selectColorTheme = uiConfigViewModel::changeColorTheme,
-                selectAccentColor = uiConfigViewModel::changeAccentColor,
-                onDrawingSaved = onDrawingSaved,
-                searchInjection = searchInjector,
-                nestedScrollConnection = scrollAwareState.nestedScrollConnection,
-                isToolbarVisible = scrollAwareState.isVisible && !isWideScreen,
-                navigationBar = {},
-                builder = builder
-            )
+            // A screen just opened starts at its top, so its bars show, whatever the previous
+            // screen was scrolled to.
+            val navBackStackEntry by navController.currentBackStackEntryAsState()
+            LaunchedEffect(navBackStackEntry?.id) { scrollAwareState.show() }
+
+            // In portrait the top bars fade away with the scroll, over the content (like the
+            // YouTube app). The wide layout has no top bars over its lists.
+            CompositionLocalProvider(
+                LocalScrollAwareState provides scrollAwareState.takeIf { !isWideScreen }
+            ) {
+                Navigation(
+                    isDarkTheme = colorTheme.isDarkTheme(),
+                    startDestination = startDestination,
+                    notesMenuInjection = notesMenuInjection,
+                    sideMenuKmpInjector = sideMenuKmpInjector,
+                    notesMenuWideLayout = isWideScreen,
+                    navController = navController,
+                    editorInjector = editorInjector,
+                    drawingInjection = drawingInjection,
+                    documentsGraphInjection = documentsGraphInjection,
+                    // There is no side menu over the graph on mobile: the arrow is the way back, and
+                    // its controls must sit above the overlaid bottom navigation bar.
+                    graphNavigateBack = navController::navigateUp,
+                    graphBottomBarPadding = if (scrollAwareState.isVisible && !isWideScreen) 80.dp else 0.dp,
+                    graphTouchControls = true,
+                    // In portrait Settings is a tab of the bottom bar, so it has no way back.
+                    settingsAsTab = !isWideScreen,
+                    selectedColorTheme = colorThemeState,
+                    selectedAccentColor = accentColorState,
+                    selectColorTheme = uiConfigViewModel::changeColorTheme,
+                    selectAccentColor = uiConfigViewModel::changeAccentColor,
+                    onDrawingSaved = onDrawingSaved,
+                    searchInjection = searchInjector,
+                    nestedScrollConnection = scrollAwareState.nestedScrollConnection,
+                    isToolbarVisible = scrollAwareState.isVisible && !isWideScreen,
+                    navigationBar = {},
+                    builder = builder
+                )
+            }
 
             // Overlay navigation bar on top of content
-            val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = navBackStackEntry?.destination
             val navigationItems by navigationViewModel.selectedNavigation.collectAsState()
 
@@ -156,8 +178,12 @@ fun PortraitMobile(
             // Hide the bottom navigation bar for every screen while in landscape (wide) mode.
             val showBottomBar = !isAuthScreen && !isWideScreen
 
+            // The bar hides by its whole height, which includes the system navigation bar under
+            // it: a fixed offset would leave a strip of it over the content at the bottom edge.
+            var navBarHeightPx by remember { mutableIntStateOf(0) }
+            val hiddenOffset = with(LocalDensity.current) { navBarHeightPx.toDp() }.coerceAtLeast(100.dp)
             val offsetY by animateDpAsState(
-                targetValue = if (scrollAwareState.isVisible && showBottomBar) 0.dp else 100.dp,
+                targetValue = if (scrollAwareState.isVisible && showBottomBar) 0.dp else hiddenOffset,
                 animationSpec = tween(durationMillis = 300),
                 label = "navBarOffset"
             )
@@ -167,6 +193,7 @@ fun PortraitMobile(
                     containerColor = MaterialTheme.colorScheme.background,
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
+                        .onSizeChanged { size -> navBarHeightPx = size.height }
                         .offset { IntOffset(0, offsetY.roundToPx()) }
                 ) {
                     // The home and the favorites share the notes screen, so the route alone
@@ -175,6 +202,16 @@ fun PortraitMobile(
                         ?.takeIf { entry -> entry.destination.route == NoteMenuDestiny.noteMenu() }
                         ?.savedStateHandle
                         ?.get<String?>(NAVIGATION_TYPE) == NotesNavigationType.FAVORITES.type
+
+                    // The selected icon is the accent pushed away from the bar background until it
+                    // reads well (the dynamic accent can be pale in light mode and dark in dark
+                    // mode), and the others are dimmed so the difference is clear.
+                    val barBackground = MaterialTheme.colorScheme.background
+                    val selectedIconColor = accentWithContrast(
+                        MaterialTheme.colorScheme.primary,
+                        barBackground
+                    )
+                    val unselectedIconColor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6F)
 
                     navigationItems.forEach { item ->
                         val matchesRoute =
@@ -218,9 +255,9 @@ fun PortraitMobile(
                             },
                             colors = NavigationBarItemDefaults.colors()
                                 .copy(
-                                    selectedIconColor = MaterialTheme.colorScheme.primary,
-                                    unselectedIconColor = MaterialTheme.colorScheme.onBackground,
-                                    selectedIndicatorColor = Color.Transparent,
+                                    selectedIconColor = selectedIconColor,
+                                    unselectedIconColor = unselectedIconColor,
+                                    selectedIndicatorColor = selectedIconColor.copy(alpha = 0.15F),
                                 )
                         )
                     }

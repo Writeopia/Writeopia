@@ -3,6 +3,9 @@ package io.writeopia.app.endpoints
 object EndPoints {
     fun localAiGenerate() = "generate"
 
+    /** GET whether the signed-in user is premium, and the price of the monthly subscription. */
+    fun subscription() = "api/auth/subscription"
+
     fun localAiModels() = "api/tags"
 
     fun introNotes() = "document/intro"
@@ -59,8 +62,18 @@ object EndPoints {
     /** POST a document; the cloud AI draws a header picture for it, served by the CDN. */
     fun aiHeaderImage() = "api/ai/header-image"
 
+    /** POST the strokes of a drawing; the cloud AI reads the equation in them and answers its LaTeX, rendered to a picture. */
+    fun aiEquationRecognize() = "api/ai/equation/recognize"
+
+    /** POST LaTeX; the backend renders it to a picture served by the CDN. */
+    fun aiEquationRender() = "api/ai/equation/render"
+
     /** The header pictures of a workspace: GET lists them, POST adds an approved one. */
     fun workspaceHeaderImages(workspaceId: String = "{workspaceId}") = "api/ai/header-images/$workspaceId"
+
+    /** DELETE takes a picture out of the pictures of the workspace. */
+    fun workspaceHeaderImage(workspaceId: String = "{workspaceId}", imageId: String = "{imageId}") =
+        "api/ai/header-images/$workspaceId/$imageId"
 
     // Public, CDN-cacheable configuration for auto-configuring Local AI (Ollama / llmman)
     fun aiLocalConfig() = "api/ai/local-config"
@@ -75,4 +88,7 @@ object EndPoints {
 
     // Public, CDN-cacheable latest desktop application version
     fun desktopAppVersion() = "auth/app/version"
+
+    /** Public, CDN-cacheable legal text. [type] is `terms` or `privacy`. */
+    fun legalDocument(type: String = "{type}") = "auth/legal/$type"
 }

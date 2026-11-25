@@ -31,6 +31,13 @@ class HeaderImagesController(
 
     private var generationJob: Job? = null
 
+    /** The pictures approved in this menu since the last listing, which it may not have had yet. */
+    private val approvedHere = mutableSetOf<String>()
+
+    /** The listings started and the newest one applied: an older answer arriving late is dropped. */
+    private var listingsStarted = 0
+    private var listingApplied = 0
+
     /** Fetches the pictures of the workspace again, each time the header menu opens. */
     fun load() {
         scope.launch {
@@ -44,31 +51,48 @@ class HeaderImagesController(
 
             _state.update { state -> state.copy(canGenerate = true) }
 
+            // The approvals made before this listing started are in it: the backend saved them first.
+            val approvedBefore = approvedHere.toSet()
+            val listing = ++listingsStarted
             val result = source.images(workspaceId)
-            if (result is ResultData.Complete) {
-                // A picture just approved may not be saved on the backend yet: it stays in front.
+            if (result is ResultData.Complete && listing > listingApplied) {
+                listingApplied = listing
+                approvedHere.removeAll(approvedBefore)
+
+                // The backend decides, so a picture deleted in the settings leaves the menu. Only a
+                // picture approved while this listing ran, which it may miss, stays in front.
                 _state.update { state ->
-                    state.copy(images = state.images.filterNot(result.data::contains) + result.data)
+                    val approved = state.images.filter { image -> image in approvedHere && image !in result.data }
+                    state.copy(images = approved + result.data)
                 }
             }
         }
+    }
+
+    /** What the user asks of the next picture. It stays for the pictures drawn after it. */
+    fun setInstructions(instructions: String) {
+        _state.update { state -> state.copy(instructions = instructions.take(INSTRUCTIONS_LIMIT)) }
     }
 
     /** Draws a picture for the document, or a different one in place of the candidate. */
     fun generate() {
         if (_state.value.generation is HeaderImageGeneration.Generating) return
 
+        val instructions = _state.value.instructions.trim()
+
         _state.update { state -> state.copy(generation = HeaderImageGeneration.Generating) }
 
         generationJob = scope.launch {
             val generation = try {
-                val source = resolveHeaderImages()
                 val workspaceId = workspaceId()
+                val source = resolveHeaderImages()
 
-                if (source == null || workspaceId == null) {
+                // The check and the request must be about the same workspace: if it changed while
+                // the cloud was resolved (say, to an offline one), nothing leaves the device.
+                if (source == null || workspaceId == null || workspaceId() != workspaceId) {
                     HeaderImageGeneration.Failed(null)
                 } else {
-                    when (val result = source.generate(workspaceId, documentTitle(), documentText())) {
+                    when (val result = source.generate(workspaceId, documentTitle(), documentText(), instructions)) {
                         is ResultData.Complete -> HeaderImageGeneration.Candidate(result.data)
                         is ResultData.Error -> HeaderImageGeneration.Failed(result.exception?.message)
                         else -> HeaderImageGeneration.Failed(null)
@@ -117,6 +141,7 @@ class HeaderImagesController(
             if (current !is HeaderImageGeneration.Candidate || current.url != url) return@launch
 
             if (result is ResultData.Complete) {
+                approvedHere.add(url)
                 onApproved(url)
                 _state.update { state ->
                     state.copy(
@@ -138,5 +163,10 @@ class HeaderImagesController(
         generationJob?.cancel()
         generationJob = null
         _state.update { state -> state.copy(generation = HeaderImageGeneration.Idle) }
+    }
+
+    companion object {
+        /** The most the user can write to ask for a picture; the backend cuts at the same size. */
+        const val INSTRUCTIONS_LIMIT = 500
     }
 }

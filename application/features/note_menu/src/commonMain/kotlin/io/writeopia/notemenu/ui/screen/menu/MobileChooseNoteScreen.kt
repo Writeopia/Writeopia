@@ -1,13 +1,10 @@
 package io.writeopia.notemenu.ui.screen.menu
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -53,6 +50,9 @@ import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import io.writeopia.commonui.LocalScrollAwareState
+import io.writeopia.commonui.ScrollAwareTopBar
+import io.writeopia.commonui.splitForTopBar
 import io.writeopia.common.utils.NotesNavigation
 import io.writeopia.resources.WrStrings
 import io.writeopia.common.utils.icons.WrIcons
@@ -70,6 +70,7 @@ import io.writeopia.notemenu.viewmodel.ChooseNoteViewModel
 import io.writeopia.notemenu.viewmodel.UserState
 import io.writeopia.notemenu.viewmodel.toNumberDesktop
 import io.writeopia.sdk.models.document.Folder
+import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.ui.draganddrop.target.DraggableScreen
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -134,6 +135,15 @@ internal fun MobileChooseNoteScreen(
 
     val showFab by derivedStateOf { !editState && !hasSelectedNotes }
 
+    // An empty screen doesn't scroll, so nothing could bring back a top bar that faded while
+    // the notes were there (deleted or moved away): it shows again, as on a screen just opened.
+    val scrollAwareState = LocalScrollAwareState.current
+    val documents by chooseNoteViewModel.documentsState.collectAsState()
+    val isEmpty = (documents as? ResultData.Complete)?.data?.documentUiList?.isEmpty() == true
+    LaunchedEffect(isEmpty, scrollAwareState) {
+        if (isEmpty) scrollAwareState?.show()
+    }
+
     // The folder card of the previous screen explodes into this whole screen. The background
     // is drawn inside the shared bounds so it grows with the animation as a solid surface.
     val sharedModifier = with(sharedTransitionScope) {
@@ -178,11 +188,7 @@ internal fun MobileChooseNoteScreen(
     Box(modifier = scrollModifier) {
         Scaffold(
             topBar = {
-                AnimatedVisibility(
-                    visible = isToolbarVisible,
-                    enter = slideInVertically { -it },
-                    exit = slideOutVertically { -it }
-                ) {
+                ScrollAwareTopBar(visible = isToolbarVisible) {
                     TopBar(
                         titleState = chooseNoteViewModel.userName,
                         workspaceNameState = chooseNoteViewModel.workspaceName,
@@ -589,9 +595,13 @@ private fun Content(
     isWideLayout: Boolean,
     sideMenuContent: @Composable () -> Unit,
 ) {
+    // The notes scroll under the top bar when it fades away and under the system navigation bar:
+    // their space is given to the list.
+    val (outerPadding, contentTopPadding, contentBottomPadding) = paddingValues.splitForTopBar()
+
     Row(
         modifier = Modifier
-            .padding(paddingValues)
+            .padding(outerPadding)
             .fillMaxSize()
     ) {
         if (isWideLayout) {
@@ -600,23 +610,35 @@ private fun Content(
 
         Column(modifier = Modifier.weight(1F).fillMaxHeight()) {
             val folderPath by chooseNoteViewModel.folderPath.collectAsState()
-
-            // Only inside a folder: the root and the favorites have nowhere to go back to.
-            if (folderPath.isNotEmpty()) {
-                FolderBreadcrumb(
-                    path = folderPath,
-                    onSelect = { folder ->
-                        navigateToAncestor(
-                            folder?.let { NotesNavigation.Folder(it.id) } ?: NotesNavigation.Root
-                        )
-                    }
-                )
-            }
-
             val currentTag by chooseNoteViewModel.currentTag.collectAsState()
-            currentTag?.let { tag -> TagHeader(tag) }
 
             NotesCardsScreen(
+                contentTopPadding = contentTopPadding,
+                contentBottomPadding = contentBottomPadding,
+                // Scrolled with the notes, so it goes under the top bar with them.
+                header = if (folderPath.isNotEmpty() || currentTag != null) {
+                    {
+                        Column {
+                            // Only inside a folder: the root and the favorites have nowhere to
+                            // go back to.
+                            if (folderPath.isNotEmpty()) {
+                                FolderBreadcrumb(
+                                    path = folderPath,
+                                    onSelect = { folder ->
+                                        navigateToAncestor(
+                                            folder?.let { NotesNavigation.Folder(it.id) }
+                                                ?: NotesNavigation.Root
+                                        )
+                                    }
+                                )
+                            }
+
+                            currentTag?.let { tag -> TagHeader(tag) }
+                        }
+                    }
+                } else {
+                    null
+                },
                 showTapToStart = chooseNoteViewModel.currentFolderId == NotesNavigation.Root.id,
                 emptyMessage = if (currentTag != null) {
                     WrStrings.tagScreenEmpty()

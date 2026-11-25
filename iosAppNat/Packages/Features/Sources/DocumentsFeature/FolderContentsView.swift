@@ -598,7 +598,9 @@ final class FolderContentsViewModel {
 
 public enum DocumentsRoute: Hashable {
     case folder(Folder)
-    case document(id: String, title: String)
+    /// A document; with `searchQuery`, the words it was found by, which the editor opens
+    /// highlighted (the global search found it by its content).
+    case document(id: String, title: String, searchQuery: String? = nil)
     /// Every favorite of the workspace, like "Favorites" of the Compose side menu.
     case favorites
     /// The documents of the workspace carrying the tag, shown like a folder.
@@ -662,7 +664,7 @@ private struct DocumentsNavigation: View {
                             onOpenFolder: { folder in Task { await router.open(folder: folder, repository: session.documents) } },
                             onOpenTag: { tag in router.open(tag: tag) }
                         )
-                    case .document(let id, let title):
+                    case .document(let id, let title, let searchQuery):
                         NoteEditorView(
                             documentId: id,
                             title: title,
@@ -675,7 +677,9 @@ private struct DocumentsNavigation: View {
                             writingAgent: session.writingAgent,
                             imageGenerator: session.writingAgent,
                             headerImages: session.headerImages,
+                            equations: session.equations,
                             loadActivity: session.contentLoad,
+                            searchQuery: searchQuery,
                             rootTitle: rootTitle
                         ) { link in
                             router.path.append(DocumentsRoute.document(id: link.id, title: link.title ?? "Untitled"))

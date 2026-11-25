@@ -11,6 +11,7 @@ import io.writeopia.sdk.models.document.Folder
 import io.writeopia.sdk.models.document.MenuItem
 import io.writeopia.sdk.models.files.ExternalFile
 import io.writeopia.sdk.models.span.Span
+import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.Tag
 import io.writeopia.ui.backstack.BackstackHandler
 import io.writeopia.ui.backstack.BackstackInform
@@ -155,6 +156,9 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
     /** Puts a picture of the workspace in the header; null removes it. */
     fun onHeaderImageSelection(url: String?)
 
+    /** What the user asks of the header pictures the AI draws, sent with each drawing. */
+    fun onHeaderImageInstructions(instructions: String)
+
     /** Asks the AI for a header picture, or for a different one. It costs tokens of the user. */
     fun generateHeaderImage()
 
@@ -165,6 +169,30 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
     fun discardHeaderImage()
 
     fun onHeaderEditionCancel()
+
+    /** The options dialog of a drawing; null while closed. */
+    val drawingOptions: StateFlow<DrawingOptionsState?>
+
+    /** The ids of the drawings the cloud AI is turning into equations right now. */
+    val convertingDrawingIds: StateFlow<Set<String>>
+
+    /** Opens the options of the drawing at [position] (the "..." of its preview). */
+    fun onDrawingOptionsClick(step: StoryStep, position: String)
+
+    fun dismissDrawingOptions()
+
+    /** Asks the cloud AI to read the equation in the drawing of the open options and replaces the drawing with it. */
+    fun convertDrawingToEquation()
+
+    /** The dialog editing the LaTeX of an equation; null while closed. */
+    val equationEdition: StateFlow<EquationEditionState?>
+
+    fun onEquationLatexChange(latex: String)
+
+    /** Renders the LaTeX typed in the dialog and puts it in the equation step. */
+    fun saveEquation()
+
+    fun dismissEquationEdition()
 
     fun onMoreOptionsClick()
 

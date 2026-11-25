@@ -5,7 +5,7 @@ import io.ktor.server.request.receiveText
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.post
-import io.writeopia.api.core.auth.dto.AccountDeletionEventPayload
+import io.writeopia.pubsub.AccountDeletionEventPayload
 import io.writeopia.api.documents.documents.service.AccountDeletionWorkspaceService
 import io.writeopia.api.embeddings.EmbeddingStore
 import io.writeopia.connection.logger

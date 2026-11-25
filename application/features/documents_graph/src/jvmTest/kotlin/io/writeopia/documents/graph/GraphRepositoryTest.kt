@@ -63,7 +63,7 @@ class GraphRepositoryTest {
         val repository = GraphRepository(InMemoryFolderRepository(), documents, tags)
         val graph = repository.loadDocumentsByTagsAsAdjacencyList(workspaceId)
             .mapKeys { it.key.id }
-            .toGraph(1000f, 1000f)
+            .toGraph()
 
         // The root is only a key, never a drawn node, like in the folder graph.
         assertEquals(listOf("a", "ideas", "work"), graph.nodes.map { it.id }.sorted())

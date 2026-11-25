@@ -1,6 +1,7 @@
 package io.writeopia.editor.features.editor.viewmodel
 
 import io.writeopia.ai.HeaderImages
+import io.writeopia.ai.WorkspaceHeaderImage
 import io.writeopia.sdk.models.utils.ResultData
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.TestScope
@@ -18,11 +19,18 @@ private class FakeHeaderImages(
     var saveFailure: String? = null,
 ) : HeaderImages {
     val generatedFor = mutableListOf<Pair<String, String>>()
+    val instructionsFor = mutableListOf<String>()
     var gate: CompletableDeferred<Unit>? = null
 
-    override suspend fun generate(workspaceId: String, documentTitle: String, documentText: String): ResultData<String> {
+    override suspend fun generate(
+        workspaceId: String,
+        documentTitle: String,
+        documentText: String,
+        instructions: String
+    ): ResultData<String> {
         gate?.await()
         generatedFor.add(documentTitle to documentText)
+        instructionsFor.add(instructions)
         val failure = failure
         return if (failure != null) {
             ResultData.Error(Exception(failure))
@@ -31,11 +39,26 @@ private class FakeHeaderImages(
         }
     }
 
-    override suspend fun images(workspaceId: String): ResultData<List<String>> = ResultData.Complete(saved.toList())
+    /** Gates handed out to the next listings, in order: each holds its listing after it read. */
+    val listingGates = ArrayDeque<CompletableDeferred<Unit>>()
+
+    override suspend fun images(workspaceId: String): ResultData<List<String>> {
+        val listed = saved.toList()
+        listingGates.removeFirstOrNull()?.await()
+        return ResultData.Complete(listed)
+    }
 
     override suspend fun save(workspaceId: String, imageUrl: String): ResultData<Unit> {
         saveFailure?.let { message -> return ResultData.Error(Exception(message)) }
         saved.add(0, imageUrl)
+        return ResultData.Complete(Unit)
+    }
+
+    override suspend fun pictures(workspaceId: String): ResultData<List<WorkspaceHeaderImage>> =
+        ResultData.Complete(saved.map { url -> WorkspaceHeaderImage(id = url, url = url, createdAt = 0) })
+
+    override suspend fun delete(workspaceId: String, imageId: String): ResultData<Unit> {
+        saved.remove(imageId)
         return ResultData.Complete(Unit)
     }
 }
@@ -90,6 +113,19 @@ class HeaderImagesControllerTest {
         )
         assertTrue(approved.isEmpty())
         assertTrue(images.saved.isEmpty())
+    }
+
+    @Test
+    fun `the instructions of the user go with every picture drawn`() = runTest(UnconfinedTestDispatcher()) {
+        val images = FakeHeaderImages()
+        val controller = controller(images)
+
+        controller.generate()
+        controller.setInstructions("  a red lighthouse  ")
+        controller.generate()
+
+        assertEquals(listOf("", "a red lighthouse"), images.instructionsFor)
+        assertEquals("  a red lighthouse  ", controller.state.value.instructions)
     }
 
     @Test
@@ -214,5 +250,26 @@ class HeaderImagesControllerTest {
 
         assertEquals(HeaderImageGeneration.Failed("Database closed"), controller.state.value.generation)
         assertTrue(images.generatedFor.isEmpty())
+    }
+
+    @Test
+    fun `a listing overtaken by a newer one cannot take an approved picture away`() = runTest(UnconfinedTestDispatcher()) {
+        val images = FakeHeaderImages()
+        val controller = controller(images)
+
+        // An old listing starts before the approval and answers last, without the picture.
+        val old = CompletableDeferred<Unit>()
+        images.listingGates.add(old)
+        controller.load()
+
+        controller.generate()
+        controller.approve()
+        val approvedUrl = controller.state.value.images.first()
+
+        controller.load()
+        assertEquals(listOf(approvedUrl), controller.state.value.images)
+
+        old.complete(Unit)
+        assertEquals(listOf(approvedUrl), controller.state.value.images)
     }
 }

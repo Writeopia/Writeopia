@@ -5,6 +5,7 @@ import io.writeopia.api.core.auth.repository.getEmailVerification
 import io.writeopia.api.core.auth.repository.getUserByEmail
 import io.writeopia.api.core.auth.repository.incrementEmailVerificationAttempts
 import io.writeopia.api.core.auth.repository.upsertEmailVerification
+import io.writeopia.api.core.email.EmailService
 import io.writeopia.connection.logger
 import io.writeopia.sql.WriteopiaDbBackend
 import java.security.MessageDigest

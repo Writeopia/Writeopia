@@ -36,6 +36,7 @@ class ChooseNoteViewModelTest {
                 notesConfig = notesConfig,
                 authRepository = authRepository,
                 documentsApi = mockk(),
+                documentSyncService = mockk(),
                 selectionState = MutableStateFlow(false),
                 keyboardEventFlow = MutableStateFlow(KeyboardEvent.IDLE),
                 workspaceConfigRepository = mockk(),

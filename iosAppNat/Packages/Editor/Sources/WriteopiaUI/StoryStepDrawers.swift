@@ -104,6 +104,10 @@ struct StoryStepDrawer: View {
             DraggableStep(step: step, position: draw.position, manager: manager, block: draw.block) {
                 DividerDrawer()
             }
+        case StoryType.equation.number:
+            DraggableStep(step: step, position: draw.position, manager: manager, block: draw.block) {
+                EquationDrawer(step: step, manager: manager)
+            }
         case StoryType.loading.number:
             LoadingDrawer()
         case StoryType.skeleton.number:
@@ -291,27 +295,49 @@ struct TitleDrawer: View {
 }
 
 private extension View {
-    /// The header colors: a popover under the pencil on the Mac, and a bottom sheet on iOS, where
-    /// a popover doesn't fit the screen.
+    /// The header dialog: a sheet on every platform. The body scrolls vertically (colors, the
+    /// pictures, the one being drawn) and the description of the AI picture is pinned at the bottom.
     @ViewBuilder
     func headerColorsPresentation(isPresented: Binding<Bool>, manager: WriteopiaStateManager) -> some View {
-        #if os(macOS)
-        popover(isPresented: isPresented, arrowEdge: .bottom) {
-            HeaderColorPicker(manager: manager)
-                .padding(16)
-        }
-        #else
         sheet(isPresented: isPresented) {
-            ScrollView {
+            HeaderDialog(manager: manager) { isPresented.wrappedValue = false }
+            #if os(macOS)
+                .frame(width: 520, height: manager.headerImages == nil ? 220 : 620)
+            #else
+                // The pictures need room for the one the AI draws; the colors alone fit a short sheet.
+                .presentationDetents(manager.headerImages == nil ? [.height(220)] : [.medium, .large])
+                .presentationDragIndicator(.visible)
+            #endif
+        }
+    }
+}
+
+/// The content of the header dialog.
+struct HeaderDialog: View {
+    let manager: WriteopiaStateManager
+    let onClose: () -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            ScrollView(.vertical) {
                 HeaderColorPicker(manager: manager)
                     .padding(.horizontal, 20)
-                    .padding(.top, 24)
+                    .padding(.top, 20)
                     .padding(.bottom, 16)
-                    .frame(maxWidth: .infinity, alignment: .top)
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
             }
-            // The pictures need room for the one the AI draws; the colors alone fit a short sheet.
-            .presentationDetents(manager.headerImages == nil ? [.height(220)] : [.medium, .large])
-            .presentationDragIndicator(.visible)
+
+            if let images = manager.headerImages {
+                Divider()
+                HeaderImageGenerateBar(model: images)
+                    .padding(16)
+            }
+        }
+        #if os(macOS)
+        .overlay(alignment: .topTrailing) {
+            Button("Done", action: onClose)
+                .keyboardShortcut(.cancelAction)
+                .padding(12)
         }
         #endif
     }
@@ -400,48 +426,33 @@ struct HeaderImagesSection: View {
     private static let tileSize = CGSize(width: 88, height: 56)
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Images")
-                .font(.subheadline.weight(.semibold))
+        ScrollViewReader { proxy in
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Images")
+                    .font(.subheadline.weight(.semibold))
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    generateTile
+                LazyVGrid(
+                    columns: [GridItem(.adaptive(minimum: Self.tileSize.width), spacing: 10)],
+                    alignment: .leading,
+                    spacing: 10
+                ) {
                     ForEach(model.images, id: \.self) { url in
                         imageTile(url)
                     }
                 }
-                .padding(.vertical, 2)
-            }
 
-            if model.generation != .idle {
-                generationPanel
-                    .transition(.opacity.combined(with: .move(edge: .top)))
+                if model.generation != .idle {
+                    generationPanel
+                        .id("generation")
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+            }
+            .animation(.snappy, value: model.generation)
+            .task { await model.load() }
+            .onChange(of: model.generation) { _, generation in
+                if generation != .idle { withAnimation { proxy.scrollTo("generation", anchor: .bottom) } }
             }
         }
-        .animation(.snappy, value: model.generation)
-        .task { await model.load() }
-    }
-
-    private var generateTile: some View {
-        Button {
-            model.generate()
-        } label: {
-            VStack(spacing: 4) {
-                Image(systemName: "sparkles")
-                    .foregroundStyle(WrColors.accent)
-                Text("Generate with AI")
-                    .font(.caption2)
-                    .lineLimit(1)
-            }
-            .frame(width: Self.tileSize.width + 24, height: Self.tileSize.height)
-            .background(WrColors.secondaryFill, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(WrColors.divider))
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .disabled(model.isGenerating)
-        .accessibilityIdentifier("editor.header.generateImage")
     }
 
     private func imageTile(_ url: String) -> some View {
@@ -529,6 +540,41 @@ struct HeaderImagesSection: View {
     }
 }
 
+/// The bottom of the header dialog: what the user wants in the picture, in as many lines as it
+/// takes, and the button that draws it with the AI.
+struct HeaderImageGenerateBar: View {
+    let model: HeaderImagesModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            TextField("Describe the image (optional)", text: instructionsBinding, axis: .vertical)
+                .lineLimit(3...6)
+                .textFieldStyle(.plain)
+                .padding(10)
+                .background(WrColors.secondaryFill, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(WrColors.divider))
+                .disabled(model.isGenerating)
+                .accessibilityIdentifier("editor.header.imageInstructions")
+
+            Button {
+                model.generate()
+            } label: {
+                Label("Generate with AI", systemImage: "sparkles")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity, minHeight: 28)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .disabled(model.isGenerating || model.isSaving)
+            .accessibilityIdentifier("editor.header.generateImage")
+        }
+    }
+
+    private var instructionsBinding: Binding<String> {
+        Binding(get: { model.instructions }, set: { model.instructions = $0 })
+    }
+}
+
 /// A header picture from the CDN, scaled to cover the frame it is given with its proportions
 /// kept and the excess cropped away, with a quiet placeholder while it loads. The drawing of the
 /// picture is what covers the frame: the blurred bands the image model paints above and below it
@@ -600,6 +646,9 @@ struct CodeBlockDrawer: View {
                 .fill(WrColors.divider)
                 .frame(width: 1)
             StepTextView(step: step, manager: manager)
+                // Next to the gutter the Mac text view would keep its fallback width, so it takes
+                // the rest of the line like a paragraph does.
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }
@@ -622,6 +671,7 @@ struct CheckItemDrawer: View {
             .accessibilityLabel(step.checked == true ? "Checked" : "Unchecked")
 
             StepTextView(step: step, manager: manager)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }
@@ -639,6 +689,7 @@ struct UnorderedListItemDrawer: View {
                 .foregroundStyle(.secondary)
                 .frame(height: TextStyles.lineHeight(of: TextStyles.baseFont(for: step, family: manager.fontFamily)))
             StepTextView(step: step, manager: manager)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }
@@ -926,6 +977,87 @@ struct LinkCardDrawer: View {
     }
 }
 
+/// An equation, like `EquationDrawer` of the SDK: the picture the backend rendered of its LaTeX
+/// (black on transparent, `EquationImage.scale` pixels per point), shown as a template tinted
+/// with the text color at a `scale`th of its size, so it reads in both themes; the LaTeX as
+/// monospaced text while there is no picture. The context menu edits, copies or deletes it.
+struct EquationDrawer: View {
+    let step: StoryStep
+    let manager: WriteopiaStateManager
+    @State private var picture: CGImage?
+    @State private var failed = false
+
+    private var latex: String { step.text ?? "" }
+    private var isRendering: Bool { manager.renderingEquationStepIds.contains(step.id) }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            content
+                .frame(maxWidth: .infinity)
+            if isRendering {
+                ProgressView()
+                    .controlSize(.small)
+            }
+        }
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity)
+        .contentShape(Rectangle())
+        .task(id: step.url) { await load() }
+        .accessibilityLabel(Text("Equation \(latex)"))
+        .accessibilityIdentifier("step.equation")
+        .contextMenu {
+            if manager.isEditable {
+                Button("Edit equation", systemImage: "pencil") {
+                    manager.onEquationEdit?(step)
+                }
+            }
+            Button("Copy LaTeX", systemImage: "doc.on.doc") {
+                SystemPasteboard.copy(latex)
+            }
+            if manager.isEditable {
+                Button("Delete equation", systemImage: "trash", role: .destructive) {
+                    manager.removeStep(stepId: step.id)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        if let picture {
+            // The natural size of the picture, shrunk only when wider than the row.
+            let width = CGFloat(picture.width) / EquationImage.scale
+            let height = CGFloat(picture.height) / EquationImage.scale
+            Image(decorative: picture, scale: EquationImage.scale)
+                .renderingMode(.template)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(maxWidth: width, maxHeight: height)
+                .foregroundStyle(.primary)
+        } else if step.url != nil && !failed {
+            ProgressView()
+                .controlSize(.small)
+        } else {
+            Text(latex)
+                .font(.system(.body, design: .monospaced))
+                .foregroundStyle(.primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func load() async {
+        guard let urlString = step.url, let url = URL(string: urlString) else {
+            picture = nil
+            return
+        }
+        failed = false
+        let loaded = await EquationPictureLoader.shared.picture(at: url)
+        guard !Task.isCancelled else { return }
+        picture = loaded
+        failed = loaded == nil
+    }
+}
+
 struct DividerDrawer: View {
     var body: some View {
         // `Divider` would be vertical inside the gutter's HStack, so draw the line directly.
@@ -1042,6 +1174,7 @@ struct DragPreview: View {
     private var previewText: String {
         if step.type.number == StoryType.divider.number { return String(localized: "Divider") }
         if step.type.number == StoryType.linkCard.number { return step.url ?? String(localized: "Link") }
+        if step.type.number == StoryType.equation.number { return step.text ?? String(localized: "Equation") }
         let text = step.documentLink?.title ?? step.text ?? ""
         return text.isEmpty ? String(localized: "Empty line") : text
     }

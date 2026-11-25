@@ -7,9 +7,9 @@ import io.writeopia.forcegraph.model.Graph
 
 /**
  * The adjacency list as nodes and links. An item listed under several hubs (a document with
- * several tags) becomes one node with one link per hub.
+ * several tags) becomes one node with one link per hub. The nodes are placed by `ForceLayout`.
  */
-internal fun Map<String, List<ItemData>>.toGraph(maxWidth: Float, maxHeight: Float): Graph {
+internal fun Map<String, List<ItemData>>.toGraph(): Graph {
     val nodesMap = linkedMapOf<String, Node>()
 
     values.flatten().forEach { item ->
@@ -17,8 +17,8 @@ internal fun Map<String, List<ItemData>>.toGraph(maxWidth: Float, maxHeight: Flo
             Node(
                 id = item.id,
                 label = item.title,
-                initialX = (150..300).random().toFloat() / 1000 * maxWidth * 2,
-                initialY = (200..350).random().toFloat() / 1000 * maxHeight * 2,
+                initialX = 0f,
+                initialY = 0f,
                 isFolder = item.isFolder,
                 selected = item.selected,
                 isTag = item.isTag,

@@ -3,9 +3,11 @@ package io.writeopia.drawing.ui.screen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -27,7 +29,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.dp
 import io.writeopia.drawing.ui.components.DrawingCanvas
+import io.writeopia.drawing.ui.components.DrawingSideToolbar
 import io.writeopia.drawing.ui.components.DrawingToolbar
+import io.writeopia.drawing.model.DrawingState
 import io.writeopia.drawing.viewmodel.DrawingViewModel
 import io.writeopia.sdk.models.drawing.DrawingData
 
@@ -60,54 +64,100 @@ fun DrawingScreen(
         }
     }
 
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
-        topBar = {
-            DrawingTopBar(
-                onSave = { onSave(state.drawingData) },
-                onCancel = onCancel
-            )
-        },
-        bottomBar = {
-            DrawingToolbar(
-                currentTool = state.currentTool,
-                currentColor = state.currentColor,
-                strokeWidth = state.strokeWidth,
-                canUndo = state.canUndo,
-                colors = DrawingViewModel.PRESET_COLORS,
-                strokeWidths = DrawingViewModel.STROKE_WIDTHS,
-                onToolSelected = viewModel::setTool,
-                onColorSelected = viewModel::setColor,
-                onStrokeWidthSelected = viewModel::setStrokeWidth,
-                onUndo = viewModel::undo,
-                onClear = viewModel::clear,
-                modifier = Modifier.padding(WindowInsets.systemBars.asPaddingValues())
-            )
-        }
-    ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .padding(paddingValues)
-                .fillMaxSize()
-                .background(
-                    MaterialTheme.colorScheme.surfaceVariant,
-                    shape = RoundedCornerShape(12.dp)
-                )
-                .padding(vertical = 4.dp)
-        ) {
-            DrawingCanvas(
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        val isLandscape = maxWidth > maxHeight
+
+        if (isLandscape) {
+            Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .onSizeChanged { size ->
-                        viewModel.setCanvasSize(size.width, size.height)
-                    },
-                strokes = state.drawingData.strokes,
-                currentTool = state.currentTool,
-                currentColor = state.currentColor,
-                strokeWidth = state.strokeWidth,
-                onStrokeAdded = viewModel::addStroke
-            )
+                    .background(MaterialTheme.colorScheme.background)
+                    .padding(WindowInsets.safeDrawing.asPaddingValues())
+            ) {
+                DrawingCanvasArea(
+                    viewModel = viewModel,
+                    state = state,
+                    modifier = Modifier.weight(1f).fillMaxSize()
+                )
+
+                DrawingSideToolbar(
+                    currentTool = state.currentTool,
+                    currentColor = state.currentColor,
+                    strokeWidth = state.strokeWidth,
+                    canUndo = state.canUndo,
+                    colors = DrawingViewModel.PRESET_COLORS,
+                    strokeWidths = DrawingViewModel.STROKE_WIDTHS,
+                    onToolSelected = viewModel::setTool,
+                    onColorSelected = viewModel::setColor,
+                    onStrokeWidthSelected = viewModel::setStrokeWidth,
+                    onUndo = viewModel::undo,
+                    onClear = viewModel::clear,
+                    onSave = { onSave(state.drawingData) },
+                    onCancel = onCancel
+                )
+            }
+        } else {
+            Scaffold(
+                modifier = Modifier.fillMaxSize(),
+                topBar = {
+                    DrawingTopBar(
+                        onSave = { onSave(state.drawingData) },
+                        onCancel = onCancel
+                    )
+                },
+                bottomBar = {
+                    DrawingToolbar(
+                        currentTool = state.currentTool,
+                        currentColor = state.currentColor,
+                        strokeWidth = state.strokeWidth,
+                        canUndo = state.canUndo,
+                        colors = DrawingViewModel.PRESET_COLORS,
+                        strokeWidths = DrawingViewModel.STROKE_WIDTHS,
+                        onToolSelected = viewModel::setTool,
+                        onColorSelected = viewModel::setColor,
+                        onStrokeWidthSelected = viewModel::setStrokeWidth,
+                        onUndo = viewModel::undo,
+                        onClear = viewModel::clear,
+                        modifier = Modifier.padding(WindowInsets.systemBars.asPaddingValues())
+                    )
+                }
+            ) { paddingValues ->
+                DrawingCanvasArea(
+                    viewModel = viewModel,
+                    state = state,
+                    modifier = Modifier.padding(paddingValues).fillMaxSize()
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun DrawingCanvasArea(
+    viewModel: DrawingViewModel,
+    state: DrawingState,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .background(
+                MaterialTheme.colorScheme.surfaceVariant,
+                shape = RoundedCornerShape(12.dp)
+            )
+            .padding(vertical = 4.dp)
+    ) {
+        DrawingCanvas(
+            modifier = Modifier
+                .fillMaxSize()
+                .onSizeChanged { size ->
+                    viewModel.setCanvasSize(size.width, size.height)
+                },
+            strokes = state.drawingData.strokes,
+            currentTool = state.currentTool,
+            currentColor = state.currentColor,
+            strokeWidth = state.strokeWidth,
+            onStrokeAdded = viewModel::addStroke
+        )
     }
 }
 

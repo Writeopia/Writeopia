@@ -16,7 +16,8 @@ public protocol StepStore: AnyObject {
 /// kept as JSON, which carries nested steps, tags, spans and links as they are.
 public final class LocalDocumentsRepository: DocumentsRepository, StepStore, PresentationsStore {
     private let directory: URL
-    private let workspaceId: String
+    /// The workspace the documents belong to.
+    public let workspaceId: String
     private let seedsWelcome: Bool
     private let db: SQLiteDatabase
     private let encoder = JSONEncoder()
@@ -160,32 +161,45 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
         return document
     }
 
+    /// The documents with every word of `query` in their title or inside one of their steps, by
+    /// prefix and ignoring case, like the full-text search of the backend (`SearchTerms`). The
+    /// SQL narrows the rows; the words are checked again on the text itself, since the JSON of a
+    /// step also holds its keys. `LIKE` only folds the case of ASCII, so a word with other
+    /// letters ("ótimo", which must find "Ótimo") skips the narrowing and every document is
+    /// checked: the database of a workspace is small.
     public func search(query: String) async throws -> [WrDocument] {
-        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return [] }
+        let terms = SearchTerms(query)
+        guard !terms.isEmpty else { return [] }
         try seedIfNeeded()
 
-        let pattern = "%\(trimmed)%"
-        let byTitle = try db.query(
-            "SELECT id FROM document WHERE deleted = 0 AND title LIKE ?",
-            [.text(pattern)],
-            row: { $0.text(0) }
-        )
-        // The JSON also matches keys, so the steps found are checked again below.
-        let byContent = try db.query(
-            "SELECT DISTINCT document_id FROM story_step WHERE content LIKE ?",
-            [.text(pattern)],
-            row: { $0.text(0) }
-        )
+        let candidates: [String]
+        if terms.tokens.allSatisfy({ token in token.allSatisfy(\.isASCII) }) {
+            let patterns = terms.tokens.map { token in "%\(token)%" }
+            let titleClause = patterns.map { _ in "title LIKE ?" }.joined(separator: " AND ")
+            let contentClause = patterns.map { _ in "content LIKE ?" }.joined(separator: " AND ")
+            let byTitle = try db.query(
+                "SELECT id FROM document WHERE deleted = 0 AND \(titleClause)",
+                patterns.map { .text($0) },
+                row: { $0.text(0) }
+            )
+            let byContent = try db.query(
+                "SELECT DISTINCT document_id FROM story_step WHERE \(contentClause)",
+                patterns.map { .text($0) },
+                row: { $0.text(0) }
+            )
+            candidates = byTitle + byContent
+        } else {
+            candidates = try db.query("SELECT id FROM document WHERE deleted = 0", row: { $0.text(0) })
+        }
 
-        return try Set(byTitle + byContent)
+        return try Set(candidates)
             .compactMap(storedDocument)
             .filter { !$0.deleted }
             .filter { document in
-                document.title.localizedCaseInsensitiveContains(trimmed) ||
+                terms.matches(document.title) ||
                     document.content.contains { step in
                         step.type.number != StoryType.drawing.number &&
-                            step.text?.localizedCaseInsensitiveContains(trimmed) == true
+                            step.text.map(terms.matches) == true
                     }
             }
             .sorted { $0.lastUpdatedAt > $1.lastUpdatedAt }
@@ -367,12 +381,17 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
         }
     }
 
-    /// Makes the favorite documents those of `ids`, as the backend has them. The timestamps
-    /// stay: nothing is to be sent because of it. Folders keep theirs, they travel whole.
-    public func applyFavorites(_ ids: Set<String>) throws {
+    /// Makes the favorite documents those of `ids`, as the backend has them, except the ones
+    /// `changedHere`: a favorite changed on this device is recorded and on its way to the
+    /// backend, not to be undone by it. The timestamps stay: nothing is to be sent because of
+    /// it. Folders keep theirs, they travel whole.
+    public func applyFavorites(_ ids: Set<String>, keeping changedHere: Set<String> = []) throws {
+        let favoriteHere = Set(try db.query("SELECT id FROM document WHERE favorite = 1") { $0.text(0) })
         try db.transaction {
-            try db.run("UPDATE document SET favorite = 0 WHERE favorite = 1")
-            for id in ids {
+            for id in favoriteHere.subtracting(ids) where !changedHere.contains(id) {
+                try db.run("UPDATE document SET favorite = 0 WHERE id = ?", [.text(id)])
+            }
+            for id in ids.subtracting(favoriteHere) where !changedHere.contains(id) {
                 try db.run("UPDATE document SET favorite = 1 WHERE id = ?", [.text(id)])
             }
         }
@@ -455,6 +474,44 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
         for id in stepIds {
             try db.run("DELETE FROM story_step_tombstone WHERE step_id = ?", [.text(id)])
         }
+    }
+
+    // MARK: - Pending favorites, used by the sync
+
+    /// The favorites changed here that the backend has not been told about yet, oldest first.
+    public func storedPendingFavorites() throws -> [PendingFavorite] {
+        try db.query(
+            "SELECT document_id, workspace_id, favorite, changed_at FROM pending_favorite ORDER BY changed_at"
+        ) { row in
+            guard let documentId = row.text(0) else { return nil }
+            return PendingFavorite(
+                documentId: documentId,
+                workspaceId: row.text(1) ?? workspaceId,
+                favorite: (row.integer(2) ?? 0) != 0,
+                changedAt: row.integer(3) ?? 0
+            )
+        }
+    }
+
+    /// Records favorites changed here, one record per document: a new change replaces the older.
+    public func storePendingFavorites(_ changes: [PendingFavorite]) throws {
+        try db.transaction {
+            for change in changes {
+                try db.run(
+                    "INSERT OR REPLACE INTO pending_favorite (document_id, workspace_id, favorite, changed_at) VALUES (?, ?, ?, ?)",
+                    [.text(change.documentId), .text(change.workspaceId), .bool(change.favorite), .integer(change.changedAt)]
+                )
+            }
+        }
+    }
+
+    /// Forgets the record once the backend has the change, unless the favorite changed again
+    /// since: a newer record stays.
+    public func deletePendingFavorite(_ change: PendingFavorite) throws {
+        try db.run(
+            "DELETE FROM pending_favorite WHERE document_id = ? AND changed_at <= ?",
+            [.text(change.documentId), .integer(change.changedAt)]
+        )
     }
 
     /// Removes steps deleted elsewhere. No tombstone is kept: the backend has one already.
@@ -830,6 +887,13 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
                 deleted_at INTEGER NOT NULL
             );
 
+            CREATE TABLE IF NOT EXISTS pending_favorite (
+                document_id TEXT PRIMARY KEY NOT NULL,
+                workspace_id TEXT NOT NULL,
+                favorite INTEGER NOT NULL,
+                changed_at INTEGER NOT NULL
+            );
+
             CREATE TABLE IF NOT EXISTS folder (
                 id TEXT PRIMARY KEY NOT NULL,
                 parent_id TEXT NOT NULL,
@@ -1096,6 +1160,30 @@ public final class LocalDocumentsRepository: DocumentsRepository, StepStore, Pre
         let documents = try db.query("SELECT COUNT(*) FROM document WHERE parent_document_id = ? AND deleted = 0", [.text(folderId)]) { $0.integer(0) }
         return Int((folders.first ?? 0) + (documents.first ?? 0))
     }
+
+    // MARK: - Reset
+
+    /// Erases every document, folder, step, tag and presentation of this database, with what was
+    /// still waiting to be sent (tombstones, favorites) and the sync watermarks, so the next
+    /// workspace sync brings the whole workspace again. The markers of the one-time migrations
+    /// and imports are kept: those must not run again. Changes not yet sent are lost.
+    public func eraseAll() throws {
+        try db.transaction {
+            for table in Self.contentTables {
+                try db.run("DELETE FROM \(table)")
+            }
+            for key in Self.syncMetaKeys {
+                try db.run("DELETE FROM meta WHERE key = ?", [.text(key)])
+            }
+        }
+    }
+
+    private static let contentTables = [
+        "story_step", "story_step_tombstone", "pending_favorite", "document", "folder",
+        "presentation_step", "presentation", "document_tag_link", "document_tag",
+    ]
+
+    private static let syncMetaKeys = ["step_deletions_synced_at", "workspace_contents_synced_at", "events_synced_at"]
 
     // MARK: - Meta
 

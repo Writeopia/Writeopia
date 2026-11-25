@@ -26,6 +26,7 @@ dependencies {
     implementation(project(":backend:documents:documents"))
     implementation(project(":backend:core:database"))
     implementation(project(":backend:core:connection"))
+    implementation(project(":backend:core:email"))
     implementation(project(":backend:core:buckets"))
     implementation(project(":plugins:writeopia_serialization"))
     implementation(project(":writeopia_models"))
@@ -36,8 +37,6 @@ dependencies {
     implementation(libs.sqldelight.jvm)
     implementation(platform(libs.google.cloud.bom))
     implementation(libs.google.cloud.storage)
-    implementation(libs.ktor.client.core)
-    implementation(libs.ktor.client.cio)
 
     testImplementation(libs.kotlin.test)
 }

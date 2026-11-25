@@ -4,14 +4,18 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -27,6 +31,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke as ComposeStroke
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import io.writeopia.sdk.model.action.Action
 import io.writeopia.sdk.model.draganddrop.DropInfo
@@ -53,6 +58,10 @@ class DrawingPreviewDrawer(
     private val onSelected: (Boolean, String) -> Unit = { _, _ -> },
     private val onDragStart: () -> Unit = {},
     private val onDragStop: () -> Unit = {},
+    /** The "..." of the drawing: the app opens its options (convert to an equation). Null hides it. */
+    private val onOptionsClick: ((StoryStep, String) -> Unit)? = null,
+    /** The ids of the drawings the AI is reading right now; they show a progress over the preview. */
+    private val convertingIds: () -> Set<String> = { emptySet() },
 ) : StoryStepDrawer {
 
     @Composable
@@ -143,21 +152,50 @@ class DrawingPreviewDrawer(
                                     .clickable { onDrawingClick(step, drawInfo.position) }
                             )
 
-                            // Delete button
-                            Icon(
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .padding(8.dp)
-                                    .clip(CircleShape)
-                                    .background(WriteopiaTheme.colorScheme.lightBackground)
-                                    .clickable {
-                                        onDelete(Action.DeleteStory(step, drawInfo.position))
-                                    }
-                                    .padding(4.dp),
-                                imageVector = WrSdkIcons.close,
-                                contentDescription = "Delete drawing",
-                                tint = MaterialTheme.colorScheme.onBackground
-                            )
+                            // The options ("...") and the delete buttons
+                            Row(
+                                modifier = Modifier.align(Alignment.TopEnd).padding(8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                if (onOptionsClick != null) {
+                                    Icon(
+                                        modifier = Modifier
+                                            .clip(CircleShape)
+                                            .background(WriteopiaTheme.colorScheme.lightBackground)
+                                            .clickable { onOptionsClick.invoke(step, drawInfo.position) }
+                                            .padding(4.dp)
+                                            .testTag("drawingOptions"),
+                                        imageVector = WrSdkIcons.moreHoriz,
+                                        contentDescription = "Drawing options",
+                                        tint = MaterialTheme.colorScheme.onBackground
+                                    )
+                                }
+
+                                Icon(
+                                    modifier = Modifier
+                                        .clip(CircleShape)
+                                        .background(WriteopiaTheme.colorScheme.lightBackground)
+                                        .clickable {
+                                            onDelete(Action.DeleteStory(step, drawInfo.position))
+                                        }
+                                        .padding(4.dp),
+                                    imageVector = WrSdkIcons.close,
+                                    contentDescription = "Delete drawing",
+                                    tint = MaterialTheme.colorScheme.onBackground
+                                )
+                            }
+
+                            if (step.id in convertingIds()) {
+                                Box(
+                                    modifier = Modifier
+                                        .matchParentSize()
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(MaterialTheme.colorScheme.background.copy(alpha = 0.6f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator(modifier = Modifier.size(32.dp))
+                                }
+                            }
                         }
                     } else {
                         // Empty or invalid drawing placeholder

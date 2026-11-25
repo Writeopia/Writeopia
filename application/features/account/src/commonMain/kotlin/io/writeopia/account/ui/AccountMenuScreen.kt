@@ -23,6 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import io.writeopia.common.utils.icons.WrIcons
+import io.writeopia.commonui.repeatedClick
 import io.writeopia.resources.WrStrings
 import io.writeopia.theme.WriteopiaTheme
 
@@ -32,7 +33,9 @@ fun AccountMenuScreen(
     navigateToTeams: () -> Unit,
     navigateToAccount: () -> Unit,
     navigateToAi: () -> Unit,
+    navigateToWorkspace: () -> Unit,
     modifier: Modifier = Modifier,
+    onVersionEasterEgg: () -> Unit = {},
 ) {
     Column(
         modifier = modifier.fillMaxSize()
@@ -46,6 +49,14 @@ fun AccountMenuScreen(
             title = WrStrings.appearance(),
             icon = WrIcons.colorModeLight,
             onClick = navigateToAppearance
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        SettingsMenuItem(
+            title = WrStrings.workspaceName(),
+            icon = WrIcons.folder,
+            onClick = navigateToWorkspace
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -76,6 +87,7 @@ fun AccountMenuScreen(
 
         Text(
             text = WrStrings.version(),
+            modifier = Modifier.repeatedClick(onReached = onVersionEasterEgg),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
         )
@@ -83,16 +95,17 @@ fun AccountMenuScreen(
 }
 
 @Composable
-private fun SettingsMenuItem(
+internal fun SettingsMenuItem(
     title: String,
     icon: ImageVector,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.medium)
-            .background(WriteopiaTheme.colorScheme.optionsSelector)
+            .background(WriteopiaTheme.colorScheme.optionButton)
             .clickable(onClick = onClick)
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically

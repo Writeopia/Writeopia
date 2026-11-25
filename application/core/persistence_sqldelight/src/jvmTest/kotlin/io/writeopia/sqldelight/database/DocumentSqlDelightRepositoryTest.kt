@@ -49,6 +49,11 @@ class DocumentSqlDelightRepositoryTest {
     }
 
     @Test
+    fun aFavoriteChangedHereStaysPendingUntilTheBackendHasIt() = runTest {
+        createDb().aFavoriteChangedHereStaysPendingUntilTheBackendHasIt()
+    }
+
+    @Test
     fun stepTimestampsAreKept() = runTest {
         createDb().stepTimestampsAreKept()
     }

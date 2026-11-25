@@ -1,0 +1,23 @@
+-- The favorites changed on this device that the backend has not been told about yet, one row
+-- per document. The row goes once the backend has the change.
+CREATE TABLE pendingFavoriteEntity (
+  document_id TEXT PRIMARY KEY,
+  workspace_id TEXT NOT NULL,
+  favorite INTEGER NOT NULL,
+  changed_at INTEGER NOT NULL
+);
+
+insert:
+INSERT OR REPLACE INTO pendingFavoriteEntity(document_id, workspace_id, favorite, changed_at)
+VALUES (?, ?, ?, ?);
+
+selectByWorkspaceId:
+SELECT *
+FROM pendingFavoriteEntity
+WHERE workspace_id = ?
+ORDER BY changed_at;
+
+deleteUpTo:
+DELETE
+FROM pendingFavoriteEntity
+WHERE document_id = ? AND changed_at <= ?;
