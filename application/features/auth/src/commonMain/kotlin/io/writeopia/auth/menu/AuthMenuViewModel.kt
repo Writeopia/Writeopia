@@ -5,6 +5,8 @@ package io.writeopia.auth.menu
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.LocalAiRepository
+import io.writeopia.analytics.Analytics
+import io.writeopia.analytics.AnalyticsTracker
 import io.writeopia.api.LocalAiApi
 import io.writeopia.auth.core.data.AccountDeletionPendingException
 import io.writeopia.auth.core.data.AuthApi
@@ -41,6 +43,7 @@ class AuthMenuViewModel(
     private val notesUseCase: NotesUseCase,
     private val localAiRepository: LocalAiRepository,
     private val json: Json = writeopiaJson,
+    private val analyticsTracker: AnalyticsTracker = Analytics,
 ) : ViewModel() {
 
     private val _email = MutableStateFlow("")
@@ -112,12 +115,16 @@ class AuthMenuViewModel(
             // is not trusted: the paywall asks the backend and lets a premium user straight through.
             else -> LoginStatus.SUBSCRIPTION_REQUIRED
         }
+        if (status == LoginStatus.ONLINE) {
+            analyticsTracker.setEnabled(true)
+        }
         emit(status)
     }
 
     fun useOffline(sideEffect: () -> Unit) {
         viewModelScope.launch {
             authRepository.useOffline()
+            analyticsTracker.setEnabled(false)
 
             val userId = WriteopiaUser.disconnectedUser().id
             val workspace = Workspace.disconnectedWorkspace()
@@ -155,6 +162,8 @@ class AuthMenuViewModel(
     fun onLoginRequest() {
         _loginState.value = ResultData.Loading()
         _accountDeletionPending.value = false
+        // Enabled here, before the request, so a failed attempt's login_failed is observable too.
+        analyticsTracker.setEnabled(true)
 
         viewModelScope.launch {
             try {
@@ -185,6 +194,7 @@ class AuthMenuViewModel(
                                 user = user,
                                 selected = true
                             )
+                            analyticsTracker.capture("user_logged_in")
                             val accessToken = result.data.accessToken
                             val refreshToken = result.data.refreshToken
                             if (accessToken != null) {
@@ -205,6 +215,7 @@ class AuthMenuViewModel(
                     is ResultData.Error -> {
                         delay(300)
                         _accountDeletionPending.value = result.exception is AccountDeletionPendingException
+                        analyticsTracker.capture("login_failed")
                         result.map { false }
                     }
 

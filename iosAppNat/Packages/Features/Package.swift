@@ -11,6 +11,7 @@ let coreProducts: [Target.Dependency] = [
     .product(name: "WrData", package: "Core"),
     .product(name: "WrSession", package: "Core"),
     .product(name: "WrDesign", package: "Core"),
+    .product(name: "WrAnalytics", package: "Core"),
 ]
 
 let package = Package(

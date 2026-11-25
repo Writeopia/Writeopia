@@ -19,6 +19,8 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
       - name: Generate windows app
         run: ./gradlew packageReleaseMsi
+        env:
+          WR_POSTHOG_PROJECT_TOKEN: ${{ secrets.WR_POSTHOG_PROJECT_TOKEN }}
       - name: upload unsigned artifact
         id: upload-unsigned-artifact
         uses: actions/upload-artifact@v7
@@ -51,6 +53,8 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
       - name: Generate linux app
         run: ./gradlew packageReleaseDeb
+        env:
+          WR_POSTHOG_PROJECT_TOKEN: ${{ secrets.WR_POSTHOG_PROJECT_TOKEN }}
       - name: Upload App
         uses: actions/upload-artifact@v7
         with:

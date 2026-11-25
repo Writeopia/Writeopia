@@ -17,6 +17,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import io.writeopia.core.folders.sync.cloud.CloudSyncManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,6 +31,7 @@ class FolderStateController private constructor(
     private val notesUseCase: NotesUseCase,
     private val authRepository: AuthRepository,
     private val documentsApi: DocumentsApi,
+    private val cloudSync: CloudSyncManager?,
 ) : FolderController {
     // The controller is shared by every notes screen, so it can't borrow a ViewModel scope: on
     // mobile each folder screen has its own ViewModel and leaving the folder would cancel the
@@ -88,9 +90,11 @@ class FolderStateController private constructor(
 
             // If backend sync succeeded, hard delete locally
             // If sync failed, folder remains soft-deleted and will be retried during EventSync
-            if (syncSuccess) {
+            // The cloud sync of the offline workspace records it first (see ChooseNoteKmpViewModel).
+            if (syncSuccess && cloudSync?.isActive() != true) {
                 notesUseCase.hardDeleteFolderById(id, workspaceId)
             }
+            cloudSync?.requestSync()
         }
     }
 
@@ -356,9 +360,10 @@ class FolderStateController private constructor(
         fun singleton(
             notesUseCase: NotesUseCase,
             authRepository: AuthRepository,
-            documentsApi: DocumentsApi
+            documentsApi: DocumentsApi,
+            cloudSync: CloudSyncManager? = null,
         ) =
-            instance ?: FolderStateController(notesUseCase, authRepository, documentsApi)
+            instance ?: FolderStateController(notesUseCase, authRepository, documentsApi, cloudSync)
                 .also {
                     instance = it
                 }

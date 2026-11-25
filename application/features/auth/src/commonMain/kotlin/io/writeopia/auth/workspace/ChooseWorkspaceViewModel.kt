@@ -5,6 +5,8 @@ package io.writeopia.auth.workspace
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.writeopia.LocalAiRepository
+import io.writeopia.analytics.Analytics
+import io.writeopia.analytics.AnalyticsTracker
 import io.writeopia.api.LocalAiApi
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.auth.core.data.WorkspaceApi
@@ -33,6 +35,7 @@ class ChooseWorkspaceViewModel(
     private val notesUseCase: NotesUseCase,
     private val localAiRepository: LocalAiRepository,
     private val json: Json = writeopiaJson,
+    private val analyticsTracker: AnalyticsTracker = Analytics,
 ) : ViewModel() {
 
     private val _workspacesState = MutableStateFlow<ResultData<List<Workspace>>>(ResultData.Idle())
@@ -125,6 +128,7 @@ class ChooseWorkspaceViewModel(
             _createWorkspaceState.value = result
 
             if (result is ResultData.Complete) {
+                analyticsTracker.capture("workspace_created")
                 loadWorkspaces()
             }
         }

@@ -31,6 +31,7 @@ jobs:
           WR_ANDROID_SIGNING_STORE_PASSWORD: ${{ secrets.WR_ANDROID_SIGNING_STORE_PASSWORD }}
           WR_ANDROID_SIGNING_KEY_ALIAS: ${{ secrets.WR_ANDROID_SIGNING_KEY_ALIAS }}
           WR_ANDROID_SIGNING_KEY_PASSWORD: ${{ secrets.WR_ANDROID_SIGNING_KEY_PASSWORD }}
+          WR_POSTHOG_PROJECT_TOKEN: ${{ secrets.WR_POSTHOG_PROJECT_TOKEN }}
 
       - name: Upload AAB as artifact
         uses: actions/upload-artifact@v7

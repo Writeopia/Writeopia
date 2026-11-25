@@ -57,6 +57,7 @@ kotlin {
                 implementation(project(":tutorials"))
                 implementation(project(":application:core:models"))
                 implementation(project(":application:core:utils"))
+                implementation(project(":application:core:analytics"))
                 implementation(project(":application:core:navigation"))
                 implementation(project(":application:core:connection"))
                 implementation(project(":application:core:configuration"))

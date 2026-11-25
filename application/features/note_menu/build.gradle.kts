@@ -63,6 +63,7 @@ kotlin {
                 implementation(project(":plugins:writeopia_network"))
 
                 implementation(project(":application:core:utils"))
+                implementation(project(":application:core:analytics"))
                 implementation(project(":application:core:models"))
                 implementation(project(":application:core:common_ui"))
                 implementation(project(":application:core:auth_core"))

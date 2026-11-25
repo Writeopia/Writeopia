@@ -1,5 +1,6 @@
 import Observation
 import SwiftUI
+import WrAnalytics
 import WrDesign
 import WrModels
 import WrNetwork
@@ -14,9 +15,11 @@ final class ChooseWorkspaceViewModel {
     private(set) var createError: String?
 
     private let session: AppSession
+    private let analytics: AnalyticsTracker
 
-    init(session: AppSession) {
+    init(session: AppSession, analytics: AnalyticsTracker = Analytics.shared) {
         self.session = session
+        self.analytics = analytics
     }
 
     var selectedWorkspaceId: String? { session.workspace?.id }
@@ -56,6 +59,7 @@ final class ChooseWorkspaceViewModel {
 
         do {
             try await session.workspacesAPI.createWorkspace(name: trimmed)
+            analytics.capture("workspace_created")
             await load()
             return true
         } catch {

@@ -441,4 +441,15 @@
   <string name="paywall_benefit_team_desc">Deel werkruimtes en schrijf samen met je team.</string>
   <string name="paywall_benefit_backup">Veilig in de cloud</string>
   <string name="paywall_benefit_backup_desc">Er wordt een back-up van je documenten gemaakt, dus met een apparaat gaat niets verloren.</string>
+  <string name="cloud_sync_title">Synchroniseren met %1$s</string>
+  <string name="cloud_sync_description">Bewaar je privéruimte in je eigen %1$s en open hem op je andere apparaten. Gratis: je documenten gaan rechtstreeks naar je account, en Writeopia ziet daar alleen zijn eigen verborgen map.</string>
+  <string name="cloud_sync_connect">Verbinden</string>
+  <string name="cloud_sync_connecting">Rond af in je browser…</string>
+  <string name="cloud_sync_disconnect">Ontkoppelen</string>
+  <string name="cloud_sync_sync_now">Nu synchroniseren</string>
+  <string name="cloud_sync_syncing">Synchroniseren…</string>
+  <string name="cloud_sync_last_sync">Laatste synchronisatie: %1$s</string>
+  <string name="cloud_sync_not_synced">Nog niet gesynchroniseerd</string>
+  <string name="cloud_sync_error">De laatste synchronisatie is mislukt: %1$s</string>
+  <string name="cloud_sync_reconnect">De toegang tot %1$s is verlopen. Verbind opnieuw om te blijven synchroniseren.</string>
 </resources>
