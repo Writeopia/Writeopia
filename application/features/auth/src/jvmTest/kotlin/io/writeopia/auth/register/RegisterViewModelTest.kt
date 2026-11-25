@@ -106,7 +106,7 @@ class RegisterViewModelTest {
 
     @Test
     fun `onRegister should track user_signed_up on success`() = runTest {
-        coEvery { authApi.register(any(), any(), any(), any(), any(), any()) } returns
+        coEvery { authApi.register(any(), any(), any(), any(), any(), any(), any()) } returns
             ResultData.Complete(registerResponse)
 
         val viewModel = filledViewModel()
@@ -119,7 +119,7 @@ class RegisterViewModelTest {
 
     @Test
     fun `onRegister should not track user_signed_up when registration fails`() = runTest {
-        coEvery { authApi.register(any(), any(), any(), any(), any(), any()) } returns
+        coEvery { authApi.register(any(), any(), any(), any(), any(), any(), any()) } returns
             ResultData.Error(Exception("Registration failed"))
 
         val viewModel = filledViewModel()

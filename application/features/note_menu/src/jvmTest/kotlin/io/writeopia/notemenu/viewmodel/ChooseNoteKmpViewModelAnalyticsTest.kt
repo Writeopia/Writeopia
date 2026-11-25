@@ -75,6 +75,7 @@ class ChooseNoteKmpViewModelAnalyticsTest {
         keyboardEventFlow = MutableStateFlow(KeyboardEvent.IDLE),
         workspaceConfigRepository = mockk(relaxed = true),
         folderSync = mockk(relaxed = true),
+        documentSyncService = mockk(relaxed = true),
         notesNavigation = NotesNavigation.Root,
         analyticsTracker = analyticsTracker,
     )

@@ -7,7 +7,6 @@ import io.writeopia.ai.task.AiTaskManager
 import io.writeopia.analytics.testing.FakeAnalyticsTracker
 import io.writeopia.auth.core.manager.AuthRepository
 import io.writeopia.core.folders.api.DocumentsApi
-import io.writeopia.core.folders.repository.InDocumentSearchRepository
 import io.writeopia.core.folders.repository.folder.FolderRepository
 import io.writeopia.core.folders.repository.tag.DocumentTagRepository
 import io.writeopia.editor.features.editor.copy.CopyManager
@@ -56,7 +55,6 @@ class NoteEditorKmpViewModelAnalyticsTest {
     private val folderRepository: FolderRepository = mockk(relaxed = true)
     private val workspaceConfigRepository: WorkspaceConfigRepository = mockk(relaxed = true)
     private val copyManager: CopyManager = mockk(relaxed = true)
-    private val inDocumentSearchRepository: InDocumentSearchRepository = mockk(relaxed = true)
     private val documentsApi: DocumentsApi = mockk(relaxed = true)
     private val documentTagRepository: DocumentTagRepository = mockk(relaxed = true)
     private val documentSyncManager: DocumentSyncManager = mockk(relaxed = true)
@@ -94,7 +92,6 @@ class NoteEditorKmpViewModelAnalyticsTest {
         keyboardEventFlow = MutableStateFlow(KeyboardEvent.IDLE),
         copyManager = copyManager,
         authRepository = authRepository,
-        inDocumentSearchRepository = inDocumentSearchRepository,
         documentSyncManager = documentSyncManager,
         documentsApi = documentsApi,
         aiTaskManager = AiTaskManager(),
