@@ -455,4 +455,6 @@
   <string name="cloud_sync_reconnect">O acesso ao %1$s terminou. Conecte de novo para continuar sincronizando.</string>
   <string name="google_signup_title">Escolha seu nome de usuário</string>
   <string name="google_signup_message">É a primeira vez que %1$s entra no Writeopia. Escolha um nome de usuário para criar sua conta.</string>
+  <string name="new_to_writeopia">Novo no Writeopia?</string>
+  <string name="create_an_account">Criar uma conta</string>
 </resources>

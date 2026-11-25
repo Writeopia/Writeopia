@@ -455,4 +455,6 @@
   <string name="continue_with_google">Google で続行</string>
   <string name="google_signup_title">ユーザー名を選択</string>
   <string name="google_signup_message">%1$s で Writeopia に初めてサインインします。アカウントを作成するユーザー名を選んでください。</string>
+  <string name="new_to_writeopia">Writeopiaは初めてですか？</string>
+  <string name="create_an_account">アカウントを作成</string>
 </resources>

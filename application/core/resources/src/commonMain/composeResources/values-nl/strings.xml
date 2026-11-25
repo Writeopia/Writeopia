@@ -455,4 +455,6 @@
   <string name="continue_with_google">Doorgaan met Google</string>
   <string name="google_signup_title">Kies je gebruikersnaam</string>
   <string name="google_signup_message">%1$s meldt zich voor het eerst aan bij Writeopia. Kies een gebruikersnaam om je account aan te maken.</string>
+  <string name="new_to_writeopia">Nieuw bij Writeopia?</string>
+  <string name="create_an_account">Account aanmaken</string>
 </resources>

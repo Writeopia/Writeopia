@@ -455,4 +455,6 @@
   <string name="continue_with_google">Продолжить с Google</string>
   <string name="google_signup_title">Выберите имя пользователя</string>
   <string name="google_signup_message">%1$s впервые входит в Writeopia. Выберите имя пользователя, чтобы создать аккаунт.</string>
+  <string name="new_to_writeopia">Впервые в Writeopia?</string>
+  <string name="create_an_account">Создать учётную запись</string>
 </resources>

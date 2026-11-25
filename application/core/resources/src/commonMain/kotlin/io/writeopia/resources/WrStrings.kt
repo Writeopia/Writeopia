@@ -146,6 +146,8 @@ import writeopia.application.core.resources.generated.resources.ai_provider_loca
 import writeopia.application.core.resources.generated.resources.ai_provider_local_unconfigured_hint
 import writeopia.application.core.resources.generated.resources.ai_provider_local_unconfigured_offline_hint
 import writeopia.application.core.resources.generated.resources.continue_with_google
+import writeopia.application.core.resources.generated.resources.create_an_account
+import writeopia.application.core.resources.generated.resources.new_to_writeopia
 import writeopia.application.core.resources.generated.resources.google_signup_message
 import writeopia.application.core.resources.generated.resources.google_signup_title
 import writeopia.application.core.resources.generated.resources.current_month_usage
@@ -1018,6 +1020,12 @@ object WrStrings {
 
     @Composable
     fun continueWithGoogle() = stringResource(Res.string.continue_with_google)
+
+    @Composable
+    fun newToWriteopia() = stringResource(Res.string.new_to_writeopia)
+
+    @Composable
+    fun createAnAccount() = stringResource(Res.string.create_an_account)
 
     @Composable
     fun registrationFailed() = stringResource(Res.string.registration_failed)

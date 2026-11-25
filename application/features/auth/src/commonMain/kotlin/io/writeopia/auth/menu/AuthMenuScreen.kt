@@ -1,15 +1,24 @@
 package io.writeopia.auth.menu
 
 import androidx.compose.foundation.background
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.draw.alpha
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.DividerDefaults
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
@@ -341,67 +350,130 @@ private fun AuthMenuContentScreen(
                 )
             }
 
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                HorizontalDivider(modifier = Modifier.weight(1F))
-
-                Text(
-                    WrStrings.or(),
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.padding(horizontal = 10.dp),
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Bold
-                )
-
-                HorizontalDivider(modifier = Modifier.weight(1F))
-            }
+            Spacer(modifier = Modifier.height(12.dp))
 
             val googleSignInLauncher = rememberGoogleSignInLauncher()
             if (googleSignInLauncher != null) {
-                val scope = rememberCoroutineScope()
+                // Only between the two ways to sign in, like in the native apps.
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    HorizontalDivider(modifier = Modifier.weight(1F))
 
-                TextButton(
-                    modifier = Modifier
-                        .padding(horizontal = 24.dp)
-                        .background(WriteopiaTheme.colorScheme.defaultButton, shape = shape)
-                        .fillMaxWidth(),
+                    Text(
+                        WrStrings.or(),
+                        color = WriteopiaTheme.colorScheme.textLighter,
+                        modifier = Modifier.padding(horizontal = 12.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+
+                    HorizontalDivider(modifier = Modifier.weight(1F))
+                }
+
+                val scope = rememberCoroutineScope()
+                var googleInProgress by remember { mutableStateOf(false) }
+
+                GoogleSignInButton(
+                    inProgress = googleInProgress,
+                    shape = shape,
+                    modifier = Modifier.padding(horizontal = 24.dp).fillMaxWidth(),
                     onClick = {
                         // UNDISPATCHED keeps the platform call inside the click event, which the
                         // web popup needs to not be blocked by the browser.
                         scope.launch(start = CoroutineStart.UNDISPATCHED) {
-                            when (val result = googleSignInLauncher.signIn()) {
-                                is GoogleSignInResult.Success -> onGoogleLoginRequest(result.credential)
-                                is GoogleSignInResult.Failure -> onGoogleSignInFailed(result.error)
-                                GoogleSignInResult.Cancelled -> Unit
+                            googleInProgress = true
+                            try {
+                                when (val result = googleSignInLauncher.signIn()) {
+                                    is GoogleSignInResult.Success -> onGoogleLoginRequest(result.credential)
+                                    is GoogleSignInResult.Failure -> onGoogleSignInFailed(result.error)
+                                    GoogleSignInResult.Cancelled -> Unit
+                                }
+                            } finally {
+                                googleInProgress = false
                             }
                         }
                     },
-                    contentPadding = PaddingValues(0.dp),
-                    shape = shape
-                ) {
-                    Text(
-                        text = WrStrings.continueWithGoogle(),
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                }
+                )
 
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
-            TextButton(
-                modifier = Modifier
-                    .padding(horizontal = 24.dp)
-                    .background(WriteopiaTheme.colorScheme.defaultButton, shape = shape)
-                    .fillMaxWidth(),
-                onClick = navigateToRegister,
-                contentPadding = PaddingValues(0.dp),
-                shape = shape
+            // "New to Writeopia? Create an account", a link like in the native apps.
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(top = 4.dp),
             ) {
                 Text(
-                    text = WrStrings.createYourAccount(),
-                    color = MaterialTheme.colorScheme.onBackground
+                    text = WrStrings.newToWriteopia(),
+                    color = WriteopiaTheme.colorScheme.textLighter,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+
+                Text(
+                    text = WrStrings.createAnAccount(),
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier
+                        .clip(MaterialTheme.shapes.small)
+                        .clickable(onClick = navigateToRegister)
+                        .padding(horizontal = 4.dp, vertical = 8.dp)
+                        .testTag("AuthMenu.register"),
+                )
+            }
+        }
+    }
+}
+
+/**
+ * "Continue with Google", outlined so it stays second to the email sign-in, with Google's "G" in
+ * the accent color. Shows a spinner while the Google page is open (the desktop browser, the
+ * Android account picker, the web popup).
+ */
+@Composable
+private fun GoogleSignInButton(
+    inProgress: Boolean,
+    shape: Shape,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    OutlinedButton(
+        onClick = onClick,
+        enabled = !inProgress,
+        shape = shape,
+        border = BorderStroke(1.dp, DividerDefaults.color),
+        colors = ButtonDefaults.outlinedButtonColors(
+            contentColor = MaterialTheme.colorScheme.onBackground,
+            disabledContentColor = MaterialTheme.colorScheme.onBackground,
+        ),
+        modifier = modifier.heightIn(min = 48.dp).testTag("AuthMenu.google"),
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.alpha(if (inProgress) 0F else 1F),
+            ) {
+                Text(
+                    text = "G",
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Black,
+                    style = MaterialTheme.typography.titleMedium,
+                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Text(
+                    text = WrStrings.continueWithGoogle(),
+                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.titleSmall,
+                )
+            }
+
+            if (inProgress) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(18.dp),
+                    strokeWidth = 2.dp,
                 )
             }
         }

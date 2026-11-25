@@ -1,6 +1,7 @@
 package io.writeopia.auth.google
 
 import android.app.Activity
+import android.util.Log
 import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -54,9 +55,15 @@ class AndroidGoogleSignInLauncher(
         } catch (e: GetCredentialCancellationException) {
             GoogleSignInResult.Cancelled
         } catch (e: GetCredentialException) {
+            // Play services logs nothing useful: "[28444] Developer console is not set up
+            // correctly" means no Android OAuth client matches this package name + signing SHA-1.
+            Log.w(TAG, "Google sign-in failed: ${e.type}: ${e.errorMessage}", e)
             GoogleSignInResult.Failure(e)
         } catch (e: GoogleIdTokenParsingException) {
+            Log.w(TAG, "Google ID token could not be parsed", e)
             GoogleSignInResult.Failure(e)
         }
     }
 }
+
+private const val TAG = "GoogleSignIn"

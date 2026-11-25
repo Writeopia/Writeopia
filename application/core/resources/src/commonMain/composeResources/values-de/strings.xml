@@ -455,4 +455,6 @@
   <string name="continue_with_google">Weiter mit Google</string>
   <string name="google_signup_title">Wähle deinen Benutzernamen</string>
   <string name="google_signup_message">%1$s meldet sich zum ersten Mal bei Writeopia an. Wähle einen Benutzernamen, um dein Konto zu erstellen.</string>
+  <string name="new_to_writeopia">Neu bei Writeopia?</string>
+  <string name="create_an_account">Konto erstellen</string>
 </resources>
