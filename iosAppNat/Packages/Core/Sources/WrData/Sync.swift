@@ -923,6 +923,17 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
 
     // MARK: - DocumentSyncing
 
+    /// Erases the local cache of the workspace, so the next `syncWorkspaceChanges` brings it
+    /// whole from the backend. A workspace sync still running ends first, so it can't write
+    /// into the emptied cache. What was not sent yet is lost.
+    public func eraseLocalCopy() async throws {
+        if let running = workspaceSyncTask {
+            _ = try? await running.value
+        }
+        try local.eraseAll()
+        lastFolderSync = [:]
+    }
+
     /// Makes the favorites those of the backend, like `DocumentSyncService.receiveFavorites` of
     /// the Compose app. A favorite changed here is recorded (`PendingFavorite`) and sent as soon
     /// as it is set, but it may not be there yet: the request failed (the document itself wasn't

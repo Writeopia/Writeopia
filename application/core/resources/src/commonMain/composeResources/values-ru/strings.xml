@@ -362,6 +362,7 @@
   <string name="folder_screen_empty">Эта папка пуста.</string>
   <string name="folder_screen_create_note">Создать заметку</string>
   <string name="documents_graph">Граф документов</string>
+  <string name="graph_section">Граф</string>
   <string name="document_tag_add_dialog_title">Добавить тег</string>
   <string name="document_tag_add_existing">Выбрать тег</string>
   <string name="document_tag_add_search">Поиск тегов</string>

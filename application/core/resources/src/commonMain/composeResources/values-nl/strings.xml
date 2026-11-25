@@ -362,6 +362,7 @@
   <string name="folder_screen_empty">Deze map is leeg.</string>
   <string name="folder_screen_create_note">Notitie aanmaken</string>
   <string name="documents_graph">Documentengrafiek</string>
+  <string name="graph_section">Grafiek</string>
   <string name="document_tag_add_dialog_title">Tag toevoegen</string>
   <string name="document_tag_add_existing">Kies een tag</string>
   <string name="document_tag_add_search">Tags zoeken</string>

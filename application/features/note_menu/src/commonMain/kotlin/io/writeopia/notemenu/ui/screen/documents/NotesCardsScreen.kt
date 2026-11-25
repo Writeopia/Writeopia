@@ -624,7 +624,7 @@ private fun FolderItem(
 
     // The card grows into the folder screen and the title flies into its toolbar.
     val cardModifier = with(sharedTransitionScope) {
-        cardBorderModifier(folderUi.selected).sharedBounds(
+        Modifier.padding(2.dp).sharedBounds(
             rememberSharedContentState(key = FolderSharedKeys.card(folderId)),
             animatedVisibilityScope = animatedVisibilityScope,
             resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds
@@ -682,6 +682,7 @@ private fun FolderItem(
                     .fillMaxWidth()
                     .clip(MaterialTheme.shapes.large)
                     .background(WriteopiaTheme.colorScheme.cardBg)
+                    .cardBorder(folderUi.selected)
                     .border(width = 2.dp, color = borderColor, shape = MaterialTheme.shapes.large)
                     .clickable {
                         folderClick(folderUi.documentId)
@@ -830,7 +831,7 @@ private fun DocumentItem(
 
     sharedTransitionScope.run {
         SelectableByDrag(
-            cardBorderModifier(documentUi.selected).sharedBounds(
+            Modifier.padding(2.dp).sharedBounds(
                 rememberSharedContentState(key = "noteInit${documentUi.documentId}"),
                 animatedVisibilityScope = animatedVisibilityScope,
                 resizeMode = SharedTransitionScope.ResizeMode.RemeasureToBounds
@@ -847,6 +848,7 @@ private fun DocumentItem(
                     .fillMaxWidth()
                     .clip(MaterialTheme.shapes.large)
                     .background(WriteopiaTheme.colorScheme.cardBg)
+                    .cardBorder(documentUi.selected)
                     .clickable {
                         documentClick(
                             documentUi.documentId,
@@ -1016,21 +1018,23 @@ private val GRID_CARD_HEIGHT = 170.dp
 /** A picture in a grid card leaves room for the text under it. */
 private val GRID_CARD_IMAGE_MAX_HEIGHT = 50.dp
 
-/** The card outline: one dynamic color when idle and another one when selected. */
+/**
+ * The card outline: one dynamic color when idle and another one when selected. It is part of the
+ * swiped card (not of the box around it), so it moves with the card when swiping to select.
+ */
 @Composable
-private fun cardBorderModifier(selected: Boolean): Modifier {
+private fun Modifier.cardBorder(selected: Boolean): Modifier {
     val colors = WriteopiaTheme.colorScheme
     val color by animateColorAsState(
         targetValue = if (selected) colors.cardBorderSelected else colors.cardBorder,
         label = "cardBorder"
     )
 
-    return Modifier.padding(2.dp)
-        .border(
-            width = if (selected) 3.dp else 1.dp,
-            color = color,
-            shape = MaterialTheme.shapes.large
-        )
+    return this.border(
+        width = if (selected) 3.dp else 1.dp,
+        color = color,
+        shape = MaterialTheme.shapes.large
+    )
 }
 
 @Composable
