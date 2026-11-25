@@ -440,4 +440,15 @@
   <string name="paywall_benefit_team_desc">Compartilhe espaços de trabalho e escreva junto com sua equipe.</string>
   <string name="paywall_benefit_backup">Seguro na nuvem</string>
   <string name="paywall_benefit_backup_desc">Seus documentos têm backup, então nada se perde junto com um dispositivo.</string>
+  <string name="cloud_sync_title">Sincronizar com o %1$s</string>
+  <string name="cloud_sync_description">Guarde seu espaço privado no seu próprio %1$s e abra-o nos seus outros dispositivos. Grátis: seus documentos vão direto para a sua conta, e o Writeopia só vê a própria pasta oculta dele lá.</string>
+  <string name="cloud_sync_connect">Conectar</string>
+  <string name="cloud_sync_connecting">Conclua no navegador…</string>
+  <string name="cloud_sync_disconnect">Desconectar</string>
+  <string name="cloud_sync_sync_now">Sincronizar agora</string>
+  <string name="cloud_sync_syncing">Sincronizando…</string>
+  <string name="cloud_sync_last_sync">Última sincronização: %1$s</string>
+  <string name="cloud_sync_not_synced">Ainda não sincronizado</string>
+  <string name="cloud_sync_error">A última sincronização falhou: %1$s</string>
+  <string name="cloud_sync_reconnect">O acesso ao %1$s terminou. Conecte de novo para continuar sincronizando.</string>
 </resources>

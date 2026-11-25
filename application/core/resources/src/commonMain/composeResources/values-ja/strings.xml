@@ -440,4 +440,15 @@
   <string name="paywall_benefit_team_desc">ワークスペースを共有して、チームと一緒に書きましょう。</string>
   <string name="paywall_benefit_backup">クラウドで安全に保管</string>
   <string name="paywall_benefit_backup_desc">ドキュメントはバックアップされるので、デバイスを失っても何も失われません。</string>
+  <string name="cloud_sync_title">%1$s と同期</string>
+  <string name="cloud_sync_description">プライベートスペースをご自身の %1$s に保存し、ほかのデバイスでも開けます。無料：ドキュメントはあなたのアカウントに直接保存され、Writeopia が見られるのは専用の非表示フォルダだけです。</string>
+  <string name="cloud_sync_connect">接続</string>
+  <string name="cloud_sync_connecting">ブラウザで完了してください…</string>
+  <string name="cloud_sync_disconnect">接続を解除</string>
+  <string name="cloud_sync_sync_now">今すぐ同期</string>
+  <string name="cloud_sync_syncing">同期中…</string>
+  <string name="cloud_sync_last_sync">最終同期：%1$s</string>
+  <string name="cloud_sync_not_synced">まだ同期されていません</string>
+  <string name="cloud_sync_error">前回の同期に失敗しました：%1$s</string>
+  <string name="cloud_sync_reconnect">%1$s へのアクセスが終了しました。同期を続けるには再度接続してください。</string>
 </resources>
