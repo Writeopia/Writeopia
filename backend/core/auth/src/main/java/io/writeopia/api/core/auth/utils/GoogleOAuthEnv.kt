@@ -5,8 +5,10 @@ package io.writeopia.api.core.auth.utils
  *
  * Client IDs are public by design, so the known ones are committed here and can be overridden
  * (or extended) with the `GOOGLE_OAUTH_CLIENT_IDS` env var (comma separated). They are the
- * audiences accepted on Google ID tokens: Android and iOS clients request tokens for the web
- * client (`serverClientId`), the desktop loopback flow yields tokens for the desktop client.
+ * audiences accepted on Google ID tokens: Android requests tokens for the web client
+ * (`serverClientId`), the desktop loopback flow yields tokens for the desktop client, and the
+ * native iOS/macOS app exchanges its code on the device (iOS clients have no secret) and sends
+ * the ID token of its own [IOS_CLIENT_ID].
  *
  * Client secrets are only needed to exchange authorization codes (desktop + web popup flows)
  * and come exclusively from `GOOGLE_OAUTH_CLIENT_SECRETS`, formatted as
@@ -16,7 +18,11 @@ object GoogleOAuthEnv {
     const val WEB_CLIENT_ID = "640912732949-al5fbqgqpehutp1iiqp3i1gtpn1vnfbd.apps.googleusercontent.com"
     const val DESKTOP_CLIENT_ID = "640912732949-72p36d9qqgsd3kbki3alua1jkqacrmp0.apps.googleusercontent.com"
 
-    val DEFAULT_CLIENT_IDS: List<String> = listOf(WEB_CLIENT_ID, DESKTOP_CLIENT_ID)
+    /** The "iOS" client of the native app (`GoogleOAuthConfig.clientID` in AuthFeature). */
+    const val IOS_CLIENT_ID = "640912732949-8uafecltdrupleq1qc9j7sol60efv2p1.apps.googleusercontent.com"
+
+    val DEFAULT_CLIENT_IDS: List<String> =
+        listOf(WEB_CLIENT_ID, DESKTOP_CLIENT_ID, IOS_CLIENT_ID).filterNot { it.startsWith("REPLACE_ME") }
 
     fun allowedClientIds(): List<String> =
         System.getenv("GOOGLE_OAUTH_CLIENT_IDS")

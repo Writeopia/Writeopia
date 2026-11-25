@@ -296,7 +296,11 @@ struct RegisterView: View {
                     PasswordStrengthView(validation: viewModel.passwordValidation)
                 }
 
-                TermsAgreementRow(viewModel: viewModel)
+                TermsAgreementRow(
+                    accepted: $viewModel.termsAccepted,
+                    disabled: viewModel.isLoading,
+                    open: { viewModel.legalDocument = $0 }
+                )
 
                 WrErrorText(viewModel.errorMessage)
 
@@ -334,21 +338,23 @@ struct RegisterView: View {
 
 /// "I agree to the Terms of Service and the Privacy Policy", both names opening the document.
 struct TermsAgreementRow: View {
-    @Bindable var viewModel: RegisterViewModel
+    @Binding var accepted: Bool
+    let disabled: Bool
+    let open: (LegalDocumentRoute) -> Void
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             Button {
-                viewModel.termsAccepted.toggle()
+                accepted.toggle()
             } label: {
-                Image(systemName: viewModel.termsAccepted ? "checkmark.square.fill" : "square")
+                Image(systemName: accepted ? "checkmark.square.fill" : "square")
                     .font(.title3)
-                    .foregroundStyle(viewModel.termsAccepted ? Color.accentColor : WrColors.textLighter)
+                    .foregroundStyle(accepted ? Color.accentColor : WrColors.textLighter)
             }
             .buttonStyle(.plain)
-            .disabled(viewModel.isLoading)
+            .disabled(disabled)
             .accessibilityLabel("Accept the Terms of Service and the Privacy Policy")
-            .accessibilityValue(viewModel.termsAccepted ? "On" : "Off")
+            .accessibilityValue(accepted ? "On" : "Off")
             .accessibilityIdentifier("register.terms")
 
             // The links are markdown inside the translated string, so each language orders
@@ -361,7 +367,7 @@ struct TermsAgreementRow: View {
                           let route = LegalDocumentRoute(type: url.lastPathComponent) else {
                         return .systemAction
                     }
-                    viewModel.legalDocument = route
+                    open(route)
                     return .handled
                 })
         }
