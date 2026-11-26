@@ -741,6 +741,7 @@ public struct NoteEditorView: View {
             }
             .onAppear { openEditors?.opened() }
             .onDisappear {
+                LiveEditors.shared.detach(viewModel.writeopiaManager)
                 openEditors?.closed()
                 viewModel.editorClosed()
                 // Save and send what's pending before leaving.
@@ -771,10 +772,22 @@ public struct NoteEditorView: View {
                         viewModel.writeopiaManager.focusTitle()
                     }
                 }
+                // Loaded and merged with the cloud: Claude Code can write into it now.
+                if viewModel.hasLoaded {
+                    LiveEditors.shared.attach(
+                        documentId: viewModel.documentId,
+                        manager: viewModel.writeopiaManager,
+                        tagger: viewModel
+                    )
+                }
                 await viewModel.loadPublishState()
             }
             .onChange(of: viewModel.writeopiaManager.changeCount) {
                 viewModel.documentChanged()
+            }
+            // AI mode starts: the suggestions and offers of the writing agent go away.
+            .onChange(of: viewModel.writeopiaManager.isInputLocked) { _, locked in
+                if locked { viewModel.writingAgent?.dismiss() }
             }
     }
 }

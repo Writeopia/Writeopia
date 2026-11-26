@@ -75,6 +75,7 @@ kotlin {
                 implementation(project(":application:core:configuration"))
                 implementation(project(":application:features:drawing"))
                 implementation(project(":application:features:writing_agent"))
+                implementation(project(":application:features:claude_code"))
                 implementation(project(":common:endpoints"))
 
                 // The header pictures of the workspace in the header menu.

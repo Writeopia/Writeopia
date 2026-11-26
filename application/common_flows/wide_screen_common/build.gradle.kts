@@ -64,6 +64,7 @@ kotlin {
                 implementation(project(":application:features:search"))
                 implementation(project(":application:features:documents_graph"))
                 implementation(project(":application:features:drawing"))
+                implementation(project(":application:features:claude_code"))
                 implementation(project(":common:endpoints"))
 
                 implementation(libs.ktor.client.logging)

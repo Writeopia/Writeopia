@@ -1025,7 +1025,8 @@ public final class NoteEditorViewModel {
     public func documentChanged() {
         guard hasLoaded else { return }
 
-        writingAgent?.storyChanged()
+        // While Claude Code writes (AI mode) the writing agent stays quiet.
+        if !writeopiaManager.isInputLocked { writingAgent?.storyChanged() }
         saveNow()
 
         guard syncing != nil else { return }
@@ -1190,4 +1191,9 @@ public struct EquationEdition: Equatable {
         self.stepId = stepId
         self.latex = latex
     }
+}
+
+/// Claude Code tags the document through its view model, like the tag menu of the editor.
+extension NoteEditorViewModel: LiveTagger {
+    public var documentTagIds: [String] { tagIds }
 }

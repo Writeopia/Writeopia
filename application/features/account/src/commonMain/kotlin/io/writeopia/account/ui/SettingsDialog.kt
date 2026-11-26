@@ -1,5 +1,6 @@
 package io.writeopia.account.ui
 
+import io.writeopia.claudecode.ui.ClaudeCodeSettingsSection
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
@@ -649,6 +650,9 @@ private fun AiSection(
 
         // Local AI Section - shared with the offline space's first-run setup screen
         LocalAiConfigScreen(controller = localAiConfigController)
+
+        // Only where the app runs the Claude Code server (the desktop): nothing elsewhere
+        ClaudeCodeSettingsSection(modifier = Modifier.padding(top = 32.dp))
     }
 }
 

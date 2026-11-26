@@ -1,3 +1,4 @@
+import ClaudeCodeFeature
 import Observation
 import SetupFeature
 import SwiftUI
@@ -69,6 +70,9 @@ struct AiSettingsView: View {
             } footer: {
                 Text("A model served on this machine by Ollama or llmman, in both spaces and offline.")
             }
+
+            // Only on the Mac, which runs the Claude Code server: nothing on iOS.
+            ClaudeCodeSettingsSection()
 
             if viewModel.session.isOnline {
                 usageSection

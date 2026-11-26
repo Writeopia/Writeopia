@@ -446,4 +446,16 @@
   <string name="google_signup_message">È il primo accesso di %1$s a Writeopia. Scegli un nome utente per creare il tuo account.</string>
   <string name="new_to_writeopia">Nuovo su Writeopia?</string>
   <string name="create_an_account">Crea un account</string>
+  <string name="claude_code_title">Claude Code</string>
+  <string name="claude_code_description">Lascia che Claude Code scriva documenti in questa app: vedi il testo comparire mentre viene scritto. Può solo creare documenti e aggiungervi contenuto, mai modificare né eliminare ciò che c\'è.</string>
+  <string name="claude_code_enable">Consenti a Claude Code di scrivere</string>
+  <string name="claude_code_command_hint">Esegui questo una volta in un terminale per collegare Claude Code:</string>
+  <string name="claude_code_copy">Copia</string>
+  <string name="claude_code_copied">Copiato</string>
+  <string name="claude_code_renew">Nuovo segreto</string>
+  <string name="claude_code_renew_hint">Il comando contiene un segreto che permette ai programmi di questo computer di scrivere qui. Se è trapelato, creane uno nuovo ed esegui il nuovo comando.</string>
+  <string name="claude_code_writing">Claude Code sta scrivendo…</string>
+  <string name="claude_code_working">Claude Code sta lavorando…</string>
+  <string name="claude_code_stop">Ferma</string>
+  <string name="claude_code_tools_only_hint">Oppure collega solo gli strumenti, senza /writeopia:plan:</string>
 </resources>

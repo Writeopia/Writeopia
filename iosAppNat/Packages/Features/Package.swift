@@ -23,6 +23,7 @@ let package = Package(
         .library(name: "DocumentsFeature", targets: ["DocumentsFeature"]),
         .library(name: "SearchFeature", targets: ["SearchFeature"]),
         .library(name: "SettingsFeature", targets: ["SettingsFeature"]),
+        .library(name: "ClaudeCodeFeature", targets: ["ClaudeCodeFeature"]),
     ],
     dependencies: [
         .package(path: "../Core"),
@@ -45,9 +46,19 @@ let package = Package(
             swiftSettings: mainActorByDefault
         ),
         .target(
+            name: "ClaudeCodeFeature",
+            dependencies: coreProducts + [
+                .product(name: "Writeopia", package: "Editor"),
+                .product(name: "WriteopiaUI", package: "Editor"),
+            ],
+            swiftSettings: mainActorByDefault
+        ),
+        .target(
             name: "SettingsFeature",
             dependencies: coreProducts + [
                 "SetupFeature",
+                // The Claude Code switch, in the AI settings of the Mac.
+                "ClaudeCodeFeature",
                 // The header pictures, drawn like in the editor.
                 .product(name: "WriteopiaUI", package: "Editor"),
             ],
@@ -61,6 +72,14 @@ let package = Package(
         .testTarget(
             name: "SettingsFeatureTests",
             dependencies: ["SettingsFeature"] + coreProducts,
+            swiftSettings: mainActorByDefault
+        ),
+        .testTarget(
+            name: "ClaudeCodeFeatureTests",
+            dependencies: ["ClaudeCodeFeature"] + coreProducts + [
+                .product(name: "Writeopia", package: "Editor"),
+                .product(name: "WriteopiaUI", package: "Editor"),
+            ],
             swiftSettings: mainActorByDefault
         ),
         .testTarget(

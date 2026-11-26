@@ -682,8 +682,9 @@ private struct DocumentsNavigation: View {
         }
     }
 
-    private func folderView(id: String, folder: Folder? = nil, tag: DocumentTag? = nil, title: String, rootTitle: String) -> FolderContentsView {
-        FolderContentsView(
+    private func folderView(id: String, folder: Folder? = nil, tag: DocumentTag? = nil, title: String, rootTitle: String) -> some View {
+        let isFolder = tag == nil && id != FolderContentsViewModel.favoritesId
+        return FolderContentsView(
             folderId: id,
             folder: folder,
             tag: tag,
@@ -697,6 +698,8 @@ private struct DocumentsNavigation: View {
             onItemsChange: router.treeChanged,
             transitionNamespace: zoomNamespace
         )
+        // Shown again when the person comes back to it: the last one shown is the one open.
+        .onAppear { router.folderShown(id, isFolder: isFolder) }
     }
 }
 

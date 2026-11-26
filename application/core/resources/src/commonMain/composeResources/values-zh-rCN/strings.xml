@@ -446,4 +446,16 @@
   <string name="google_signup_message">这是 %1$s 首次登录 Writeopia。请选择一个用户名来创建账户。</string>
   <string name="new_to_writeopia">第一次使用 Writeopia？</string>
   <string name="create_an_account">创建账户</string>
+  <string name="claude_code_title">Claude Code</string>
+  <string name="claude_code_description">让 Claude Code 在此应用中撰写文档：文字会在写作时实时出现。它只能创建文档和追加内容，绝不会修改或删除已有内容。</string>
+  <string name="claude_code_enable">允许 Claude Code 写入</string>
+  <string name="claude_code_command_hint">在终端中运行一次以下命令以连接 Claude Code：</string>
+  <string name="claude_code_copy">复制</string>
+  <string name="claude_code_copied">已复制</string>
+  <string name="claude_code_renew">新密钥</string>
+  <string name="claude_code_renew_hint">该命令包含一个密钥，可让此电脑上的程序在此写入。如果密钥泄露，请生成新的并运行新命令。</string>
+  <string name="claude_code_writing">Claude Code 正在写作…</string>
+  <string name="claude_code_working">Claude Code 正在工作…</string>
+  <string name="claude_code_stop">停止</string>
+  <string name="claude_code_tools_only_hint">或者只连接工具，不含 /writeopia:plan：</string>
 </resources>

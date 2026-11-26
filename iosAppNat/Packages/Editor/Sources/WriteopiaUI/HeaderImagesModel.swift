@@ -91,6 +91,20 @@ public final class HeaderImagesModel {
         }
     }
 
+    /// Draws a header picture for a document and keeps it with the pictures of the workspace,
+    /// without the approval step of the menu: for Claude Code, which was asked for it. Returns the
+    /// URL; the caller puts it in the header.
+    public func drawAndKeep(documentTitle: String, documentText: String, instructions: String) async throws -> String {
+        let url = try await service.generateHeaderImage(
+            documentTitle: documentTitle,
+            documentText: documentText,
+            instructions: instructions
+        )
+        try await service.saveHeaderImage(url: url)
+        images = [url] + images.filter { $0 != url }
+        return url
+    }
+
     /// Keeps the candidate with the pictures of the workspace and, once the backend has it, puts
     /// it in the header. When saving fails the candidate stays, with the reason, to approve again.
     public func approve() async {

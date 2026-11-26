@@ -110,6 +110,9 @@ public struct WriteopiaEditor: View {
                     .backgroundPreferenceValue(BlockPiecesKey.self) { BlockPainter(pieces: $0) }
                     .coordinateSpace(.named(ReorderCoordinator.coordinateSpace))
                     .overlay(alignment: .topLeading) { reorderPreview }
+                    // AI mode: Claude Code writes, the person watches. The steps take no clicks
+                    // nor drags; the scroll view around them still scrolls.
+                    .allowsHitTesting(!manager.isInputLocked)
                     .padding(.top, 8)
                     .background { SwipeSelectionInstaller(coordinator: swipeSelection) }
                     .environment(\.reorderCoordinator, reorder)

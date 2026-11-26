@@ -110,7 +110,11 @@ struct StepTextViewRepresentable: NSViewRepresentable {
     func updateNSView(_ textView: StepNSTextView, context: Context) {
         let coordinator = context.coordinator
         coordinator.parent = self
-        textView.isEditable = manager.isEditable
+        textView.isEditable = manager.isEditable && !manager.isInputLocked
+        // AI mode: no caret in the text, so the keys do nothing here.
+        if manager.isInputLocked, textView.window?.firstResponder === textView {
+            DispatchQueue.main.async { textView.window?.makeFirstResponder(nil) }
+        }
         textView.onFocusChange = { [weak manager, stepId = step.id] hasFocus in
             manager?.onFocusChange(stepId: stepId, hasFocus: hasFocus)
         }

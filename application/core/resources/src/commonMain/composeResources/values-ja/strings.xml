@@ -446,4 +446,16 @@
   <string name="google_signup_message">%1$s で Writeopia に初めてサインインします。アカウントを作成するユーザー名を選んでください。</string>
   <string name="new_to_writeopia">Writeopiaは初めてですか？</string>
   <string name="create_an_account">アカウントを作成</string>
+  <string name="claude_code_title">Claude Code</string>
+  <string name="claude_code_description">Claude Code にこのアプリでドキュメントを書かせます。書かれていく文字がその場で表示されます。できるのはドキュメントの作成と追記だけで、既存の内容の変更や削除はできません。</string>
+  <string name="claude_code_enable">Claude Code に書き込みを許可</string>
+  <string name="claude_code_command_hint">Claude Code を接続するには、ターミナルでこれを一度実行してください：</string>
+  <string name="claude_code_copy">コピー</string>
+  <string name="claude_code_copied">コピーしました</string>
+  <string name="claude_code_renew">新しいシークレット</string>
+  <string name="claude_code_renew_hint">このコマンドには、このコンピューター上のプログラムがここに書き込めるシークレットが含まれています。漏れた場合は新しいものを作り、新しいコマンドを実行してください。</string>
+  <string name="claude_code_writing">Claude Code が書いています…</string>
+  <string name="claude_code_working">Claude Code が作業中です…</string>
+  <string name="claude_code_stop">停止</string>
+  <string name="claude_code_tools_only_hint">または /writeopia:plan なしでツールだけを接続：</string>
 </resources>

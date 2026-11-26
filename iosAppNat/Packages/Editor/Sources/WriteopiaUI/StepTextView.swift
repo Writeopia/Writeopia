@@ -67,7 +67,11 @@ struct StepTextViewRepresentable: UIViewRepresentable {
     func updateUIView(_ textView: StepUITextView, context: Context) {
         let coordinator = context.coordinator
         coordinator.parent = self
-        textView.isEditable = manager.isEditable
+        textView.isEditable = manager.isEditable && !manager.isInputLocked
+        // AI mode: no caret in the text, so the keys do nothing here.
+        if manager.isInputLocked, textView.isFirstResponder {
+            DispatchQueue.main.async { textView.resignFirstResponder() }
+        }
         textView.onEraseAtStart = { [weak manager, stepId = step.id] in
             manager?.onErase(stepId: stepId)
         }

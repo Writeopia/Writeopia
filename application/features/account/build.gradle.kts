@@ -66,6 +66,7 @@ kotlin {
                 implementation(project(":application:core:configuration"))
                 // The header pictures, drawn like in the editor.
                 implementation(project(":writeopia_ui"))
+                implementation(project(":application:features:claude_code"))
 
                 //
 
