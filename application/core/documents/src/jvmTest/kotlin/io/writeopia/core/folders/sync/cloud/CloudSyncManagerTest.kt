@@ -45,6 +45,29 @@ class CloudSyncManagerTest {
     )
 
     @Test
+    fun `a connection whose reset fails is undone, so nothing syncs incomplete`() = runBlocking<Unit> {
+        val brokenState = object : CloudSyncStateStore by stateStore {
+            override suspend fun saveSeenVersions(versions: Map<String, String>) =
+                throw CloudStoreException("state can't be written")
+
+            override suspend fun clearSeenVersions() = saveSeenVersions(emptyMap())
+        }
+        val manager = CloudSyncManager(
+            connector = connector,
+            cloudSync = { CloudWorkspaceSync(InMemoryDocumentRepository(), FakeFolderRepository(), cloud, brokenState) },
+            stateStore = brokenState,
+            currentWorkspaceId = { workspaceId },
+        )
+
+        assertTrue(manager.connect().isFailure)
+
+        assertFalse(connector.connected)
+        assertFalse(manager.status.value.connected)
+        assertEquals("state can't be written", manager.status.value.error)
+        assertIs<ResultData.Idle<Unit>>(manager.syncNow())
+    }
+
+    @Test
     fun `only the offline workspace of a connected account syncs`() = runBlocking<Unit> {
         assertIs<ResultData.Idle<Unit>>(manager.syncNow())
 

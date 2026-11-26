@@ -89,22 +89,31 @@ class CloudSyncManager(
     /** Asks the user to connect their account, then syncs. */
     suspend fun connect(): Result<Unit> {
         val connector = connector ?: return Result.failure(IllegalStateException("No cloud storage here"))
-        val result = connector.connect()
-        if (result.isSuccess) {
-            // Maybe another account than before (after a disconnect, or a reconnect once the
-            // access was taken back): it has none of the files, so everything is sent again.
-            val reset = attempt {
-                stateStore.clearSeenVersions()
-                cloudSync().forgetSyncStamps(Workspace.disconnectedWorkspace().id)
-            }
-            _status.update {
-                it.copy(connected = true, error = reset.exceptionOrNull()?.message, needsReconnect = false)
-            }
-            requestSync()
-        } else {
-            _status.update { it.copy(error = result.exceptionOrNull()?.message) }
+        val connected = connector.connect()
+        if (connected.isFailure) {
+            _status.update { it.copy(error = connected.exceptionOrNull()?.message) }
+            return connected
         }
-        return result
+
+        // Maybe another account than before (after a disconnect, or a reconnect once the access
+        // was taken back): it has none of the files, so everything must be sent again. Without
+        // that reset a sync would leave the account incomplete, so the connection is undone
+        // instead: nothing syncs until a later connection gets the reset through.
+        val reset = attempt {
+            stateStore.clearSeenVersions()
+            cloudSync().forgetSyncStamps(Workspace.disconnectedWorkspace().id)
+        }
+        if (reset.isFailure) {
+            attempt { connector.disconnect() }
+            _status.update {
+                it.copy(connected = false, error = reset.exceptionOrNull()?.message, needsReconnect = false)
+            }
+            return reset
+        }
+
+        _status.update { it.copy(connected = true, error = null, needsReconnect = false) }
+        requestSync()
+        return connected
     }
 
     /**

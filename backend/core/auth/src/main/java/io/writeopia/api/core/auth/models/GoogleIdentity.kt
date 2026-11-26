@@ -15,16 +15,16 @@ data class GoogleIdentity(
     val hostedDomain: String? = null,
 ) {
     /**
-     * Whether Google owns the truth about [email]: a Gmail address, or an address of the account's
-     * own Workspace domain. Any other address was verified once, when the Google account was made,
-     * and may belong to someone else by now, so it can't stand for an existing Writeopia account.
+     * Whether Google owns the truth about [email] (with [emailVerified], which the service checks
+     * first): a Gmail address, or any address of a Workspace account (an `hd` claim), whose
+     * domains, secondary and alias ones included, the organisation proved to Google. Any other
+     * address was verified once, when a consumer Google account was made with it, and may belong
+     * to someone else by now, so it can't stand for an existing Writeopia account.
      */
     val isEmailAuthoritative: Boolean
         get() {
             val domain = email.substringAfterLast('@').lowercase()
-            return domain == "gmail.com" ||
-                domain == "googlemail.com" ||
-                (hostedDomain != null && hostedDomain.equals(domain, ignoreCase = true))
+            return domain == "gmail.com" || domain == "googlemail.com" || !hostedDomain.isNullOrBlank()
         }
 }
 

@@ -26,17 +26,25 @@ class DesktopGoogleSignInLauncherTest {
     private fun fakeBrowser(
         onParams: (Map<String, String>) -> Unit = {},
         callbackQuery: (Map<String, String>) -> String,
+    ): (String) -> Unit = fakeBrowserSending(onParams) { params -> listOf(callbackQuery(params)) }
+
+    /** The browser hitting the redirect URI with each query, one after the other. */
+    private fun fakeBrowserSending(
+        onParams: (Map<String, String>) -> Unit = {},
+        callbackQueries: (Map<String, String>) -> List<String>,
     ): (String) -> Unit = { url ->
         val params = query(URI(url).rawQuery)
         onParams(params)
         val redirect = params.getValue("redirect_uri")
         browserThreads += Thread {
             try {
-                val response = http.send(
-                    HttpRequest.newBuilder(URI("$redirect?${callbackQuery(params)}")).GET().build(),
-                    HttpResponse.BodyHandlers.ofString()
-                )
-                synchronized(browserStatuses) { browserStatuses += response.statusCode() }
+                callbackQueries(params).forEach { callbackQuery ->
+                    val response = http.send(
+                        HttpRequest.newBuilder(URI("$redirect?$callbackQuery")).GET().build(),
+                        HttpResponse.BodyHandlers.ofString()
+                    )
+                    synchronized(browserStatuses) { browserStatuses += response.statusCode() }
+                }
             } catch (e: Throwable) {
                 synchronized(browserErrors) { browserErrors += e }
             }
@@ -84,6 +92,23 @@ class DesktopGoogleSignInLauncherTest {
         assertEquals("openid email profile", consentParams["scope"])
         assertEquals("desktop-client", consentParams["client_id"])
         assertEquals(Pkce.challenge(credential.codeVerifier!!), consentParams["code_challenge"])
+    }
+
+    @Test
+    fun `after a forged callback, the real one still signs in`() = runBlocking<Unit> {
+        val launcher = DesktopGoogleSignInLauncher(
+            openUrl = fakeBrowserSending { params ->
+                listOf("code=forged-code&state=forged", "code=real-code&state=${params["state"]}")
+            },
+            clientId = "desktop-client",
+            timeout = 5.seconds,
+        )
+
+        val result = launcher.signIn()
+
+        assertEquals(listOf(404, 200), browserAnswers())
+        val success = assertIs<GoogleSignInResult.Success>(result)
+        assertEquals("real-code", assertIs<GoogleCredential.AuthCode>(success.credential).code)
     }
 
     @Test

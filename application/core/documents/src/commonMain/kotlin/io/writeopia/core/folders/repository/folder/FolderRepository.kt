@@ -61,6 +61,17 @@ interface FolderRepository {
     suspend fun localOutDatedFolders(workspaceId: String): List<Folder>
 
     /**
+     * Every folder of [workspaceId] counts as never synced. Only the sync stamp changes: the
+     * database implementations update that column alone, so a concurrent edit is never undone.
+     * This default, for repositories without a database, writes the folders back.
+     */
+    suspend fun clearLastSyncedAt(workspaceId: String) {
+        getFoldersForWorkspace(workspaceId)
+            .filter { folder -> folder.lastSyncedAt != null }
+            .forEach { folder -> updateFolder(folder.copy(lastSyncedAt = null)) }
+    }
+
+    /**
      * When this device last received the contents (documents and subfolders) of a folder, or
      * null if never. Works the same for the root, which has no folder row of its own.
      */

@@ -17,17 +17,18 @@ class GoogleIdentityTest {
         )
 
     @Test
-    fun `google is authoritative for gmail and for the account's own workspace domain`() {
+    fun `google is authoritative for gmail and for any workspace account`() {
         assertTrue(identity("ana@gmail.com").isEmailAuthoritative)
         assertTrue(identity("Ana@GoogleMail.com").isEmailAuthoritative)
         assertTrue(identity("ana@acme.io", hostedDomain = "acme.io").isEmailAuthoritative)
-        assertTrue(identity("ana@ACME.io", hostedDomain = "acme.IO").isEmailAuthoritative)
+        // A secondary or alias domain of the same Workspace organisation.
+        assertTrue(identity("ana@acme-labs.io", hostedDomain = "acme.io").isEmailAuthoritative)
     }
 
     @Test
-    fun `any other address was only verified once`() {
+    fun `a consumer account's other address was only verified once`() {
         assertFalse(identity("ana@acme.io").isEmailAuthoritative)
-        assertFalse(identity("ana@acme.io", hostedDomain = "other.io").isEmailAuthoritative)
+        assertFalse(identity("ana@acme.io", hostedDomain = " ").isEmailAuthoritative)
         assertFalse(identity("ana@gmail.com.evil.io").isEmailAuthoritative)
     }
 }

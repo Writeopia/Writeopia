@@ -75,12 +75,9 @@ class CloudWorkspaceSync(
      */
     suspend fun forgetSyncStamps(workspaceId: String) {
         running.withLock {
-            documentRepository.loadDocumentsWorkspace(workspaceId)
-                .filter { document -> document.lastSyncedAt != null }
-                .forEach { document -> documentRepository.saveDocumentMetadata(document.copy(lastSyncedAt = null)) }
-            folderRepository.getFoldersForWorkspace(workspaceId)
-                .filter { folder -> folder.lastSyncedAt != null }
-                .forEach { folder -> folderRepository.updateFolder(folder.copy(lastSyncedAt = null)) }
+            // Field-only updates: an edit made meanwhile must not be lost to an old copy.
+            documentRepository.clearLastSyncedAt(workspaceId)
+            folderRepository.clearLastSyncedAt(workspaceId)
         }
     }
 

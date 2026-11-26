@@ -165,6 +165,11 @@ UPDATE documentEntity SET favorite = 1 WHERE id = ?;
 unFavoriteById:
 UPDATE documentEntity SET favorite = 0 WHERE id = ?;
 
+-- Only the sync stamp: every document of the workspace counts as never sent, and nothing else of
+-- the rows is touched (a concurrent edit of a title or a move stays).
+clearLastSyncedAtByWorkspace:
+UPDATE documentEntity SET last_synced_at = NULL WHERE workspace_id = ?;
+
 moveToFolder:
 UPDATE documentEntity SET parent_document_id = ?, last_updated_at = ? WHERE id = ?;
 

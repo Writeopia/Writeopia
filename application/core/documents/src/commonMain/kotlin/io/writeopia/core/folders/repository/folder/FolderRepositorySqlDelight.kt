@@ -82,6 +82,10 @@ class FolderRepositorySqlDelight(
         folderDao.removeListening(parentId, workspaceId)
     }
 
+    override suspend fun clearLastSyncedAt(workspaceId: String) {
+        folderDao.clearLastSyncedAt(workspaceId)
+    }
+
     override suspend fun localOutDatedFolders(workspaceId: String): List<Folder> =
         folderDao.selectOutdatedByWorkspaceId(workspaceId)
 

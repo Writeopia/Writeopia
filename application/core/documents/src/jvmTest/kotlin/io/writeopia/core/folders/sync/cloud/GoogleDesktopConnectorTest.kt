@@ -13,6 +13,7 @@ import io.ktor.http.parseQueryString
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import java.net.HttpURLConnection
+import java.net.Socket
 import java.net.URI
 import kotlin.concurrent.thread
 import kotlin.test.Test
@@ -109,6 +110,32 @@ class GoogleDesktopConnectorTest {
 
             assertEquals(GoogleTokens("a1", "r1", time + 3_600_000), tokenStore.tokens)
             assertTrue(connector.isConnected())
+        }
+    }
+
+    @Test
+    fun `a client that connects and sends nothing doesn't hold the sign-in`() = runBlocking {
+        withTimeout(LOOPBACK_TEST_TIMEOUT) {
+            val silent = mutableListOf<Socket>()
+            try {
+                val connector = connector(
+                    openBrowser = { url ->
+                        val redirect = URI(Url(url).parameters["redirect_uri"]!!)
+                        // Opened first and never written to: it times out, then Google answers.
+                        silent += Socket(redirect.host, redirect.port)
+                        googleRedirectsBack(url, code = "the-code")
+                    },
+                ) {
+                    HttpStatusCode.OK to """{"access_token":"a1","expires_in":3600,"refresh_token":"r1",
+                        |"scope":"${GoogleDriveFileStore.SCOPE}"}
+                    """.trimMargin()
+                }
+
+                assertTrue(connector.connect().isSuccess)
+                assertEquals("a1", tokenStore.tokens?.accessToken)
+            } finally {
+                silent.forEach(Socket::close)
+            }
         }
     }
 
