@@ -195,6 +195,21 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                 false
             }
 
+            KeyboardCommands.isFontLargerEvent(keyEvent) -> {
+                sendEvent(KeyboardEvent.FONT_LARGER)
+                false
+            }
+
+            KeyboardCommands.isFontSmallerEvent(keyEvent) -> {
+                sendEvent(KeyboardEvent.FONT_SMALLER)
+                false
+            }
+
+            KeyboardCommands.isFontResetEvent(keyEvent) -> {
+                sendEvent(KeyboardEvent.FONT_RESET)
+                false
+            }
+
             KeyboardCommands.isShiftArrowUpEvent(keyEvent) -> {
                 sendEvent(KeyboardEvent.SHIFT_ARROW_UP)
                 false

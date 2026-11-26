@@ -93,10 +93,34 @@ object KeyboardCommands {
             keyEvent.key.keyCode == Key.E.keyCode &&
             keyEvent.type == KeyEventType.KeyUp
 
+    // Cmd/Ctrl + Shift + -: Cmd/Ctrl + - alone makes the text smaller.
     fun isListEvent(keyEvent: KeyEvent) =
         keyEvent.isCommandTrigger() &&
+            keyEvent.isShiftPressed &&
             keyEvent.key.keyCode == Key.Minus.keyCode &&
             keyEvent.type == KeyEventType.KeyUp
+
+    // "+" shares its key with "=" on most layouts, so Cmd/Ctrl + = counts with or without Shift.
+    // On key down, so holding the keys keeps zooming.
+    fun isFontLargerEvent(keyEvent: KeyEvent) =
+        keyEvent.isCommandTrigger() &&
+            keyEvent.key.keyCode in fontLargerKeys &&
+            keyEvent.type == KeyEventType.KeyDown
+
+    fun isFontSmallerEvent(keyEvent: KeyEvent) =
+        keyEvent.isCommandTrigger() &&
+            !keyEvent.isShiftPressed &&
+            keyEvent.key.keyCode in fontSmallerKeys &&
+            keyEvent.type == KeyEventType.KeyDown
+
+    fun isFontResetEvent(keyEvent: KeyEvent) =
+        keyEvent.isCommandTrigger() &&
+            keyEvent.key.keyCode in fontResetKeys &&
+            keyEvent.type == KeyEventType.KeyDown
+
+    private val fontLargerKeys = setOf(Key.Equals.keyCode, Key.Plus.keyCode, Key.NumPadAdd.keyCode, Key.NumPadEquals.keyCode)
+    private val fontSmallerKeys = setOf(Key.Minus.keyCode, Key.NumPadSubtract.keyCode)
+    private val fontResetKeys = setOf(Key.Zero.keyCode, Key.NumPad0.keyCode)
 
     fun isShiftArrowUpEvent(keyEvent: KeyEvent) =
         keyEvent.isShiftPressed &&
