@@ -63,6 +63,7 @@ func httpResponse(status: Int, body: Data? = nil) -> Data {
     case 403: "Forbidden"
     case 404: "Not Found"
     case 405: "Method Not Allowed"
+    case 503: "Service Unavailable"
     default: "Error"
     }
     var head = "HTTP/1.1 \(status) \(reason)\r\nConnection: close\r\nContent-Length: \(body?.count ?? 0)\r\n"

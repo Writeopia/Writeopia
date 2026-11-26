@@ -51,6 +51,7 @@ kotlin {
                 implementation(project(":writeopia"))
                 implementation(project(":writeopia_ui"))
                 implementation(project(":writeopia_models"))
+                implementation(project(":plugins:writeopia_export"))
 
                 implementation(project(":application:core:documents"))
                 implementation(project(":application:core:theme"))
@@ -69,6 +70,7 @@ kotlin {
         val jvmMain by getting {
             dependencies {
                 implementation(libs.ktor.server.cio)
+                implementation(libs.ktor.server.body.limit)
             }
         }
 

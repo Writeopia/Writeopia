@@ -1,5 +1,7 @@
 package io.writeopia.claudecode.server
 
+import io.ktor.server.application.install
+import io.ktor.server.plugins.bodylimit.RequestBodyLimit
 import io.writeopia.claudecode.LiveTags
 import io.writeopia.claudecode.LiveFolders
 import io.writeopia.claudecode.ClaudeCodeBridge
@@ -64,6 +66,8 @@ class ClaudeCodeServer private constructor(
 
         _state.value = try {
             server = embeddedServer(CIO, host = HOST, port = port) {
+                // Counted on the bytes read, whatever Content-Length says.
+                install(RequestBodyLimit) { bodyLimit { MAX_BODY_BYTES } }
                 routing {
                     post("/mcp") { handle(call) }
                     // No event stream from the server, and no sessions to end.
@@ -110,6 +114,7 @@ class ClaudeCodeServer private constructor(
         private const val HOST = "127.0.0.1"
         private const val KEY_ENABLED = "enabled"
         private const val KEY_TOKEN = "token"
+        private const val MAX_BODY_BYTES = 4L * 1024 * 1024
 
         /**
          * Makes the server of the app and hands it to the settings; it starts right away when

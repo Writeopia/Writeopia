@@ -110,11 +110,14 @@ class LiveWriter(
 
         while (shown < text.length) {
             if (isStopped()) {
-                // What the person saw stays: the block as far as it got, saved.
-                manager.changeStoryState(
-                    Action.StoryStateChange(step.partial(shown).copy(ephemeral = false), position, preserveFocus = true),
-                    trackIt = false
-                )
+                // What the person saw stays: the block as far as it got, saved. Nothing of the
+                // title was shown yet: it keeps the text it had.
+                if (shown > 0 || step.type != StoryTypes.TITLE.type) {
+                    manager.changeStoryState(
+                        Action.StoryStateChange(step.partial(shown).copy(ephemeral = false), position, preserveFocus = true),
+                        trackIt = false
+                    )
+                }
                 return false
             }
 

@@ -97,4 +97,9 @@ import WrModels
         #expect(text == "😀 ok")
         #expect(spans == [SpanInfo(start: 3, end: 5, span: "BOLD")])
     }
+
+    @Test func anEscapedMarkerNeverClosesASpan() {
+        #expect(LiveMarkdown.inline("*word\\*") == ("*word*", []))
+        #expect(LiveMarkdown.inline("a *word* b") == ("a word b", [SpanInfo(start: 2, end: 6, span: "ITALIC")]))
+    }
 }

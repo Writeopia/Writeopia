@@ -145,4 +145,14 @@ class AiModeTest {
         assertEquals(AiMode.OFF, ClaudeCodeBridge.aiMode.value)
         assertNotNull(ClaudeCodeBridge.beginWriting())
     }
+
+    @Test
+    fun `a stop before the first character of the title keeps the title`() = runTest {
+        val manager = manager(StoryStep(id = "title", type = StoryTypes.TITLE.type, text = "Old"))
+
+        val done = LiveWriter(tick = 1.milliseconds).write(manager, "New title", emptyList()) { true }
+
+        assertFalse(done)
+        assertEquals("Old", manager.getStory(Rank.at(0))!!.text)
+    }
 }

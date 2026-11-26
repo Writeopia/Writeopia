@@ -1,5 +1,6 @@
 package io.writeopia.claudecode.mcp
 
+import kotlinx.serialization.json.booleanOrNull
 import io.writeopia.claudecode.LiveTag
 import io.writeopia.claudecode.LiveDocuments
 import kotlinx.serialization.json.Json
@@ -109,6 +110,10 @@ class McpHandler(
 
             SET_HEADER_IMAGE -> documents.setHeaderImage(argument("document_id"), argument("description"))
 
+            CURRENT_PLACE -> documents.currentPlace(
+                includeContent = (arguments["include_content"] as? JsonPrimitive)?.booleanOrNull ?: true
+            )
+
             LIST_TAGS -> documents.listTags()
 
             ADD_TAGS -> {
@@ -142,6 +147,8 @@ class McpHandler(
                 )
 
                 LiveDocuments.Outcome.Finished -> toolText(FINISHED)
+
+                is LiveDocuments.Outcome.Place -> toolText(outcome.text)
 
                 is LiveDocuments.Outcome.Tags -> toolText(describeTags(outcome.tags))
 
@@ -214,6 +221,7 @@ class McpHandler(
         const val FINISH = "finish_writing"
         const val SET_HEADER_IMAGE = "set_header_image"
         const val LIST_TAGS = "list_tags"
+        const val CURRENT_PLACE = "get_current_place"
         const val ADD_TAGS = "add_tags"
 
         const val FINISHED = "Writeopia left AI mode: the person can edit the documents again."
@@ -239,7 +247,9 @@ class McpHandler(
         const val INSTRUCTIONS =
             "Writes documents in the Writeopia app open on this computer. The person watches the text " +
                 "appear in the editor as it is written. Tools only add: they never change nor delete " +
-                "what is already there. To organize documents, see the folders with $LIST_FOLDERS (reuse " +
+                "what is already there. Call $CURRENT_PLACE first to see where the person is and what " +
+                "the open document holds, and again when a call says something changed. To organize " +
+                "documents, see the folders with $LIST_FOLDERS (reuse " +
                 "one that fits before making a new one), make folders with $CREATE_FOLDER, and pass a " +
                 "folder_id to $CREATE. For anything longer than a few paragraphs, write in parts so " +
                 "the person can follow along: $CREATE with the title and the first section, then one " +
@@ -337,6 +347,33 @@ class McpHandler(
                             put(
                                 "description",
                                 "What the picture should show or its style, in a sentence. Optional: the picture follows the document anyway."
+                            )
+                        }
+                    }
+                    put("additionalProperties", false)
+                }
+            }
+            addJsonObject {
+                put("name", CURRENT_PLACE)
+                put("title", "See where the person is in Writeopia")
+                put(
+                    "description",
+                    "Tells what Writeopia shows now: the document open in the editor (document_id, " +
+                        "title, folder, tags, locked, header picture) with its content as Markdown, or the " +
+                        "folder open when no document is. Also tells what the person changed since your " +
+                        "last call: another document opened, or blocks added, changed or removed. Only " +
+                        "reads. Call it before writing into the open document, and whenever the person " +
+                        "may have moved or edited."
+                )
+                putJsonObject("inputSchema") {
+                    put("type", "object")
+                    putJsonObject("properties") {
+                        putJsonObject("include_content") {
+                            put("type", "boolean")
+                            put(
+                                "description",
+                                "Whether to include the document's content as Markdown (up to 20,000 " +
+                                    "characters). Default true."
                             )
                         }
                     }

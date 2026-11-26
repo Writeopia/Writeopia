@@ -453,7 +453,7 @@
   <string name="claude_code_copy">Копировать</string>
   <string name="claude_code_copied">Скопировано</string>
   <string name="claude_code_renew">Новый секрет</string>
-  <string name="claude_code_renew_hint">Команда содержит секрет, позволяющий программам на этом компьютере писать сюда. Если он утёк, создайте новый и выполните новую команду.</string>
+  <string name="claude_code_renew_hint">Команда содержит секрет, позволяющий программам на этом компьютере писать сюда. Если он утёк, создайте новый, удалите старое подключение (claude plugin uninstall writeopia@writeopia, claude mcp remove writeopia --scope user) и выполните новую команду.</string>
   <string name="claude_code_writing">Claude Code пишет…</string>
   <string name="claude_code_working">Claude Code работает…</string>
   <string name="claude_code_stop">Остановить</string>

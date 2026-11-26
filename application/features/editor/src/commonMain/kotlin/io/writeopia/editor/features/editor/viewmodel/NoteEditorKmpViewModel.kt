@@ -265,9 +265,10 @@ class NoteEditorKmpViewModel(
     }
 
     init {
-        // While Claude Code writes, the writing agent stays quiet: no suggestions, no offers.
+        // While Claude Code writes, the writing agent stays quiet: no suggestions, no offers. The
+        // first value counts too: Claude opens editors while AI mode is already on.
         viewModelScope.launch(Dispatchers.Default) {
-            ClaudeCodeBridge.aiMode.map { mode -> mode.isOn }.distinctUntilChanged().drop(1).collect { aiModeOn ->
+            ClaudeCodeBridge.aiMode.map { mode -> mode.isOn }.distinctUntilChanged().collect { aiModeOn ->
                 val agent = writingAgent ?: return@collect
                 if (aiModeOn) {
                     agent.stop()

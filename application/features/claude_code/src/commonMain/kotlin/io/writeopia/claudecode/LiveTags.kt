@@ -25,16 +25,20 @@ class RepositoryLiveTags(
     private val workspaceId: suspend () -> String,
 ) : LiveTags {
 
-    override suspend fun list(): List<LiveTag> =
-        tagRepository.getTagsForWorkspace(workspaceId())
+    override suspend fun list(): List<LiveTag> = list(workspaceId())
+
+    private suspend fun list(workspaceId: String): List<LiveTag> =
+        tagRepository.getTagsForWorkspace(workspaceId)
             .filter { tag -> !tag.deleted }
             .map { tag -> LiveTag(tag.id, tag.name, tag.description) }
 
     override suspend fun findOrCreate(name: String): Pair<LiveTag, Boolean> {
-        list().firstOrNull { tag -> tag.name.equals(name, ignoreCase = true) }?.let { return it to false }
+        // One workspace for the lookup and the new tag, even if the person switches meanwhile.
+        val workspaceId = workspaceId()
+        list(workspaceId).firstOrNull { tag -> tag.name.equals(name, ignoreCase = true) }?.let { return it to false }
 
         val now = Clock.System.now()
-        val tag = DocumentTag(workspaceId = workspaceId(), name = name, createdAt = now, lastUpdatedAt = now)
+        val tag = DocumentTag(workspaceId = workspaceId, name = name, createdAt = now, lastUpdatedAt = now)
         tagRepository.upsertTag(tag)
         return LiveTag(tag.id, tag.name) to true
     }

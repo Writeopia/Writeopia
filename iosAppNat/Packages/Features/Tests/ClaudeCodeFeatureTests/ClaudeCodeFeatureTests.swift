@@ -17,6 +17,8 @@ private final class FakeDocuments: LiveDocumentsWriting {
         .headerImageSet(documentId: documentId ?? "doc1", title: "Trip", url: "https://cdn/p.png")
     }
 
+    func currentPlace(includeContent: Bool) async -> LiveOutcome { .place(includeContent ? "with content" : "without") }
+
     func listTags() async -> LiveOutcome {
         .tags([LiveTag(id: "f", name: "Food"), LiveTag(id: "t", name: "Travel", description: "Trips and places")])
     }
@@ -77,7 +79,7 @@ private func json(_ data: Data?) -> [String: Any] {
     @Test func listsTheTwoTools() async {
         let tools = (await call(#"{"jsonrpc":"2.0","id":"a","method":"tools/list"}"#)["result"] as? [String: Any])?["tools"] as? [[String: Any]]
 
-        #expect(tools?.compactMap { $0["name"] as? String } == ["create_document", "append_to_document", "set_header_image", "list_tags", "add_tags", "finish_writing", "list_folders", "create_folder"])
+        #expect(tools?.compactMap { $0["name"] as? String } == ["create_document", "append_to_document", "set_header_image", "get_current_place", "list_tags", "add_tags", "finish_writing", "list_folders", "create_folder"])
     }
 
     @Test func createAnswersWithTheDocumentId() async {
@@ -138,7 +140,9 @@ private func json(_ data: Data?) -> [String: Any] {
     private func server() -> ClaudeCodeServer {
         let defaults = UserDefaults(suiteName: "ClaudeCodeServerTests-\(UUID().uuidString)")!
         defaults.set("secret", forKey: "wr.claudeCode.token")
-        return ClaudeCodeServer(defaults: defaults)
+        let server = ClaudeCodeServer(defaults: defaults)
+        server.state = .running(token: "secret")
+        return server
     }
 
     private func request(_ headers: [String: String], method: String = "POST", path: String = "/mcp") -> HTTPRequest {
@@ -159,6 +163,13 @@ private func json(_ data: Data?) -> [String: Any] {
         #expect(status(await server.respond(to: request([:], path: "/other"))) == "HTTP/1.1 404 Not Found")
     }
 
+    @Test func aServerTurnedOffAnswersNothing() async {
+        let server = server()
+        server.state = .off
+
+        #expect(status(await server.respond(to: request(["authorization": "Bearer secret"]))) == "HTTP/1.1 503 Service Unavailable")
+    }
+
     @Test func localOrigins() {
         #expect(ClaudeCodeServer.isLocalOrigin("http://localhost:3000"))
         #expect(ClaudeCodeServer.isLocalOrigin("http://127.0.0.1"))
@@ -176,6 +187,7 @@ private func json(_ data: Data?) -> [String: Any] {
             func finish() async -> LiveOutcome { .finished }
             func setHeaderImage(documentId: String?, description: String?) async -> LiveOutcome { .stopped }
             func listTags() async -> LiveOutcome { .stopped }
+            func currentPlace(includeContent: Bool) async -> LiveOutcome { .stopped }
             func addTags(documentId: String?, names: [String]) async -> LiveOutcome { .stopped }
         }
         let answer = json(await McpHandler(documents: Stopped(), serverVersion: "t").handle(Data(
@@ -264,5 +276,67 @@ private func json(_ data: Data?) -> [String: Any] {
 
     @Test func listTagsShowsTheCatalogueWithDescriptions() async {
         #expect(await text("list_tags") == "Tags of the workspace (2):\n- Food\n- Travel: Trips and places")
+    }
+}
+
+/// The same report cases as `CurrentPlaceTest.kt`, word for word.
+@Suite struct CurrentPlaceTests {
+    private let trips = LiveFolder(id: "f1", name: "Trips", parentId: "root")
+    private let year = LiveFolder(id: "f2", name: "2026", parentId: "f1")
+
+    @Test func aDocumentWithItsFolderPathTagsAndContent() {
+        let text = PlaceReport.describe(
+            document: OpenDocument(id: "d1", title: "Lisbon", folderPath: [trips, year], tags: ["Food", "Travel"], isLocked: false, hasHeaderPicture: true),
+            currentFolder: year,
+            change: .edited(added: 2, changed: 1, removed: 0),
+            content: "# Lisbon\n\nDay one\n"
+        )
+
+        #expect(text == "Writeopia shows the document \"Lisbon\" (document_id: d1) in Trips / 2026 (folder_id: f2).\n" +
+            "Tags: Food, Travel. Locked: no. Header picture: yes.\n\n" +
+            "Since your last call, the person changed this document: 2 blocks added, 1 changed, 0 removed.\n\n" +
+            "Content (Markdown):\n# Lisbon\n\nDay one")
+    }
+
+    @Test func noDocumentOpenAtTheTopLevelOrInAFolderAfterLeavingOne() {
+        #expect(PlaceReport.describe(document: nil, currentFolder: nil, change: nil, content: nil)
+            == "No document is open in Writeopia. The app has the top level open.")
+        #expect(PlaceReport.describe(document: nil, currentFolder: trips, change: .moved(fromId: "d1", fromTitle: "Lisbon"), content: nil)
+            == "No document is open in Writeopia. The app has \"Trips\" (folder_id: f1) open.\n\n" +
+            "Since your last call, the person left \"Lisbon\" (document_id: d1).")
+    }
+
+    @Test func aDocumentAtTheTopLevelUnchangedEmptyAndALongOneCut() {
+        let doc = OpenDocument(id: "d1", title: "Notes", folderPath: [], tags: [], isLocked: true, hasHeaderPicture: false)
+
+        #expect(PlaceReport.describe(document: doc, currentFolder: nil, change: .unchanged, content: "  ")
+            == "Writeopia shows the document \"Notes\" (document_id: d1) in the top level.\n" +
+            "Tags: none. Locked: yes. Header picture: no.\n\n" +
+            "Since your last call, nothing changed here.\n\nContent: empty.")
+        let long = PlaceReport.describe(document: doc, currentFolder: nil, change: nil, content: String(repeating: "a", count: PlaceReport.contentLimit + 5))
+        #expect(long.hasSuffix("\n…(cut: 5 more characters)"))
+    }
+
+    @Test func changesCountBlocksAddedChangedAndRemovedOrAMove() {
+        let before = DocumentSnapshot(documentId: "d1", title: "Lisbon", blocks: ["a": "1", "b": "2", "c": "3"])
+
+        #expect(before.change(to: DocumentSnapshot(documentId: "d1", title: "Lisbon", blocks: ["a": "1", "b": "2!", "d": "4"]))
+            == .edited(added: 1, changed: 1, removed: 1))
+        #expect(before.change(to: before) == .unchanged)
+        #expect(before.change(to: DocumentSnapshot(documentId: "d2", title: "Other", blocks: [:])) == .moved(fromId: "d1", fromTitle: "Lisbon"))
+        #expect(before.change(to: nil) == .moved(fromId: "d1", fromTitle: "Lisbon"))
+    }
+
+    @Test func getCurrentPlacePassesIncludeContent() async {
+        let handler = McpHandler(documents: FakeDocuments(), serverVersion: "t")
+        func text(_ arguments: String) async -> String {
+            let answer = json(await handler.handle(Data(
+                #"{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"get_current_place","arguments":\#(arguments)}}"#.utf8
+            )))
+            return (((answer["result"] as? [String: Any])?["content"] as? [[String: Any]])?.first?["text"] as? String) ?? ""
+        }
+
+        #expect(await text("{}") == "with content")
+        #expect(await text(#"{"include_content":false}"#) == "without")
     }
 }

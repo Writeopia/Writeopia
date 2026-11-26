@@ -63,6 +63,9 @@ public struct NoteEditorView: View {
     /// The command field of the AI panel has the keyboard focus (the Mac).
     @State private var aiCommandFocused = false
     @State private var linkSelection: StepSelection?
+    /// `open` finished (load and merge with the cloud): a later load ("Try again") registers the
+    /// editor with Claude Code at once.
+    @State private var openFinished = false
     @State private var linkURL = ""
     private let fallbackTitle: String
     /// The name of the root folder in "Move to", like the documents list shows it.
@@ -240,7 +243,8 @@ public struct NoteEditorView: View {
     /// the history of the document (the text views have no history of their own).
     private var keyboardShortcuts: some View {
         let manager = viewModel.writeopiaManager
-        let canEdit = viewModel.hasLoaded && !viewModel.isLocked
+        // While Claude Code writes (AI mode) the shortcuts don't edit; the writer still does.
+        let canEdit = viewModel.hasLoaded && !viewModel.isLocked && !manager.isInputLocked
         return ZStack {
             Button("Undo") { manager.undo() }
                 .keyboardShortcut("z", modifiers: .command)
@@ -253,7 +257,7 @@ public struct NoteEditorView: View {
                 viewModel.runAi(.prompt, mode: .cursor)
             }
             .keyboardShortcut("k", modifiers: .command)
-            .disabled(!viewModel.hasLoaded || !viewModel.isAiAvailable || viewModel.isLocked || viewModel.isAiRunning)
+            .disabled(!canEdit || !viewModel.isAiAvailable || viewModel.isAiRunning)
 
             Button("Stop AI") {
                 if viewModel.isSearchVisible {
@@ -772,18 +776,19 @@ public struct NoteEditorView: View {
                         viewModel.writeopiaManager.focusTitle()
                     }
                 }
-                // Loaded and merged with the cloud: Claude Code can write into it now.
-                if viewModel.hasLoaded {
-                    LiveEditors.shared.attach(
-                        documentId: viewModel.documentId,
-                        manager: viewModel.writeopiaManager,
-                        tagger: viewModel
-                    )
-                }
+                // Loaded and merged with the cloud: Claude Code can write into it now, unless the
+                // screen went away meanwhile.
+                guard !Task.isCancelled else { return }
+                openFinished = true
+                attachToClaudeCode()
                 await viewModel.loadPublishState()
             }
             .onChange(of: viewModel.writeopiaManager.changeCount) {
                 viewModel.documentChanged()
+            }
+            // A load that failed and was tried again: the editor shows the document now.
+            .onChange(of: viewModel.hasLoaded) { _, loaded in
+                if loaded, openFinished { attachToClaudeCode() }
             }
             // AI mode starts: the suggestions and offers of the writing agent go away.
             .onChange(of: viewModel.writeopiaManager.isInputLocked) { _, locked in
@@ -791,6 +796,18 @@ public struct NoteEditorView: View {
             }
     }
 }
+extension NoteEditorView {
+    /// Lets Claude Code write into this editor, once its document is shown.
+    fileprivate func attachToClaudeCode() {
+        guard viewModel.hasLoaded else { return }
+        LiveEditors.shared.attach(
+            documentId: viewModel.documentId,
+            manager: viewModel.writeopiaManager,
+            tagger: viewModel
+        )
+    }
+}
+
 /// The screen's side of the writing agent: the image picker and the drawing editor.
 private final class EditorWritingAgentUI: WritingAgentUI {
     private let onPickImage: () -> Void

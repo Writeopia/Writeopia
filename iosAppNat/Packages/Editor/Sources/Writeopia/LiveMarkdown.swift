@@ -167,13 +167,24 @@ public enum LiveMarkdown {
             }
         }
 
-        func closesLater(_ marker: String, from: Int) -> Bool {
-            if marker.utf16.count > 1 { return indexOf(marker, from: from) != nil }
+        // A marker after an odd run of backslashes is escaped, like the loop below reads it.
+        func isEscaped(_ index: Int) -> Bool {
+            var backslashes = 0
+            while index - backslashes - 1 >= 0, units[index - backslashes - 1] == unit("\\") { backslashes += 1 }
+            return backslashes % 2 == 1
+        }
 
-            // A single `*` closes unless it is a `**` (a run of exactly two); `***` holds one.
+        func closesLater(_ marker: String, from: Int) -> Bool {
             let mark = marker.utf16.first!
             var found = indexOf(marker, from: from)
             while let start = found {
+                if isEscaped(start) {
+                    found = indexOf(marker, from: start + 1)
+                    continue
+                }
+                if marker.utf16.count > 1 { return true }
+
+                // A single `*` closes unless it is a `**` (a run of exactly two); `***` holds one.
                 var end = start
                 while end < units.count, units[end] == mark { end += 1 }
                 if end - start != 2 { return true }

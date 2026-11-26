@@ -8,6 +8,8 @@ public enum LiveOutcome: Equatable, Sendable {
     case finished
     case headerImageSet(documentId: String, title: String, url: String)
     case tags([LiveTag])
+    /// The text of get_current_place.
+    case place(String)
     case tagged(documentId: String, title: String, added: [LiveTagged], already: [String])
     case failed(String)
     /// The person stopped Claude Code, in the middle of this call or a moment before it.
@@ -23,6 +25,7 @@ public protocol LiveDocumentsWriting: AnyObject {
     func finish() async -> LiveOutcome
     func setHeaderImage(documentId: String?, description: String?) async -> LiveOutcome
     func listTags() async -> LiveOutcome
+    func currentPlace(includeContent: Bool) async -> LiveOutcome
     func addTags(documentId: String?, names: [String]) async -> LiveOutcome
 }
 
@@ -132,6 +135,8 @@ public final class McpHandler {
             outcome = await documents.listFolders()
         case Self.finish:
             outcome = await documents.finish()
+        case Self.currentPlace:
+            outcome = await documents.currentPlace(includeContent: arguments["include_content"] as? Bool ?? true)
         case Self.listTags:
             outcome = await documents.listTags()
         case Self.addTags:
@@ -164,6 +169,8 @@ public final class McpHandler {
             ))
         case .finished:
             return result(id: id, toolText(Self.finished))
+        case let .place(text):
+            return result(id: id, toolText(text))
         case let .tags(tags):
             return result(id: id, toolText(Self.describeTags(tags)))
         case let .tagged(documentId, title, added, already):
@@ -220,6 +227,7 @@ public final class McpHandler {
     public static let finish = "finish_writing"
     public static let setHeaderImage = "set_header_image"
     public static let listTags = "list_tags"
+    public static let currentPlace = "get_current_place"
     public static let addTags = "add_tags"
 
     static let finished = "Writeopia left AI mode: the person can edit the documents again."
@@ -245,7 +253,9 @@ public final class McpHandler {
     static let instructions =
         "Writes documents in the Writeopia app open on this computer. The person watches the text " +
         "appear in the editor as it is written. Tools only add: they never change nor delete " +
-        "what is already there. To organize documents, see the folders with \(listFolders) (reuse " +
+        "what is already there. Call \(currentPlace) first to see where the person is and what " +
+        "the open document holds, and again when a call says something changed. To organize " +
+        "documents, see the folders with \(listFolders) (reuse " +
         "one that fits before making a new one), make folders with \(createFolder), and pass a " +
         "folder_id to \(create). For anything longer than a few paragraphs, write in parts so " +
         "the person can follow along: \(create) with the title and the first section, then one " +
@@ -325,6 +335,28 @@ public final class McpHandler {
                             "type": "string",
                             "description":
                                 "What the picture should show or its style, in a sentence. Optional: the picture follows the document anyway.",
+                        ],
+                    ],
+                    "additionalProperties": false,
+                ] as [String: Any],
+            ],
+            [
+                "name": currentPlace,
+                "title": "See where the person is in Writeopia",
+                "description":
+                    "Tells what Writeopia shows now: the document open in the editor (document_id, " +
+                    "title, folder, tags, locked, header picture) with its content as Markdown, or the " +
+                    "folder open when no document is. Also tells what the person changed since your " +
+                    "last call: another document opened, or blocks added, changed or removed. Only " +
+                    "reads. Call it before writing into the open document, and whenever the person " +
+                    "may have moved or edited.",
+                "inputSchema": [
+                    "type": "object",
+                    "properties": [
+                        "include_content": [
+                            "type": "boolean",
+                            "description":
+                                "Whether to include the document's content as Markdown (up to 20,000 characters). Default true.",
                         ],
                     ],
                     "additionalProperties": false,

@@ -453,7 +453,7 @@
   <string name="claude_code_copy">Copia</string>
   <string name="claude_code_copied">Copiato</string>
   <string name="claude_code_renew">Nuovo segreto</string>
-  <string name="claude_code_renew_hint">Il comando contiene un segreto che permette ai programmi di questo computer di scrivere qui. Se è trapelato, creane uno nuovo ed esegui il nuovo comando.</string>
+  <string name="claude_code_renew_hint">Il comando contiene un segreto che permette ai programmi di questo computer di scrivere qui. Se è trapelato, creane uno nuovo, rimuovi la vecchia connessione (claude plugin uninstall writeopia@writeopia, claude mcp remove writeopia --scope user) ed esegui il nuovo comando.</string>
   <string name="claude_code_writing">Claude Code sta scrivendo…</string>
   <string name="claude_code_working">Claude Code sta lavorando…</string>
   <string name="claude_code_stop">Ferma</string>

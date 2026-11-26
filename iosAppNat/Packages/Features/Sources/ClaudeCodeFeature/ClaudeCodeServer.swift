@@ -25,7 +25,8 @@ public final class ClaudeCodeServer {
         case failed(String)
     }
 
-    public private(set) var state: State = .off
+    /// Set by the listener; tests set it to answer requests without a socket.
+    public internal(set) var state: State = .off
 
     /// Whether this platform has the server: only the Mac.
     public static var isAvailable: Bool {
@@ -40,6 +41,8 @@ public final class ClaudeCodeServer {
     @ObservationIgnored private let defaults: UserDefaults
     #if os(macOS)
     @ObservationIgnored private var listener: NWListener?
+    /// The connections of the current listener, cancelled when the server stops.
+    @ObservationIgnored private var connections: [ObjectIdentifier: NWConnection] = [:]
     #endif
 
     private static let enabledKey = "wr.claudeCode.enabled"
@@ -113,6 +116,8 @@ public final class ClaudeCodeServer {
 
     /// The answer to `request`: the HTTP side of the server, apart from the socket.
     func respond(to request: HTTPRequest) async -> Data {
+        // Turned off meanwhile: nothing reaches the documents.
+        guard case .running = state else { return httpResponse(status: 503) }
         guard request.path == "/mcp" else { return httpResponse(status: 404) }
         guard request.method == "POST" else { return httpResponse(status: 405) }
 
@@ -139,11 +144,19 @@ public final class ClaudeCodeServer {
             parameters.requiredLocalEndpoint = .hostPort(host: "127.0.0.1", port: NWEndpoint.Port(rawValue: Self.port)!)
             parameters.allowLocalEndpointReuse = true
             let listener = try NWListener(using: parameters)
-            listener.newConnectionHandler = { [weak self] connection in
-                Task { @MainActor in self?.serve(connection) }
+            listener.newConnectionHandler = { [weak self, weak listener] connection in
+                Task { @MainActor in
+                    // A connection of a listener stopped meanwhile is closed, not served.
+                    guard let self, let listener, listener === self.listener else { return connection.cancel() }
+                    self.serve(connection)
+                }
             }
-            listener.stateUpdateHandler = { [weak self] update in
-                Task { @MainActor in self?.listenerChanged(update) }
+            listener.stateUpdateHandler = { [weak self, weak listener] update in
+                Task { @MainActor in
+                    // An update of a listener stopped meanwhile says nothing of the current one.
+                    guard let self, let listener, listener === self.listener else { return }
+                    self.listenerChanged(update)
+                }
             }
             self.listener = listener
             listener.start(queue: .main)
@@ -173,10 +186,22 @@ public final class ClaudeCodeServer {
         LiveEditors.shared.reset()
         listener?.cancel()
         listener = nil
+        connections.values.forEach { $0.cancel() }
+        connections = [:]
         state = .off
     }
 
     private func serve(_ connection: NWConnection) {
+        let id = ObjectIdentifier(connection)
+        connections[id] = connection
+        connection.stateUpdateHandler = { [weak self] update in
+            switch update {
+            case .cancelled, .failed:
+                Task { @MainActor in self?.connections[id] = nil }
+            default:
+                break
+            }
+        }
         connection.start(queue: .main)
         receive(on: connection, buffer: Data())
     }

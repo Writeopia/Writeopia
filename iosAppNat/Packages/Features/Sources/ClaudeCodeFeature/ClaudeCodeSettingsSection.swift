@@ -51,7 +51,7 @@ public struct ClaudeCodeSettingsSection: View {
                     copied = nil
                 }
             }
-            Text("The command holds a secret that lets programs on this computer write here. If it leaked, make a new one and run the new command.")
+            Text("The command holds a secret that lets programs on this computer write here. If it leaked, make a new one, remove the old connection (claude plugin uninstall writeopia@writeopia, claude mcp remove writeopia --scope user) and run the new command.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 

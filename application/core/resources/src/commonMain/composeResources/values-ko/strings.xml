@@ -453,7 +453,7 @@
   <string name="claude_code_copy">복사</string>
   <string name="claude_code_copied">복사됨</string>
   <string name="claude_code_renew">새 비밀 키</string>
-  <string name="claude_code_renew_hint">이 명령에는 이 컴퓨터의 프로그램이 여기에 쓸 수 있게 하는 비밀 키가 들어 있습니다. 유출되었다면 새로 만들고 새 명령을 실행하세요.</string>
+  <string name="claude_code_renew_hint">이 명령에는 이 컴퓨터의 프로그램이 여기에 쓸 수 있게 하는 비밀 키가 들어 있습니다. 유출되었다면 새로 만들고, 이전 연결을 제거한 뒤 (claude plugin uninstall writeopia@writeopia, claude mcp remove writeopia --scope user) 새 명령을 실행하세요.</string>
   <string name="claude_code_writing">Claude Code가 작성 중입니다…</string>
   <string name="claude_code_working">Claude Code가 작업 중입니다…</string>
   <string name="claude_code_stop">중지</string>

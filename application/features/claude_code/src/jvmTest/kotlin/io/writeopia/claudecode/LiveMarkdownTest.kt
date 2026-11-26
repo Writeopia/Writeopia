@@ -138,4 +138,10 @@ class LiveMarkdownTest {
         assertEquals("\uD83D\uDE00 ok", text)
         assertEquals(listOf(SpanInfo.create(3, 5, Span.BOLD)), spans)
     }
+
+    @Test
+    fun `an escaped marker never closes a span`() {
+        assertEquals("*word*" to emptyList(), LiveMarkdown.inline("*word\\*"))
+        assertEquals("a word b" to listOf(SpanInfo.create(2, 6, Span.ITALIC)), LiveMarkdown.inline("a *word* b"))
+    }
 }

@@ -93,4 +93,15 @@ import WrModels
         #expect(!manager.isInputLocked)
         #expect(editors.beginWriting() != nil)
     }
+
+    @Test func aStopBeforeTheFirstCharacterOfTheTitleKeepsTheTitle() async {
+        let manager = manager([StoryStep(id: "t", type: .title, text: "Old", position: Rank.at(0))])
+        let before = manager.changeCount
+
+        let done = await LiveWriter(tick: .milliseconds(1)).write(manager, title: "New title", blocks: []) { true }
+
+        #expect(!done)
+        #expect(manager.documentContent.first?.text == "Old")
+        #expect(manager.changeCount == before)
+    }
 }

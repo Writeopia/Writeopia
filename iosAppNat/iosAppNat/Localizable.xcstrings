@@ -29191,71 +29191,6 @@
         }
       }
     },
-    "The command holds a secret that lets programs on this computer write here. If it leaked, make a new one and run the new command." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Der Befehl enthält ein Geheimnis, mit dem Programme auf diesem Computer hier schreiben können. Falls es bekannt wurde, erstelle ein neues und führe den neuen Befehl aus."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "El comando contiene un secreto que permite a los programas de este equipo escribir aquí. Si se filtró, crea uno nuevo y ejecuta el nuevo comando."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La commande contient un secret qui permet aux programmes de cet ordinateur d'écrire ici. S'il a fuité, créez-en un nouveau et exécutez la nouvelle commande."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il comando contiene un segreto che permette ai programmi di questo computer di scrivere qui. Se è trapelato, creane uno nuovo ed esegui il nuovo comando."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "このコマンドには、このコンピューター上のプログラムがここに書き込めるシークレットが含まれています。漏れた場合は新しいものを作り、新しいコマンドを実行してください。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "이 명령에는 이 컴퓨터의 프로그램이 여기에 쓸 수 있게 하는 비밀 키가 들어 있습니다. 유출되었다면 새로 만들고 새 명령을 실행하세요."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Het commando bevat een geheim waarmee programma's op deze computer hier kunnen schrijven. Als het is uitgelekt, maak een nieuw en voer het nieuwe commando uit."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O comando contém um segredo que permite a programas deste computador escrever aqui. Se ele vazou, crie um novo e rode o novo comando."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Команда содержит секрет, позволяющий программам на этом компьютере писать сюда. Если он утёк, создайте новый и выполните новую команду."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "该命令包含一个密钥，可让此电脑上的程序在此写入。如果密钥泄露，请生成新的并运行新命令。"
-          }
-        }
-      }
-    },
     "The document couldn't be saved on this device." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -36796,6 +36731,70 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "你的团队"
+          }
+        }
+      }
+    },
+    "The command holds a secret that lets programs on this computer write here. If it leaked, make a new one, remove the old connection (claude plugin uninstall writeopia@writeopia, claude mcp remove writeopia --scope user) and run the new command." : {
+      "localizations" : {
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O comando contém um segredo que permite a programas deste computador escrever aqui. Se ele vazou, crie um novo, remova a conexão antiga (claude plugin uninstall writeopia@writeopia, claude mcp remove writeopia --scope user) e rode o novo comando."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El comando contiene un secreto que permite a los programas de este equipo escribir aquí. Si se filtró, crea uno nuevo, elimina la conexión anterior (claude plugin uninstall writeopia@writeopia, claude mcp remove writeopia --scope user) y ejecuta el nuevo comando."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La commande contient un secret qui permet aux programmes de cet ordinateur d'écrire ici. S'il a fuité, créez-en un nouveau, supprimez l'ancienne connexion (claude plugin uninstall writeopia@writeopia, claude mcp remove writeopia --scope user) et exécutez la nouvelle commande."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Befehl enthält ein Geheimnis, mit dem Programme auf diesem Computer hier schreiben können. Falls es bekannt wurde, erstelle ein neues, entferne die alte Verbindung (claude plugin uninstall writeopia@writeopia, claude mcp remove writeopia --scope user) und führe den neuen Befehl aus."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il comando contiene un segreto che permette ai programmi di questo computer di scrivere qui. Se è trapelato, creane uno nuovo, rimuovi la vecchia connessione (claude plugin uninstall writeopia@writeopia, claude mcp remove writeopia --scope user) ed esegui il nuovo comando."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このコマンドには、このコンピューター上のプログラムがここに書き込めるシークレットが含まれています。漏れた場合は新しいものを作り、古い接続を削除して (claude plugin uninstall writeopia@writeopia, claude mcp remove writeopia --scope user)、新しいコマンドを実行してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 명령에는 이 컴퓨터의 프로그램이 여기에 쓸 수 있게 하는 비밀 키가 들어 있습니다. 유출되었다면 새로 만들고, 이전 연결을 제거한 뒤 (claude plugin uninstall writeopia@writeopia, claude mcp remove writeopia --scope user) 새 명령을 실행하세요."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Het commando bevat een geheim waarmee programma's op deze computer hier kunnen schrijven. Als het is uitgelekt, maak een nieuw, verwijder de oude verbinding (claude plugin uninstall writeopia@writeopia, claude mcp remove writeopia --scope user) en voer het nieuwe commando uit."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Команда содержит секрет, позволяющий программам на этом компьютере писать сюда. Если он утёк, создайте новый, удалите старое подключение (claude plugin uninstall writeopia@writeopia, claude mcp remove writeopia --scope user) и выполните новую команду."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "该命令包含一个密钥，可让此电脑上的程序在此写入。如果密钥泄露，请生成新的，删除旧连接 (claude plugin uninstall writeopia@writeopia, claude mcp remove writeopia --scope user)，然后运行新命令。"
           }
         }
       }

@@ -1,5 +1,10 @@
 package io.writeopia.claudecode
 
+import io.writeopia.sdk.export.DocumentToMarkdown
+import io.writeopia.claudecode.mcp.PlaceReport
+import io.writeopia.claudecode.mcp.OpenDocument
+import io.writeopia.claudecode.mcp.FolderTree
+import io.writeopia.claudecode.mcp.DocumentSnapshot
 import io.writeopia.sdk.model.action.Action
 import io.writeopia.claudecode.mcp.LiveFolder
 import io.writeopia.claudecode.markdown.LiveMarkdown
@@ -34,6 +39,9 @@ class LiveDocuments(
 ) {
     private val mutex = Mutex()
 
+    /** The document as Claude Code last saw it (at the end of its last call), to tell what changed since. */
+    private var lastSeen: DocumentSnapshot? = null
+
     sealed interface Outcome {
         data class Written(val documentId: String, val title: String, val blocks: Int) : Outcome
 
@@ -57,6 +65,9 @@ class LiveDocuments(
 
         data class HeaderImageSet(val documentId: String, val title: String, val url: String) : Outcome
 
+        /** The text of get_current_place. */
+        data class Place(val text: String) : Outcome
+
         /** The person stopped Claude Code, in the middle of this call or a moment before it. */
         data object Stopped : Outcome
     }
@@ -76,7 +87,12 @@ class LiveDocuments(
         write(manager, title.trim(), markdown.orEmpty(), ticket)
     }
 
-    suspend fun append(documentId: String?, markdown: String): Outcome = inAiMode { ticket ->
+    suspend fun append(documentId: String?, markdown: String): Outcome {
+        switchedDocument(documentId)?.let { return it }
+        return appendInAiMode(documentId, markdown)
+    }
+
+    private suspend fun appendInAiMode(documentId: String?, markdown: String): Outcome = inAiMode { ticket ->
         val manager = when (val opened = openEditor(documentId)) {
             is Opened.Editor -> opened.manager
             is Opened.Failure -> return opened.outcome
@@ -84,6 +100,87 @@ class LiveDocuments(
 
         write(manager, null, markdown, ticket)
     }
+
+    /**
+     * Without a document_id, in the middle of a working session (AI mode on), the open document
+     * must still be the one Claude was writing in: when the person moved to another one, Claude is
+     * told where they are now, to decide again, instead of writing there unasked.
+     */
+    private fun switchedDocument(documentId: String?): Outcome? {
+        if (!documentId.isNullOrBlank() || !bridge.aiMode.value.isOn) return null
+        val last = lastSeen ?: return null
+        val current = bridge.current?.takeIf { it.isInitialized() } ?: return null
+        val currentId = current.documentInfo.value.id
+        if (currentId == last.documentId) return null
+
+        return Outcome.Failed(
+            "The person switched documents: Writeopia shows \"${titleOf(current)}\" (document_id: $currentId) " +
+                "now, not \"${last.title}\" (document_id: ${last.documentId}) where you were writing. Call " +
+                "get_current_place, then pass the document_id of the document to write in."
+        )
+    }
+
+    /**
+     * Where the person is: the document open in the editor (with its content as Markdown when
+     * [includeContent]) or the folder open, and what changed since Claude's last call. Only
+     * reads: no AI mode.
+     */
+    suspend fun currentPlace(includeContent: Boolean): Outcome = mutex.withLock {
+        val manager = bridge.current?.takeIf { it.isInitialized() }
+        val allFolders = folders?.list().orEmpty()
+        val byId = allFolders.associateBy { it.id }
+        val now = manager?.let(::snapshot)
+
+        val document = manager?.let {
+            val info = manager.documentInfo.value
+            val tagNames = tags?.list().orEmpty()
+                .filter { tag -> tag.id in manager.documentTagIds.value }
+                .map { tag -> tag.name }
+                .sortedBy { name -> name.lowercase() }
+            OpenDocument(
+                id = info.id,
+                title = titleOf(manager),
+                folderPath = pathTo(info.parentId, byId),
+                tags = tagNames,
+                isLocked = info.isLocked,
+                hasHeaderPicture = manager.currentStory.value.stories.values
+                    .firstOrNull { step -> step.type == StoryTypes.TITLE.type }
+                    ?.url.isNullOrBlank().not(),
+            )
+        }
+        val currentFolder = folders?.currentFolderId()?.let(byId::get)
+        val change = lastSeen?.changeTo(now)
+        val content = manager?.takeIf { includeContent }?.let { editor ->
+            DocumentToMarkdown.parse(editor.currentStory.value.stories.filterValues { step -> !step.ephemeral })
+        }
+
+        // Claude has seen it now: the next report tells what changed from here.
+        if (now != null) lastSeen = now
+        Outcome.Place(PlaceReport.describe(document, currentFolder, change, content))
+    }
+
+    /** The folders from the top level down to [folderId]; empty at the top level. */
+    private fun pathTo(folderId: String, byId: Map<String, LiveFolder>): List<LiveFolder> {
+        val path = mutableListOf<LiveFolder>()
+        var id: String? = folderId
+        while (id != null && id != FolderTree.ROOT && path.size < byId.size) {
+            val folder = byId[id] ?: break
+            path.add(0, folder)
+            id = folder.parentId
+        }
+        return path
+    }
+
+    private fun snapshot(manager: WriteopiaStateManager): DocumentSnapshot =
+        DocumentSnapshot(
+            documentId = manager.documentInfo.value.id,
+            title = titleOf(manager),
+            blocks = manager.currentStory.value.stories.values
+                .filter { step -> !step.ephemeral }
+                .associate { step ->
+                    step.id to "${step.type.number}|${step.text}|${step.checked}|${step.url}|${step.tags}"
+                },
+        )
 
     /**
      * Draws a header picture for the document with the cloud AI of Writeopia, from its title and
@@ -121,6 +218,7 @@ class LiveDocuments(
             step.copy(url = url, decoration = step.decoration.copy(backgroundColor = null))
         }
         manager.changeStoryState(Action.StoryStateChange(withPicture, position, preserveFocus = true))
+        lastSeen = snapshot(manager)
 
         Outcome.HeaderImageSet(manager.documentInfo.value.id, titleOf(manager), url)
     }
@@ -163,6 +261,7 @@ class LiveDocuments(
             }
         }
 
+        lastSeen = snapshot(manager)
         Outcome.Tagged(manager.documentInfo.value.id, titleOf(manager), added, already)
     }
 
@@ -197,8 +296,11 @@ class LiveDocuments(
         }
 
         // A document just opened may still be merged with its copy in the cloud, which would
-        // replace what is being written.
+        // replace what is being written: wait for it, and don't write while it lasts.
         withTimeoutOrNull(openTimeout) { isLoading.first { loading -> !loading } }
+            ?: return Opened.Failure(
+                Outcome.Failed("Writeopia is still loading the document. Try again in a moment.")
+            )
         return Opened.Editor(manager)
     }
 
@@ -256,7 +358,9 @@ class LiveDocuments(
         }
 
         val blocks = LiveMarkdown.blocks(markdown)
-        if (!writer.write(manager, title, blocks) { bridge.isStopped(ticket) }) return Outcome.Stopped
+        val done = writer.write(manager, title, blocks) { bridge.isStopped(ticket) }
+        lastSeen = snapshot(manager)
+        if (!done) return Outcome.Stopped
 
         return Outcome.Written(
             documentId = manager.documentInfo.value.id,

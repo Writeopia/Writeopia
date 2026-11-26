@@ -154,12 +154,23 @@ object LiveMarkdown {
             }
         }
 
-        fun closesLater(marker: String, from: Int): Boolean {
-            if (marker.length > 1) return markdown.indexOf(marker, from) >= 0
+        // A marker after an odd run of backslashes is escaped, like the loop below reads it.
+        fun isEscaped(at: Int): Boolean {
+            var backslashes = 0
+            while (at - backslashes - 1 >= 0 && markdown[at - backslashes - 1] == '\\') backslashes++
+            return backslashes % 2 == 1
+        }
 
-            // A single `*` closes unless it is a `**` (a run of exactly two); `***` holds one.
+        fun closesLater(marker: String, from: Int): Boolean {
             var at = markdown.indexOf(marker, from)
             while (at >= 0) {
+                if (isEscaped(at)) {
+                    at = markdown.indexOf(marker, at + 1)
+                    continue
+                }
+                if (marker.length > 1) return true
+
+                // A single `*` closes unless it is a `**` (a run of exactly two); `***` holds one.
                 var end = at
                 while (end < markdown.length && markdown[end] == marker[0]) end++
                 if (end - at != 2) return true

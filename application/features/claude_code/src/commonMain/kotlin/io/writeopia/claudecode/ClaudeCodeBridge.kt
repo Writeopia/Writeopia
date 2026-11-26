@@ -87,18 +87,29 @@ object ClaudeCodeBridge {
     @Volatile private var stoppedGeneration = -1L
 
     @Volatile private var stoppedAt: TimeMark? = null
-    private var idleJob: Job? = null
+
+    @Volatile private var idleJob: Job? = null
 
     /**
      * A call starts writing. Returns its ticket, or null when the person stopped Claude Code a
      * moment ago: the call is refused.
+     *
+     * The ticket is taken and AI mode turned on before the stop is checked, and [stop] marks the
+     * time before it reads the ticket: a stop that lands in between is either seen here (the call
+     * is refused, AI mode goes off again) or sees this ticket and stops it. No lock is needed.
      */
     fun beginWriting(): Long? {
-        if (stoppedAt?.let { it.elapsedNow() < stopCooldown } == true) return null
         idleJob?.cancel()
-        generation += 1
+        val ticket = generation + 1
+        generation = ticket
         _aiMode.value = AiMode.WRITING
-        return generation
+
+        if (stoppedAt?.let { it.elapsedNow() < stopCooldown } == true) {
+            if (stoppedGeneration < ticket) stoppedGeneration = ticket
+            _aiMode.value = AiMode.OFF
+            return null
+        }
+        return ticket
     }
 
     /** The call with [ticket] is done: AI mode waits for the next one, then ends. */
@@ -117,9 +128,10 @@ object ClaudeCodeBridge {
 
     /** The person stops Claude Code: the call in progress stops where it is. */
     fun stop() {
-        idleJob?.cancel()
-        stoppedGeneration = generation
+        // The time first, then the ticket: see [beginWriting].
         stoppedAt = TimeSource.Monotonic.markNow()
+        stoppedGeneration = generation
+        idleJob?.cancel()
         _aiMode.value = AiMode.OFF
     }
 

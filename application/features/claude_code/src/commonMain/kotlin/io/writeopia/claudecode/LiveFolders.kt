@@ -30,8 +30,11 @@ class RepositoryLiveFolders(
 
     override fun currentFolderId(): String = currentFolder()
 
-    override suspend fun exists(folderId: String): Boolean =
-        folderId == Folder.ROOT_PATH || folderRepository.getFolderById(folderId)?.deleted == false
+    override suspend fun exists(folderId: String): Boolean {
+        if (folderId == Folder.ROOT_PATH) return true
+        val folder = folderRepository.getFolderById(folderId) ?: return false
+        return !folder.deleted && folder.workspaceId == workspaceId()
+    }
 
     override suspend fun create(name: String, parentId: String): String {
         val folder = Folder.fromName(name, workspaceId()).copy(parentId = parentId)

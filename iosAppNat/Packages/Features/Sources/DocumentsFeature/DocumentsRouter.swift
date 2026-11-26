@@ -63,6 +63,11 @@ public final class DocumentsRouter {
     }
 
     /// A folder view appeared: `id` is a folder, or the favorites or a tag (then the root counts).
+    /// `folder` is about to be shown: it is the folder open from now on, before the navigation lands.
+    public func willShow(_ folder: Folder) {
+        shownFolderId = folder.id
+    }
+
     func folderShown(_ id: String, isFolder: Bool) {
         shownFolderId = isFolder ? id : Folder.rootId
     }

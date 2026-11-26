@@ -60,6 +60,7 @@ class McpHandlerTest {
                 "create_document",
                 "append_to_document",
                 "set_header_image",
+                "get_current_place",
                 "list_tags",
                 "add_tags",
                 "finish_writing",

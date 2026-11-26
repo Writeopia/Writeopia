@@ -87,8 +87,9 @@ public struct LiveWriter {
 
         while shown < units.count {
             if isStopped() {
-                // What the person saw stays: the block as far as it got, saved.
-                finish(step.partial(shown), in: manager)
+                // What the person saw stays: the block as far as it got, saved. Nothing of the
+                // title was shown yet: it keeps the text it had, and nothing is saved.
+                if shown > 0 || !step.isTitle { finish(step.partial(shown), in: manager) }
                 return false
             }
             shown = min(units.count, shown + perTick)

@@ -13,6 +13,8 @@ public final class LiveDocuments: LiveDocumentsWriting {
     private let writer: LiveWriter
     private let openTimeout: Duration
     private var queue: Task<Void, Never>?
+    /// The document as Claude Code last saw it (at the end of its last call), to tell what changed since.
+    private var lastSeen: DocumentSnapshot?
 
     public init(
         session: @escaping () -> AppSession?,
@@ -54,12 +56,84 @@ public final class LiveDocuments: LiveDocumentsWriting {
     }
 
     public func append(documentId: String?, markdown: String) async -> LiveOutcome {
-        await inAiMode { [self] ticket in
+        if let switched = switchedDocument(documentId) { return switched }
+        return await inAiMode { [self] ticket in
             switch await openEditor(documentId) {
             case let .success(editor): return await write(into: editor, title: nil, markdown: markdown, ticket: ticket)
             case let .failure(failure): return failure.outcome
             }
         }
+    }
+
+    /// Without a document_id, in the middle of a working session (AI mode on), the open document
+    /// must still be the one Claude was writing in: when the person moved to another one, Claude is
+    /// told where they are now, to decide again, instead of writing there unasked.
+    private func switchedDocument(_ documentId: String?) -> LiveOutcome? {
+        guard documentId?.trimmingCharacters(in: .whitespaces).nonEmpty == nil, editors.mode.isOn,
+              let last = lastSeen, let current = editors.current, current.documentId != last.documentId else {
+            return nil
+        }
+        return .failed(
+            "The person switched documents: Writeopia shows \"\(current.manager.title)\" (document_id: \(current.documentId)) " +
+                "now, not \"\(last.title)\" (document_id: \(last.documentId)) where you were writing. Call " +
+                "get_current_place, then pass the document_id of the document to write in."
+        )
+    }
+
+    /// Where the person is: the document open in the editor (with its content as Markdown when
+    /// `includeContent`) or the folder open, and what changed since Claude's last call. Only
+    /// reads: no AI mode.
+    public func currentPlace(includeContent: Bool) async -> LiveOutcome {
+        guard let session = readySession() else { return Self.noWorkspace }
+        let editor = editors.current
+        let now = editor.map(snapshot)
+
+        var document: OpenDocument?
+        if let editor {
+            let manager = editor.manager
+            let parentId = (try? await session.documents.document(id: editor.documentId))?.parentId ?? Folder.rootId
+            let path = ((try? await session.documents.folderPath(to: parentId)) ?? [])
+                .map { LiveFolder(id: $0.id, name: $0.title, parentId: $0.parentId) }
+            let tagIds = Set(editor.tagger?.documentTagIds ?? [])
+            let tagNames = ((try? await session.documents.tags()) ?? [])
+                .filter { tagIds.contains($0.id) && !$0.deleted }
+                .map(\.name)
+                .sorted { $0.lowercased() < $1.lowercased() }
+            let title = manager.currentStory.sortedStories.first(where: \.isTitle)
+            document = OpenDocument(
+                id: editor.documentId,
+                title: manager.title,
+                folderPath: path,
+                tags: tagNames,
+                isLocked: !manager.isEditable,
+                hasHeaderPicture: !(title?.url ?? "").isEmpty
+            )
+        }
+
+        let folderId = currentFolderId()
+        let currentFolder: LiveFolder? = if folderId == Folder.rootId {
+            nil
+        } else {
+            (try? await session.documents.folder(id: folderId)).flatMap { $0 }
+                .map { LiveFolder(id: $0.id, name: $0.title, parentId: $0.parentId) }
+        }
+        let change = lastSeen?.change(to: now)
+        let content = includeContent ? editor.map { DocumentToMarkdown.parse($0.manager.documentContent) } : nil
+
+        // Claude has seen it now: the next report tells what changed from here.
+        if let now { lastSeen = now }
+        return .place(PlaceReport.describe(document: document, currentFolder: currentFolder, change: change, content: content))
+    }
+
+    private func snapshot(_ editor: LiveEditors.Editor) -> DocumentSnapshot {
+        let manager = editor.manager
+        let blocks = Dictionary(
+            manager.documentContent.map { step in
+                (step.id, "\(step.type.number)|\(step.text ?? "")|\(String(describing: step.checked))|\(step.url ?? "")|\(step.tags.map(\.tag))")
+            },
+            uniquingKeysWith: { first, _ in first }
+        )
+        return DocumentSnapshot(documentId: editor.documentId, title: manager.title, blocks: blocks)
     }
 
     /// Draws a header picture for the document with the cloud AI of Writeopia, from its title and
@@ -101,6 +175,7 @@ public final class LiveDocuments: LiveDocumentsWriting {
             if editors.isStopped(ticket) { return .stopped }
 
             manager.setHeaderImage(url)
+            lastSeen = snapshot(editor)
             return .headerImageSet(documentId: editor.documentId, title: manager.title, url: url)
         }
     }
@@ -141,7 +216,13 @@ public final class LiveDocuments: LiveDocumentsWriting {
             }
             guard let tagger = editor.tagger else { return .failed("This Writeopia app has no tags.") }
 
-            var catalogue = ((try? await session.documents.tags()) ?? []).filter { !$0.deleted }
+            var catalogue: [DocumentTag]
+            do {
+                catalogue = try await session.documents.tags().filter { !$0.deleted }
+            } catch {
+                // Read as empty, every tag would be made again.
+                return .failed("Writeopia could not read the tags: \(error.localizedDescription)")
+            }
             var added: [(String, Bool)] = []
             var already: [String] = []
             for name in wanted {
@@ -163,6 +244,7 @@ public final class LiveDocuments: LiveDocumentsWriting {
                     }
                 }
             }
+            lastSeen = snapshot(editor)
             return .tagged(
                 documentId: editor.documentId,
                 title: editor.manager.title,
@@ -227,9 +309,15 @@ public final class LiveDocuments: LiveDocumentsWriting {
     /// writing, so it never ends AI mode in the middle of one.
     public func finish() async -> LiveOutcome {
         let previous = queue
-        await previous?.value
-        editors.finish()
-        return .finished
+        let editors = editors
+        let task = Task { () -> LiveOutcome in
+            await previous?.value
+            editors.finish()
+            return .finished
+        }
+        // The calls after it wait until AI mode is off.
+        queue = Task { _ = await task.value }
+        return await task.value
     }
 
     /// The folders, to choose where to write. Only reads: no AI mode, no banner.
@@ -282,6 +370,7 @@ public final class LiveDocuments: LiveDocumentsWriting {
         let blocks = LiveMarkdown.blocks(markdown)
         let editors = editors
         let done = await writer.write(manager, title: title, blocks: blocks) { editors.isStopped(ticket) }
+        lastSeen = snapshot(editor)
         if !done { return .stopped }
 
         let written = manager.title

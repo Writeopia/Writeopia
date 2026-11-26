@@ -56,6 +56,8 @@ struct MacMainView: View {
         ClaudeCode.openFolder = { folder in
             selection = .documents
             router.treeChanged()
+            // The default parent at once, before the navigation below lands.
+            router.willShow(folder)
             Task { await router.open(folder: folder, repository: session.documents) }
         }
         ClaudeCode.currentFolderId = { router.shownFolderId }
