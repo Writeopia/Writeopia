@@ -15,9 +15,6 @@ interface FolderCommonDao {
     /** Folders changed locally since they were last sent to the backend, or never sent. */
     suspend fun getOutdatedFoldersForWorkspace(workspaceId: String): List<Folder>
 
-    /** Every folder of the workspace counts as never synced; only that column changes. */
-    suspend fun clearLastSyncedAt(workspaceId: String)
-
     suspend fun getLastUpdated(): List<Folder>
 
     suspend fun getFolderByParentId(id: String, workspaceId: String): List<Folder>

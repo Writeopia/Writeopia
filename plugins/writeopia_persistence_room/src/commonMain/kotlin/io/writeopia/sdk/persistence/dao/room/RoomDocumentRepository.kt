@@ -135,10 +135,6 @@ class RoomDocumentRepository(
         instant: Instant
     ): List<Document> = throw IllegalStateException("This method is not supported")
 
-    override suspend fun clearLastSyncedAt(workspaceId: String) {
-        documentEntityDao.clearLastSyncedAt(workspaceId)
-    }
-
     override suspend fun favoriteDocumentByIds(ids: Set<String>) {
         setFavorite(ids, "", true)
     }

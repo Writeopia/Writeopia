@@ -98,10 +98,6 @@ class RoomFolderRepository(
 
     override suspend fun stopListeningForFoldersByParentId(parentId: String, workspaceId: String) {}
 
-    override suspend fun clearLastSyncedAt(workspaceId: String) {
-        folderRoomDao.clearLastSyncedAt(workspaceId)
-    }
-
     override suspend fun localOutDatedFolders(workspaceId: String): List<Folder> =
         folderRoomDao.getOutdatedFoldersForWorkspace(workspaceId)
 

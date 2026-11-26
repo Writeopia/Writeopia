@@ -39,17 +39,6 @@ interface DocumentRepository : DocumentUpdate, DocumentSearch {
 
     suspend fun loadOutdatedDocumentsForWorkspace(workspaceId: String): List<Document>
 
-    /**
-     * Every document of [workspaceId] counts as never synced. Only the sync stamp changes: the
-     * database implementations update that column alone, so a concurrent edit is never undone.
-     * This default, for repositories without a database, writes the documents back.
-     */
-    suspend fun clearLastSyncedAt(workspaceId: String) {
-        loadDocumentsWorkspace(workspaceId)
-            .filter { document -> document.lastSyncedAt != null }
-            .forEach { document -> saveDocumentMetadata(document.copy(lastSyncedAt = null)) }
-    }
-
     suspend fun loadDocumentById(id: String, workspaceId: String): Document?
 
     suspend fun loadDocumentByIds(ids: List<String>, workspaceId: String): List<Document>

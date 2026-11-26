@@ -8,7 +8,6 @@ import androidx.room.Query
 import androidx.room.Update
 import io.writeopia.sdk.models.CREATED_AT
 import io.writeopia.sdk.models.DOCUMENT_ENTITY
-import io.writeopia.sdk.models.LAST_SYNCED_AT
 import io.writeopia.sdk.models.LAST_UPDATED_AT
 import io.writeopia.sdk.models.TITLE
 import io.writeopia.sdk.persistence.entity.document.DocumentEntity
@@ -221,10 +220,6 @@ interface DocumentEntityDao {
     fun listenForFavoriteDocumentsWithContentForWorkspace(
         workspaceId: String,
     ): Flow<Map<DocumentEntity, List<StoryStepEntity>>>
-
-    // Only the sync stamp, so a concurrent edit of the other columns stays.
-    @Query("UPDATE $DOCUMENT_ENTITY SET $LAST_SYNCED_AT = NULL WHERE workspace_id = :workspaceId")
-    suspend fun clearLastSyncedAt(workspaceId: String)
 
     @Query("UPDATE $DOCUMENT_ENTITY set workspace_id = :newUserId WHERE workspace_id = :oldUserId")
     suspend fun moveDocumentsToNewUser(oldUserId: String, newUserId: String)
