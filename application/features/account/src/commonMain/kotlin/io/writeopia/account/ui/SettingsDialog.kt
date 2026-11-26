@@ -626,6 +626,10 @@ private fun AiSection(
         val titleColor = MaterialTheme.colorScheme.onBackground
         val cloudAiAvailable by isCloudAiAvailable.collectAsState()
 
+        // First: Claude Code, only where the app runs its server (the desktop); nothing elsewhere,
+        // the spacing included
+        ClaudeCodeSettingsSection(modifier = Modifier.padding(bottom = 32.dp))
+
         // Who answers the AI commands, like the "Run AI with" picker of the Mac app
         AiProviderOptions(
             selectedProviderState = aiProviderState,
@@ -650,9 +654,6 @@ private fun AiSection(
 
         // Local AI Section - shared with the offline space's first-run setup screen
         LocalAiConfigScreen(controller = localAiConfigController)
-
-        // Only where the app runs the Claude Code server (the desktop): nothing elsewhere
-        ClaudeCodeSettingsSection(modifier = Modifier.padding(top = 32.dp))
     }
 }
 

@@ -23,9 +23,7 @@ public struct ClaudeCodeSettingsSection: View {
 
                 switch server.state {
                 case .running:
-                    if let plugin = server.pluginCommand, let tools = server.command {
-                        commandView(plugin: plugin, tools: tools)
-                    }
+                    if let plugin = server.pluginCommand { commandView(plugin: plugin) }
                 case let .failed(reason):
                     Text(reason).foregroundStyle(.red)
                 case .off:
@@ -40,25 +38,11 @@ public struct ClaudeCodeSettingsSection: View {
     }
 
     @ViewBuilder
-    private func commandView(plugin: String, tools: String) -> some View {
+    private func commandView(plugin: String) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Run this once in a terminal to connect Claude Code:")
             commandText(plugin)
-            HStack {
-                copyButton(plugin)
-                Button("New secret") {
-                    server.renewToken()
-                    copied = nil
-                }
-            }
-            Text("The command holds a secret that lets programs on this computer write here. If it leaked, make a new one, remove the old connection (claude plugin uninstall writeopia@writeopia, claude mcp remove writeopia --scope user) and run the new command.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            Text("Or connect only the tools, without /writeopia:plan:")
-                .padding(.top, 8)
-            commandText(tools)
-            copyButton(tools)
+            copyButton(plugin)
         }
         .padding(.vertical, 4)
     }

@@ -47,6 +47,9 @@ struct AiSettingsView: View {
     var body: some View {
         @Bindable var session = viewModel.session
         WrForm {
+            // First: Claude Code, only on the Mac, which runs its server; nothing on iOS.
+            ClaudeCodeSettingsSection()
+
             appleIntelligenceSection
 
             Section {
@@ -70,9 +73,6 @@ struct AiSettingsView: View {
             } footer: {
                 Text("A model served on this machine by Ollama or llmman, in both spaces and offline.")
             }
-
-            // Only on the Mac, which runs the Claude Code server: nothing on iOS.
-            ClaudeCodeSettingsSection()
 
             if viewModel.session.isOnline {
                 usageSection

@@ -2,7 +2,6 @@ package io.writeopia.resources
 
 import androidx.compose.runtime.Composable
 import org.jetbrains.compose.resources.stringResource
-import writeopia.application.core.resources.generated.resources.claude_code_tools_only_hint
 import writeopia.application.core.resources.generated.resources.claude_code_writing
 import writeopia.application.core.resources.generated.resources.claude_code_working
 import writeopia.application.core.resources.generated.resources.claude_code_stop
@@ -12,8 +11,6 @@ import writeopia.application.core.resources.generated.resources.claude_code_enab
 import writeopia.application.core.resources.generated.resources.claude_code_command_hint
 import writeopia.application.core.resources.generated.resources.claude_code_copy
 import writeopia.application.core.resources.generated.resources.claude_code_copied
-import writeopia.application.core.resources.generated.resources.claude_code_renew
-import writeopia.application.core.resources.generated.resources.claude_code_renew_hint
 import writeopia.application.core.resources.generated.resources.Res
 import writeopia.application.core.resources.generated.resources.accent_color
 import writeopia.application.core.resources.generated.resources.settings_workspace_content
@@ -1752,11 +1749,7 @@ object WrStrings {
     @Composable
     fun claudeCodeCopied() = stringResource(Res.string.claude_code_copied)
 
-    @Composable
-    fun claudeCodeRenew() = stringResource(Res.string.claude_code_renew)
 
-    @Composable
-    fun claudeCodeRenewHint() = stringResource(Res.string.claude_code_renew_hint)
 
     @Composable
     fun claudeCodeWriting() = stringResource(Res.string.claude_code_writing)
@@ -1767,6 +1760,4 @@ object WrStrings {
     @Composable
     fun claudeCodeStop() = stringResource(Res.string.claude_code_stop)
 
-    @Composable
-    fun claudeCodeToolsOnlyHint() = stringResource(Res.string.claude_code_tools_only_hint)
 }

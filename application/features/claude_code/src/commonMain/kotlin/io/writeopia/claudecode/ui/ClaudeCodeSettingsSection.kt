@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.MaterialTheme
@@ -75,11 +74,7 @@ fun ClaudeCodeSettingsSection(modifier: Modifier = Modifier) {
         when (val current = state) {
             is ClaudeCodeState.Running -> {
                 Spacer(modifier = Modifier.height(12.dp))
-                CommandBox(
-                    pluginCommand = current.pluginCommand,
-                    toolsCommand = current.command,
-                    renew = controller::renewToken
-                )
+                CommandBox(pluginCommand = current.pluginCommand)
             }
 
             is ClaudeCodeState.Failed -> {
@@ -97,7 +92,7 @@ fun ClaudeCodeSettingsSection(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun CommandBox(pluginCommand: String, toolsCommand: String, renew: () -> Unit) {
+private fun CommandBox(pluginCommand: String) {
     val textColor = MaterialTheme.colorScheme.onBackground
 
     Column {
@@ -109,36 +104,12 @@ private fun CommandBox(pluginCommand: String, toolsCommand: String, renew: () ->
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        CopyableCommand(pluginCommand) {
-            Spacer(modifier = Modifier.width(8.dp))
-
-            TextButton(onClick = renew) {
-                Text(WrStrings.claudeCodeRenew())
-            }
-        }
-
-        Text(
-            WrStrings.claudeCodeRenewHint(),
-            style = MaterialTheme.typography.bodySmall,
-            color = textColor.copy(alpha = 0.7F)
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            WrStrings.claudeCodeToolsOnlyHint(),
-            style = MaterialTheme.typography.bodyMedium,
-            color = textColor
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        CopyableCommand(toolsCommand)
+        CopyableCommand(pluginCommand)
     }
 }
 
 @Composable
-private fun CopyableCommand(command: String, moreActions: @Composable () -> Unit = {}) {
+private fun CopyableCommand(command: String) {
     val clipboard = LocalClipboardManager.current
     var copied by remember(command) { mutableStateOf(false) }
     val textColor = MaterialTheme.colorScheme.onBackground
@@ -164,8 +135,6 @@ private fun CopyableCommand(command: String, moreActions: @Composable () -> Unit
             }) {
                 Text(if (copied) WrStrings.claudeCodeCopied() else WrStrings.claudeCodeCopy())
             }
-
-            moreActions()
         }
     }
 }

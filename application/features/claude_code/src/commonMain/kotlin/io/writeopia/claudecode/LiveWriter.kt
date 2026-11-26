@@ -132,6 +132,9 @@ class LiveWriter(
             delay(tick)
         }
 
+        // Nothing to type (an empty text) and stopped meanwhile: the block keeps what it had.
+        if (text.isEmpty() && isStopped()) return false
+
         manager.changeStoryState(
             Action.StoryStateChange(step.copy(ephemeral = false).copyNewLocalId(), position, preserveFocus = true),
             trackIt = false

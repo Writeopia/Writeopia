@@ -452,10 +452,7 @@
   <string name="claude_code_command_hint">Claude Code を接続するには、ターミナルでこれを一度実行してください：</string>
   <string name="claude_code_copy">コピー</string>
   <string name="claude_code_copied">コピーしました</string>
-  <string name="claude_code_renew">新しいシークレット</string>
-  <string name="claude_code_renew_hint">このコマンドには、このコンピューター上のプログラムがここに書き込めるシークレットが含まれています。漏れた場合は新しいものを作り、古い接続を削除して (claude plugin uninstall writeopia@writeopia, claude mcp remove writeopia --scope user)、新しいコマンドを実行してください。</string>
   <string name="claude_code_writing">Claude Code が書いています…</string>
   <string name="claude_code_working">Claude Code が作業中です…</string>
   <string name="claude_code_stop">停止</string>
-  <string name="claude_code_tools_only_hint">または /writeopia:plan なしでツールだけを接続：</string>
 </resources>

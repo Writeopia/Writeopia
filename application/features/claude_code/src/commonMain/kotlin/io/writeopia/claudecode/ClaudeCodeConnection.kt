@@ -18,26 +18,18 @@ interface ClaudeCodeController {
     val state: StateFlow<ClaudeCodeState>
 
     fun setEnabled(enabled: Boolean)
-
-    /** A new secret: the command given before stops working. */
-    fun renewToken()
 }
 
 sealed interface ClaudeCodeState {
     data object Off : ClaudeCodeState
 
-    data class Running(val port: Int, val token: String) : ClaudeCodeState {
+    data class Running(val port: Int) : ClaudeCodeState {
         /**
          * What the person runs once in a terminal: the Writeopia plugin of Claude Code (the tools
-         * and /writeopia:plan), from the marketplace repository Writeopia/writeopia-claude, with this app's secret.
+         * and /writeopia:plan), from the marketplace repository Writeopia/writeopia-claude.
          */
         val pluginCommand: String =
-            "claude plugin install writeopia --marketplace Writeopia/writeopia-claude --config writeopia_token=$token"
-
-        /** The tools alone, without the plugin. */
-        val command: String =
-            "claude mcp add --transport http --scope user writeopia http://127.0.0.1:$port/mcp " +
-                "--header \"Authorization: Bearer $token\""
+            "claude plugin install writeopia --marketplace Writeopia/writeopia-claude"
     }
 
     data class Failed(val reason: String) : ClaudeCodeState

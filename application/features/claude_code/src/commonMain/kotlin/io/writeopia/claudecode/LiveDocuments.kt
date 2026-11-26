@@ -88,11 +88,13 @@ class LiveDocuments(
     }
 
     suspend fun append(documentId: String?, markdown: String): Outcome {
-        switchedDocument(documentId)?.let { return it }
-        return appendInAiMode(documentId, markdown)
+        // In a working session when the call came: checked once its turn comes, just before writing.
+        val inSession = bridge.aiMode.value.isOn
+        return appendInAiMode(documentId, markdown, inSession)
     }
 
-    private suspend fun appendInAiMode(documentId: String?, markdown: String): Outcome = inAiMode { ticket ->
+    private suspend fun appendInAiMode(documentId: String?, markdown: String, inSession: Boolean): Outcome = inAiMode { ticket ->
+        if (inSession) switchedDocument(documentId)?.let { return it }
         val manager = when (val opened = openEditor(documentId)) {
             is Opened.Editor -> opened.manager
             is Opened.Failure -> return opened.outcome
@@ -107,7 +109,7 @@ class LiveDocuments(
      * told where they are now, to decide again, instead of writing there unasked.
      */
     private fun switchedDocument(documentId: String?): Outcome? {
-        if (!documentId.isNullOrBlank() || !bridge.aiMode.value.isOn) return null
+        if (!documentId.isNullOrBlank()) return null
         val last = lastSeen ?: return null
         val current = bridge.current?.takeIf { it.isInitialized() } ?: return null
         val currentId = current.documentInfo.value.id
@@ -126,14 +128,17 @@ class LiveDocuments(
      * reads: no AI mode.
      */
     suspend fun currentPlace(includeContent: Boolean): Outcome = mutex.withLock {
-        val manager = bridge.current?.takeIf { it.isInitialized() }
+        // The repositories first: after them nothing suspends, so the report, its content and the
+        // baseline kept for the next one are the same state of the editor.
         val allFolders = folders?.list().orEmpty()
+        val catalogue = tags?.list().orEmpty()
         val byId = allFolders.associateBy { it.id }
+        val manager = bridge.current?.takeIf { it.isInitialized() }
         val now = manager?.let(::snapshot)
 
         val document = manager?.let {
             val info = manager.documentInfo.value
-            val tagNames = tags?.list().orEmpty()
+            val tagNames = catalogue
                 .filter { tag -> tag.id in manager.documentTagIds.value }
                 .map { tag -> tag.name }
                 .sortedBy { name -> name.lowercase() }
@@ -175,10 +180,14 @@ class LiveDocuments(
         DocumentSnapshot(
             documentId = manager.documentInfo.value.id,
             title = titleOf(manager),
-            blocks = manager.currentStory.value.stories.values
-                .filter { step -> !step.ephemeral }
-                .associate { step ->
-                    step.id to "${step.type.number}|${step.text}|${step.checked}|${step.url}|${step.tags}"
+            blocks = manager.currentStory.value.stories
+                .filterValues { step -> !step.ephemeral }
+                .entries
+                .associate { (position, step) ->
+                    // Sorted, so the same block always reads the same; position for the moves.
+                    val tags = step.tags.map { "${it.tag.label}:${it.position}" }.sorted()
+                    val spans = step.spans.map { it.toText() }.sorted()
+                    step.id to "$position|${step.type.number}|${step.text}|${step.checked}|${step.url}|$tags|$spans"
                 },
         )
 
@@ -313,7 +322,8 @@ class LiveDocuments(
         val parent = parentId?.trim()?.takeIf { it.isNotEmpty() } ?: folders.currentFolderId()
         if (!folders.exists(parent)) return noFolder(parent)
 
-        val folderId = folders.create(name.trim(), parent)
+        val folderId = runCatching { folders.create(name.trim(), parent) }
+            .getOrElse { error -> return Outcome.Failed(error.message ?: "Writeopia could not make the folder.") }
         bridge.requestOpen(ClaudeCodeBridge.OpenRequest.Folder(folderId))
         Outcome.FolderCreated(folderId, name.trim(), parent)
     }

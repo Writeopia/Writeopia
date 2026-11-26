@@ -100,6 +100,8 @@ public struct LiveWriter {
             try? await Task.sleep(for: tick)
         }
 
+        // Nothing to type (an empty text) and stopped meanwhile: the block keeps what it had.
+        if units.isEmpty, isStopped() { return false }
         finish(step, in: manager)
         return true
     }

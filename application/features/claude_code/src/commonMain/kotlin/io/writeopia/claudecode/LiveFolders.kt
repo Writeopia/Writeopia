@@ -37,7 +37,14 @@ class RepositoryLiveFolders(
     }
 
     override suspend fun create(name: String, parentId: String): String {
-        val folder = Folder.fromName(name, workspaceId()).copy(parentId = parentId)
+        val workspaceId = workspaceId()
+        if (parentId != Folder.ROOT_PATH) {
+            val parent = folderRepository.getFolderById(parentId)
+            check(parent != null && !parent.deleted && parent.workspaceId == workspaceId) {
+                "Writeopia has no folder with the id $parentId in this workspace."
+            }
+        }
+        val folder = Folder.fromName(name, workspaceId).copy(parentId = parentId)
         folderRepository.createFolder(folder)
         folderRepository.refreshFolders()
         return folder.id

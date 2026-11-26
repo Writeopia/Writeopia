@@ -139,9 +139,8 @@ private func json(_ data: Data?) -> [String: Any] {
 @Suite struct ClaudeCodeServerTests {
     private func server() -> ClaudeCodeServer {
         let defaults = UserDefaults(suiteName: "ClaudeCodeServerTests-\(UUID().uuidString)")!
-        defaults.set("secret", forKey: "wr.claudeCode.token")
         let server = ClaudeCodeServer(defaults: defaults)
-        server.state = .running(token: "secret")
+        server.state = .running
         return server
     }
 
@@ -153,26 +152,33 @@ private func json(_ data: Data?) -> [String: Any] {
         String(decoding: data, as: UTF8.self).components(separatedBy: "\r\n")[0]
     }
 
-    @Test func refusesRequestsWithoutTheSecretOrFromWebPages() async {
+    private let local = ["host": "127.0.0.1:47615"]
+
+    @Test func refusesWebPagesAndOtherHostsWithoutAnySecret() async {
         let server = server()
 
-        #expect(status(await server.respond(to: request([:]))) == "HTTP/1.1 401 Unauthorized")
-        #expect(status(await server.respond(to: request(["authorization": "Bearer nope"]))) == "HTTP/1.1 401 Unauthorized")
-        #expect(status(await server.respond(to: request(["authorization": "Bearer secret", "origin": "https://evil.example"]))) == "HTTP/1.1 403 Forbidden")
-        #expect(status(await server.respond(to: request([:], method: "GET"))) == "HTTP/1.1 405 Method Not Allowed")
-        #expect(status(await server.respond(to: request([:], path: "/other"))) == "HTTP/1.1 404 Not Found")
+        #expect(status(await server.respond(to: request(local.merging(["origin": "https://evil.example"]) { $1 }))) == "HTTP/1.1 403 Forbidden")
+        // A site pointing its own name at 127.0.0.1 (DNS rebinding) sends its name.
+        #expect(status(await server.respond(to: request(["host": "evil.example:47615"]))) == "HTTP/1.1 403 Forbidden")
+        #expect(status(await server.respond(to: request([:]))) == "HTTP/1.1 403 Forbidden")
+        #expect(status(await server.respond(to: request(local, method: "GET"))) == "HTTP/1.1 405 Method Not Allowed")
+        #expect(status(await server.respond(to: request(local, path: "/other"))) == "HTTP/1.1 404 Not Found")
     }
 
     @Test func aServerTurnedOffAnswersNothing() async {
         let server = server()
         server.state = .off
 
-        #expect(status(await server.respond(to: request(["authorization": "Bearer secret"]))) == "HTTP/1.1 503 Service Unavailable")
+        #expect(status(await server.respond(to: request(local))) == "HTTP/1.1 503 Service Unavailable")
     }
 
-    @Test func localOrigins() {
+    @Test func localHostsAndOrigins() {
+        #expect(ClaudeCodeServer.isLocalHost("127.0.0.1:47615"))
+        #expect(ClaudeCodeServer.isLocalHost("localhost:47615"))
+        #expect(ClaudeCodeServer.isLocalHost("[::1]:47615"))
+        #expect(!ClaudeCodeServer.isLocalHost("127.0.0.1"))
+        #expect(!ClaudeCodeServer.isLocalHost("evil.example:47615"))
         #expect(ClaudeCodeServer.isLocalOrigin("http://localhost:3000"))
-        #expect(ClaudeCodeServer.isLocalOrigin("http://127.0.0.1"))
         #expect(!ClaudeCodeServer.isLocalOrigin("http://127.0.0.1.evil.com"))
     }
 }

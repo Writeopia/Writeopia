@@ -56,8 +56,10 @@ public final class LiveDocuments: LiveDocumentsWriting {
     }
 
     public func append(documentId: String?, markdown: String) async -> LiveOutcome {
-        if let switched = switchedDocument(documentId) { return switched }
+        // In a working session when the call came: checked once its turn comes, just before writing.
+        let inSession = editors.mode.isOn
         return await inAiMode { [self] ticket in
+            if inSession, let switched = switchedDocument(documentId) { return switched }
             switch await openEditor(documentId) {
             case let .success(editor): return await write(into: editor, title: nil, markdown: markdown, ticket: ticket)
             case let .failure(failure): return failure.outcome
@@ -69,7 +71,7 @@ public final class LiveDocuments: LiveDocumentsWriting {
     /// must still be the one Claude was writing in: when the person moved to another one, Claude is
     /// told where they are now, to decide again, instead of writing there unasked.
     private func switchedDocument(_ documentId: String?) -> LiveOutcome? {
-        guard documentId?.trimmingCharacters(in: .whitespaces).nonEmpty == nil, editors.mode.isOn,
+        guard documentId?.trimmingCharacters(in: .whitespaces).nonEmpty == nil,
               let last = lastSeen, let current = editors.current, current.documentId != last.documentId else {
             return nil
         }
@@ -85,17 +87,34 @@ public final class LiveDocuments: LiveDocumentsWriting {
     /// reads: no AI mode.
     public func currentPlace(includeContent: Bool) async -> LiveOutcome {
         guard let session = readySession() else { return Self.noWorkspace }
-        let editor = editors.current
+
+        // The repositories first: after them nothing suspends, so the report, its content and the
+        // baseline kept for the next one are the same state of the editor.
+        let documentId = editors.current?.documentId
+        var path: [LiveFolder] = []
+        if let documentId {
+            let parentId = (try? await session.documents.document(id: documentId))?.parentId ?? Folder.rootId
+            path = ((try? await session.documents.folderPath(to: parentId)) ?? [])
+                .map { LiveFolder(id: $0.id, name: $0.title, parentId: $0.parentId) }
+        }
+        let catalogue = (try? await session.documents.tags()) ?? []
+        let folderId = currentFolderId()
+        let currentFolder: LiveFolder? = if folderId == Folder.rootId {
+            nil
+        } else {
+            (try? await session.documents.folder(id: folderId)).flatMap { $0 }
+                .map { LiveFolder(id: $0.id, name: $0.title, parentId: $0.parentId) }
+        }
+
+        // The person may have moved meanwhile: the folder path belongs to the document read above.
+        let editor = editors.current.flatMap { $0.documentId == documentId ? $0 : nil }
         let now = editor.map(snapshot)
 
         var document: OpenDocument?
         if let editor {
             let manager = editor.manager
-            let parentId = (try? await session.documents.document(id: editor.documentId))?.parentId ?? Folder.rootId
-            let path = ((try? await session.documents.folderPath(to: parentId)) ?? [])
-                .map { LiveFolder(id: $0.id, name: $0.title, parentId: $0.parentId) }
             let tagIds = Set(editor.tagger?.documentTagIds ?? [])
-            let tagNames = ((try? await session.documents.tags()) ?? [])
+            let tagNames = catalogue
                 .filter { tagIds.contains($0.id) && !$0.deleted }
                 .map(\.name)
                 .sorted { $0.lowercased() < $1.lowercased() }
@@ -110,13 +129,6 @@ public final class LiveDocuments: LiveDocumentsWriting {
             )
         }
 
-        let folderId = currentFolderId()
-        let currentFolder: LiveFolder? = if folderId == Folder.rootId {
-            nil
-        } else {
-            (try? await session.documents.folder(id: folderId)).flatMap { $0 }
-                .map { LiveFolder(id: $0.id, name: $0.title, parentId: $0.parentId) }
-        }
         let change = lastSeen?.change(to: now)
         let content = includeContent ? editor.map { DocumentToMarkdown.parse($0.manager.documentContent) } : nil
 
@@ -129,7 +141,11 @@ public final class LiveDocuments: LiveDocumentsWriting {
         let manager = editor.manager
         let blocks = Dictionary(
             manager.documentContent.map { step in
-                (step.id, "\(step.type.number)|\(step.text ?? "")|\(String(describing: step.checked))|\(step.url ?? "")|\(step.tags.map(\.tag))")
+                // Sorted, so the same block always reads the same; position for the moves.
+                let tags = step.tags.map { "\($0.tag):\($0.position)" }.sorted()
+                let spans = step.spans.map { "\($0.start):\($0.end):\($0.span):\($0.extra ?? "")" }.sorted()
+                let fields = [step.position, "\(step.type.number)", step.text ?? "", String(describing: step.checked), step.url ?? ""]
+                return (step.id, (fields + ["\(tags)", "\(spans)"]).joined(separator: "|"))
             },
             uniquingKeysWith: { first, _ in first }
         )

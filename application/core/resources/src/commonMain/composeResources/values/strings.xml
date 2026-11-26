@@ -452,10 +452,7 @@
   <string name="claude_code_command_hint">Run this once in a terminal to connect Claude Code:</string>
   <string name="claude_code_copy">Copy</string>
   <string name="claude_code_copied">Copied</string>
-  <string name="claude_code_renew">New secret</string>
-  <string name="claude_code_renew_hint">The command holds a secret that lets programs on this computer write here. If it leaked, make a new one, remove the old connection (claude plugin uninstall writeopia@writeopia, claude mcp remove writeopia --scope user) and run the new command.</string>
   <string name="claude_code_writing">Claude Code is writing…</string>
   <string name="claude_code_working">Claude Code is working…</string>
   <string name="claude_code_stop">Stop</string>
-  <string name="claude_code_tools_only_hint">Or connect only the tools, without /writeopia:plan:</string>
 </resources>

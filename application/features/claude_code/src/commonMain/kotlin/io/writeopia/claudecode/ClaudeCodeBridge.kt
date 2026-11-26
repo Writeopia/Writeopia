@@ -116,6 +116,11 @@ object ClaudeCodeBridge {
     fun endWriting(ticket: Long) {
         if (ticket != generation || isStopped(ticket)) return
         _aiMode.value = AiMode.WAITING
+        // A stop that landed between the check and WAITING: it said OFF first, it stays OFF.
+        if (isStopped(ticket)) {
+            _aiMode.value = AiMode.OFF
+            return
+        }
         idleJob?.cancel()
         idleJob = scope.launch {
             delay(idleTimeout)

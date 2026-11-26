@@ -9,6 +9,8 @@ import io.writeopia.claudecode.mcp.PlaceReport
 import io.writeopia.sdk.manager.WriteopiaManager
 import io.writeopia.sdk.model.action.Action
 import io.writeopia.sdk.models.document.Document
+import io.writeopia.sdk.models.span.Span
+import io.writeopia.sdk.models.span.SpanInfo
 import io.writeopia.sdk.models.story.StoryStep
 import io.writeopia.sdk.models.story.StoryTypes
 import io.writeopia.sdk.utils.iterables.Rank
@@ -163,5 +165,32 @@ class CurrentPlaceTest {
         val append = handler.call("append_to_document", """{"markdown":"More"}""")
         assertTrue(append.contains("\"isError\":true"), append)
         assertTrue(append.contains("The person switched documents: Writeopia shows \\\"Porto\\\" (document_id: d2)"), append)
+    }
+
+    @Test
+    fun `a change of formatting only counts as a changed block`() = runTest {
+        val handler = McpHandler(
+            LiveDocuments(openTimeout = 50.milliseconds, isLoading = MutableStateFlow(false)),
+            serverVersion = "test"
+        )
+        val lisbon = editor("d1", "Lisbon")
+        handler.call("get_current_place", """{"include_content":false}""")
+
+        lisbon.changeStoryState(
+            Action.StoryStateChange(
+                StoryStep(
+                    id = "d1-p",
+                    type = StoryTypes.TEXT.type,
+                    text = "Hello",
+                    spans = setOf(SpanInfo.create(0, 5, Span.BOLD)),
+                ),
+                Rank.at(1)
+            )
+        )
+        val report = handler.call("get_current_place", """{"include_content":false}""")
+
+        assertTrue(report.contains("0 blocks added, 1 changed, 0 removed"), report)
+        val again = handler.call("get_current_place", """{"include_content":false}""")
+        assertTrue(again.contains("nothing changed here"), again)
     }
 }

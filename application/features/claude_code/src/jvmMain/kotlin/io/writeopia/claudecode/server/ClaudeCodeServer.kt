@@ -28,14 +28,13 @@ import io.writeopia.claudecode.mcp.McpHandler
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import java.security.MessageDigest
-import java.security.SecureRandom
 import java.util.prefs.Preferences
 
 /**
- * The MCP server of the desktop app, for Claude Code: `POST /mcp` on 127.0.0.1 only, each request
- * carrying the secret shown in the settings as a bearer token. Requests from web pages (an
- * `Origin` that is not this machine) are refused, so a site can't drive it.
+ * The MCP server of the desktop app, for Claude Code: `POST /mcp` on 127.0.0.1 only, while the
+ * switch of the settings is on. No secret: what reaches 127.0.0.1 runs on this computer. Web pages
+ * are refused: an `Origin` that is not this machine gets 403, and so does a `Host` that is not
+ * 127.0.0.1/localhost (a site that points its own name at 127.0.0.1, DNS rebinding).
  */
 class ClaudeCodeServer private constructor(
     private val handler: McpHandler,
@@ -53,14 +52,6 @@ class ClaudeCodeServer private constructor(
         if (enabled) start() else stop()
     }
 
-    override fun renewToken() {
-        preferences.put(KEY_TOKEN, newToken())
-        if (server != null) _state.value = ClaudeCodeState.Running(port, token())
-    }
-
-    private fun token(): String =
-        preferences.get(KEY_TOKEN, null) ?: newToken().also { preferences.put(KEY_TOKEN, it) }
-
     private fun start() {
         if (server != null) return
 
@@ -75,7 +66,7 @@ class ClaudeCodeServer private constructor(
                     delete("/mcp") { call.respond(HttpStatusCode.MethodNotAllowed) }
                 }
             }.start(wait = false)
-            ClaudeCodeState.Running(port, token())
+            ClaudeCodeState.Running(port)
         } catch (e: Exception) {
             server = null
             ClaudeCodeState.Failed(
@@ -98,9 +89,9 @@ class ClaudeCodeServer private constructor(
             return
         }
 
-        val bearer = call.request.headers[HttpHeaders.Authorization]?.removePrefix("Bearer ")?.trim()
-        if (bearer == null || !sameSecret(bearer, token())) {
-            call.respond(HttpStatusCode.Unauthorized)
+        val host = call.request.headers[HttpHeaders.Host]
+        if (host == null || !isLocalHost(host, port)) {
+            call.respond(HttpStatusCode.Forbidden)
             return
         }
 
@@ -113,7 +104,6 @@ class ClaudeCodeServer private constructor(
     companion object {
         private const val HOST = "127.0.0.1"
         private const val KEY_ENABLED = "enabled"
-        private const val KEY_TOKEN = "token"
         private const val MAX_BODY_BYTES = 4L * 1024 * 1024
 
         /**
@@ -135,13 +125,8 @@ class ClaudeCodeServer private constructor(
         internal fun isLocalOrigin(origin: String): Boolean =
             Regex("""^https?://(localhost|127\.0\.0\.1|\[::1])(:\d+)?$""").matches(origin)
 
-        private fun sameSecret(given: String, expected: String): Boolean =
-            MessageDigest.isEqual(given.toByteArray(), expected.toByteArray())
-
-        private fun newToken(): String {
-            val bytes = ByteArray(24)
-            SecureRandom().nextBytes(bytes)
-            return bytes.joinToString("") { byte -> "%02x".format(byte) }
-        }
+        /** The name the request was sent to: this machine at [port], nothing else. */
+        internal fun isLocalHost(host: String, port: Int): Boolean =
+            host in setOf("127.0.0.1:$port", "localhost:$port", "[::1]:$port")
     }
 }
