@@ -110,8 +110,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -281,7 +281,6 @@ class NoteEditorKmpViewModel(
 
         viewModelScope.launch(Dispatchers.Default) {
             keyboardEventFlow
-                .onEach { delay(60) }
                 .collect { event ->
                     when (event) {
                         KeyboardEvent.LOCAL_SAVE -> {
@@ -328,6 +327,12 @@ class NoteEditorKmpViewModel(
                         KeyboardEvent.LIST -> {
                             writeopiaManager.addListItem()
                         }
+
+                        KeyboardEvent.FONT_LARGER -> increaseFontSize()
+
+                        KeyboardEvent.FONT_SMALLER -> decreaseFontSize()
+
+                        KeyboardEvent.FONT_RESET -> resetFontSize()
 
                         else -> {}
                     }
@@ -1259,6 +1264,21 @@ class NoteEditorKmpViewModel(
 
         val workspace = authRepository.getWorkspace() ?: return
         syncService.sendPendingFavorites(workspace.id)
+    }
+
+    private val _fontScale = MutableStateFlow(EditorFontScale.DEFAULT)
+    override val fontScale: StateFlow<Float> = _fontScale.asStateFlow()
+
+    override fun increaseFontSize() {
+        _fontScale.update(EditorFontScale::larger)
+    }
+
+    override fun decreaseFontSize() {
+        _fontScale.update(EditorFontScale::smaller)
+    }
+
+    override fun resetFontSize() {
+        _fontScale.value = EditorFontScale.DEFAULT
     }
 
     override fun changeFontFamily(font: Font) {

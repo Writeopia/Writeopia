@@ -54,11 +54,8 @@ import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.sqldelight.di.SqlDelightDaoInjector
 import io.writeopia.genai.di.GenAiInjection
 import io.writeopia.writingagent.di.WritingAgentInjection
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.launch
 import java.io.File
 
 private const val APP_DIRECTORY = ".writeopia"
@@ -92,13 +89,12 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
     )
 
     val selectionState = MutableStateFlow(false)
-    val keyboardEventFlow = MutableStateFlow<KeyboardEvent?>(null)
+    // A SharedFlow without replay: each key press reaches the collectors once, and a screen that
+    // starts collecting later doesn't receive the last shortcut again. The buffer lets tryEmit
+    // succeed from the key handler without suspending.
+    val keyboardEventFlow = MutableSharedFlow<KeyboardEvent>(extraBufferCapacity = 64)
     val sendEvent = { keyboardEvent: KeyboardEvent ->
-        coroutineScope.launch(Dispatchers.IO) {
-            keyboardEventFlow.tryEmit(keyboardEvent)
-            delay(20)
-            keyboardEventFlow.tryEmit(KeyboardEvent.IDLE)
-        }
+        keyboardEventFlow.tryEmit(keyboardEvent)
     }
 
     val handleKeyboardEvent: (KeyEvent) -> Boolean = { keyEvent ->
@@ -195,6 +191,21 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                 false
             }
 
+            KeyboardCommands.isFontLargerEvent(keyEvent) -> {
+                sendEvent(KeyboardEvent.FONT_LARGER)
+                false
+            }
+
+            KeyboardCommands.isFontSmallerEvent(keyEvent) -> {
+                sendEvent(KeyboardEvent.FONT_SMALLER)
+                false
+            }
+
+            KeyboardCommands.isFontResetEvent(keyEvent) -> {
+                sendEvent(KeyboardEvent.FONT_RESET)
+                false
+            }
+
             KeyboardCommands.isShiftArrowUpEvent(keyEvent) -> {
                 sendEvent(KeyboardEvent.SHIFT_ARROW_UP)
                 false
@@ -276,7 +287,7 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                             composable(route = Destinations.MAIN_APP.id) {
                                 DesktopApp(
                                     selectionState = selectionState,
-                                    keyboardEventFlow = keyboardEventFlow.filterNotNull(),
+                                    keyboardEventFlow = keyboardEventFlow,
                                     coroutineScope = coroutineScope,
                                     colorThemeOption = colorTheme,
                                     accentColorOption = accentColorState,

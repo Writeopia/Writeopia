@@ -20,6 +20,9 @@ enum class KeyboardEvent {
     EQUATION,
     SEARCH,
     LIST,
+    FONT_LARGER,
+    FONT_SMALLER,
+    FONT_RESET,
     SHIFT_ARROW_UP,
     SHIFT_ARROW_DOWN,
 }
