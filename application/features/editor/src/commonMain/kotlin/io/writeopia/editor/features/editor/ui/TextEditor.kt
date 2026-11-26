@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
@@ -13,7 +14,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.drawing.ui.drawer.DrawingPreviewDrawer
@@ -74,6 +77,8 @@ internal fun TextEditor(
         }
     }
     val isEditable by noteEditorViewModel.isEditable.collectAsState()
+    val fontScale by noteEditorViewModel.fontScale.collectAsState()
+    val density = LocalDensity.current
     val drawConfig = remember { DrawConfigFactory.getDrawConfig() }
 
     val convertingDrawingIds by noteEditorViewModel.convertingDrawingIds.collectAsState()
@@ -116,30 +121,35 @@ internal fun TextEditor(
 //    }
 
 //    Box {
-    WriteopiaEditor(
-        modifier = modifier.widthIn(max = 850.dp),
-        contentPadding = contentPadding,
-        editable = editable,
-        listState = listState,
-        keyFn = keyFn,
-        drawers = drawersFactory.create(
-            noteEditorViewModel.writeopiaManager,
-            onHeaderClick = noteEditorViewModel::onHeaderClick,
-            editable = isEditable,
-            aiExplanation = WrStrings.aiExplanation(),
-            isDarkTheme = isDarkTheme,
-            drawConfig = drawConfig,
-            fontFamily = fontFamily,
-            generateSection = noteEditorViewModel::aiSection,
-            receiveExternalFile = noteEditorViewModel::receiveExternalFile,
-            onDocumentLinkClick = onDocumentLinkClick,
-            linkLeadingIcon = WrIcons.pageStyle,
-            customDrawers = mapOf(
-                StoryTypes.DRAWING.type.number to drawingPreviewDrawer
-            )
-        ),
-        storyState = storyState,
-    )
+    // The zoom (Cmd/Ctrl + and -) scales the text only: every sp in the document, nothing in dp.
+    CompositionLocalProvider(
+        LocalDensity provides Density(density.density, density.fontScale * fontScale)
+    ) {
+        WriteopiaEditor(
+            modifier = modifier.widthIn(max = 850.dp),
+            contentPadding = contentPadding,
+            editable = editable,
+            listState = listState,
+            keyFn = keyFn,
+            drawers = drawersFactory.create(
+                noteEditorViewModel.writeopiaManager,
+                onHeaderClick = noteEditorViewModel::onHeaderClick,
+                editable = isEditable,
+                aiExplanation = WrStrings.aiExplanation(),
+                isDarkTheme = isDarkTheme,
+                drawConfig = drawConfig,
+                fontFamily = fontFamily,
+                generateSection = noteEditorViewModel::aiSection,
+                receiveExternalFile = noteEditorViewModel::receiveExternalFile,
+                onDocumentLinkClick = onDocumentLinkClick,
+                linkLeadingIcon = WrIcons.pageStyle,
+                customDrawers = mapOf(
+                    StoryTypes.DRAWING.type.number to drawingPreviewDrawer
+                )
+            ),
+            storyState = storyState,
+        )
+    }
 
 //        CommentThreadOverlay(
 //            uiState = commentUiState,

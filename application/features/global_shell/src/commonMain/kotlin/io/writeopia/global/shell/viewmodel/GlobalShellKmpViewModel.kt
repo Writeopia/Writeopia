@@ -62,7 +62,6 @@ import io.writeopia.common.utils.Destinations
 import io.writeopia.ui.keyboard.KeyboardEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -364,7 +363,6 @@ class GlobalShellKmpViewModel(
 
         viewModelScope.launch {
             keyboardEventFlow
-                ?.onEach { delay(60) }
                 ?.collect { event ->
                     when (event) {
                         KeyboardEvent.SEARCH -> {

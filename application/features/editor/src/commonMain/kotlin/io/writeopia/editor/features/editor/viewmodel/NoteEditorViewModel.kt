@@ -56,6 +56,9 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
 
     val fontFamily: StateFlow<Font>
 
+    /** The zoom of the document's text, changed with Cmd/Ctrl + and -. Never saved. */
+    val fontScale: StateFlow<Float>
+
     val loadingState: StateFlow<Boolean>
 
     val notFavorite: StateFlow<Boolean>
@@ -239,6 +242,12 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
     fun clearSelections()
 
     fun changeFontFamily(font: Font)
+
+    fun increaseFontSize()
+
+    fun decreaseFontSize()
+
+    fun resetFontSize()
 
     /** Adds the image at [position], or at the cursor without one. */
     fun addImage(imagePath: String, position: String? = null)
