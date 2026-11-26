@@ -31,10 +31,6 @@ interface FolderRoomDao {
     @Query("SELECT * FROM $FOLDER_ENTITY WHERE workspace_id = :workspaceId AND deleted = 0")
     suspend fun getFoldersByWorkspaceId(workspaceId: String): List<FolderEntity>
 
-    // Only the sync stamp, so a concurrent rename or move stays.
-    @Query("UPDATE $FOLDER_ENTITY SET last_synced_at = NULL WHERE workspace_id = :workspaceId")
-    suspend fun clearLastSyncedAt(workspaceId: String)
-
     // Folders changed locally since they were last sent to the backend, or never sent.
     @Query(
         "SELECT * FROM $FOLDER_ENTITY WHERE workspace_id = :workspaceId AND deleted = 0 " +

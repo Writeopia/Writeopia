@@ -526,9 +526,6 @@ private fun WorkspacePage(
 
             if (showPath) Spacer(modifier = Modifier.height(32.dp))
 
-            // Google Drive on desktop; nothing on the platforms without a cloud storage.
-            CloudSyncSettingsRoute(modifier = Modifier.padding(bottom = 32.dp))
-
             Text(
                 WrStrings.settingsWorkspaceContent(),
                 style = MaterialTheme.typography.titleLarge,
