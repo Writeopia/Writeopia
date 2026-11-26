@@ -1749,8 +1749,6 @@ object WrStrings {
     @Composable
     fun claudeCodeCopied() = stringResource(Res.string.claude_code_copied)
 
-
-
     @Composable
     fun claudeCodeWriting() = stringResource(Res.string.claude_code_writing)
 
@@ -1759,5 +1757,4 @@ object WrStrings {
 
     @Composable
     fun claudeCodeStop() = stringResource(Res.string.claude_code_stop)
-
 }
