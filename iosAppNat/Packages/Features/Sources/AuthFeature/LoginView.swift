@@ -226,10 +226,9 @@ struct GoogleSignInButton: View {
     var body: some View {
         Button(action: action) {
             ZStack {
-                HStack(spacing: 8) {
-                    Text("G")
-                        .font(.system(.headline, design: .rounded).weight(.heavy))
-                        .foregroundStyle(WrColors.accent)
+                HStack(spacing: 10) {
+                    GoogleLogo()
+                        .frame(width: 18, height: 18)
                     Text("Continue with Google")
                         .font(.headline)
                 }
