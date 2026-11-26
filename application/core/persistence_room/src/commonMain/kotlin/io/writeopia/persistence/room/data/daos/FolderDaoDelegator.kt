@@ -30,6 +30,10 @@ class FolderDaoDelegator(
     override suspend fun getOutdatedFoldersForWorkspace(workspaceId: String): List<Folder> =
         delegate.getOutdatedFoldersByWorkspaceId(workspaceId).map { it.toCommonEntity().toModel(0) }
 
+    override suspend fun clearLastSyncedAt(workspaceId: String) {
+        delegate.clearLastSyncedAt(workspaceId)
+    }
+
     override suspend fun getLastUpdated(): List<Folder> =
         delegate.getLastUpdated().map { it.toCommonEntity().toModel(0) }
 

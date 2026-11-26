@@ -81,6 +81,11 @@ class FolderSqlDelightDao(database: WriteopiaDb?) : FolderSearch {
             ?.map { it.toModel(0) }
             ?: emptyList()
 
+    /** Every folder of the workspace counts as never sent; only that column changes. */
+    suspend fun clearLastSyncedAt(workspaceId: String) {
+        folderEntityQueries?.clearLastSyncedAtByWorkspace(workspaceId)
+    }
+
     /** Folders changed locally since they were last sent to the backend, or never sent. */
     suspend fun selectOutdatedByWorkspaceId(workspaceId: String): List<Folder> =
         folderEntityQueries?.selectOutdatedByWorkspace(workspaceId)

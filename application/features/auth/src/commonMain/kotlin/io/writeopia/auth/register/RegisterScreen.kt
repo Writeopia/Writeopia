@@ -430,7 +430,7 @@ private fun BoxScope.RegisterContent(
  * "I agree to the Terms of Service and the Privacy Policy", with both names opening the document.
  */
 @Composable
-private fun TermsAgreement(
+internal fun TermsAgreement(
     accepted: Boolean,
     onAcceptedChanged: (Boolean) -> Unit,
     onOpenLegalDocument: (type: String) -> Unit,

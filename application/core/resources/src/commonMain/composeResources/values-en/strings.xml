@@ -190,6 +190,7 @@
   <string name="drawing">Drawing</string>
   <string name="new_drawing">New Drawing</string>
   <string name="login_failed">Login failed. Please check your credentials.</string>
+  <string name="continue_with_google">Continue with Google</string>
   <string name="registration_failed">Registration failed. Please try again.</string>
   <string name="username_taken">This username is already taken</string>
   <string name="register_enter_email">Enter your email to receive a verification code</string>
@@ -441,4 +442,19 @@
   <string name="paywall_benefit_team_desc">Share workspaces and write together with your team.</string>
   <string name="paywall_benefit_backup">Safe in the cloud</string>
   <string name="paywall_benefit_backup_desc">Your documents are backed up, so nothing is lost with a device.</string>
+  <string name="cloud_sync_title">Sync with %1$s</string>
+  <string name="cloud_sync_description">Keep your private space in your own %1$s, and open it on your other devices. Free: your documents go straight to your account, and Writeopia only sees its own hidden folder there.</string>
+  <string name="cloud_sync_connect">Connect</string>
+  <string name="cloud_sync_connecting">Finish in your browser…</string>
+  <string name="cloud_sync_disconnect">Disconnect</string>
+  <string name="cloud_sync_sync_now">Sync now</string>
+  <string name="cloud_sync_syncing">Syncing…</string>
+  <string name="cloud_sync_last_sync">Last sync: %1$s</string>
+  <string name="cloud_sync_not_synced">Not synced yet</string>
+  <string name="cloud_sync_error">The last sync failed: %1$s</string>
+  <string name="cloud_sync_reconnect">The access to %1$s ended. Connect again to keep syncing.</string>
+  <string name="google_signup_title">Choose your username</string>
+  <string name="google_signup_message">This is the first time %1$s signs in to Writeopia. Pick a username to create your account.</string>
+  <string name="new_to_writeopia">New to Writeopia?</string>
+  <string name="create_an_account">Create an account</string>
 </resources>

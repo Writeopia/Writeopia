@@ -124,6 +124,17 @@ public final class APIClient {
         _ = try await send(method, path, query: [], body: body, authenticated: authenticated)
     }
 
+    /// Sends an unauthenticated request and returns the body with its status, an error status
+    /// included: for answers whose error bodies carry data (the 422 of a first Google sign-in).
+    public func sendReturningStatus<Body: Encodable>(
+        _ method: Method,
+        _ path: String,
+        body: Body
+    ) async throws -> (data: Data, status: Int) {
+        let request = try makeRequest(method, path, query: [], body: body, authenticated: false)
+        return try await execute(request)
+    }
+
     /// Sends a raw body (e.g. multipart form data) and returns the response body. An expired
     /// session is refreshed once, like the JSON calls.
     public func upload(_ path: String, body: Data, contentType: String) async throws -> Data {
@@ -255,7 +266,7 @@ public final class APIClient {
             if (200..<300).contains(status) {
                 Self.logger.debug("← \(status) \(method, privacy: .public) \(url, privacy: .public) (\(data.count) bytes)")
             } else {
-                let body = String(decoding: data.prefix(2000), as: UTF8.self)
+                let body = Self.loggedErrorBody(data, for: request.url)
                 Self.logger.error("← \(status) \(method, privacy: .public) \(url, privacy: .public): \(body, privacy: .public)")
             }
             return (data, status)
@@ -263,6 +274,17 @@ public final class APIClient {
             Self.logger.error("✕ \(method, privacy: .public) \(url, privacy: .public): \(error.localizedDescription, privacy: .public)")
             throw error
         }
+    }
+
+    static func isAuthPath(_ url: URL?) -> Bool {
+        url?.path().contains("/api/auth/") ?? false
+    }
+
+    /// What the log shows of an error body. Those of the auth service can carry credentials (the
+    /// Google ID token of a first sign-in): only their size is logged. The caller still gets the
+    /// whole body.
+    static func loggedErrorBody(_ data: Data, for url: URL?) -> String {
+        isAuthPath(url) ? "<\(data.count) bytes, not logged>" : String(decoding: data.prefix(2000), as: UTF8.self)
     }
 
     private func validate(_ data: Data, status: Int) throws -> Data {

@@ -78,10 +78,35 @@ public enum LoginResult: Equatable, Sendable {
     case emailNotConfirmed(User)
 }
 
+/// The first sign-in of a Google account with no Writeopia account: the account is made once the
+/// user picks a username and agrees to the Terms. `idToken` is sent back with them; it expires
+/// within the hour.
+public struct GoogleSignUp: Decodable, Equatable, Sendable {
+    public let idToken: String
+    public let email: String
+    public let name: String
+    public let suggestedUsername: String
+
+    public init(idToken: String, email: String, name: String, suggestedUsername: String) {
+        self.idToken = idToken
+        self.email = email
+        self.name = name
+        self.suggestedUsername = suggestedUsername
+    }
+}
+
+public enum GoogleLoginResult: Equatable, Sendable {
+    case loggedIn(User)
+    /// No Writeopia account for this Google account yet.
+    case signUpRequired(GoogleSignUp)
+}
+
 public enum AuthError: Error, Equatable {
     case invalidCredentials
     case accountDeletionPending
     case invalidCode
+    case usernameTaken
+    case googleSignInFailed
     case server(String)
 
     public var userMessage: String {
@@ -89,6 +114,8 @@ public enum AuthError: Error, Equatable {
         case .invalidCredentials: String(localized: "Wrong email or password.")
         case .accountDeletionPending: String(localized: "This account is being deleted.")
         case .invalidCode: String(localized: "The code is invalid or has expired.")
+        case .usernameTaken: String(localized: "This username is already taken.")
+        case .googleSignInFailed: String(localized: "Could not sign in with Google. Please try again.")
         case .server(let message): message
         }
     }
@@ -122,6 +149,56 @@ public final class AuthAPI {
             throw AuthError.invalidCredentials
         } catch APIError.forbidden {
             throw AuthError.accountDeletionPending
+        }
+    }
+
+    /// Signs in with a Google ID token, which the backend verifies with Google. A Google account
+    /// with no Writeopia account answers `.signUpRequired`; sent again with the token it carries,
+    /// a `username` and the legal version, it creates the account (`AuthError.usernameTaken` when
+    /// that name is taken).
+    public func loginWithGoogle(
+        idToken: String,
+        username: String? = nil,
+        acceptedLegalVersion: String? = nil
+    ) async throws -> GoogleLoginResult {
+        struct Body: Encodable {
+            let idToken: String
+            let username: String?
+            let acceptedLegalVersion: String?
+        }
+
+        let (data, status) = try await client.sendReturningStatus(
+            .post,
+            "api/auth/login/google",
+            body: Body(idToken: idToken, username: username, acceptedLegalVersion: acceptedLegalVersion)
+        )
+
+        switch status {
+        case 200..<300:
+            let response = try Self.decode(AuthResponse.self, data)
+            switch try handle(response) {
+            case .loggedIn(let user):
+                return .loggedIn(user)
+            case .emailNotConfirmed:
+                // Google accounts are made active; a disabled one can't be signed in this way.
+                throw AuthError.googleSignInFailed
+            }
+        case 403:
+            throw AuthError.accountDeletionPending
+        case 422:
+            return .signUpRequired(try Self.decode(GoogleSignUp.self, data))
+        case 409 where username != nil:
+            throw AuthError.usernameTaken
+        default:
+            throw AuthError.googleSignInFailed
+        }
+    }
+
+    private static func decode<T: Decodable>(_ type: T.Type, _ data: Data) throws -> T {
+        do {
+            return try APIClient.decoder.decode(type, from: data)
+        } catch {
+            throw APIError.decoding
         }
     }
 

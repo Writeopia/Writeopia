@@ -7,6 +7,11 @@ import io.ktor.server.application.install
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.plugins.cors.routing.CORS
+import io.writeopia.api.core.auth.service.GoogleCodeExchanger
+import io.writeopia.api.core.auth.service.GoogleHttpCodeExchanger
+import io.writeopia.api.core.auth.service.GoogleJwksTokenVerifier
+import io.writeopia.api.core.auth.service.GoogleTokenVerifier
+import io.writeopia.api.core.auth.utils.GoogleOAuthEnv
 import io.writeopia.api.core.auth.utils.installAuth
 import io.writeopia.api.embeddings.Embedder
 import io.writeopia.api.embeddings.EmbeddingStore
@@ -32,7 +37,9 @@ fun Application.module(
     adminKey: String? = System.getenv("ADMIN_KEY"),
     /** The embeddings to use instead of Gemini + pgvector from the environment; tests pass fakes. */
     embedder: Embedder? = null,
-    embeddingStore: EmbeddingStore? = null
+    embeddingStore: EmbeddingStore? = null,
+    googleTokenVerifier: GoogleTokenVerifier = GoogleJwksTokenVerifier(GoogleOAuthEnv.allowedClientIds()),
+    googleCodeExchanger: GoogleCodeExchanger = GoogleHttpCodeExchanger(GoogleOAuthEnv.clientSecrets())
 ) {
     val db = writeopiaDb ?: configurePersistence()
     logger.info("debug: $debugMode, staging: $stagingMode")
@@ -44,7 +51,9 @@ fun Application.module(
         debugMode = debugMode,
         adminKey = adminKey,
         embedder = embedder,
-        embeddingStore = embeddingStore
+        embeddingStore = embeddingStore,
+        googleTokenVerifier = googleTokenVerifier,
+        googleCodeExchanger = googleCodeExchanger
     )
     configureSerialization()
     configureEditorSockets()

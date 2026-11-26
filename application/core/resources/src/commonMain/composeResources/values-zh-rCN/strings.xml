@@ -441,4 +441,20 @@
   <string name="paywall_benefit_team_desc">共享工作区，与团队一起写作。</string>
   <string name="paywall_benefit_backup">云端安全保存</string>
   <string name="paywall_benefit_backup_desc">你的文档已备份，即使丢失设备也不会丢失任何内容。</string>
+  <string name="cloud_sync_title">与 %1$s 同步</string>
+  <string name="cloud_sync_description">将你的私人空间保存在你自己的 %1$s 中，并在其他设备上打开。免费：文档直接存入你的账户，Writeopia 只能看到它自己的隐藏文件夹。</string>
+  <string name="cloud_sync_connect">连接</string>
+  <string name="cloud_sync_connecting">请在浏览器中完成…</string>
+  <string name="cloud_sync_disconnect">断开连接</string>
+  <string name="cloud_sync_sync_now">立即同步</string>
+  <string name="cloud_sync_syncing">正在同步…</string>
+  <string name="cloud_sync_last_sync">上次同步：%1$s</string>
+  <string name="cloud_sync_not_synced">尚未同步</string>
+  <string name="cloud_sync_error">上次同步失败：%1$s</string>
+  <string name="cloud_sync_reconnect">对 %1$s 的访问已结束。请重新连接以继续同步。</string>
+  <string name="continue_with_google">使用 Google 继续</string>
+  <string name="google_signup_title">选择你的用户名</string>
+  <string name="google_signup_message">这是 %1$s 首次登录 Writeopia。请选择一个用户名来创建账户。</string>
+  <string name="new_to_writeopia">第一次使用 Writeopia？</string>
+  <string name="create_an_account">创建账户</string>
 </resources>

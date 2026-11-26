@@ -1142,6 +1142,10 @@ class DocumentSqlDao(
         documentQueries?.deleteByFolderId(Clock.System.now().toEpochMilliseconds(), folderId, workspaceId)
     }
 
+    suspend fun clearLastSyncedAt(workspaceId: String) {
+        documentQueries?.clearLastSyncedAtByWorkspace(workspaceId)
+    }
+
     suspend fun favoriteById(documentId: String) {
         documentQueries?.favoriteById(documentId)
     }

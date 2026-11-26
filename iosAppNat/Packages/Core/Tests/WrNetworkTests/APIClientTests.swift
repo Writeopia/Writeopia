@@ -91,3 +91,30 @@ struct Echo: Decodable, Equatable {
         #expect(APIClient.serverMessage(Data("<html></html>".utf8)) == nil)
     }
 }
+
+@Suite struct APIClientLoggingTests {
+    @Test func authErrorBodiesAreNotLogged() {
+        #expect(APIClient.isAuthPath(URL(string: "https://example.com/api/auth/login/google")))
+        #expect(!APIClient.isAuthPath(URL(string: "https://example.com/api/document/1")))
+
+        // The 422 of a first Google sign-in carries the ID token: the log shows its size only.
+        let signUp = Data(#"{"idToken":"eyJ.secret.token","email":"ana@gmail.com"}"#.utf8)
+        let logged = APIClient.loggedErrorBody(signUp, for: URL(string: "https://example.com/api/auth/login/google"))
+        #expect(!logged.contains("eyJ.secret.token"))
+        #expect(logged == "<\(signUp.count) bytes, not logged>")
+
+        // Elsewhere the body is what helps debugging.
+        let other = APIClient.loggedErrorBody(Data("Not found".utf8), for: URL(string: "https://example.com/api/document/1"))
+        #expect(other == "Not found")
+    }
+
+    @Test func theCallerStillGetsTheAuthErrorBody() async throws {
+        let transport = StubTransport([{ _ in (422, #"{"idToken":"secret"}"#) }])
+        let client = APIClient(transport: transport, tokenStore: InMemoryTokenStore(), baseURL: URL(string: "https://example.com")!)
+
+        let (data, status) = try await client.sendReturningStatus(.post, "api/auth/login/google", body: EmptyBody())
+
+        #expect(status == 422)
+        #expect(String(decoding: data, as: UTF8.self) == #"{"idToken":"secret"}"#)
+    }
+}

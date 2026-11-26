@@ -202,6 +202,10 @@ class SqlDelightDocumentRepository(
         documentSqlDao.deleteDocumentsByUserId(workspaceId)
     }
 
+    override suspend fun clearLastSyncedAt(workspaceId: String) {
+        documentSqlDao.clearLastSyncedAt(workspaceId)
+    }
+
     override suspend fun favoriteDocumentByIds(ids: Set<String>) {
         ids.forEach { id ->
             documentSqlDao.favoriteById(id)
