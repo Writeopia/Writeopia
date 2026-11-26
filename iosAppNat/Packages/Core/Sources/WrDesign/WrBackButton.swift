@@ -12,13 +12,25 @@ public struct WrBackButton: View {
         self.action = action
     }
 
+    @Environment(\.wrUsesV4) private var usesV4
+
     public var body: some View {
-        Button(action: action) {
-            Label(title, systemImage: "chevron.backward")
-                .font(.callout.weight(.semibold))
+        Group {
+            if usesV4 {
+                // v4: a ghost button with an arrow, quiet next to the card.
+                Button(action: action) {
+                    Label(title, systemImage: "arrow.left")
+                }
+                .buttonStyle(WrButtonStyle(kind: .ghost))
+            } else {
+                Button(action: action) {
+                    Label(title, systemImage: "chevron.backward")
+                        .font(.callout.weight(.semibold))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(WrColors.accent)
+            }
         }
-        .buttonStyle(.plain)
-        .foregroundStyle(WrColors.accent)
         .frame(maxWidth: .infinity, alignment: .leading)
         .keyboardShortcut(.cancelAction)
     }

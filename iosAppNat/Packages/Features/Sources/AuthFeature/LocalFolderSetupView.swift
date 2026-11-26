@@ -3,40 +3,33 @@ import SwiftUI
 import WrDesign
 import WrSession
 
-/// Second setup screen of the private space, like `LocalFolderSetupScreen` of the desktop app:
-/// the folder in the computer where the workspace is kept.
+/// Second setup step of the private space, on the v4 design: the folder in the computer where
+/// the workspace is kept, like `LocalFolderSetupScreen` of the desktop app.
 public struct LocalFolderSetupView: View {
     @Environment(AppSession.self) private var session
 
     public init() {}
 
     public var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                WrBackButton("Back", action: session.retreatOfflineSetup)
-                    .accessibilityIdentifier("setup.folder.back")
-
-                WrScreenHeader(
-                    eyebrow: "Private space",
+        WrOnboardingScreen(width: WrTheme.Size.dialogMd, back: ("Back", session.retreatOfflineSetup)) {
+            VStack(alignment: .leading, spacing: WrTheme.Space.s300) {
+                WrTitleBlock(
+                    eyebrow: "Private space · Step 2 of 2",
                     title: "Choose a local folder",
-                    subtitle: "Pick a folder in your computer to keep your workspace, or skip and do it later from Settings."
+                    subtitle: "Your documents are saved here as plain files. You can skip this and pick a folder later in Settings."
                 )
 
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Local Folder")
-                        .font(.headline)
-                        .foregroundStyle(WrColors.textLight)
+                VStack(alignment: .leading, spacing: WrTheme.Space.s100) {
+                    Text("Folder")
+                        .wrTextStyle(.labelSmall)
+                        .foregroundStyle(WrTheme.Colors.textSecondary)
 
                     PrivateSpaceFolderPicker()
                 }
 
-                WrPrimaryButton("Continue", action: session.advanceOfflineSetup)
+                WrPrimaryButton("Start writing", action: session.advanceOfflineSetup)
                     .accessibilityIdentifier("setup.folder.continue")
             }
-            .padding(24)
-            .frame(maxWidth: 700)
-            .frame(maxWidth: .infinity)
         }
-        .background(WrColors.background)
     }
 }

@@ -114,37 +114,35 @@ struct LoginView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                #if os(macOS)
-                WrBackButton("Choose space", action: session.switchSpace)
-                    .accessibilityIdentifier("login.back")
-                #endif
-
-                WrScreenHeader(
+        WrOnboardingScreen(width: 440, back: backToSpaces) {
+            VStack(alignment: .leading, spacing: WrTheme.Space.s200) {
+                WrTitleBlock(
                     eyebrow: "Open space",
                     title: "Welcome back",
-                    subtitle: "Sign in to sync your documents across devices."
+                    subtitle: "Sign in to sync your documents across devices.",
+                    eyebrowColor: WrTheme.Colors.accent
                 )
-                .padding(.bottom, 12)
+                .padding(.bottom, WrTheme.Space.s100)
 
-                WrTextField("Email", text: $viewModel.email, systemImage: "envelope", kind: .email)
-                    .focused($focusedField, equals: .email)
-                    .submitLabel(.next)
-                    .onSubmit { focusedField = .password }
-                    .accessibilityIdentifier("login.email")
+                field("Email") {
+                    WrTextField("Email", text: $viewModel.email, systemImage: "envelope", kind: .email)
+                        .focused($focusedField, equals: .email)
+                        .submitLabel(.next)
+                        .onSubmit { focusedField = .password }
+                        .accessibilityIdentifier("login.email")
+                }
 
-                WrTextField("Password", text: $viewModel.password, systemImage: "lock", kind: .password)
-                    .focused($focusedField, equals: .password)
-                    .submitLabel(.go)
-                    .onSubmit(logIn)
-                    .accessibilityIdentifier("login.password")
-
-                HStack {
-                    Spacer()
+                field("Password") {
+                    WrTextField("Password", text: $viewModel.password, systemImage: "lock", kind: .password)
+                        .focused($focusedField, equals: .password)
+                        .submitLabel(.go)
+                        .onSubmit(logIn)
+                        .accessibilityIdentifier("login.password")
+                } trailing: {
                     Button("Forgot password?") { navigate(.forgotPassword) }
-                        .font(.footnote.weight(.semibold))
-                        .tint(WrColors.accent)
+                        .buttonStyle(.plain)
+                        .wrTextStyle(.labelSmall)
+                        .foregroundStyle(WrTheme.Colors.textLink)
                 }
 
                 WrErrorText(viewModel.errorMessage)
@@ -156,28 +154,32 @@ struct LoginView: View {
                 if viewModel.isGoogleAvailable {
                     orDivider
 
-                    GoogleSignInButton(isLoading: viewModel.isGoogleLoading, action: signInWithGoogle)
-                        .disabled(viewModel.isLoading || viewModel.isGoogleLoading)
-                        .accessibilityIdentifier("login.google")
+                    if viewModel.isGoogleLoading {
+                        WrStatusBanner("Finish signing in on Google's page…")
+                            .accessibilityIdentifier("login.google.waiting")
+                    } else {
+                        GoogleSignInButton(isLoading: false, action: signInWithGoogle)
+                            .disabled(viewModel.isLoading)
+                            .accessibilityIdentifier("login.google")
+                    }
                 }
 
-                HStack(spacing: 4) {
+                HStack(spacing: WrTheme.Space.s50) {
                     Text("New to Writeopia?")
-                        .foregroundStyle(WrColors.textLighter)
+                        .foregroundStyle(WrTheme.Colors.textTertiary)
                     Button("Create an account") { navigate(.register) }
+                        .buttonStyle(.plain)
                         .fontWeight(.semibold)
-                        .tint(WrColors.accent)
+                        .foregroundStyle(WrTheme.Colors.textLink)
                 }
-                .font(.callout)
-                .padding(.top, 8)
+                .wrTextStyle(.bodySmall)
+                .frame(maxWidth: .infinity)
+                .padding(.top, WrTheme.Space.s100)
             }
-            .padding(24)
-            .frame(maxWidth: 520)
-            .frame(maxWidth: .infinity)
         }
         .scrollDismissesKeyboard(.interactively)
-        .background(WrColors.background)
         .animation(.default, value: viewModel.errorMessage)
+        .animation(.default, value: viewModel.isGoogleLoading)
         .sheet(item: $viewModel.googleSignUp) { signUp in
             GoogleSignUpView(viewModel: signUp) { viewModel.googleSignUp = nil }
         }
@@ -189,6 +191,34 @@ struct LoginView: View {
                     Label("Choose space", systemImage: "chevron.backward")
                 }
             }
+        }
+    }
+
+    /// A Mac window has no navigation bar for the way back, so the screen shows it; on iOS the
+    /// toolbar has it.
+    private var backToSpaces: (title: LocalizedStringKey, action: () -> Void)? {
+        #if os(macOS)
+        return ("Choose space", session.switchSpace)
+        #else
+        return nil
+        #endif
+    }
+
+    /// A label above a field, with an optional link at its end, like the v4 forms.
+    private func field<Content: View, Trailing: View>(
+        _ label: LocalizedStringKey,
+        @ViewBuilder field: () -> Content,
+        @ViewBuilder trailing: () -> Trailing = { EmptyView() }
+    ) -> some View {
+        VStack(alignment: .leading, spacing: WrTheme.Space.s100) {
+            HStack {
+                Text(label)
+                    .wrTextStyle(.labelSmall)
+                    .foregroundStyle(WrTheme.Colors.textSecondary)
+                Spacer()
+                trailing()
+            }
+            field()
         }
     }
 
@@ -207,14 +237,14 @@ struct LoginView: View {
     }
 
     private var orDivider: some View {
-        HStack(spacing: 12) {
-            Rectangle().fill(WrColors.divider).frame(height: 1)
+        HStack(spacing: WrTheme.Space.s150) {
+            WrDivider()
             Text("or")
-                .font(.footnote)
-                .foregroundStyle(WrColors.textLighter)
-            Rectangle().fill(WrColors.divider).frame(height: 1)
+                .wrTextStyle(.bodySmall)
+                .foregroundStyle(WrTheme.Colors.textTertiary)
+            WrDivider()
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, WrTheme.Space.s50)
     }
 }
 
@@ -222,8 +252,24 @@ struct LoginView: View {
 struct GoogleSignInButton: View {
     let isLoading: Bool
     let action: () -> Void
+    @Environment(\.wrUsesV4) private var usesV4
 
     var body: some View {
+        if usesV4 {
+            Button(action: action) {
+                HStack(spacing: WrTheme.Space.s100) {
+                    GoogleLogo()
+                        .frame(width: 16, height: 16)
+                    Text("Continue with Google")
+                }
+            }
+            .buttonStyle(WrButtonStyle(kind: .secondary, size: .large, fillsWidth: true))
+        } else {
+            legacy
+        }
+    }
+
+    private var legacy: some View {
         Button(action: action) {
             ZStack {
                 HStack(spacing: 10) {

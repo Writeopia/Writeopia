@@ -10,24 +10,35 @@ public struct LocalAiConfigView: View {
     @State private var urlText = ""
     @State private var modelToDownload = ""
     @State private var showsManual = false
+    private let showsSummary: Bool
+    private let presentsWizard: Bool
 
-    public init() {}
+    /// - Parameters:
+    ///   - showsSummary: the status row and "Auto configure". Off when the screen shows them
+    ///     itself, like the v4 setup, which keeps only the manual configuration here.
+    ///   - presentsWizard: presents the "Auto configure" sheet. Off when the screen presents it.
+    public init(showsSummary: Bool = true, presentsWizard: Bool = true) {
+        self.showsSummary = showsSummary
+        self.presentsWizard = presentsWizard
+    }
 
     private var config: LocalAiConfigController { session.localAiConfig }
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            statusRow
+            if showsSummary {
+                statusRow
 
-            Button {
-                config.openWizard()
-            } label: {
-                Label("Auto configure", systemImage: "wand.and.stars")
+                Button {
+                    config.openWizard()
+                } label: {
+                    Label("Auto configure", systemImage: "wand.and.stars")
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(WrColors.accent)
+                .disabled(config.wizard != .closed)
+                .accessibilityIdentifier("localAi.autoConfigure")
             }
-            .buttonStyle(.borderedProminent)
-            .tint(WrColors.accent)
-            .disabled(config.wizard != .closed)
-            .accessibilityIdentifier("localAi.autoConfigure")
 
             DisclosureGroup(isExpanded: $showsManual) {
                 VStack(alignment: .leading, spacing: 16) {
@@ -57,7 +68,7 @@ public struct LocalAiConfigView: View {
         .onChange(of: config.url) { _, url in
             if URL(string: urlText) != url { urlText = url.absoluteString }
         }
-        .sheet(isPresented: Binding(get: { config.wizard != .closed }, set: { if !$0 { config.closeWizard() } })) {
+        .sheet(isPresented: Binding(get: { presentsWizard && config.wizard != .closed }, set: { if !$0 { config.closeWizard() } })) {
             LocalAiWizardSheet(controller: config)
         }
     }
@@ -227,118 +238,121 @@ public struct LocalAiConfigView: View {
     }
 }
 
-/// "Auto configure": detects the local AI and proposes a model per tier, like
-/// `LocalAiWizardDialog` of the Compose app.
+/// "Auto configure", on the v4 design: detects the local AI and proposes a model per size,
+/// like `LocalAiWizardDialog` of the Compose app.
 struct LocalAiWizardSheet: View {
     let controller: LocalAiConfigController
     @State private var providerURL: URL?
     @State private var tier: LocalAiAutoConfig.ModelTier?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: 0) {
             switch controller.wizard {
             case .closed:
                 EmptyView()
             case .detecting:
-                HStack(spacing: 12) {
-                    ProgressView()
-                    Text("Detecting Local AI")
-                        .font(.headline)
-                }
-                .frame(maxWidth: .infinity, minHeight: 120)
+                WrDialogHeader("Configure local AI", description: "Looking for a local AI on this computer.", close: controller.closeWizard)
+                WrStatusBanner("Looking for Ollama or llmman…")
+                    .padding(.top, WrTheme.Space.s300)
+                    .accessibilityIdentifier("localAi.wizard.detecting")
             case .selecting(let config, let providers):
                 selecting(config, providers)
             case .error(let error):
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Configuration Failed")
-                        .font(.title2.bold())
-                    Text(message(for: error))
-                        .foregroundStyle(WrColors.textLighter)
-                    HStack {
-                        Spacer()
-                        Button("Close", action: controller.closeWizard)
-                        Button("Retry", action: controller.openWizard)
-                            .buttonStyle(.borderedProminent)
-                    }
+                WrDialogHeader("Configuration failed", close: controller.closeWizard)
+                Text(message(for: error))
+                    .wrTextStyle(.bodyMedium)
+                    .foregroundStyle(WrTheme.Colors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, WrTheme.Space.s150)
+                HStack(spacing: WrTheme.Space.s100) {
+                    Spacer()
+                    WrButton("Close", kind: .ghost, action: controller.closeWizard)
+                    WrButton("Try again", kind: .primary, action: controller.openWizard)
+                        .keyboardShortcut(.defaultAction)
                 }
+                .padding(.top, WrTheme.Space.s300)
             }
         }
-        .padding(24)
-        .frame(minWidth: 420, idealWidth: 460)
-        .background(WrColors.background)
+        .padding(WrTheme.Space.s300)
+        .frame(width: WrTheme.Size.dialogMd, alignment: .topLeading)
+        .background(WrTheme.Colors.bgRaised)
+        .wrV4()
     }
 
     private func selecting(_ config: LocalAiAutoConfig, _ providers: [LocalAiConfigController.ProviderInfo]) -> some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Configure Local AI")
-                .font(.title2.bold())
+        let chosenURL = providerURL ?? providers.first(where: \.isAvailable)?.url
+        let chosenTier = tier ?? config.defaultTier
 
-            Text("Select Provider")
-                .font(.subheadline.weight(.semibold))
-            ForEach(providers) { provider in
-                let selected = (providerURL ?? providers.first(where: \.isAvailable)?.url) == provider.url
-                Button {
-                    providerURL = provider.url
-                } label: {
-                    HStack {
-                        Image(systemName: selected ? "largecircle.fill.circle" : "circle")
-                            .foregroundStyle(selected ? WrColors.accent : WrColors.textLighter)
-                        Text(provider.name)
-                        Spacer()
-                        Text(provider.isAvailable ? "Available" : "Not Detected")
-                            .font(.caption)
-                            .foregroundStyle(provider.isAvailable ? .green : WrColors.textLighter)
-                    }
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .disabled(!provider.isAvailable)
-                .opacity(provider.isAvailable ? 1 : 0.5)
-            }
+        return VStack(alignment: .leading, spacing: 0) {
+            WrDialogHeader(
+                "Configure local AI",
+                description: "Writeopia downloads the model through your provider. After that it works offline.",
+                close: controller.closeWizard
+            )
 
-            Text("Select Model Tier")
-                .font(.subheadline.weight(.semibold))
-            ForEach(config.modelTiers) { option in
-                let selected = (tier ?? config.defaultTier) == option
-                Button {
-                    tier = option
-                } label: {
-                    HStack(alignment: .top) {
-                        Image(systemName: selected ? "largecircle.fill.circle" : "circle")
-                            .foregroundStyle(selected ? WrColors.accent : WrColors.textLighter)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(title(for: option.type))
-                                .font(.body.weight(.semibold))
-                            Text(description(for: option.type))
-                                .font(.caption)
-                                .foregroundStyle(WrColors.textLighter)
-                            Text(option.modelName)
-                                .font(.caption.monospaced())
-                                .foregroundStyle(WrColors.textLighter)
+            sectionTitle("Provider")
+            VStack(spacing: 0) {
+                ForEach(Array(providers.enumerated()), id: \.element.id) { index, provider in
+                    if index > 0 { WrDivider() }
+                    WrProviderRow(
+                        provider.name,
+                        isSelected: chosenURL == provider.url,
+                        isAvailable: provider.isAvailable,
+                        status: provider.isAvailable
+                            ? WrPill("Detected", kind: .success)
+                            : WrPill("Not installed", kind: .neutral),
+                        action: { providerURL = provider.url }
+                    ) {
+                        if !provider.isAvailable, provider.name == "Ollama" {
+                            Link("How to install", destination: URL(string: "https://ollama.com")!)
+                                .buttonStyle(WrButtonStyle(kind: .ghost))
                         }
-                        Spacer()
                     }
-                    .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: WrTheme.Radius.lg)
+                    .strokeBorder(WrTheme.Colors.borderDefault)
             }
 
-            HStack {
+            sectionTitle("Model size")
+            HStack(alignment: .top, spacing: WrTheme.Space.s100) {
+                ForEach(config.modelTiers) { option in
+                    WrTierCard(
+                        title(for: option.type),
+                        description: description(for: option.type),
+                        model: option.modelName,
+                        isSelected: chosenTier == option,
+                        isRecommended: config.defaultTier == option,
+                        action: { tier = option }
+                    )
+                    .accessibilityIdentifier("localAi.wizard.tier.\(option.type.rawValue.lowercased())")
+                }
+            }
+            .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: WrTheme.Space.s100) {
                 Spacer()
-                Button("Cancel", action: controller.closeWizard)
-                    .keyboardShortcut(.cancelAction)
-                Button("Download & Configure") {
-                    guard let url = providerURL ?? providers.first(where: \.isAvailable)?.url,
-                          let tier = tier ?? config.defaultTier
-                    else { return }
+                WrButton("Cancel", kind: .ghost, action: controller.closeWizard)
+                WrButton("Download & configure", kind: .primary) {
+                    guard let url = chosenURL, let tier = chosenTier else { return }
                     controller.confirmWizard(providerURL: url, tier: tier)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(WrColors.accent)
                 .keyboardShortcut(.defaultAction)
+                .disabled(chosenURL == nil || chosenTier == nil)
                 .accessibilityIdentifier("localAi.wizard.confirm")
             }
+            .padding(.top, WrTheme.Space.s300)
         }
+    }
+
+    private func sectionTitle(_ title: LocalizedStringKey) -> some View {
+        Text(title)
+            .textCase(.uppercase)
+            .wrTextStyle(.overline)
+            .foregroundStyle(WrTheme.Colors.textTertiary)
+            .padding(.top, WrTheme.Space.s300)
+            .padding(.bottom, WrTheme.Space.s100)
     }
 
     private func title(for tier: LocalAiAutoConfig.Tier) -> LocalizedStringKey {

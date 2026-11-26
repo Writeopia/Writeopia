@@ -68,38 +68,45 @@ public struct WorkspaceSyncView: View {
     }
 
     public var body: some View {
-        VStack(spacing: 24) {
-            switch viewModel.state {
-            case .syncing, .done:
-                ProgressView()
-                    .controlSize(.large)
+        WrOnboardingScreen(width: 440) {
+            VStack(spacing: WrTheme.Space.s300) {
+                switch viewModel.state {
+                case .syncing, .done:
+                    icon("arrow.triangle.2.circlepath", tint: WrTheme.Colors.accent, background: WrTheme.Colors.accentSubtle)
 
-                VStack(spacing: 8) {
-                    Text("Syncing your workspace")
-                        .font(.title2.bold())
-                        .foregroundStyle(WrColors.textLight)
-                    Text("Your documents are being brought to this device. This may take a moment.")
-                        .font(.callout)
-                        .foregroundStyle(WrColors.textLighter)
+                    WrTitleBlock(
+                        title: "Syncing your workspace",
+                        subtitle: "Your documents are being brought to this device. You can start writing while the rest arrives.",
+                        alignment: .center
+                    )
+
+                    WrStatusBanner("Bringing your documents…")
+                        .accessibilityIdentifier("workspaceSync.progress")
+
+                    WrPrimaryButton("Continue in background", action: viewModel.continueToDocuments)
+                        .accessibilityIdentifier("workspaceSync.continue")
+                case .failed:
+                    icon("exclamationmark.triangle", tint: WrTheme.Colors.warning, background: WrTheme.Colors.warningSubtle)
+
+                    WrTitleBlock(
+                        title: "The sync didn't finish",
+                        subtitle: "It will be tried again when you open your documents.",
+                        alignment: .center
+                    )
+
+                    WrPrimaryButton("Continue", action: viewModel.continueToDocuments)
+                        .accessibilityIdentifier("workspaceSync.continue")
                 }
-                .multilineTextAlignment(.center)
-
-                WrPrimaryButton("Continue in background", action: viewModel.continueToDocuments)
-                    .accessibilityIdentifier("workspaceSync.continue")
-            case .failed:
-                Text("The sync didn't finish. It will be tried again when you open your documents.")
-                    .font(.callout)
-                    .foregroundStyle(WrColors.textLight)
-                    .multilineTextAlignment(.center)
-
-                WrPrimaryButton("Continue", action: viewModel.continueToDocuments)
-                    .accessibilityIdentifier("workspaceSync.continue")
             }
         }
-        .padding(24)
-        .frame(maxWidth: 400)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(WrColors.background)
         .task { viewModel.start() }
+    }
+
+    private func icon(_ systemImage: String, tint: Color, background: Color) -> some View {
+        Image(systemName: systemImage)
+            .font(.system(size: 18, weight: .semibold))
+            .foregroundStyle(tint)
+            .frame(width: 48, height: 48)
+            .background(background, in: RoundedRectangle(cornerRadius: WrTheme.Radius.lg))
     }
 }
