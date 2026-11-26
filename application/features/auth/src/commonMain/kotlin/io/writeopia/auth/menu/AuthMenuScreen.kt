@@ -1,5 +1,6 @@
 package io.writeopia.auth.menu
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.graphics.Shape
@@ -427,8 +428,8 @@ private fun AuthMenuContentScreen(
 }
 
 /**
- * "Continue with Google", outlined so it stays second to the email sign-in, with Google's "G" in
- * the accent color. Shows a spinner while the Google page is open (the desktop browser, the
+ * "Continue with Google", outlined so it stays second to the email sign-in, with Google's own
+ * four-color "G" ([GoogleLogo]). Shows a spinner while the Google page is open (the desktop browser, the
  * Android account picker, the web popup).
  */
 @Composable
@@ -454,14 +455,13 @@ private fun GoogleSignInButton(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.alpha(if (inProgress) 0F else 1F),
             ) {
-                Text(
-                    text = "G",
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Black,
-                    style = MaterialTheme.typography.titleMedium,
+                Image(
+                    imageVector = GoogleLogo,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
                 )
 
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(10.dp))
 
                 Text(
                     text = WrStrings.continueWithGoogle(),
