@@ -17,6 +17,11 @@ class DesktopGoogleSignInLauncherTest {
 
     private val http: HttpClient = HttpClient.newHttpClient()
 
+    /** The browser's requests, kept so each test waits for them and sees their answers. */
+    private val browserThreads = mutableListOf<Thread>()
+    private val browserStatuses = mutableListOf<Int>()
+    private val browserErrors = mutableListOf<Throwable>()
+
     /** Simulates the browser: parses the consent URL and immediately hits the redirect URI. */
     private fun fakeBrowser(
         onParams: (Map<String, String>) -> Unit = {},
@@ -25,13 +30,27 @@ class DesktopGoogleSignInLauncherTest {
         val params = query(URI(url).rawQuery)
         onParams(params)
         val redirect = params.getValue("redirect_uri")
-        Thread {
-            val response = http.send(
-                HttpRequest.newBuilder(URI("$redirect?${callbackQuery(params)}")).GET().build(),
-                HttpResponse.BodyHandlers.ofString()
-            )
-            assertEquals(200, response.statusCode())
-        }.start()
+        browserThreads += Thread {
+            try {
+                val response = http.send(
+                    HttpRequest.newBuilder(URI("$redirect?${callbackQuery(params)}")).GET().build(),
+                    HttpResponse.BodyHandlers.ofString()
+                )
+                synchronized(browserStatuses) { browserStatuses += response.statusCode() }
+            } catch (e: Throwable) {
+                synchronized(browserErrors) { browserErrors += e }
+            }
+        }.also(Thread::start)
+    }
+
+    /** Waits for the browser's requests, failing the test if one failed or hung. */
+    private fun browserAnswers(): List<Int> {
+        browserThreads.forEach { thread ->
+            thread.join(5_000)
+            assertTrue(!thread.isAlive, "The browser request never finished")
+        }
+        browserErrors.firstOrNull()?.let { throw AssertionError("The browser request failed", it) }
+        return browserStatuses.toList()
     }
 
     private fun query(raw: String?): Map<String, String> =
@@ -51,6 +70,7 @@ class DesktopGoogleSignInLauncherTest {
 
         val result = launcher.signIn()
 
+        assertEquals(listOf(200), browserAnswers())
         assertIs<GoogleSignInResult.Success>(result)
         val credential = assertIs<GoogleCredential.AuthCode>(result.credential)
         assertEquals("abc123", credential.code)
@@ -67,9 +87,24 @@ class DesktopGoogleSignInLauncherTest {
     }
 
     @Test
-    fun `rejects a callback whose state does not match`() = runBlocking<Unit> {
+    fun `ignores a callback whose state does not match and keeps waiting`() = runBlocking<Unit> {
         val launcher = DesktopGoogleSignInLauncher(
             openUrl = fakeBrowser { "code=abc123&state=forged" },
+            clientId = "desktop-client",
+            timeout = 500.milliseconds,
+        )
+
+        val result = launcher.signIn()
+
+        // Turned away, not taken: the attempt runs out of time with no credential.
+        assertEquals(listOf(404), browserAnswers())
+        assertIs<GoogleSignInResult.Cancelled>(result)
+    }
+
+    @Test
+    fun `a browser that can't be opened fails the sign-in`() = runBlocking<Unit> {
+        val launcher = DesktopGoogleSignInLauncher(
+            openUrl = { throw UnsupportedOperationException("No browser") },
             clientId = "desktop-client",
             timeout = 5.seconds,
         )
@@ -88,6 +123,7 @@ class DesktopGoogleSignInLauncherTest {
         )
 
         assertIs<GoogleSignInResult.Cancelled>(launcher.signIn())
+        assertEquals(listOf(200), browserAnswers())
     }
 
     @Test

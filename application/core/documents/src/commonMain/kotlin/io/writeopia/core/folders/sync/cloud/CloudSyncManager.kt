@@ -4,6 +4,7 @@ package io.writeopia.core.folders.sync.cloud
 
 import io.writeopia.sdk.models.utils.ResultData
 import io.writeopia.sdk.models.workspace.Workspace
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -90,7 +91,15 @@ class CloudSyncManager(
         val connector = connector ?: return Result.failure(IllegalStateException("No cloud storage here"))
         val result = connector.connect()
         if (result.isSuccess) {
-            _status.update { it.copy(connected = true, error = null, needsReconnect = false) }
+            // Maybe another account than before (after a disconnect, or a reconnect once the
+            // access was taken back): it has none of the files, so everything is sent again.
+            val reset = attempt {
+                stateStore.clearSeenVersions()
+                cloudSync().forgetSyncStamps(Workspace.disconnectedWorkspace().id)
+            }
+            _status.update {
+                it.copy(connected = true, error = reset.exceptionOrNull()?.message, needsReconnect = false)
+            }
             requestSync()
         } else {
             _status.update { it.copy(error = result.exceptionOrNull()?.message) }
@@ -105,8 +114,16 @@ class CloudSyncManager(
     suspend fun disconnect() {
         val connector = connector ?: return
         connector.disconnect()
-        stateStore.clearSeenVersions()
-        _status.update { it.copy(connected = false, error = null, needsReconnect = false, lastSync = null) }
+        // A state that can't be written is reported; the next connection clears it again.
+        val cleared = attempt { stateStore.clearSeenVersions() }
+        _status.update {
+            it.copy(
+                connected = false,
+                error = cleared.exceptionOrNull()?.message,
+                needsReconnect = false,
+                lastSync = null
+            )
+        }
     }
 
     /** Syncs now, waiting for it. Does nothing unless [isActive]. */
@@ -131,6 +148,16 @@ class CloudSyncManager(
         }
         return result
     }
+
+    /** Like runCatching, but a cancelled coroutine stays cancelled. */
+    private inline fun attempt(block: () -> Unit): Result<Unit> =
+        try {
+            Result.success(block())
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
 
     private suspend fun syncIfActive() {
         if (isActive()) syncNow()

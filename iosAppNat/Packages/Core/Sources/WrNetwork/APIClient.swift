@@ -266,7 +266,11 @@ public final class APIClient {
             if (200..<300).contains(status) {
                 Self.logger.debug("← \(status) \(method, privacy: .public) \(url, privacy: .public) (\(data.count) bytes)")
             } else {
-                let body = String(decoding: data.prefix(2000), as: UTF8.self)
+                // Error bodies of the auth service can carry credentials (the Google ID token of a
+                // first sign-in): only their size is logged. The caller still gets the body.
+                let body = Self.isAuthPath(request.url)
+                    ? "<\(data.count) bytes, not logged>"
+                    : String(decoding: data.prefix(2000), as: UTF8.self)
                 Self.logger.error("← \(status) \(method, privacy: .public) \(url, privacy: .public): \(body, privacy: .public)")
             }
             return (data, status)
@@ -274,6 +278,10 @@ public final class APIClient {
             Self.logger.error("✕ \(method, privacy: .public) \(url, privacy: .public): \(error.localizedDescription, privacy: .public)")
             throw error
         }
+    }
+
+    static func isAuthPath(_ url: URL?) -> Bool {
+        url?.path().contains("/api/auth/") ?? false
     }
 
     private func validate(_ data: Data, status: Int) throws -> Data {

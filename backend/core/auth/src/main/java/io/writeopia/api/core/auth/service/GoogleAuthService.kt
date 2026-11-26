@@ -20,6 +20,7 @@ import io.writeopia.api.core.auth.repository.recordLegalAcceptance
 import io.writeopia.api.core.auth.routing.validateUsername
 import io.writeopia.api.core.auth.repository.usernameExists
 import io.writeopia.api.core.auth.service.RefreshTokenService.generateAndStoreTokens
+import io.writeopia.api.core.auth.utils.isUniqueViolation
 import io.writeopia.connection.logger
 import io.writeopia.sdk.models.id.GenerateId
 import io.writeopia.sdk.serialization.data.auth.GoogleLoginRequest
@@ -33,7 +34,9 @@ import java.util.UUID
  * Resolution order:
  * 1. An `external_identity` row for Google's subject id - the normal repeat-login path.
  * 2. A user with the same (Google-verified) email - the identity is linked to that account for
- *    good. An account still waiting for email confirmation is activated, since Google just
+ *    good, when Google is authoritative for the address (Gmail, or the account's Workspace
+ *    domain); otherwise [GoogleLoginResult.EmailNotLinkable] and the user signs in with the
+ *    password. An account still waiting for email confirmation is activated, since Google just
  *    verified the same address.
  * 3. Otherwise there is no account yet: without a username and the current legal version the
  *    answer is [GoogleLoginResult.SignUpRequired], carrying the verified ID token so the client
@@ -73,6 +76,31 @@ object GoogleAuthService {
             return GoogleLoginResult.InvalidToken("Google account email is not verified")
         }
 
+        // Another request may make the same account, identity or username meanwhile (two first
+        // sign-ins racing). Once more, the login finds what the other one made, or says why not
+        // (the username is taken). The ID token is reused: a code can only be exchanged once.
+        return try {
+            loginVerified(writeopiaDb, request, idToken, identity, provisionWorkspaceForNewUser, onWorkspaceProvisioned)
+        } catch (e: Exception) {
+            if (!e.isUniqueViolation()) throw e
+            logger.info("Google login conflict, trying again: ${e.message}")
+            loginVerified(writeopiaDb, request, idToken, identity, provisionWorkspaceForNewUser, onWorkspaceProvisioned)
+        }
+    }
+
+    private suspend fun loginVerified(
+        writeopiaDb: WriteopiaDbBackend,
+        request: GoogleLoginRequest,
+        idToken: String,
+        identity: GoogleIdentity,
+        provisionWorkspaceForNewUser: (
+            writeopiaDb: WriteopiaDbBackend,
+            workspaceId: String,
+            workspaceName: String,
+            userId: String
+        ) -> Unit,
+        onWorkspaceProvisioned: (userId: String, workspaceId: String) -> Unit,
+    ): GoogleLoginResult {
         val email = identity.email.trim().lowercase()
         val name = identity.name?.trim()?.takeIf { it.isNotBlank() } ?: email.substringBefore('@')
 
@@ -80,6 +108,7 @@ object GoogleAuthService {
         val user = when (existing) {
             is Existing.Found -> existing.user
             Existing.DeletionPending -> return GoogleLoginResult.DeletionPending
+            Existing.NotLinkable -> return GoogleLoginResult.EmailNotLinkable
             Existing.None -> {
                 val username = request.username?.trim()?.takeIf { it.isNotEmpty() }
                     ?: return GoogleLoginResult.SignUpRequired(
@@ -132,6 +161,7 @@ object GoogleAuthService {
     private sealed interface Existing {
         data class Found(val user: WriteopiaBeUser) : Existing
         data object DeletionPending : Existing
+        data object NotLinkable : Existing
         data object None : Existing
     }
 
@@ -149,6 +179,12 @@ object GoogleAuthService {
 
         val existing = writeopiaDb.getUserByEmail(email) ?: return Existing.None
         if (existing.status == UserStatus.DELETION_PENDING) return Existing.DeletionPending
+        // Linking hands the account to whoever holds this Google identity: only when Google
+        // vouches for the address today, not for one it verified once (see isEmailAuthoritative).
+        if (!identity.isEmailAuthoritative) {
+            logger.info("Google identity not linked to user ${existing.id}: email not authoritative")
+            return Existing.NotLinkable
+        }
 
         if (existing.status == UserStatus.EMAIL_CONFIRMATION_PENDING) {
             writeopiaDb.enableUserByEmail(email)

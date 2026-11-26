@@ -3,6 +3,7 @@ package io.writeopia.auth.google
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
@@ -24,6 +25,7 @@ class DesktopGoogleSignInLauncher(
     private val authEndpoint: String = "https://accounts.google.com/o/oauth2/v2/auth",
 ) : GoogleSignInLauncher {
 
+    @OptIn(ExperimentalCoroutinesApi::class) // getCompleted
     override suspend fun signIn(): GoogleSignInResult = withContext(Dispatchers.IO) {
         val verifier = Pkce.verifier()
         val state = Pkce.state()
@@ -38,15 +40,34 @@ class DesktopGoogleSignInLauncher(
         try {
             server.createContext(CALLBACK_PATH) { exchange ->
                 val params = parseQuery(exchange.requestURI.rawQuery)
-                respondHtml(exchange, if (params.containsKey("error")) ERROR_HTML else SUCCESS_HTML)
+                // Only Google's redirect of this attempt ends it: another request (a prefetch, a
+                // stray tab, a forged one) is turned away and the sign-in goes on waiting.
+                val isAnswer = exchange.requestMethod == "GET" &&
+                    exchange.requestURI.path == CALLBACK_PATH &&
+                    params["state"] == state
+                if (!isAnswer) {
+                    respondHtml(exchange, NOT_FOUND_HTML, status = 404)
+                    return@createContext
+                }
+
+                // Taken before the page is written, so a slow browser can't lose the code to
+                // the timeout.
                 callback.complete(CallbackParams(params))
+                respondHtml(exchange, if (params.containsKey("error")) ERROR_HTML else SUCCESS_HTML)
             }
             server.start()
 
             val redirectUri = "http://$LOOPBACK_HOST:${server.address.port}$CALLBACK_PATH"
-            openUrl(buildAuthUrl(redirectUri, Pkce.challenge(verifier), state))
+            try {
+                openUrl(buildAuthUrl(redirectUri, Pkce.challenge(verifier), state))
+            } catch (e: Exception) {
+                // No browser to open (headless Linux, a broken default browser).
+                return@withContext GoogleSignInResult.Failure(e)
+            }
 
+            // An answer that came in just as the time ran out still counts.
             val received = withTimeoutOrNull(timeout) { callback.await() }
+                ?: callback.takeIf { it.isCompleted }?.getCompleted()
                 ?: return@withContext GoogleSignInResult.Cancelled
 
             when {
@@ -56,9 +77,6 @@ class DesktopGoogleSignInLauncher(
                     } else {
                         GoogleSignInResult.Failure(IllegalStateException("Google returned: ${received.error}"))
                     }
-
-                received.state != state ->
-                    GoogleSignInResult.Failure(IllegalStateException("OAuth state mismatch"))
 
                 received.code.isNullOrBlank() ->
                     GoogleSignInResult.Failure(IllegalStateException("No authorization code received"))
@@ -73,7 +91,9 @@ class DesktopGoogleSignInLauncher(
                 )
             }
         } finally {
-            server.stop(0)
+            // Up to a second for the page being written to the browser, which the callback was
+            // taken before; returns at once when no request is in flight.
+            server.stop(1)
         }
     }
 
@@ -107,10 +127,10 @@ class DesktopGoogleSignInLauncher(
                 URLDecoder.decode(key, Charsets.UTF_8) to URLDecoder.decode(value, Charsets.UTF_8)
             }
 
-    private fun respondHtml(exchange: HttpExchange, html: String) {
+    private fun respondHtml(exchange: HttpExchange, html: String, status: Int = 200) {
         val bytes = html.toByteArray(Charsets.UTF_8)
         exchange.responseHeaders.add("Content-Type", "text/html; charset=utf-8")
-        exchange.sendResponseHeaders(200, bytes.size.toLong())
+        exchange.sendResponseHeaders(status, bytes.size.toLong())
         exchange.responseBody.use { it.write(bytes) }
     }
 
@@ -121,8 +141,13 @@ class DesktopGoogleSignInLauncher(
         val SUCCESS_HTML = """
             <!DOCTYPE html><html><head><meta charset="utf-8"><title>Writeopia</title></head>
             <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-align: center; padding-top: 80px;">
-            <h2>Signed in to Writeopia</h2><p>You can close this window and return to the app.</p>
+            <h2>Back to Writeopia</h2><p>Return to the app to continue. You can close this window.</p>
             </body></html>
+        """.trimIndent()
+
+        val NOT_FOUND_HTML = """
+            <!DOCTYPE html><html><head><meta charset="utf-8"><title>Writeopia</title></head>
+            <body>Not found</body></html>
         """.trimIndent()
 
         val ERROR_HTML = """

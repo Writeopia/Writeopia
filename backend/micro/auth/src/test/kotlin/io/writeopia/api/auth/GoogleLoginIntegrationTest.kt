@@ -156,9 +156,14 @@ class GoogleLoginIntegrationTest {
         val client = defaultClient()
 
         val first = client.googleLogin(signUp).body<AuthResponse>()
+        // The Google account's email changed since: the subject still finds the account.
+        verifier.identity = identity.copy(email = otherEmail)
         val second = client.googleLogin().body<AuthResponse>()
 
         assertEquals(first.writeopiaUser.id, second.writeopiaUser.id)
+        assertEquals(first.writeopiaUser.id, db.getUserIdByExternalIdentity(PROVIDER_GOOGLE, subject))
+        assertEquals(testEmail, db.getUserByEmail(testEmail)?.email)
+        assertNull(db.getUserByEmail(otherEmail))
         val workspaces = client.get("/api/workspace/user") {
             header("X-Forwarded-Authorization", "Bearer ${second.accessToken}")
         }.body<List<WorkspaceApi>>()
@@ -167,6 +172,8 @@ class GoogleLoginIntegrationTest {
 
     @Test
     fun `matching email links the google identity to the existing account`() = testApplication {
+        // A Workspace account of the email's own domain: Google vouches for the address.
+        verifier.identity = identity.copy(hostedDomain = "example.com")
         installApp()
         val client = defaultClient()
 
@@ -189,6 +196,28 @@ class GoogleLoginIntegrationTest {
         assertEquals("existing_user", user.username)
         assertEquals(UserStatus.ACTIVE, user.status)
         assertEquals(user.id, db.getUserIdByExternalIdentity(PROVIDER_GOOGLE, subject))
+    }
+
+    @Test
+    fun `an email google is not authoritative for is never linked to an existing account`() = testApplication {
+        // A consumer Google account made with an example.com address: verified once, maybe not
+        // owned by the same person anymore.
+        installApp()
+        val client = defaultClient()
+
+        db.insertUser(
+            name = "Existing User",
+            username = "existing_user",
+            email = testEmail,
+            password = "hash",
+            salt = "salt",
+            status = UserStatus.ACTIVE,
+        )
+
+        val response = client.googleLogin()
+
+        assertEquals(HttpStatusCode.PreconditionFailed, response.status)
+        assertNull(db.getUserIdByExternalIdentity(PROVIDER_GOOGLE, subject))
     }
 
     @Test

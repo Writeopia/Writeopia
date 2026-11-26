@@ -192,7 +192,14 @@ class GoogleDesktopConnector(
             }
 
             socket.use {
-                val requestLine = socket.getInputStream().bufferedReader().readLine().orEmpty()
+                // A client that connects and never sends its request must not hold the sign-in:
+                // it is dropped, and the loop checks the deadline again.
+                socket.soTimeout = CLIENT_READ_TIMEOUT_MILLIS
+                val requestLine = try {
+                    socket.getInputStream().bufferedReader().readLine().orEmpty()
+                } catch (_: SocketTimeoutException) {
+                    return@use
+                }
                 val target = requestLine.split(" ").getOrNull(1).orEmpty()
                 val query = Url("http://127.0.0.1$target").parameters
                 val output = socket.getOutputStream()
@@ -253,6 +260,7 @@ class GoogleDesktopConnector(
         internal const val TOKEN_URL = "https://oauth2.googleapis.com/token"
         internal const val REVOKE_URL = "https://oauth2.googleapis.com/revoke"
         private const val EXPIRY_MARGIN_MILLIS = 60_000L
+        private const val CLIENT_READ_TIMEOUT_MILLIS = 5_000
 
         internal fun challengeOf(verifier: String): String {
             val digest = MessageDigest.getInstance("SHA-256").digest(verifier.toByteArray(Charsets.US_ASCII))

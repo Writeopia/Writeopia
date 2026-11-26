@@ -16,6 +16,7 @@ import io.writeopia.auth.register.LEGAL_TERMS
 import io.writeopia.auth.register.LegalDocumentState
 import io.writeopia.sdk.serialization.data.auth.AuthResponse
 import io.writeopia.sdk.serialization.data.auth.GoogleLoginRequest
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.ensureActive
 import io.writeopia.auth.core.manager.AuthRepository
@@ -274,8 +275,22 @@ class AuthMenuViewModel(
                     _googleSignUp.value = signUp.copy(error = GoogleSignUpError.FAILED)
 
                 else -> {
-                    _googleSignUp.value = null
-                    _loginState.value = handleAuthResult(result)
+                    // Keeping the user and its tokens can still fail: the dialog stays, with
+                    // the error, instead of the exception escaping the coroutine.
+                    val handled = try {
+                        handleAuthResult(result)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        ResultData.Error(e)
+                    }
+
+                    if (handled is ResultData.Error && error == null) {
+                        _googleSignUp.value = signUp.copy(error = GoogleSignUpError.FAILED)
+                    } else {
+                        _googleSignUp.value = null
+                    }
+                    _loginState.value = handled
                 }
             }
         }
@@ -323,6 +338,9 @@ class AuthMenuViewModel(
                     result.map { true }
                 } else {
                     _emailConfirmationRequired.value = false
+                    // An account left waiting for its confirmation (a registration never
+                    // finished) must not send the next launch to the confirmation screen.
+                    authRepository.clearPendingConfirmationEmail()
                     EnvUtils.getAdminKey()?.let { adminKey ->
                         authApi.enableUser(user.email, adminKey)
                     }

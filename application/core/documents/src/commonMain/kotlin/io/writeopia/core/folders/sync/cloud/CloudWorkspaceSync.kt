@@ -69,6 +69,21 @@ class CloudWorkspaceSync(
             }
         }
 
+    /**
+     * Forgets that anything of [workspaceId] was sent, so the next sync writes every document and
+     * folder again: for a newly connected account, which has none of them yet.
+     */
+    suspend fun forgetSyncStamps(workspaceId: String) {
+        running.withLock {
+            documentRepository.loadDocumentsWorkspace(workspaceId)
+                .filter { document -> document.lastSyncedAt != null }
+                .forEach { document -> documentRepository.saveDocumentMetadata(document.copy(lastSyncedAt = null)) }
+            folderRepository.getFoldersForWorkspace(workspaceId)
+                .filter { folder -> folder.lastSyncedAt != null }
+                .forEach { folder -> folderRepository.updateFolder(folder.copy(lastSyncedAt = null)) }
+        }
+    }
+
     private suspend fun syncInternal(workspaceId: String) {
         val deviceId = state.deviceId()
         val files = store.list()
@@ -94,6 +109,13 @@ class CloudWorkspaceSync(
             // The same folder from two devices: the newer copy.
             .groupBy { folder -> folder.id }
             .map { (_, copies) -> copies.maxBy { folder -> folder.lastUpdatedAt } }
+            // A device's folders file holds all its folders, edited there or not: an old copy
+            // must not replace a newer folder here, even one already synced. Only the cloud sync
+            // needs this; the backend always sends its latest copy.
+            .filter { received ->
+                val local = folderRepository.getFolderById(received.id)
+                local == null || local.lastUpdatedAt <= received.lastUpdatedAt
+            }
         folderConflictHandler.handleConflict(
             localFolders = folderRepository.localOutDatedFolders(workspaceId),
             externalFolders = receivedFolders,
@@ -221,8 +243,11 @@ class CloudWorkspaceSync(
             store.update(ownFile.id, content)
         }
 
-        outdated.forEach { folder ->
-            folderRepository.updateFolder(folder.copy(lastSyncedAt = folder.lastSyncedAt?.let { maxOf(it, sentAt) } ?: sentAt))
+        // Reloaded: an edit made while the file was written must not be undone by the stamp.
+        outdated.forEach { sent ->
+            val current = folderRepository.getFolderById(sent.id) ?: return@forEach
+            val syncedAt = current.lastSyncedAt?.let { maxOf(it, sentAt) } ?: sentAt
+            folderRepository.updateFolder(current.copy(lastSyncedAt = syncedAt))
         }
     }
 

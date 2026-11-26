@@ -12,7 +12,6 @@ import io.writeopia.api.core.auth.models.toApi
 import io.writeopia.api.core.auth.service.GoogleAuthService
 import io.writeopia.api.core.auth.service.GoogleCodeExchanger
 import io.writeopia.api.core.auth.service.GoogleTokenVerifier
-import io.writeopia.api.core.auth.utils.isUniqueViolation
 import io.writeopia.connection.logger
 import io.writeopia.sdk.serialization.data.auth.AuthResponse
 import io.writeopia.sdk.serialization.data.auth.GoogleLoginRequest
@@ -66,12 +65,6 @@ fun Routing.googleAuthRoute(
                 onWorkspaceProvisioned
             )
         } catch (e: Exception) {
-            if (e.isUniqueViolation()) {
-                // Two first-logins for the same Google account raced; the other one won.
-                logger.info("Google login conflict: ${e.message}")
-                call.respond(HttpStatusCode.Conflict, "Account already being created")
-                return
-            }
             logger.error("Google login error: ${e.message}", e)
             call.respond(HttpStatusCode.InternalServerError, "Google login failed")
             return
@@ -118,6 +111,13 @@ fun Routing.googleAuthRoute(
 
             GoogleLoginResult.UsernameTaken ->
                 call.respond(HttpStatusCode.Conflict, "Username taken")
+
+            // Not 409, which the apps read as a taken username.
+            GoogleLoginResult.EmailNotLinkable ->
+                call.respond(
+                    HttpStatusCode.PreconditionFailed,
+                    "An account with this email already exists. Sign in with your password."
+                )
 
             is GoogleLoginResult.InvalidToken ->
                 call.respond(HttpStatusCode.Unauthorized, "Invalid Google token")

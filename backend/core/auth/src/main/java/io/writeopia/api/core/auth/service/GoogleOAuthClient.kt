@@ -75,6 +75,7 @@ class GoogleJwksTokenVerifier(
                 emailVerified = emailVerified,
                 name = jwt.getClaim("name").asString(),
                 audience = jwt.audience.firstOrNull() ?: "",
+                hostedDomain = jwt.getClaim("hd").asString()?.takeIf { it.isNotBlank() },
             )
         } catch (e: GoogleTokenException) {
             throw e

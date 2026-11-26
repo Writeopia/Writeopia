@@ -28,7 +28,7 @@ final class LoginViewModel {
     var isGoogleAvailable: Bool { GoogleOAuthConfig.isConfigured }
 
     var canLogIn: Bool {
-        FieldValidator.isValidEmail(email) && !password.isEmpty && !isLoading
+        FieldValidator.isValidEmail(email) && !password.isEmpty && !isLoading && !isGoogleLoading
     }
 
     func logIn() async {

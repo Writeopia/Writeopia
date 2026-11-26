@@ -7,6 +7,9 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.File
+import java.nio.file.AtomicMoveNotSupportedException
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 
 /** [CloudSyncStateStore] in a JSON file of the app's folder. */
 class FileCloudSyncStateStore(private val file: File) : CloudSyncStateStore {
@@ -28,19 +31,36 @@ class FileCloudSyncStateStore(private val file: File) : CloudSyncStateStore {
         write(read().copy(seen = versions))
     }
 
+    /**
+     * The stored state; a fresh one only when there is no file yet. A file that can't be read or
+     * decoded throws: starting over would give this device a new id, and the other devices would
+     * take its old files for someone else's.
+     */
     private suspend fun read(): State = withContext(Dispatchers.IO) {
         if (!file.exists()) return@withContext State()
-        runCatching { json.decodeFromString<State>(file.readText()) }.getOrElse { State() }
+        try {
+            json.decodeFromString<State>(file.readText())
+        } catch (e: Exception) {
+            throw CloudStoreException("The cloud sync state in ${file.path} can't be read: ${e.message}")
+        }
     }
 
-    private suspend fun write(state: State) = withContext(Dispatchers.IO) {
+    private suspend fun write(state: State): Unit = withContext(Dispatchers.IO) {
         file.parentFile?.mkdirs()
-        // Written aside, then moved over, so a crash never leaves half a file.
+        // Written aside, then moved over in one step: the old file stays whole until the new one
+        // replaces it, and a failed move throws instead of losing the device id.
         val temporary = File(file.parentFile, "${file.name}.tmp")
         temporary.writeText(json.encodeToString(State.serializer(), state))
-        if (!temporary.renameTo(file)) {
-            file.delete()
-            temporary.renameTo(file)
+        try {
+            Files.move(
+                temporary.toPath(),
+                file.toPath(),
+                StandardCopyOption.REPLACE_EXISTING,
+                StandardCopyOption.ATOMIC_MOVE,
+            )
+        } catch (e: AtomicMoveNotSupportedException) {
+            Files.move(temporary.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING)
         }
+        Unit
     }
 }

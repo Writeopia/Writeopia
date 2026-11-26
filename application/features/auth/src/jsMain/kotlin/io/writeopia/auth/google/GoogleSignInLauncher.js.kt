@@ -1,16 +1,38 @@
 package io.writeopia.auth.google
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import kotlinx.browser.window
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
 @Composable
 actual fun rememberGoogleSignInLauncher(): GoogleSignInLauncher? {
     if (!GoogleOAuthConfig.isConfigured) return null
-    return remember { WebGoogleSignInLauncher() }
+
+    // index.html loads the gsi script async: the button shows once it is there. A script that
+    // never loads (blocked, offline) leaves the button hidden, and the email sign-in stays.
+    val ready by produceState(initialValue = isGisAvailable()) {
+        var waited = 0L
+        while (!value && waited < GIS_LOAD_TIMEOUT_MS) {
+            delay(GIS_POLL_MS)
+            waited += GIS_POLL_MS
+            value = isGisAvailable()
+        }
+        if (!value) console.warn("Google Identity Services did not load: Google sign-in is unavailable")
+    }
+
+    return if (ready) remember { WebGoogleSignInLauncher() } else null
 }
+
+private const val GIS_POLL_MS = 200L
+private const val GIS_LOAD_TIMEOUT_MS = 15_000L
+
+private fun isGisAvailable(): Boolean =
+    js("typeof google !== 'undefined' && !!google.accounts && !!google.accounts.oauth2") as Boolean
 
 /**
  * Google Identity Services "code model" in popup mode. The `gsi/client` script is loaded by
@@ -76,9 +98,6 @@ class WebGoogleSignInLauncher(
             }
         }
     }
-
-    private fun isGisAvailable(): Boolean =
-        js("typeof google !== 'undefined' && !!google.accounts && !!google.accounts.oauth2") as Boolean
 
     private fun initCodeClient(
         clientId: String,

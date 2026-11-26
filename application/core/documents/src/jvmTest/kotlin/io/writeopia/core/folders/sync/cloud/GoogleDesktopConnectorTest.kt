@@ -11,6 +11,7 @@ import io.ktor.http.content.OutgoingContent
 import io.ktor.http.headersOf
 import io.ktor.http.parseQueryString
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import java.net.HttpURLConnection
 import java.net.URI
 import kotlin.concurrent.thread
@@ -18,6 +19,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.seconds
 
 class GoogleDesktopConnectorTest {
 
@@ -76,49 +78,55 @@ class GoogleDesktopConnectorTest {
 
     @Test
     fun `connecting exchanges the code with the PKCE verifier and keeps the tokens`() = runBlocking {
-        var authorizationUrl = ""
-        val connector = connector(
-            openBrowser = { url ->
-                authorizationUrl = url
-                googleRedirectsBack(url, code = "the-code")
-            },
-        ) {
-            HttpStatusCode.OK to """{"access_token":"a1","expires_in":3600,"refresh_token":"r1",
-                |"scope":"${GoogleDriveFileStore.SCOPE}","token_type":"Bearer"}
-            """.trimMargin()
+        // Real time: the loopback server waits on sockets, not on the fake clock.
+        withTimeout(LOOPBACK_TEST_TIMEOUT) {
+            var authorizationUrl = ""
+            val connector = connector(
+                openBrowser = { url ->
+                    authorizationUrl = url
+                    googleRedirectsBack(url, code = "the-code")
+                },
+            ) {
+                HttpStatusCode.OK to """{"access_token":"a1","expires_in":3600,"refresh_token":"r1",
+                    |"scope":"${GoogleDriveFileStore.SCOPE}","token_type":"Bearer"}
+                """.trimMargin()
+            }
+
+            assertTrue(connector.connect().isSuccess)
+
+            val authorization = Url(authorizationUrl).parameters
+            assertEquals(GoogleDriveFileStore.SCOPE, authorization["scope"])
+            assertEquals("offline", authorization["access_type"])
+            assertEquals("S256", authorization["code_challenge_method"])
+            assertTrue(authorization["redirect_uri"]!!.startsWith("http://127.0.0.1:"))
+
+            val (request, form) = requests.single()
+            assertEquals(GoogleDesktopConnector.TOKEN_URL, request.url.toString())
+            assertEquals("the-code", form["code"])
+            assertEquals("authorization_code", form["grant_type"])
+            assertEquals(authorization["redirect_uri"], form["redirect_uri"])
+            assertEquals(authorization["code_challenge"], GoogleDesktopConnector.challengeOf(form["code_verifier"]!!))
+
+            assertEquals(GoogleTokens("a1", "r1", time + 3_600_000), tokenStore.tokens)
+            assertTrue(connector.isConnected())
         }
-
-        assertTrue(connector.connect().isSuccess)
-
-        val authorization = Url(authorizationUrl).parameters
-        assertEquals(GoogleDriveFileStore.SCOPE, authorization["scope"])
-        assertEquals("offline", authorization["access_type"])
-        assertEquals("S256", authorization["code_challenge_method"])
-        assertTrue(authorization["redirect_uri"]!!.startsWith("http://127.0.0.1:"))
-
-        val (request, form) = requests.single()
-        assertEquals(GoogleDesktopConnector.TOKEN_URL, request.url.toString())
-        assertEquals("the-code", form["code"])
-        assertEquals("authorization_code", form["grant_type"])
-        assertEquals(authorization["redirect_uri"], form["redirect_uri"])
-        assertEquals(authorization["code_challenge"], GoogleDesktopConnector.challengeOf(form["code_verifier"]!!))
-
-        assertEquals(GoogleTokens("a1", "r1", time + 3_600_000), tokenStore.tokens)
-        assertTrue(connector.isConnected())
     }
 
     @Test
     fun `a refusal, or a consent without the Drive access, doesn't connect`() = runBlocking {
-        val refused = connector(openBrowser = { url -> googleRedirectsBack(url, code = null) }) {
-            HttpStatusCode.OK to "{}"
-        }
-        assertTrue(refused.connect().isFailure)
+        // Real time: the loopback server waits on sockets, not on the fake clock.
+        withTimeout(LOOPBACK_TEST_TIMEOUT) {
+            val refused = connector(openBrowser = { url -> googleRedirectsBack(url, code = null) }) {
+                HttpStatusCode.OK to "{}"
+            }
+            assertTrue(refused.connect().isFailure)
 
-        val withoutDrive = connector(openBrowser = { url -> googleRedirectsBack(url, code = "c") }) {
-            HttpStatusCode.OK to """{"access_token":"a","refresh_token":"r","scope":"openid"}"""
+            val withoutDrive = connector(openBrowser = { url -> googleRedirectsBack(url, code = "c") }) {
+                HttpStatusCode.OK to """{"access_token":"a","refresh_token":"r","scope":"openid"}"""
+            }
+            assertTrue(withoutDrive.connect().isFailure)
+            assertNull(tokenStore.tokens)
         }
-        assertTrue(withoutDrive.connect().isFailure)
-        assertNull(tokenStore.tokens)
     }
 
     @Test
@@ -161,5 +169,9 @@ class GoogleDesktopConnectorTest {
         assertEquals(GoogleDesktopConnector.REVOKE_URL, request.url.toString())
         assertEquals("r1", form["token"])
         assertNull(tokenStore.tokens)
+    }
+
+    private companion object {
+        val LOOPBACK_TEST_TIMEOUT = 30.seconds
     }
 }

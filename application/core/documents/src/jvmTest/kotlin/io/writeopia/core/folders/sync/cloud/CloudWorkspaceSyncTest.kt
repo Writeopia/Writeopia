@@ -158,6 +158,38 @@ class CloudWorkspaceSyncTest {
     }
 
     @Test
+    fun `an old copy in another device's file never replaces a newer folder already synced`() = runBlocking {
+        deviceA.folders.createFolder(folder("f1", "Work", updatedAt = 1))
+        deviceA.syncOk()
+        deviceB.syncOk()
+
+        deviceA.folders.updateFolder(deviceA.folders.getFolderById("f1")!!.copy(title = "Job", lastUpdatedAt = Clock.System.now()))
+        deviceA.syncOk()
+
+        // B wrote its folders file again, from a listing taken before A's edit: it still holds
+        // the old "Work". A takes the changed file in, with the folder already synced there.
+        val bFolders = cloud.idOf(CloudSyncFile.foldersName("deviceB"))
+        cloud.update(bFolders, cloud.download(bFolders))
+        deviceA.syncOk()
+
+        assertEquals("Job", deviceA.folders.getFolderById("f1")?.title)
+    }
+
+    @Test
+    fun `forgetting the sync stamps makes every document and folder go again`() = runBlocking {
+        deviceA.documents.saveDocument(document("doc1", step("a", 1)))
+        deviceA.folders.createFolder(folder("f1", "Work", updatedAt = 1))
+        deviceA.syncOk()
+        assertTrue(deviceA.documents.loadOutdatedDocumentsForWorkspace(workspaceId).isEmpty())
+        assertTrue(deviceA.folders.localOutDatedFolders(workspaceId).isEmpty())
+
+        deviceA.sync.forgetSyncStamps(workspaceId)
+
+        assertEquals(listOf("doc1"), deviceA.documents.loadOutdatedDocumentsForWorkspace(workspaceId).map { it.id })
+        assertEquals(listOf("f1"), deviceA.folders.localOutDatedFolders(workspaceId).map { it.id })
+    }
+
+    @Test
     fun `an unchanged file of another device is not downloaded again`() = runBlocking {
         deviceA.documents.saveDocument(document("doc1", step("a", 1)))
         deviceA.syncOk()

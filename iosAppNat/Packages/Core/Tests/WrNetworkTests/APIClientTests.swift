@@ -91,3 +91,20 @@ struct Echo: Decodable, Equatable {
         #expect(APIClient.serverMessage(Data("<html></html>".utf8)) == nil)
     }
 }
+
+@Suite struct APIClientLoggingTests {
+    @Test func authErrorBodiesAreNotLogged() {
+        #expect(APIClient.isAuthPath(URL(string: "https://example.com/api/auth/login/google")))
+        #expect(!APIClient.isAuthPath(URL(string: "https://example.com/api/document/1")))
+    }
+
+    @Test func theCallerStillGetsTheAuthErrorBody() async throws {
+        let transport = StubTransport([{ _ in (422, #"{"idToken":"secret"}"#) }])
+        let client = APIClient(transport: transport, tokenStore: InMemoryTokenStore(), baseURL: URL(string: "https://example.com")!)
+
+        let (data, status) = try await client.sendReturningStatus(.post, "api/auth/login/google", body: EmptyBody())
+
+        #expect(status == 422)
+        #expect(String(decoding: data, as: UTF8.self) == #"{"idToken":"secret"}"#)
+    }
+}

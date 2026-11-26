@@ -90,7 +90,8 @@ fun CloudSyncSettings(
 
         val stateText = when {
             status.needsReconnect -> WrStrings.cloudSyncReconnect(status.providerName)
-            !status.connected -> null
+            // A connection that failed leaves the account disconnected, with why.
+            !status.connected && status.error == null -> null
             status.syncing -> WrStrings.cloudSyncSyncing()
             status.error != null -> WrStrings.cloudSyncError(status.error.orEmpty())
             status.lastSync != null -> WrStrings.cloudSyncLastSync(formatTime(status.lastSync!!))
