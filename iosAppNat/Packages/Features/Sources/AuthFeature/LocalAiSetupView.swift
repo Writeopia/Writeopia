@@ -21,10 +21,22 @@ public struct LocalAiSetupView: View {
 
                 AiSetupContent()
 
-                WrPrimaryButton("Continue", action: session.advanceOfflineSetup)
-                    .disabled(session.localAiConfig.wizard == .detecting)
-                    .accessibilityIdentifier("setup.ai.continue")
+                VStack(spacing: WrTheme.Space.s100) {
+                    WrPrimaryButton("Continue", action: session.advanceOfflineSetup)
+                        .disabled(session.localAiConfig.wizard == .detecting)
+                        .accessibilityIdentifier("setup.ai.continue")
+
+                    // Goes on without configuring anything now: the AI choice stays as it is
+                    // and can be changed in Settings.
+                    WrButton("Skip, set up later", kind: .ghost, action: skip)
+                        .accessibilityIdentifier("setup.ai.skip")
+                }
             }
         }
+    }
+
+    private func skip() {
+        session.localAiConfig.closeWizard()
+        session.advanceOfflineSetup()
     }
 }

@@ -256,7 +256,9 @@ struct LocalAiWizardSheet: View {
                     .padding(.top, WrTheme.Space.s300)
                     .accessibilityIdentifier("localAi.wizard.detecting")
             case .selecting(let config, let providers):
-                selecting(config, providers)
+                selecting(config, providers, downloading: nil)
+            case .downloading(let config, let providers, let providerURL, let tier):
+                selecting(config, providers, downloading: (providerURL, tier))
             case .error(let error):
                 WrDialogHeader("Configuration failed", close: controller.closeWizard)
                 Text(message(for: error))
@@ -279,9 +281,16 @@ struct LocalAiWizardSheet: View {
         .wrV4()
     }
 
-    private func selecting(_ config: LocalAiAutoConfig, _ providers: [LocalAiConfigController.ProviderInfo]) -> some View {
-        let chosenURL = providerURL ?? providers.first(where: \.isAvailable)?.url
-        let chosenTier = tier ?? config.defaultTier
+    /// The choices of the wizard. While the chosen model downloads they stay shown, locked,
+    /// with the progress under them, like the "Downloading" state of the design.
+    private func selecting(
+        _ config: LocalAiAutoConfig,
+        _ providers: [LocalAiConfigController.ProviderInfo],
+        downloading: (providerURL: URL, tier: LocalAiAutoConfig.ModelTier)?
+    ) -> some View {
+        let chosenURL = downloading?.providerURL ?? providerURL ?? providers.first(where: \.isAvailable)?.url
+        let chosenTier = downloading?.tier ?? tier ?? config.defaultTier
+        let isDownloading = downloading != nil
 
         return VStack(alignment: .leading, spacing: 0) {
             WrDialogHeader(
@@ -303,8 +312,8 @@ struct LocalAiWizardSheet: View {
                             : WrPill("Not installed", kind: .neutral),
                         action: { providerURL = provider.url }
                     ) {
-                        if !provider.isAvailable, provider.name == "Ollama" {
-                            Link("How to install", destination: URL(string: "https://ollama.com")!)
+                        if !provider.isAvailable, let page = installPage(for: provider.name) {
+                            Link("How to install", destination: page)
                                 .buttonStyle(WrButtonStyle(kind: .ghost))
                         }
                     }
@@ -314,6 +323,8 @@ struct LocalAiWizardSheet: View {
                 RoundedRectangle(cornerRadius: WrTheme.Radius.lg)
                     .strokeBorder(WrTheme.Colors.borderDefault)
             }
+            .disabled(isDownloading)
+            .opacity(isDownloading ? 0.5 : 1)
 
             sectionTitle("Model size")
             HStack(alignment: .top, spacing: WrTheme.Space.s100) {
@@ -330,20 +341,81 @@ struct LocalAiWizardSheet: View {
                 }
             }
             .fixedSize(horizontal: false, vertical: true)
+            .disabled(isDownloading)
+            .opacity(isDownloading ? 0.5 : 1)
+
+            if isDownloading {
+                downloadProgress
+                    .padding(.top, WrTheme.Space.s200)
+            }
 
             HStack(spacing: WrTheme.Space.s100) {
                 Spacer()
-                WrButton("Cancel", kind: .ghost, action: controller.closeWizard)
-                WrButton("Download & configure", kind: .primary) {
-                    guard let url = chosenURL, let tier = chosenTier else { return }
-                    controller.confirmWizard(providerURL: url, tier: tier)
+                if isDownloading {
+                    WrButton("Cancel download", kind: .ghost, action: controller.cancelWizardDownload)
+                        .accessibilityIdentifier("localAi.wizard.cancelDownload")
+                    WrButton("Configuring…", kind: .primary) {}
+                        .disabled(true)
+                } else {
+                    WrButton("Cancel", kind: .ghost, action: controller.closeWizard)
+                    WrButton("Download & configure", kind: .primary) {
+                        guard let url = chosenURL, let tier = chosenTier else { return }
+                        controller.confirmWizard(providerURL: url, tier: tier)
+                    }
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(chosenURL == nil || chosenTier == nil)
+                    .accessibilityIdentifier("localAi.wizard.confirm")
                 }
-                .keyboardShortcut(.defaultAction)
-                .disabled(chosenURL == nil || chosenTier == nil)
-                .accessibilityIdentifier("localAi.wizard.confirm")
             }
             .padding(.top, WrTheme.Space.s300)
         }
+    }
+
+    /// Where to get each provider when it isn't installed.
+    private func installPage(for provider: String) -> URL? {
+        switch provider {
+        case "Ollama": URL(string: "https://ollama.com")
+        case "llmman": URL(string: "https://github.com/llmmanorg/llmman")
+        default: nil
+        }
+    }
+
+    /// The download running in the dialog: spinner, model, size so far and the bar.
+    private var downloadProgress: some View {
+        VStack(alignment: .leading, spacing: WrTheme.Space.s100) {
+            HStack(spacing: WrTheme.Space.s100) {
+                WrSpinner(size: 14)
+                if let progress = controller.download.value {
+                    Text("Downloading \(progress.model)")
+                        .wrTextStyle(.labelMedium)
+                        .foregroundStyle(WrTheme.Colors.textPrimary)
+                    Spacer(minLength: 0)
+                    Text(verbatim: sizeInfo(progress))
+                        .wrTextStyle(.bodySmall)
+                        .monospacedDigit()
+                        .foregroundStyle(WrTheme.Colors.textTertiary)
+                } else {
+                    Text("Preparing the download…")
+                        .wrTextStyle(.labelMedium)
+                        .foregroundStyle(WrTheme.Colors.textPrimary)
+                    Spacer(minLength: 0)
+                }
+            }
+            WrProgressBar(value: controller.download.value?.fraction)
+            Text("You can close this window. The download continues in the background.")
+                .wrTextStyle(.bodySmall)
+                .foregroundStyle(WrTheme.Colors.textTertiary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(WrTheme.Space.s200)
+        .background(WrTheme.Colors.bgSubtle, in: RoundedRectangle(cornerRadius: WrTheme.Radius.lg))
+        .accessibilityIdentifier("localAi.wizard.download")
+    }
+
+    private func sizeInfo(_ progress: LocalAiConfigController.DownloadProgress) -> String {
+        guard let completed = progress.completed, let total = progress.total else { return progress.status }
+        let style = ByteCountFormatStyle(style: .file)
+        return String(localized: "\(completed.formatted(style)) of \(total.formatted(style))")
     }
 
     private func sectionTitle(_ title: LocalizedStringKey) -> some View {

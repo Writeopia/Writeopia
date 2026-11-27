@@ -85,6 +85,8 @@ final class LoginViewModel {
             }
         } catch GoogleSignInError.cancelled {
             // The user closed Google's page.
+        } catch is CancellationError {
+            // "Cancel" or "Open browser again" on the waiting screen stopped this attempt.
         } catch let error as AuthError {
             errorMessage = error.userMessage
         } catch is GoogleSignInError {
@@ -99,6 +101,8 @@ struct LoginView: View {
     @State private var viewModel: LoginViewModel
     @FocusState private var focusedField: Field?
     @Environment(\.webAuthenticationSession) private var webAuthenticationSession
+    /// The Google sign-in running, so the waiting screen can stop or restart it.
+    @State private var googleTask: Task<Void, Never>?
     private let session: AppSession
     private let navigate: (LoginDestination) -> Void
 
@@ -115,6 +119,59 @@ struct LoginView: View {
 
     var body: some View {
         WrOnboardingScreen(width: 440, back: backToSpaces) {
+            if viewModel.isGoogleLoading {
+                googleWaiting
+            } else {
+                form
+            }
+        }
+        .scrollDismissesKeyboard(.interactively)
+        .animation(.default, value: viewModel.errorMessage)
+        .animation(.default, value: viewModel.isGoogleLoading)
+        .sheet(item: $viewModel.googleSignUp) { signUp in
+            GoogleSignUpView(viewModel: signUp) { viewModel.googleSignUp = nil }
+        }
+        #if os(iOS)
+        // The Mac shows the way back inside the screen (`backToSpaces`); a toolbar button there
+        // would be a second one in the title bar.
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button {
+                    session.switchSpace()
+                } label: {
+                    Label("Choose space", systemImage: "chevron.backward")
+                }
+            }
+        }
+        #endif
+    }
+
+    /// "Continue in your browser": shown while Google's page is open, in place of the form.
+    private var googleWaiting: some View {
+        VStack(alignment: .leading, spacing: WrTheme.Space.s300) {
+            VStack(alignment: .leading, spacing: WrTheme.Space.s200 + WrTheme.Space.s50) {
+                WrBrandMark()
+                WrTitleBlock(
+                    eyebrow: "Open space",
+                    title: "Continue in your browser",
+                    subtitle: "We opened Google in your browser. Finish signing in there and Writeopia picks up right where you left off.",
+                    eyebrowColor: WrTheme.Colors.accent
+                )
+            }
+
+            WrStatusBanner("Waiting for Google…")
+                .accessibilityIdentifier("login.google.waiting")
+
+            VStack(spacing: WrTheme.Space.s100) {
+                WrButton("Open browser again", kind: .secondary, fillsWidth: true, action: restartGoogle)
+                    .accessibilityIdentifier("login.google.reopen")
+                WrButton("Cancel", kind: .ghost, fillsWidth: true, action: cancelGoogle)
+                    .accessibilityIdentifier("login.google.cancel")
+            }
+        }
+    }
+
+    private var form: some View {
             VStack(alignment: .leading, spacing: WrTheme.Space.s200) {
                 // Figma: 20 pt between the mark and the eyebrow.
                 WrBrandMark()
@@ -158,14 +215,9 @@ struct LoginView: View {
                 if viewModel.isGoogleAvailable {
                     orDivider
 
-                    if viewModel.isGoogleLoading {
-                        WrStatusBanner("Finish signing in on Google's page…")
-                            .accessibilityIdentifier("login.google.waiting")
-                    } else {
-                        GoogleSignInButton(isLoading: false, action: signInWithGoogle)
-                            .disabled(viewModel.isLoading)
-                            .accessibilityIdentifier("login.google")
-                    }
+                    GoogleSignInButton(isLoading: false, action: signInWithGoogle)
+                        .disabled(viewModel.isLoading)
+                        .accessibilityIdentifier("login.google")
                 }
 
                 HStack(spacing: WrTheme.Space.s50) {
@@ -180,22 +232,6 @@ struct LoginView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.top, WrTheme.Space.s100)
             }
-        }
-        .scrollDismissesKeyboard(.interactively)
-        .animation(.default, value: viewModel.errorMessage)
-        .animation(.default, value: viewModel.isGoogleLoading)
-        .sheet(item: $viewModel.googleSignUp) { signUp in
-            GoogleSignUpView(viewModel: signUp) { viewModel.googleSignUp = nil }
-        }
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button {
-                    session.switchSpace()
-                } label: {
-                    Label("Choose space", systemImage: "chevron.backward")
-                }
-            }
-        }
     }
 
     /// A Mac window has no navigation bar for the way back, so the screen shows it; on iOS the
@@ -233,7 +269,24 @@ struct LoginView: View {
 
     private func signInWithGoogle() {
         focusedField = nil
-        Task {
+        startGoogle(after: nil)
+    }
+
+    /// Stops the attempt running and opens Google's page again once it has stopped.
+    private func restartGoogle() {
+        let running = googleTask
+        running?.cancel()
+        startGoogle(after: running)
+    }
+
+    private func cancelGoogle() {
+        googleTask?.cancel()
+    }
+
+    private func startGoogle(after previous: Task<Void, Never>?) {
+        googleTask = Task {
+            await previous?.value
+            guard !Task.isCancelled else { return }
             await viewModel.signInWithGoogle { url, scheme in
                 try await webAuthenticationSession.authenticate(using: url, callbackURLScheme: scheme)
             }

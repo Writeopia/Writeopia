@@ -101,17 +101,36 @@ private func settle() async {
         var started = false
         controller.confirmWizard(providerURL: providers[1].url, tier: config.defaultTier!) { started = true }
         #expect(started)
-        #expect(controller.wizard == .closed)
+        // The wizard stays open on the download, with the choices kept.
+        #expect(controller.wizard == .downloading(config, providers, providerURL: providers[1].url, tier: config.defaultTier!))
         #expect(controller.url == OllamaAPI.llmmanURL)
         #expect(controller.selectedModel == "gpt-oss:20b")
         await settle()
 
+        #expect(controller.wizard == .closed)
         #expect(ollama.pulled == ["gpt-oss:20b"])
         #expect(controller.download == .idle)
         #expect(controller.models == .loaded(["gpt-oss:20b"]))
         #expect(controller.isConfigured)
         #expect(recorder.changes.last?.0 == OllamaAPI.llmmanURL)
         #expect(recorder.changes.last?.1 == "gpt-oss:20b")
+    }
+
+    @Test func cancellingTheWizardDownloadGoesBackToTheChoices() async {
+        let (controller, _) = controller(FakeOllama(["http://localhost:11434": []]))
+
+        controller.openWizard()
+        await settle()
+        guard case .selecting(let config, let providers) = controller.wizard else {
+            Issue.record("wizard is \(controller.wizard)")
+            return
+        }
+
+        controller.confirmWizard(providerURL: providers[0].url, tier: config.defaultTier!)
+        controller.cancelWizardDownload()
+
+        #expect(controller.wizard == .selecting(config, providers))
+        #expect(controller.download == .idle)
     }
 
     @Test func wizardFailsWhenNothingRuns() async {
