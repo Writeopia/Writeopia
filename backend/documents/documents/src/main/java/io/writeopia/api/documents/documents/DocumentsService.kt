@@ -40,7 +40,9 @@ import io.writeopia.api.documents.documents.repository.moveFolderToFolder
 import io.writeopia.api.documents.documents.repository.removeUserFavorite
 import io.writeopia.api.documents.documents.repository.saveDocument
 import io.writeopia.api.documents.documents.repository.saveDocumentTag
+import io.writeopia.api.documents.documents.repository.saveDocumentWithCreationEvent
 import io.writeopia.api.documents.documents.repository.saveFolder
+import io.writeopia.api.documents.documents.repository.saveFolderWithCreationEvent
 import io.writeopia.api.documents.documents.repository.setDocumentPublished
 import io.writeopia.api.documents.documents.repository.updateDocumentTitle
 import io.writeopia.api.documents.documents.repository.touchDocument
@@ -78,20 +80,28 @@ object DocumentsService {
     suspend fun receiveDocuments(
         documents: List<Document>,
         workspaceId: String,
+        userId: String,
         writeopiaDb: WriteopiaDbBackend,
         useAi: Boolean,
         embeddingService: DocumentEmbeddingService? = null
     ): Boolean {
         documents.forEach { document ->
             // Where the document was before, so a save that also moves it refreshes both folders.
-            val previousParentId = embeddingService?.let {
-                writeopiaDb.getDocumentById(document.id, workspaceId)?.parentId
+            // The save and its creation event are one write: a failing event must not keep the row.
+            val stored = writeopiaDb.transactionWithResult {
+                val previous = writeopiaDb.getDocumentById(document.id, workspaceId)
+                writeopiaDb.saveDocument(document)
+                if (previous == null && !document.deleted) {
+                    writeopiaDb.createSyncEvent(workspaceId, SyncEventType.CREATE_DOCUMENT, document.id, userId)
+                }
+                previous
             }
-            writeopiaDb.saveDocument(document)
             // The steps travel through the step sync, so what was sent may carry none: the
             // document is embedded as stored.
-            val stored = embeddingService?.let { writeopiaDb.getDocumentWithContentById(document.id, workspaceId) }
-            embeddingService?.onDocumentSaved(stored ?: document, previousParentId, writeopiaDb)
+            val storedWithContent = embeddingService?.let {
+                writeopiaDb.getDocumentWithContentById(document.id, workspaceId)
+            }
+            embeddingService?.onDocumentSaved(storedWithContent ?: document, stored?.parentId, writeopiaDb)
         }
 
         return if (useAi) sendToAiHub(documents, workspaceId) else true
@@ -170,10 +180,13 @@ object DocumentsService {
      */
     suspend fun receiveFolders(
         folders: List<Folder>,
+        userId: String,
         writeopiaDb: WriteopiaDbBackend,
         embeddingService: DocumentEmbeddingService? = null
     ): Boolean {
-        val tombstoned = writeopiaDb.saveFolder(*folders.toTypedArray())
+        val tombstoned = folders
+            .filterNot { folder -> writeopiaDb.saveFolderWithCreationEvent(folder, userId) }
+            .map { folder -> folder.id }
 
         if (tombstoned.isNotEmpty()) {
             logger.info("Ignored ${tombstoned.size} tombstoned folder(s) sent by client: $tombstoned")
@@ -248,6 +261,7 @@ object DocumentsService {
         parentFolderId: String,
         title: String,
         workspaceId: String,
+        userId: String,
         icon: MenuItem.Icon? = null,
         writeopiaDb: WriteopiaDbBackend,
         embeddingService: DocumentEmbeddingService? = null
@@ -264,7 +278,7 @@ object DocumentsService {
             icon = icon
         )
 
-        writeopiaDb.saveFolder(folder)
+        writeopiaDb.saveFolderWithCreationEvent(folder, userId)
         embeddingService?.onFolderSaved(folder, writeopiaDb)
         return folder
     }
@@ -312,14 +326,19 @@ object DocumentsService {
     suspend fun upsertDocument(
         document: Document,
         workspaceId: String,
+        userId: String,
         writeopiaDb: WriteopiaDbBackend,
         embeddingService: DocumentEmbeddingService?
     ): Document {
-        val previousParentId = embeddingService?.let {
-            writeopiaDb.getDocumentById(document.id, workspaceId)?.parentId
+        val (saved, existing) = writeopiaDb.transactionWithResult {
+            val previous = writeopiaDb.getDocumentById(document.id, workspaceId)
+            val stored = upsertDocument(document, workspaceId, writeopiaDb)
+            if (previous == null) {
+                writeopiaDb.createSyncEvent(workspaceId, SyncEventType.CREATE_DOCUMENT, document.id, userId)
+            }
+            stored to previous
         }
-        val saved = upsertDocument(document, workspaceId, writeopiaDb)
-        embeddingService?.onDocumentSaved(saved, previousParentId, writeopiaDb)
+        embeddingService?.onDocumentSaved(saved, existing?.parentId, writeopiaDb)
 
         return saved
     }
@@ -327,6 +346,7 @@ object DocumentsService {
     suspend fun cloneDocuments(
         documentIds: List<String>,
         workspaceId: String,
+        userId: String,
         writeopiaDb: WriteopiaDbBackend,
         useAi: Boolean,
         embeddingService: DocumentEmbeddingService? = null
@@ -356,7 +376,7 @@ object DocumentsService {
                 favorite = false
             )
 
-            writeopiaDb.saveDocument(clonedDocument)
+            writeopiaDb.saveDocumentWithCreationEvent(clonedDocument, userId)
             embeddingService?.onDocumentSaved(clonedDocument, null, writeopiaDb)
             clonedDocuments.add(clonedDocument)
         }
@@ -699,6 +719,7 @@ object DocumentsService {
     suspend fun syncStorySteps(
         documentId: String,
         workspaceId: String,
+        userId: String,
         request: StoryStepSyncRequest,
         writeopiaDb: WriteopiaDbBackend,
         embeddingService: DocumentEmbeddingService? = null
@@ -723,7 +744,7 @@ object DocumentsService {
                 parentId = "root",
                 workspaceId = workspaceId
             )
-            writeopiaDb.saveDocument(newDocument)
+            writeopiaDb.saveDocumentWithCreationEvent(newDocument, userId)
         }
 
         // Get server steps updated after client's last sync
@@ -859,6 +880,7 @@ object DocumentsService {
     suspend fun describeLinkCard(
         documentId: String,
         workspaceId: String,
+        userId: String,
         request: LinkCardDescriptionRequest,
         describe: suspend (url: String) -> String?,
         writeopiaDb: WriteopiaDbBackend
@@ -891,7 +913,7 @@ object DocumentsService {
 
         if (writeopiaDb.getDocumentById(documentId, workspaceId) == null) {
             val now = Clock.System.now()
-            writeopiaDb.saveDocument(
+            writeopiaDb.saveDocumentWithCreationEvent(
                 Document(
                     id = documentId,
                     title = "Untitled",
@@ -901,7 +923,8 @@ object DocumentsService {
                     lastSyncedAt = now,
                     parentId = "root",
                     workspaceId = workspaceId
-                )
+                ),
+                userId
             )
         }
 
@@ -961,6 +984,7 @@ object DocumentsService {
         documents: List<DocumentSyncInfo>,
         targetFolderId: String,
         workspaceId: String,
+        userId: String,
         summaryTitle: String?,
         model: String?,
         ignoreSyncCheck: Boolean,
@@ -1084,7 +1108,7 @@ object DocumentsService {
         )
 
         // Save the document
-        writeopiaDb.saveDocument(summaryDocument)
+        writeopiaDb.saveDocumentWithCreationEvent(summaryDocument, userId)
 
         return GenerateSummaryResult.Success(summaryDocument)
     }

@@ -24,6 +24,7 @@ class StoryStepSyncTest {
 
     private val db = configureTestPersistence()
     private val workspaceId = "workspace-step-sync"
+    private val userId = "workspace-step-sync-user"
     private val documentId = "doc-step-sync"
 
     /** A document edited on a client at [editedAt], epoch milliseconds. */
@@ -68,6 +69,7 @@ class StoryStepSyncTest {
         DocumentsService.syncStorySteps(
             documentId = documentId,
             workspaceId = workspaceId,
+            userId = userId,
             request = request(StoryStep(id = "line", type = StoryTypes.TEXT.type, text = "New line"), editedAt),
             writeopiaDb = db
         )
@@ -85,6 +87,7 @@ class StoryStepSyncTest {
         DocumentsService.syncStorySteps(
             documentId = documentId,
             workspaceId = workspaceId,
+            userId = userId,
             request = request(StoryStep(id = "line", type = StoryTypes.TEXT.type, text = "Older"), editedAt),
             writeopiaDb = db
         )
@@ -99,6 +102,7 @@ class StoryStepSyncTest {
         DocumentsService.syncStorySteps(
             documentId = documentId,
             workspaceId = workspaceId,
+            userId = userId,
             request = request(StoryStep(id = "line", type = StoryTypes.TEXT.type), editedAt).copy(changes = emptyList()),
             writeopiaDb = db
         )
@@ -113,6 +117,7 @@ class StoryStepSyncTest {
         DocumentsService.syncStorySteps(
             documentId = documentId,
             workspaceId = workspaceId,
+            userId = userId,
             request = request(StoryStep(id = "line", type = StoryTypes.TEXT.type, text = "Line"), editedAt),
             writeopiaDb = db
         )
