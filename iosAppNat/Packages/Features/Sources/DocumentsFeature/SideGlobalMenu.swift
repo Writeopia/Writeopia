@@ -140,7 +140,10 @@ public struct SidebarFolders: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: SideMenuStyle.headerSpacing) {
+            #if os(macOS)
+            v4Header
+            #else
             HStack {
                 Text("Folders")
                     .font(SideMenuStyle.sectionFont)
@@ -170,6 +173,7 @@ public struct SidebarFolders: View {
             }
             .padding(.leading, 12)
             .padding(.trailing, 4)
+            #endif
 
             FolderTreeLevel(parentId: Folder.rootId, depth: 0, router: router, open: open)
                 .padding(.leading, SideMenuStyle.treeInset)
@@ -180,6 +184,38 @@ public struct SidebarFolders: View {
             Button("Create") { createFolder() }
         }
     }
+
+    #if os(macOS)
+    /// "FOLDERS" with the add button, like the section of the v4 sidebar.
+    private var v4Header: some View {
+        WrSectionLabel("Folders") {
+            HStack(spacing: WrTheme.Space.s50) {
+                // Shows while a document opens or a folder expands, from the device and then the backend.
+                if session.contentLoad.isLoading {
+                    WrSpinner(size: 12)
+                        .accessibilityLabel("Loading document")
+                        .accessibilityIdentifier("sideMenu.loadingDocument")
+                }
+                Button {
+                    newFolderTitle = ""
+                    asksNewFolderTitle = true
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(WrTheme.Colors.iconSecondary)
+                        .frame(width: 24, height: 24)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .help("New folder")
+                .accessibilityLabel("New folder")
+                .accessibilityIdentifier("sideMenu.newFolder")
+            }
+        }
+        .frame(height: 24)
+        .padding(.leading, WrTheme.Space.s100)
+    }
+    #endif
 
     private func open(_ item: FolderItem) {
         onOpen()
@@ -207,11 +243,20 @@ public struct SidebarFolders: View {
 /// sidebar, so its rows match them; the Mac sidebar and the side menu are denser.
 private enum SideMenuStyle {
     #if os(macOS)
-    static let rowFont: Font = .subheadline
-    static let rowHeight: CGFloat = 32
+    // The tree of the v4 sidebar: 30 pt rows, 13 pt titles, a 12 pt chevron.
+    static let rowFont: Font = WrTextStyle.bodySmall.font
+    static let rowHeight: CGFloat = 30
+    static let rowSpacing: CGFloat = 1
     static let sectionFont: Font = .caption.weight(.semibold)
     static let sectionCase: Text.Case? = .uppercase
     static let treeInset: CGFloat = 0
+    static let headerSpacing: CGFloat = 2
+    static let chevronWidth: CGFloat = 12
+    static let chevronFont: Font = .system(size: 9, weight: .bold)
+    static let depthIndent: CGFloat = 20
+    static let leadingPadding: CGFloat = 4
+    static let textColor = WrTheme.Colors.textSecondary
+    static let iconColor = WrTheme.Colors.iconSecondary
     #else
     static let rowFont: Font = .body
     static let rowHeight: CGFloat = 44
@@ -220,6 +265,14 @@ private enum SideMenuStyle {
     /// The column of the chevrons goes in the margin of the sidebar, so the icons of the tree
     /// line up with the icons of the rows above it.
     static let treeInset: CGFloat = -24
+    static let rowSpacing: CGFloat = 0
+    static let headerSpacing: CGFloat = 2
+    static let chevronWidth: CGFloat = 20
+    static let chevronFont: Font = .caption2.weight(.bold)
+    static let depthIndent: CGFloat = 14
+    static let leadingPadding: CGFloat = 4
+    static let textColor = WrColors.textLight
+    static let iconColor = Color.secondary
     #endif
 }
 
@@ -234,7 +287,7 @@ private struct FolderTreeLevel: View {
     @State private var expanded: Set<String> = []
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: SideMenuStyle.rowSpacing) {
             ForEach(sortedFolders) { folder in
                 row(
                     title: folder.displayTitle,
@@ -246,6 +299,8 @@ private struct FolderTreeLevel: View {
                     isExpanded: expanded.contains(folder.id),
                     toggle: { toggle(folder.id) }
                 ) { open(.folder(folder)) }
+                // Dragged onto a folder of the canvas, or into the folder the canvas shows.
+                .draggable(FolderItem.folder(folder).payload.rawValue)
 
                 if expanded.contains(folder.id) {
                     FolderTreeLevel(parentId: folder.id, depth: depth + 1, router: router, open: open)
@@ -261,6 +316,7 @@ private struct FolderTreeLevel: View {
                 ) {
                     open(.document(document))
                 }
+                .draggable(FolderItem.document(document).payload.rawValue)
             }
         }
         .task(id: router.treeVersion) { await load() }
@@ -309,10 +365,10 @@ private struct FolderTreeLevel: View {
             // Expands a folder; documents keep the space so titles line up.
             Button(action: toggle) {
                 Image(systemName: "chevron.right")
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(.secondary)
+                    .font(SideMenuStyle.chevronFont)
+                    .foregroundStyle(SideMenuStyle.iconColor)
                     .rotationEffect(.degrees(isExpanded == true ? 90 : 0))
-                    .frame(width: 20, height: SideMenuStyle.rowHeight)
+                    .frame(width: SideMenuStyle.chevronWidth, height: SideMenuStyle.rowHeight)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -327,7 +383,7 @@ private struct FolderTreeLevel: View {
                 Button(action: action) {
                     Text(title.isEmpty ? String(localized: "Untitled") : title)
                         .lineLimit(1)
-                        .foregroundStyle(WrColors.textLight)
+                        .foregroundStyle(SideMenuStyle.textColor)
                         .font(SideMenuStyle.rowFont)
                         .frame(maxWidth: .infinity, minHeight: SideMenuStyle.rowHeight, alignment: .leading)
                         .contentShape(Rectangle())
@@ -338,10 +394,10 @@ private struct FolderTreeLevel: View {
                     Label {
                         Text(title.isEmpty ? String(localized: "Untitled") : title)
                             .lineLimit(1)
-                            .foregroundStyle(WrColors.textLight)
+                            .foregroundStyle(SideMenuStyle.textColor)
                     } icon: {
                         icon()
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(SideMenuStyle.iconColor)
                     }
                     .font(SideMenuStyle.rowFont)
                     .frame(maxWidth: .infinity, minHeight: SideMenuStyle.rowHeight, alignment: .leading)
@@ -350,7 +406,8 @@ private struct FolderTreeLevel: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(.leading, CGFloat(depth) * 14 + 4)
+        .padding(.leading, CGFloat(depth) * SideMenuStyle.depthIndent + SideMenuStyle.leadingPadding)
+        .modifier(SidebarRowHover())
     }
 
     /// Shows what is on the device right away, then fetches the children from the backend: a
@@ -391,5 +448,21 @@ private struct FolderTreeLevel: View {
             try? await session.documents.updateDocumentIcon(id: documentId, icon: icon)
             router.contentsChanged()
         }
+    }
+}
+
+/// The hover background of a row of the v4 sidebar tree; nothing on iOS.
+private struct SidebarRowHover: ViewModifier {
+    @State private var isHovered = false
+
+    func body(content: Content) -> some View {
+        #if os(macOS)
+        content
+            .padding(.trailing, WrTheme.Space.s100)
+            .background(isHovered ? WrTheme.Colors.bgHover : .clear, in: RoundedRectangle(cornerRadius: WrTheme.Radius.md))
+            .onHover { isHovered = $0 }
+        #else
+        content
+        #endif
     }
 }

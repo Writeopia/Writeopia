@@ -923,7 +923,7 @@ public struct WrEmptyState<Actions: View>: View {
                 .font(.system(size: 20, weight: .medium))
                 .foregroundStyle(WrTheme.Colors.iconSecondary)
                 .frame(width: 48, height: 48)
-                .background(WrTheme.Colors.bgHover, in: RoundedRectangle(cornerRadius: WrTheme.Radius.lg))
+                .background(WrTheme.Colors.bgSubtle, in: RoundedRectangle(cornerRadius: WrTheme.Radius.lg))
                 .padding(.bottom, WrTheme.Space.s100)
             Text(title)
                 .wrTextStyle(.headingSmall)

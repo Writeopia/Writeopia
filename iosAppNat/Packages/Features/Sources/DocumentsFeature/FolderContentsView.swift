@@ -702,6 +702,8 @@ private struct DocumentsNavigation: View {
 
 struct FolderContentsView: View {
     @State private var viewModel: FolderContentsViewModel
+    /// Set while the Mac sidebar is hidden: the canvas header shows the button to bring it back.
+    @Environment(\.showSidebar) private var showSidebar
     @Binding private var path: NavigationPath
     /// New folders use `FolderEditSheet`, to pick an icon; new documents open right away.
     @State private var showsNewFolder = false
@@ -764,6 +766,12 @@ struct FolderContentsView: View {
         GeometryReader { geometry in
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
+                    #if os(macOS)
+                    v4Content
+                        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { contentWidth = $0 }
+                        .background { SwipeSelectionInstaller(coordinator: swipeSelection) }
+                        .environment(\.swipeSelection, swipeSelection)
+                    #else
                     if let tag = viewModel.tag {
                         TagHeaderView(tag: tag)
                     }
@@ -782,6 +790,7 @@ struct FolderContentsView: View {
                         .padding(.top, viewModel.isRoot ? 16 : 4)
                         .background { SwipeSelectionInstaller(coordinator: swipeSelection) }
                         .environment(\.swipeSelection, swipeSelection)
+                    #endif
                 }
                 // The content fills the visible height, so a drag can start anywhere on the
                 // empty space and select the items it crosses, like the Compose app.
@@ -805,7 +814,12 @@ struct FolderContentsView: View {
         // On the scroll view only: applied to the whole screen, the sheets would inherit it and
         // get a pull to refresh of their own.
         .refreshable { await viewModel.load() }
+        #if os(macOS)
+        // The v4 canvas: its own header instead of the window toolbar, on a rounded card.
+        .safeAreaInset(edge: .top, spacing: 0) { canvasHeader }
+        #else
         .background(WrColors.background)
+        #endif
         .modifier(folderMenuPresentations)
         // A folder of the list, edited from the "more" button of its card, like the edition
         // dialog of a folder card in the Compose app.
@@ -888,7 +902,7 @@ struct FolderContentsView: View {
         .overlay {
             WrStateOverlay(
                 isLoading: viewModel.isLoading,
-                isEmpty: viewModel.isEmpty,
+                isEmpty: viewModel.isEmpty && !Self.drawsOwnEmptyState,
                 errorMessage: viewModel.errorMessage,
                 emptyTitle: viewModel.isTag ? "No documents carry this tag yet." : "This folder is empty",
                 emptyImage: viewModel.isTag ? "tag" : "folder",
@@ -898,6 +912,7 @@ struct FolderContentsView: View {
         .navigationTitle(viewModel.folder?.displayTitle ?? title)
         // A large title can't show an icon, so inside a folder the title is inline, with the icon.
         .toolbarTitleDisplayMode(viewModel.isRoot ? .automatic : .inline)
+        #if !os(macOS)
         .toolbar {
             if !viewModel.isRoot, !viewModel.isFavorites, !viewModel.isTag {
                 ToolbarItem(placement: .principal) {
@@ -946,6 +961,7 @@ struct FolderContentsView: View {
                 }
             }
         }
+        #endif
         .task {
             depth = path.count
             await viewModel.load()
@@ -987,6 +1003,26 @@ struct FolderContentsView: View {
         } message: {
             Text(viewModel.actionError ?? "")
         }
+        #if os(macOS)
+        .wrCanvas(insetsLeading: showSidebar != nil)
+        .ignoresSafeArea(.container, edges: .top)
+        // The breadcrumb of the canvas header is the way back.
+        .navigationBarBackButtonHidden(true)
+        // The window keeps its title bar for the traffic lights, but shows nothing in it: the
+        // canvas header has the title and the actions.
+        .toolbar(removing: .title)
+        .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
+        .wrV4()
+        #endif
+    }
+
+    /// The Mac draws the v4 empty state inside the canvas, under the title of the folder.
+    private static var drawsOwnEmptyState: Bool {
+        #if os(macOS)
+        true
+        #else
+        false
+        #endif
     }
 
     // MARK: - Layouts
@@ -1050,7 +1086,7 @@ struct FolderContentsView: View {
     }
 
     private func cell(_ item: FolderItem, style: ItemCard.Style) -> some View {
-        NavigationLink(value: item.route) {
+        interactiveItem(item) {
             ItemCard(
                 item: item,
                 isDropTarget: dropTargetId == item.id,
@@ -1060,6 +1096,14 @@ struct FolderContentsView: View {
                 onFolderIconPick: item.isFolder ? { icon in changeIcon(of: item.id, to: icon) } : nil,
                 onFolderEdit: folderOf(item).map { folder in { editingFolder = folder } }
             )
+        }
+    }
+
+    /// An item of the folder that opens on a click, selects by sliding or by a drag box, drags
+    /// into folders and takes items dropped on it when it's a folder.
+    private func interactiveItem<Label: View>(_ item: FolderItem, @ViewBuilder label: () -> Label) -> some View {
+        NavigationLink(value: item.route) {
+            label()
         }
         .buttonStyle(.plain)
         .folderContextMenu(item) { folder in editingFolder = folder }
@@ -1748,3 +1792,481 @@ private struct TagHeaderView: View {
         .accessibilityIdentifier("tagHeader")
     }
 }
+
+// MARK: - v4 canvas (Mac)
+
+#if os(macOS)
+extension FolderContentsView {
+    /// The header of the canvas (Figma "Canvas header"): where the folder is, how the items
+    /// are shown and sorted, and "New document".
+    var canvasHeader: some View {
+        HStack(spacing: WrTheme.Space.s50) {
+            if let showSidebar {
+                WrIconButton("Show sidebar", systemImage: "sidebar.left", action: showSidebar)
+                    .accessibilityIdentifier("documents.showSidebar")
+            }
+            canvasBreadcrumb
+            Spacer(minLength: WrTheme.Space.s100)
+            if viewModel.isSyncing {
+                WrSpinner(size: 14)
+                    .padding(.trailing, WrTheme.Space.s100)
+                    .accessibilityLabel("Syncing")
+            }
+            Menu {
+                Picker("View", selection: Bindable(settings).arrangement) {
+                    ForEach(DocumentsArrangement.allCases, id: \.self) { arrangement in
+                        Label(arrangement.title, systemImage: arrangement.systemImage).tag(arrangement)
+                    }
+                }
+                .pickerStyle(.inline)
+            } label: {
+                WrIconButtonLabel(systemImage: settings.arrangement.v4SystemImage, isSelected: true)
+            }
+            .menuStyle(.button)
+            .buttonStyle(.plain)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .help("View")
+            .accessibilityIdentifier("documents.arrangement")
+            Menu {
+                Picker("Sort by", selection: Bindable(settings).order) {
+                    ForEach(DocumentsOrder.allCases, id: \.self) { order in
+                        Label(order.title, systemImage: order.systemImage).tag(order)
+                    }
+                }
+                .pickerStyle(.inline)
+            } label: {
+                WrIconButtonLabel(systemImage: "arrow.up.arrow.down")
+            }
+            .menuStyle(.button)
+            .buttonStyle(.plain)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .help("Sort by")
+            .accessibilityIdentifier("documents.order")
+            if isRealFolder {
+                WrIconButton("Folder options", systemImage: "ellipsis") { folderSheet = .options }
+                    .accessibilityIdentifier("documents.folderMenu")
+            }
+            if viewModel.canCreateItems {
+                WrIconButton("New folder", systemImage: "folder.badge.plus") { showsNewFolder = true }
+                    .accessibilityIdentifier("documents.newFolder")
+                WrButton("New document", systemImage: "plus", kind: .primary) { createDocument() }
+                    .padding(.leading, WrTheme.Space.s100)
+                    .accessibilityIdentifier("documents.newDocument")
+            }
+        }
+        // With the sidebar hidden, the traffic lights of the window sit at the left of the header.
+        .padding(.leading, showSidebar == nil ? WrTheme.Space.s200 : 72)
+        .padding(.trailing, WrTheme.Space.s150)
+        .frame(height: WrTheme.Size.header)
+        .background(WrTheme.Colors.bgCanvas)
+    }
+
+    private var isRealFolder: Bool { !viewModel.isRoot && !viewModel.isFavorites && !viewModel.isTag }
+
+    /// "Home  /  Work": each folder above this one goes back to it.
+    private var canvasBreadcrumb: some View {
+        HStack(spacing: 6) {
+            if viewModel.isRoot {
+                crumbText(String(localized: "Home"), isCurrent: true)
+            } else {
+                Button { navigate(toAncestor: nil) } label: { crumbText(String(localized: "Home"), isCurrent: false) }
+                    .buttonStyle(.plain)
+                ForEach(isRealFolder ? viewModel.ancestors : []) { folder in
+                    crumbSeparator
+                    Button { navigate(toAncestor: folder) } label: { crumbText(folder.displayTitle, isCurrent: false) }
+                        .buttonStyle(.plain)
+                }
+                crumbSeparator
+                crumbText(canvasTitle, isCurrent: true)
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(Text("Folder path"))
+        .accessibilityIdentifier("documents.breadcrumb")
+    }
+
+    private func crumbText(_ title: String, isCurrent: Bool) -> some View {
+        Text(title)
+            .wrTextStyle(isCurrent ? .labelLarge : .bodyMedium)
+            .foregroundStyle(isCurrent ? WrTheme.Colors.textPrimary : WrTheme.Colors.textTertiary)
+            .lineLimit(1)
+    }
+
+    private var crumbSeparator: some View {
+        Text(verbatim: "/")
+            .wrTextStyle(.bodyMedium)
+            .foregroundStyle(WrTheme.Colors.textTertiary)
+            .accessibilityHidden(true)
+    }
+
+    /// The name of what the canvas shows.
+    private var canvasTitle: String {
+        if viewModel.isRoot { return String(localized: "Home") }
+        if let tag = viewModel.tag { return "#\(tag.name)" }
+        return viewModel.folder?.displayTitle ?? title
+    }
+
+    /// The title, how many documents and folders there are, the folders as tiles and the
+    /// documents in the arrangement chosen; or the empty state.
+    var v4Content: some View {
+        let folders = viewModel.items.filter(\.isFolder)
+        let documents = viewModel.items.filter { !$0.isFolder }
+        return VStack(alignment: .leading, spacing: 0) {
+            Text(canvasTitle)
+                .wrTextStyle(.displayMedium)
+                .foregroundStyle(WrTheme.Colors.textPrimary)
+                .lineLimit(2)
+                .accessibilityAddTraits(.isHeader)
+                .accessibilityIdentifier("documents.folderTitle")
+            if !viewModel.isLoading || !viewModel.isEmpty {
+                countsText(folders: folders.count, documents: documents.count)
+                    .wrTextStyle(.bodySmall)
+                    .foregroundStyle(WrTheme.Colors.textTertiary)
+                    .padding(.top, 6)
+            }
+
+            if !folders.isEmpty {
+                WrSectionLabel("Folders")
+                    .padding(.top, 28)
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 200), spacing: WrTheme.Space.s150)], spacing: WrTheme.Space.s150) {
+                    ForEach(folders) { item in
+                        interactiveItem(item) {
+                            V4FolderTile(
+                                item: item,
+                                isDropTarget: dropTargetId == item.id,
+                                isSelected: viewModel.isSelected(item.id),
+                                onIconPick: { icon in changeIcon(of: item.id, to: icon) }
+                            )
+                        }
+                        .accessibilityIdentifier("folderTile.\(item.title)")
+                    }
+                }
+                .padding(.top, 10)
+            }
+
+            if !documents.isEmpty {
+                WrSectionLabel(documentsSectionTitle) {
+                    Text(settings.order.title)
+                        .wrTextStyle(.bodyXSmall)
+                        .foregroundStyle(WrTheme.Colors.textTertiary)
+                }
+                .padding(.top, folders.isEmpty ? 28 : 32)
+                v4Documents(documents)
+                    .padding(.top, 10)
+            }
+
+            if viewModel.isEmpty, !viewModel.isLoading, viewModel.errorMessage == nil {
+                v4EmptyState
+            }
+        }
+        .padding(.horizontal, WrTheme.Space.s600)
+        .padding(.top, WrTheme.Space.s200)
+        .padding(.bottom, WrTheme.Space.s500)
+    }
+
+    /// "Recent" on Home sorted by the last edit, like the design; "Documents" otherwise.
+    private var documentsSectionTitle: LocalizedStringKey {
+        viewModel.isRoot && settings.order == .updated ? "Recent" : "Documents"
+    }
+
+    private func countsText(folders: Int, documents: Int) -> Text {
+        if folders == 0, documents == 0 { return Text("Empty") }
+        if folders == 0 { return Text("\(documents) documents") }
+        if documents == 0 { return Text("\(folders) folders") }
+        return Text("\(documents) documents") + Text(verbatim: " · ") + Text("\(folders) folders")
+    }
+
+    @ViewBuilder
+    private func v4Documents(_ documents: [FolderItem]) -> some View {
+        switch settings.arrangement {
+        case .list:
+            LazyVStack(spacing: WrTheme.Space.s50) {
+                ForEach(documents) { item in
+                    interactiveItem(item) {
+                        V4DocumentCard(item: item, style: .row, isDropTarget: false, isSelected: viewModel.isSelected(item.id), showsSyncState: viewModel.showsSyncState)
+                    }
+                }
+            }
+        case .grid:
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), spacing: WrTheme.Space.s200)], spacing: WrTheme.Space.s200) {
+                ForEach(documents) { item in
+                    interactiveItem(item) {
+                        V4DocumentCard(item: item, style: .grid, isDropTarget: false, isSelected: viewModel.isSelected(item.id), showsSyncState: viewModel.showsSyncState)
+                    }
+                }
+            }
+        case .staggeredGrid:
+            HStack(alignment: .top, spacing: WrTheme.Space.s200) {
+                ForEach(Array(v4StaggeredColumns(documents).enumerated()), id: \.offset) { _, column in
+                    LazyVStack(spacing: WrTheme.Space.s200) {
+                        ForEach(column) { item in
+                            interactiveItem(item) {
+                                V4DocumentCard(item: item, style: .staggered, isDropTarget: false, isSelected: viewModel.isSelected(item.id), showsSyncState: viewModel.showsSyncState)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func v4StaggeredColumns(_ items: [FolderItem]) -> [[FolderItem]] {
+        let minWidth: CGFloat = 220
+        let spacing = WrTheme.Space.s200
+        let count = max(2, Int((contentWidth - 2 * WrTheme.Space.s600 + spacing) / (minWidth + spacing)))
+        var columns = Array(repeating: [FolderItem](), count: count)
+        var heights = Array(repeating: 0, count: count)
+        for item in items {
+            let shortest = heights.indices.min { heights[$0] < heights[$1] } ?? 0
+            columns[shortest].append(item)
+            heights[shortest] += item.estimatedStaggeredHeight
+        }
+        return columns
+    }
+
+    /// `v4/EmptyState` of a folder, of the favorites and of a tag. An empty folder takes the
+    /// documents and folders dragged from the sidebar.
+    @ViewBuilder
+    private var v4EmptyState: some View {
+        if viewModel.isTag {
+            WrEmptyState(systemImage: "number", title: "No documents carry this tag yet.")
+        } else if viewModel.isFavorites {
+            WrEmptyState(systemImage: "star", title: "No favorites yet", description: "Documents you mark as favorite show up here.")
+        } else if let folder = viewModel.folder, isRealFolder {
+            WrEmptyState(
+                systemImage: "folder",
+                title: "This folder is empty",
+                description: "Create a document here or drag one in from the sidebar."
+            ) {
+                WrButton("New document", systemImage: "plus", kind: .primary) { createDocument() }
+            }
+            .background(
+                dropTargetId == folder.id ? WrTheme.Colors.accentSubtle : .clear,
+                in: RoundedRectangle(cornerRadius: WrTheme.Radius.lg)
+            )
+            .dropDestination(for: String.self) { payloads, _ in
+                guard let payload = payloads.first else { return false }
+                Task {
+                    if await viewModel.move(payload, into: folder) {
+                        movedCount += 1
+                        onItemsChange()
+                    }
+                }
+                return true
+            } isTargeted: { targeted in
+                dropTargetId = targeted ? folder.id : nil
+            }
+            .padding(.top, WrTheme.Space.s300)
+        } else {
+            WrEmptyState(systemImage: "doc.text", title: "No documents yet", description: "Create a document to start writing.") {
+                WrButton("New document", systemImage: "plus", kind: .primary) { createDocument() }
+            }
+            .padding(.top, WrTheme.Space.s300)
+        }
+    }
+}
+
+extension DocumentsArrangement {
+    /// The icon of the view button of the v4 canvas.
+    var v4SystemImage: String {
+        switch self {
+        case .list: "list.bullet"
+        case .grid: "square.grid.2x2"
+        case .staggeredGrid: "rectangle.3.group"
+        }
+    }
+}
+
+/// A folder of the v4 canvas (Figma "Folder tile"): its icon, name and how many items it holds.
+struct V4FolderTile: View {
+    let item: FolderItem
+    let isDropTarget: Bool
+    let isSelected: Bool
+    var onIconPick: ((IconInfo?) -> Void)?
+    @State private var isHovered = false
+
+    var body: some View {
+        HStack(spacing: WrTheme.Space.s150) {
+            if case .folder(let folder) = item {
+                Group {
+                    if let onIconPick {
+                        FolderIconButton(icon: folder.icon, isDropTarget: isDropTarget, onPick: onIconPick)
+                    } else {
+                        FolderIconImage(icon: folder.icon, isDropTarget: isDropTarget)
+                    }
+                }
+                .font(.system(size: 16))
+                .foregroundStyle(WrTheme.Colors.iconSecondary)
+                .frame(width: 20, height: 20)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(folder.displayTitle)
+                        .wrTextStyle(.labelLarge)
+                        .foregroundStyle(WrTheme.Colors.textPrimary)
+                        .lineLimit(1)
+                    Text("\(folder.itemCount) items")
+                        .wrTextStyle(.bodyXSmall)
+                        .foregroundStyle(WrTheme.Colors.textTertiary)
+                        .lineLimit(1)
+                }
+            }
+            Spacer(minLength: 0)
+            if isSelected {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(WrTheme.Colors.accent)
+                    .transition(.scale.combined(with: .opacity))
+            } else if item.isFavorite {
+                Image(systemName: "star")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(WrTheme.Colors.iconSecondary)
+                    .accessibilityLabel("Favorite")
+            }
+        }
+        .padding(.leading, WrTheme.Space.s150)
+        .padding(.trailing, WrTheme.Space.s200)
+        .frame(height: 60)
+        .modifier(V4CardChrome(
+            isHighlighted: isDropTarget || isSelected,
+            isHovered: isHovered,
+            background: WrTheme.Colors.bgCanvas
+        ))
+        .scaleEffect(isDropTarget ? 1.03 : 1)
+        .onHover { isHovered = $0 }
+        .animation(.snappy, value: isSelected)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+}
+
+/// A document of the v4 canvas (Figma "Document card"): title, preview and when it was edited,
+/// with the favorite star; or, in the list arrangement, the same on one row.
+struct V4DocumentCard: View {
+    let item: FolderItem
+    let style: ItemCard.Style
+    let isDropTarget: Bool
+    let isSelected: Bool
+    var showsSyncState = false
+    @State private var isHovered = false
+
+    var body: some View {
+        Group {
+            if style == .row { row } else { card }
+        }
+        .modifier(V4CardChrome(
+            isHighlighted: isDropTarget || isSelected,
+            isHovered: isHovered,
+            background: WrTheme.Colors.bgSubtle
+        ))
+        .overlay(alignment: style == .row ? .trailing : .topTrailing) {
+            if isSelected {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(WrTheme.Colors.accent)
+                    .padding(WrTheme.Space.s150)
+                    .transition(.scale.combined(with: .opacity))
+            }
+        }
+        .onHover { isHovered = $0 }
+        .animation(.snappy, value: isSelected)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    private var document: WrDocument? {
+        if case .document(let document) = item { document } else { nil }
+    }
+
+    private var card: some View {
+        VStack(alignment: .leading, spacing: WrTheme.Space.s100) {
+            Text(document?.displayTitle ?? "")
+                .wrTextStyle(.headingSmall)
+                .foregroundStyle(WrTheme.Colors.textPrimary)
+                .lineLimit(style == .staggered ? 3 : 1)
+                .multilineTextAlignment(.leading)
+            if let preview = document?.preview, !preview.isEmpty {
+                Text(preview)
+                    .wrTextStyle(.bodySmall)
+                    .foregroundStyle(WrTheme.Colors.textSecondary)
+                    .lineLimit(style == .staggered ? 10 : 3)
+                    .multilineTextAlignment(.leading)
+            }
+            if style == .grid {
+                Spacer(minLength: 0)
+            }
+            meta
+        }
+        .padding(.horizontal, WrTheme.Space.s200)
+        .padding(.top, WrTheme.Space.s200)
+        .padding(.bottom, WrTheme.Space.s150)
+        .frame(maxWidth: .infinity, minHeight: style == .grid ? 156 : nil, maxHeight: style == .grid ? 156 : nil, alignment: .topLeading)
+    }
+
+    private var row: some View {
+        HStack(spacing: WrTheme.Space.s150) {
+            Text(document?.displayTitle ?? "")
+                .wrTextStyle(.labelLarge)
+                .foregroundStyle(WrTheme.Colors.textPrimary)
+                .lineLimit(1)
+            if let preview = document?.preview, !preview.isEmpty {
+                Text(preview)
+                    .wrTextStyle(.bodySmall)
+                    .foregroundStyle(WrTheme.Colors.textTertiary)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: WrTheme.Space.s100)
+            meta
+                .fixedSize()
+                .opacity(isSelected ? 0 : 1)
+        }
+        .padding(.horizontal, WrTheme.Space.s200)
+        .frame(height: 44)
+    }
+
+    /// When it was edited, whether it still has to be sent and the favorite star.
+    private var meta: some View {
+        HStack(spacing: WrTheme.Space.s50) {
+            if let document, document.lastUpdatedAt > 0 {
+                Text(document.lastUpdatedDate, format: .relative(presentation: .named))
+                    .wrTextStyle(.bodyXSmall)
+                    .foregroundStyle(WrTheme.Colors.textTertiary)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 0)
+            if showsSyncState, document?.isOutdated == true {
+                Image(systemName: "icloud.and.arrow.up")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(WrTheme.Colors.iconTertiary)
+                    .accessibilityLabel("Not synced")
+            }
+            if item.isFavorite, !(isSelected && style != .row) {
+                Image(systemName: "star")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(WrTheme.Colors.iconSecondary)
+                    .accessibilityLabel("Favorite")
+            }
+        }
+    }
+}
+
+/// The border and background of the v4 tiles and cards; accent while selected or under a drag.
+private struct V4CardChrome: ViewModifier {
+    let isHighlighted: Bool
+    let isHovered: Bool
+    let background: Color
+
+    func body(content: Content) -> some View {
+        content
+            .background(
+                isHighlighted ? WrTheme.Colors.accentSubtle : background,
+                in: RoundedRectangle(cornerRadius: WrTheme.Radius.lg)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: WrTheme.Radius.lg)
+                    .strokeBorder(
+                        isHighlighted ? WrTheme.Colors.accent : (isHovered ? WrTheme.Colors.borderDefault : WrTheme.Colors.borderSubtle),
+                        lineWidth: isHighlighted ? 2 : 1
+                    )
+            }
+            .contentShape(RoundedRectangle(cornerRadius: WrTheme.Radius.lg))
+    }
+}
+#endif

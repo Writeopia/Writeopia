@@ -19,6 +19,7 @@ public final class DocumentsRouter {
     @MainActor
     func open(folder: Folder, repository: DocumentsRepository) async {
         favoritesOpened = false
+        graphOpened = false
         let ancestors = (try? await repository.folderPath(to: folder.id)) ?? []
         let folders = ancestors.last?.id == folder.id ? ancestors : [folder]
         path = NavigationPath(folders.map(DocumentsRoute.folder))
@@ -34,15 +35,24 @@ public final class DocumentsRouter {
         path.append(DocumentsRoute.tag(tag))
     }
 
+    /// Shows the documents carrying `tag` right under the root, from the sidebar.
+    func openFromSidebar(tag: DocumentTag) {
+        favoritesOpened = false
+        graphOpened = false
+        path = NavigationPath([DocumentsRoute.tag(tag)])
+    }
+
     /// Shows the documents graph, right under the root.
     public func openGraph() {
         favoritesOpened = false
+        graphOpened = true
         path = NavigationPath([DocumentsRoute.graph])
     }
 
     /// Shows every favorite of the workspace, right under the root.
     public func openFavorites() {
         favoritesOpened = true
+        graphOpened = false
         path = NavigationPath([DocumentsRoute.favorites])
     }
 
@@ -53,8 +63,16 @@ public final class DocumentsRouter {
     /// side menu's highlight. Going back to the root with the back button leaves it too.
     public var showsFavorites: Bool { favoritesOpened && !path.isEmpty }
 
+    /// Set by `openGraph`; cleared when anything else is opened from the side menu.
+    private var graphOpened = false
+
+    /// Whether the graph is the screen shown (or a document opened from it), for the
+    /// side menu's highlight.
+    public var showsGraph: Bool { graphOpened && !path.isEmpty }
+
     public func reset() {
         favoritesOpened = false
+        graphOpened = false
         path = NavigationPath()
     }
 
@@ -68,4 +86,9 @@ public final class DocumentsRouter {
         contentsVersion += 1
         treeVersion += 1
     }
+}
+
+public extension EnvironmentValues {
+    /// Shows the Mac sidebar again; set only while it's hidden, so the canvas offers the button.
+    @Entry var showSidebar: (() -> Void)?
 }
