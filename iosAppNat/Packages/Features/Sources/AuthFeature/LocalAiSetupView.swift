@@ -3,34 +3,40 @@ import SwiftUI
 import WrDesign
 import WrSession
 
-/// First setup screen of the private space, like `LocalAiSetupScreen` of the desktop app:
-/// which AI answers in the editor, Apple Intelligence or a local model.
+/// First setup step of the private space, on the v4 design: which AI answers in the editor,
+/// Apple Intelligence or a local model, like `LocalAiSetupScreen` of the desktop app.
 public struct LocalAiSetupView: View {
     @Environment(AppSession.self) private var session
 
     public init() {}
 
     public var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                WrBackButton("Choose space", action: session.retreatOfflineSetup)
-                    .accessibilityIdentifier("setup.ai.back")
-
-                WrScreenHeader(
-                    eyebrow: "Private space",
-                    title: "Set up your AI",
-                    subtitle: "Use Apple Intelligence, or configure Ollama or llmman now. You can change this later in Settings."
+        WrOnboardingScreen(width: WrTheme.Size.dialogMd, back: ("Choose space", session.retreatOfflineSetup)) {
+            VStack(alignment: .leading, spacing: WrTheme.Space.s300) {
+                WrTitleBlock(
+                    eyebrow: "Private space · Step 1 of 2",
+                    title: "Set up AI",
+                    subtitle: "Choose what runs AI on this computer. Your text never leaves the device, and you can change this later in Settings."
                 )
 
                 AiSetupContent()
 
-                WrPrimaryButton("Continue", action: session.advanceOfflineSetup)
-                    .accessibilityIdentifier("setup.ai.continue")
+                VStack(spacing: WrTheme.Space.s100) {
+                    WrPrimaryButton("Continue", action: session.advanceOfflineSetup)
+                        .disabled(session.localAiConfig.wizard == .detecting)
+                        .accessibilityIdentifier("setup.ai.continue")
+
+                    // Goes on without configuring anything now: the AI choice stays as it is
+                    // and can be changed in Settings.
+                    WrButton("Skip, set up later", kind: .ghost, action: skip)
+                        .accessibilityIdentifier("setup.ai.skip")
+                }
             }
-            .padding(24)
-            .frame(maxWidth: 700)
-            .frame(maxWidth: .infinity)
         }
-        .background(WrColors.background)
+    }
+
+    private func skip() {
+        session.localAiConfig.closeWizard()
+        session.advanceOfflineSetup()
     }
 }

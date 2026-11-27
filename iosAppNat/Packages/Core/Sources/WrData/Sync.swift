@@ -615,6 +615,8 @@ public protocol DocumentSyncing: AnyObject {
     /// folder (favorites, tags) are complete, and a document favorited elsewhere shows up even
     /// when its folder was never opened here.
     func syncWorkspaceChanges() async throws
+    /// The same, telling `progress` how many of the documents received are merged so far.
+    func syncWorkspaceChanges(progress: @escaping (_ done: Int, _ total: Int) -> Void) async throws
     /// Merges the backend copy into the local one and returns the result when it changed, like
     /// `DocumentLoadUseCase.fetchAndMergeFromBackend`.
     func fetchAndMerge(documentId: String) async throws -> WrDocument?
@@ -625,6 +627,13 @@ public protocol DocumentSyncing: AnyObject {
         deletions: [String],
         lastSyncTimestamp: Int64
     ) async throws -> Int64
+}
+
+public extension DocumentSyncing {
+    /// Syncs without telling the progress, for syncs that can't count it.
+    func syncWorkspaceChanges(progress: @escaping (_ done: Int, _ total: Int) -> Void) async throws {
+        try await syncWorkspaceChanges()
+    }
 }
 
 /// Documents whose link cards the backend AI can describe.
@@ -1087,6 +1096,12 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
     /// login sync still runs), the caller waits for it instead of receiving the workspace
     /// twice; what changes meanwhile comes with the next one.
     public func syncWorkspaceChanges() async throws {
+        try await syncWorkspaceChanges(progress: { _, _ in })
+    }
+
+    /// The same, telling `progress` how many of the documents received are merged so far.
+    /// A caller that joins a sync already running gets no progress.
+    public func syncWorkspaceChanges(progress: @escaping (_ done: Int, _ total: Int) -> Void) async throws {
         // The repository is main-actor isolated (the package's default isolation), and nothing
         // suspends between this check and the assignment below, so two callers can't both
         // start a sync.
@@ -1094,13 +1109,13 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
             try await running.value
             return
         }
-        let task = Task { try await performWorkspaceSync() }
+        let task = Task { try await performWorkspaceSync(progress: progress) }
         workspaceSyncTask = task
         defer { workspaceSyncTask = nil }
         try await task.value
     }
 
-    private func performWorkspaceSync() async throws {
+    private func performWorkspaceSync(progress: (_ done: Int, _ total: Int) -> Void) async throws {
         if let last = lastFolderSync[Self.workspaceSyncKey], Date().timeIntervalSince(last) < 2 { return }
 
         // Deletions that couldn't be sent before go first, wherever they are, so the backend
@@ -1143,8 +1158,11 @@ public final class SyncedDocumentsRepository: DocumentsRepository, DocumentSynci
         }
 
         let received = try await stepSync.receiveDeletedSteps(since: try local.stepDeletionsSyncedAt() ?? 0)
-        for document in remoteContents.documents {
+        let total = remoteContents.documents.count
+        progress(0, total)
+        for (index, document) in remoteContents.documents.enumerated() {
             try stepSync.mergeReceived(document, excluding: received.stepIds.union(deletedHere))
+            progress(index + 1, total)
         }
         try local.setStepDeletionsSyncedAt(received.serverTimestamp)
 

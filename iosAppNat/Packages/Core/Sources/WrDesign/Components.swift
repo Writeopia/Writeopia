@@ -12,7 +12,17 @@ public struct WrPrimaryButton: View {
         self.action = action
     }
 
+    @Environment(\.wrUsesV4) private var usesV4
+
     public var body: some View {
+        if usesV4 {
+            WrButton(title, kind: .primary, size: .large, fillsWidth: true, isLoading: isLoading, action: action)
+        } else {
+            legacy
+        }
+    }
+
+    private var legacy: some View {
         Button(action: action) {
             ZStack {
                 Text(title)
@@ -50,6 +60,7 @@ public struct WrTextField: View {
     @Binding private var text: String
     @State private var isPasswordVisible = false
     @FocusState private var isFocused: Bool
+    @Environment(\.wrUsesV4) private var usesV4
 
     public init(_ title: LocalizedStringKey, text: Binding<String>, systemImage: String, kind: Kind = .plain) {
         self.title = title
@@ -60,9 +71,12 @@ public struct WrTextField: View {
 
     public var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: systemImage)
-                .foregroundStyle(WrColors.textLighter)
-                .frame(width: 20)
+            // v4 fields carry a label above them instead of a leading icon.
+            if !usesV4 {
+                Image(systemName: systemImage)
+                    .foregroundStyle(WrColors.textLighter)
+                    .frame(width: 20)
+            }
 
             field
                 .textFieldStyle(.plain)
@@ -86,13 +100,7 @@ public struct WrTextField: View {
                 .accessibilityLabel(isPasswordVisible ? "Hide password" : "Show password")
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .background(WrColors.surface, in: RoundedRectangle(cornerRadius: 12))
-        .overlay {
-            RoundedRectangle(cornerRadius: 12)
-                .strokeBorder(WrColors.divider)
-        }
+        .modifier(WrTextFieldChrome(isFocused: isFocused))
     }
 
     private var isPassword: Bool {
@@ -142,6 +150,41 @@ public struct WrTextField: View {
     }
 }
 
+/// The box around `WrTextField`: the legacy look, or the v4 one (40 pt, 8 pt corners, the
+/// accent border while focused).
+private struct WrTextFieldChrome: ViewModifier {
+    let isFocused: Bool
+    @Environment(\.wrUsesV4) private var usesV4
+
+    func body(content: Content) -> some View {
+        if usesV4 {
+            content
+                .wrTextStyle(.bodyMedium)
+                .foregroundStyle(WrTheme.Colors.textPrimary)
+                .padding(.horizontal, WrTheme.Space.s150)
+                .frame(minHeight: WrTheme.Size.controlLg)
+                .background(WrTheme.Colors.bgRaised, in: RoundedRectangle(cornerRadius: WrTheme.Radius.md))
+                .overlay {
+                    RoundedRectangle(cornerRadius: WrTheme.Radius.md)
+                        .strokeBorder(
+                            isFocused ? WrTheme.Colors.accent : WrTheme.Colors.borderDefault,
+                            lineWidth: isFocused ? 1.5 : 1
+                        )
+                }
+                .animation(.easeOut(duration: 0.12), value: isFocused)
+        } else {
+            content
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+                .background(WrColors.surface, in: RoundedRectangle(cornerRadius: 12))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12)
+                        .strokeBorder(WrColors.divider)
+                }
+        }
+    }
+}
+
 /// Inline error text shown under forms.
 public struct WrErrorText: View {
     private let message: String?
@@ -173,7 +216,17 @@ public struct WrScreenHeader: View {
         self.subtitle = subtitle
     }
 
+    @Environment(\.wrUsesV4) private var usesV4
+
     public var body: some View {
+        if usesV4 {
+            WrTitleBlock(eyebrow: eyebrow, title: title, subtitle: subtitle)
+        } else {
+            legacy
+        }
+    }
+
+    private var legacy: some View {
         VStack(alignment: .leading, spacing: 8) {
             if let eyebrow {
                 Text(eyebrow)

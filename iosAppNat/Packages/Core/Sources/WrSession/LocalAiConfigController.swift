@@ -49,6 +49,8 @@ public final class LocalAiConfigController {
         case closed
         case detecting
         case selecting(LocalAiAutoConfig, [ProviderInfo])
+        /// The chosen model is downloading with the wizard still open; the choices stay shown.
+        case downloading(LocalAiAutoConfig, [ProviderInfo], providerURL: URL, tier: LocalAiAutoConfig.ModelTier)
         case error(WizardError)
     }
 
@@ -158,6 +160,8 @@ public final class LocalAiConfigController {
                 if selectedModel == nil || selectedModel?.isEmpty == true {
                     select(model: model)
                 }
+                // The wizard was left open on the download: it's done.
+                if case .downloading = wizard { wizard = .closed }
                 onComplete()
             } catch is CancellationError {
                 download = .idle
@@ -214,14 +218,29 @@ public final class LocalAiConfigController {
         }
     }
 
-    /// Saves the provider and the model, starts downloading it and closes the wizard.
+    /// Saves the provider and the model and starts downloading it. The wizard stays open on
+    /// the download and closes when it ends; closing it earlier leaves the download running.
     public func confirmWizard(providerURL: URL, tier: LocalAiAutoConfig.ModelTier, onDownloadStarted: () -> Void = {}) {
         set(url: providerURL)
         selectedModel = tier.modelName
         onChange(url, selectedModel)
-        wizard = .closed
+        if case .selecting(let config, let providers) = wizard {
+            wizard = .downloading(config, providers, providerURL: providerURL, tier: tier)
+        } else {
+            wizard = .closed
+        }
         download(model: tier.modelName)
         onDownloadStarted()
+    }
+
+    /// Stops the download of the wizard and goes back to the choices.
+    public func cancelWizardDownload() {
+        downloadTask?.cancel()
+        downloadTask = nil
+        download = .idle
+        if case .downloading(let config, let providers, _, _) = wizard {
+            wizard = .selecting(config, providers)
+        }
     }
 
     public func closeWizard() {

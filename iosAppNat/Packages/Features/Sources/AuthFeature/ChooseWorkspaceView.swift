@@ -21,6 +21,8 @@ final class ChooseWorkspaceViewModel {
 
     var selectedWorkspaceId: String? { session.workspace?.id }
 
+    var userEmail: String? { session.user?.email }
+
     func load() async {
         isLoading = true
         defer { isLoading = false }
@@ -84,58 +86,27 @@ public struct ChooseWorkspaceView: View {
 
     public var body: some View {
         NavigationStack {
-            List {
-                Section {
-                    ForEach(viewModel.workspaces) { workspace in
-                        Button {
-                            viewModel.select(workspace)
-                        } label: {
-                            WorkspaceRow(workspace: workspace, isSelected: workspace.id == viewModel.selectedWorkspaceId)
-                        }
-                        .accessibilityIdentifier("workspace.\(workspace.name)")
-                    }
-                } header: {
-                    if !viewModel.workspaces.isEmpty {
-                        Text("Your teams")
-                    }
+            WrOnboardingScreen(width: 520, back: signOutBack) {
+                VStack(alignment: .leading, spacing: WrTheme.Space.s300) {
+                    WrTitleBlock(eyebrow: "Open space", title: "Choose a workspace", subtitle: subtitle)
+
+                    workspaces
+                        // Figma: 16 pt from the list to "New workspace", 24 above it.
+                        .padding(.bottom, -WrTheme.Space.s100)
+
+                    WrButton("New workspace", systemImage: "plus", kind: .secondary, size: .large, fillsWidth: true, action: startCreating)
+                        .accessibilityIdentifier("workspace.new")
                 }
             }
-            .overlay {
-                WrStateOverlay(
-                    isLoading: viewModel.isLoading,
-                    isEmpty: viewModel.workspaces.isEmpty,
-                    errorMessage: viewModel.errorMessage,
-                    emptyTitle: "You're not in any team yet",
-                    emptyImage: "person.3",
-                    retry: { Task { await viewModel.load() } }
-                )
-            }
-            .navigationTitle("Choose a workspace")
-            #if os(macOS)
-            .safeAreaInset(edge: .top) {
-                WrBackButton("Sign out") {
-                    Task { await viewModel.signOut() }
-                }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 12)
-            }
-            #endif
+            #if os(iOS)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Sign out") {
                         Task { await viewModel.signOut() }
                     }
                 }
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        newWorkspaceName = ""
-                        viewModel.resetCreateError()
-                        showCreate = true
-                    } label: {
-                        Label("New workspace", systemImage: "plus")
-                    }
-                }
             }
+            #endif
             .task { await viewModel.load() }
             .refreshable { await viewModel.load() }
             .alert("New workspace", isPresented: $showCreate) {
@@ -160,37 +131,78 @@ public struct ChooseWorkspaceView: View {
             }
         }
     }
+
+    private var subtitle: LocalizedStringKey {
+        if let email = viewModel.userEmail {
+            "Signed in as \(email)"
+        } else {
+            "Pick the workspace to open on this device."
+        }
+    }
+
+    /// The way out at the top of the window on the Mac; iOS has it in the toolbar.
+    private var signOutBack: (title: LocalizedStringKey, action: () -> Void)? {
+        #if os(macOS)
+        return ("Sign out", { Task { await viewModel.signOut() } })
+        #else
+        return nil
+        #endif
+    }
+
+    @ViewBuilder
+    private var workspaces: some View {
+        if viewModel.isLoading && viewModel.workspaces.isEmpty {
+            WrStatusBanner("Loading your workspaces…")
+        } else if let error = viewModel.errorMessage, viewModel.workspaces.isEmpty {
+            VStack(alignment: .leading, spacing: WrTheme.Space.s150) {
+                WrErrorText(error)
+                WrButton("Try again", kind: .secondary) {
+                    Task { await viewModel.load() }
+                }
+            }
+        } else if viewModel.workspaces.isEmpty {
+            WrEmptyState(
+                systemImage: "person.3",
+                title: "You're not in any team yet",
+                description: "Create a workspace, or ask a teammate to invite you."
+            )
+        } else {
+            VStack(spacing: 0) {
+                ForEach(Array(viewModel.workspaces.enumerated()), id: \.element.id) { index, workspace in
+                    if index > 0 { WrDivider() }
+                    WorkspaceRow(workspace: workspace, isSelected: workspace.id == viewModel.selectedWorkspaceId) {
+                        viewModel.select(workspace)
+                    }
+                    .accessibilityIdentifier("workspace.\(workspace.name)")
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: WrTheme.Radius.lg))
+            .overlay {
+                RoundedRectangle(cornerRadius: WrTheme.Radius.lg)
+                    .strokeBorder(WrTheme.Colors.borderDefault)
+            }
+        }
+    }
+
+    private func startCreating() {
+        newWorkspaceName = ""
+        viewModel.resetCreateError()
+        showCreate = true
+    }
 }
 
+/// One workspace of the list, the v4 `WorkspaceRow`. The one used last is marked.
 struct WorkspaceRow: View {
     let workspace: Workspace
     let isSelected: Bool
+    let action: () -> Void
 
     var body: some View {
-        HStack(spacing: 14) {
-            Text(String(workspace.name.prefix(1)).uppercased())
-                .font(.headline)
-                .foregroundStyle(.white)
-                .frame(width: 40, height: 40)
-                .background(WrColors.accent.gradient, in: RoundedRectangle(cornerRadius: 10))
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(workspace.name)
-                    .font(.headline)
-                    .foregroundStyle(WrColors.textLight)
-                Text("\(workspace.role.capitalized) · \(workspace.documentCount) documents")
-                    .font(.subheadline)
-                    .foregroundStyle(WrColors.textLighter)
-            }
-
-            Spacer()
-
-            if isSelected {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(WrColors.accent)
-            }
-        }
-        .padding(.vertical, 4)
-        .contentShape(Rectangle())
+        WrWorkspaceRow(
+            workspace.name,
+            meta: Text("\(workspace.role.capitalized) · \(workspace.documentCount) documents"),
+            badge: isSelected ? WrPill("Last used", kind: .neutral) : nil,
+            action: action
+        )
     }
 }
