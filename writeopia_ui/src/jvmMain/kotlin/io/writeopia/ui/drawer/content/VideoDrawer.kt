@@ -96,7 +96,9 @@ class VideoDrawer(
                         Box(modifier = videoModifier) {
                             DragTarget(
                                 modifier = videoModifier,
-                                dataToDrop = DropInfo(step, drawInfo.position)
+                                dataToDrop = DropInfo(step, drawInfo.position),
+                                onDragStart = onDragStart,
+                                onDragStop = onDragStop
                             ) {
                                 val playerState = rememberVideoPlayerState(videoUrl)
 

@@ -722,5 +722,41 @@ private let sample = document([
         #expect(manager.dragPosition == nil)
         #expect(reorder.active == nil)
     }
+
+    @Test func stepsWithoutTextMoveWithAPressAndHold() {
+        for type in [StoryType.image, .documentLink, .linkCard, .divider] {
+            #expect(ReorderCoordinator.holdsToReorder(StoryStep(id: "s", type: type, position: Rank.at(1))))
+        }
+        for type in [StoryType.title, .text, .checkItem, .unorderedListItem, .codeBlock, .aiAnswer] {
+            #expect(!ReorderCoordinator.holdsToReorder(StoryStep(id: "s", type: type, position: Rank.at(1))))
+        }
+    }
+
+    @Test func aHoldFollowedByADragMovesTheStep() {
+        let (manager, reorder) = setUp()
+
+        // The hold is recognized before the finger moves; nothing is dragged yet.
+        reorder.holdRecognized()
+        #expect(reorder.active == nil)
+        #expect(manager.dragPosition == nil)
+
+        reorder.dragChanged(stepId: "a", location: CGPoint(x: 100, y: 150))
+        #expect(manager.dragPosition == Rank.at(3))
+        reorder.dragEnded()
+
+        #expect(manager.currentStory.sortedStories.map(\.id) == ["t", "b", "c", "a"])
+        #expect(reorder.active == nil)
+    }
+
+    @Test func aHoldReleasedWithoutMovingChangesNothing() {
+        let (manager, reorder) = setUp()
+
+        reorder.holdRecognized()
+        reorder.dragEnded()
+
+        #expect(manager.currentStory.sortedStories.map(\.id) == ["t", "a", "b", "c"])
+        #expect(manager.dragPosition == nil)
+        #expect(reorder.active == nil)
+    }
 }
 #endif
