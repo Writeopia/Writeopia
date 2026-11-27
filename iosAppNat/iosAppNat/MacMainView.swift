@@ -71,6 +71,8 @@ struct MacMainView: View {
             savePlace(place)
             registerTab()
         }
+        // Only the documents screen shows the router's document: search and settings show none.
+        .onChange(of: selection) { _, _ in registerTab() }
         .onDisappear {
             if let window { OpenTabs.shared.remove(window) }
         }
@@ -78,30 +80,38 @@ struct MacMainView: View {
 
     // MARK: - Tabs
 
-    /// The place of a restored tab, or the one a new tab was opened on; once.
+    /// The place of a restored tab, or the one a new tab was opened on; once. A tab that saved
+    /// anything is a restored one: its saved place wins (the root included), and the launch place
+    /// is never replayed. A place saved in another workspace means nothing here: the root.
     private func applyPlace() async {
         guard !placeApplied else { return }
         placeApplied = true
 
-        if let saved = StoredPlace(json: savedPlace), saved.workspaceId == session.workspace?.id {
-            await router.open(place: saved.place, repository: session.documents)
+        if let saved = StoredPlace(json: savedPlace) {
+            if saved.workspaceId == session.workspace?.id, let place = saved.place {
+                await router.open(place: place, repository: session.documents)
+            }
         } else if let place = launch?.place {
             await router.open(place: place, repository: session.documents)
         }
+        // Saved at once, even at the root: from now on this tab restores from what it saved.
+        savePlace(router.place)
         if launch?.byClaude == true { takeFront() }
     }
 
+    /// Keeps where the tab is, with its workspace; nil is the root. Without a workspace (signed
+    /// out) the last place stays: it is checked against the workspace when restored.
     private func savePlace(_ place: TabPlace?) {
-        guard let place, let workspaceId = session.workspace?.id else {
-            savedPlace = ""
-            return
-        }
+        guard let workspaceId = session.workspace?.id else { return }
         savedPlace = StoredPlace(workspaceId: workspaceId, place: place).json ?? ""
     }
 
+    /// The document this tab shows, for Claude Code to come to it instead of opening it again:
+    /// only while the documents screen is selected, since search and settings hide it.
     private func registerTab() {
         guard let window else { return }
-        OpenTabs.shared.update(window: window, documentId: router.shownDocumentId) { takeFront() }
+        let documentId = selection == .documents ? router.shownDocumentId : nil
+        OpenTabs.shared.update(window: window, documentId: documentId) { takeFront() }
     }
 
     /// A new tab of this window's group, on `place`.
@@ -158,12 +168,12 @@ struct MacMainView: View {
 }
 
 /// The place of a tab as the scene keeps it: with its workspace, since the ids mean nothing in
-/// another one.
+/// another one. `place` is nil at the root.
 struct StoredPlace: Codable, Equatable {
     let workspaceId: String
-    let place: TabPlace
+    let place: TabPlace?
 
-    init(workspaceId: String, place: TabPlace) {
+    init(workspaceId: String, place: TabPlace?) {
         self.workspaceId = workspaceId
         self.place = place
     }

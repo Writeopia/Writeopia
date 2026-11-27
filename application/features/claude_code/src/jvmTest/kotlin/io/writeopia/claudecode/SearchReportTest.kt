@@ -44,6 +44,14 @@ class SearchReportTest {
     }
 
     @Test
+    fun aMatchLongerThanTheExcerptShowsItsStart() {
+        assertEquals(
+            "a intro **budget" + "x".repeat(146) + "**…",
+            SearchReport.excerpt("a intro budget" + "x".repeat(200) + " end", listOf("budget"))
+        )
+    }
+
+    @Test
     fun longTextIsCutAroundTheFirstMatchAtWordBoundaries() {
         val text = (1..40).joinToString(" ") { "word$it" } + " budget " + (41..80).joinToString(" ") { "word$it" }
         assertEquals(

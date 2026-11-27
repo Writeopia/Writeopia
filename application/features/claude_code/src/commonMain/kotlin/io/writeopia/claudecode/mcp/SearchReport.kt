@@ -103,17 +103,22 @@ object SearchReport {
             if (from > 0) from = words.firstOrNull { (start, _) -> start >= from }?.first ?: from
             to = (from + EXCERPT_LENGTH).coerceAtMost(clean.length)
             if (to < clean.length) {
-                to = words.lastOrNull { (start, end) -> end <= to && start > from }?.second ?: to
+                val snapped = words.lastOrNull { (start, end) -> end <= to && start > from }?.second ?: to
+                // Never before the end of the first match: a word longer than the excerpt is cut
+                // instead, showing its start.
+                val firstHit = hits.firstOrNull { (start, _) -> start >= from }
+                if (firstHit == null || snapped >= firstHit.second) to = snapped
             }
         }
 
         return buildString {
             if (from > 0) append("…")
             var cursor = from
-            hits.filter { (start, end) -> start >= from && end <= to }.forEach { (start, end) ->
+            hits.filter { (start, _) -> start >= from && start < to }.forEach { (start, end) ->
+                val shownEnd = minOf(end, to)
                 append(clean, cursor, start)
-                append("**").append(clean, start, end).append("**")
-                cursor = end
+                append("**").append(clean, start, shownEnd).append("**")
+                cursor = shownEnd
             }
             append(clean, cursor, to)
             if (to < clean.length) append("…")

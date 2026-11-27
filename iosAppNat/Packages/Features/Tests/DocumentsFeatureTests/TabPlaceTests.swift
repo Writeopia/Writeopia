@@ -50,7 +50,9 @@ import WrStorage
 
     @Test func aFolderThatIsGoneLeavesTheRoot() async {
         let router = DocumentsRouter()
-        await router.open(place: .folder(id: "deleted"), repository: repository())
+        let repository = repository()
+        await router.open(place: .folder(id: "ideas"), repository: repository)
+        await router.open(place: .folder(id: "deleted"), repository: repository)
 
         #expect(router.path.isEmpty)
         #expect(router.shownFolderId == Folder.rootId)

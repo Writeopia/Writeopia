@@ -34,6 +34,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -178,6 +179,9 @@ private fun TabItem(
     val isHovered by interaction.collectIsHoveredAsState()
     var dragX by remember { mutableFloatStateOf(0F) }
     var slotWidth by remember { mutableStateOf(1F) }
+    // The gesture outlives recompositions (keyed by the tab): read the callback with the tab's
+    // index of now, not the one of when the gesture started listening.
+    val currentOnDragBy by rememberUpdatedState(onDragBy)
 
     val background = when {
         isActive -> MaterialTheme.colorScheme.background
@@ -199,7 +203,7 @@ private fun TabItem(
                 detectDragGesturesAfterLongPress(
                     onDragEnd = {
                         val slots = (dragX / slotWidth).toInt()
-                        if (slots != 0) onDragBy(slots)
+                        if (slots != 0) currentOnDragBy(slots)
                         dragX = 0F
                     },
                     onDragCancel = { dragX = 0F },

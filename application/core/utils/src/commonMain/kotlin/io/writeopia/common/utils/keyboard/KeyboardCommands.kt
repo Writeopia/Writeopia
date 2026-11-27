@@ -157,6 +157,17 @@ object KeyboardCommands {
                     (keyEvent.isCommandTrigger() && keyEvent.isShiftPressed && keyEvent.key.keyCode == Key.LeftBracket.keyCode)
             )
 
+    /** Ctrl (+ Shift) + Tab moved between tabs: its Tab release must be swallowed too. */
+    fun isTabKeyDown(keyEvent: KeyEvent) =
+        keyEvent.key.keyCode == Key.Tab.keyCode && keyEvent.type == KeyEventType.KeyDown
+
+    /**
+     * The release of Tab. After a Ctrl + Tab that moved between tabs, Ctrl may be let go first:
+     * that release would otherwise read as an ordinary Tab (`isAcceptAiEvent`).
+     */
+    fun isTabKeyUp(keyEvent: KeyEvent) =
+        keyEvent.key.keyCode == Key.Tab.keyCode && keyEvent.type == KeyEventType.KeyUp
+
     /** Cmd/Ctrl + 1...9: the index of the tab to show (from 0; 8 means the last), or null. */
     fun selectTabIndex(keyEvent: KeyEvent): Int? {
         if (!keyEvent.isCommandTrigger() || keyEvent.isShiftPressed || keyEvent.isAltPressed) return null

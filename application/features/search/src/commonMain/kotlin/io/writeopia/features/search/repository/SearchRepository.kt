@@ -1,6 +1,7 @@
 package io.writeopia.features.search.repository
 
 import io.writeopia.auth.core.manager.AuthRepository
+import io.writeopia.common.utils.DISCONNECTED_USER_ID
 import io.writeopia.features.search.api.SearchApi
 import io.writeopia.models.interfaces.search.FolderSearch
 import io.writeopia.sdk.models.document.Document
@@ -77,6 +78,11 @@ class SearchRepository(
 
         return authRepository.listenForWorkspace().flatMapLatest { workspace ->
             flow {
+                // The offline space lives on this device only: the backend has nothing of it.
+                if (workspace.id == DISCONNECTED_USER_ID) {
+                    emit(emptyList())
+                    return@flow
+                }
                 val results = searchApi.searchApi(query, workspace.id)
                 // A document found by its words comes with the matching step as its only content.
                 val documents = results.documents.map { document ->

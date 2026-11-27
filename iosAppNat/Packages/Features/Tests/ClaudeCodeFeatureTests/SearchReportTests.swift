@@ -25,6 +25,13 @@ import Testing
         #expect(SearchReport.excerpt("Unplanned plans", tokens: ["plan"]) == "Unplanned **plans**")
     }
 
+    @Test func aMatchLongerThanTheExcerptShowsItsStart() {
+        #expect(
+            SearchReport.excerpt("a intro budget" + String(repeating: "x", count: 200) + " end", tokens: ["budget"])
+                == "a intro **budget" + String(repeating: "x", count: 146) + "**…"
+        )
+    }
+
     @Test func longTextIsCutAroundTheFirstMatchAtWordBoundaries() {
         let text = (1...40).map { "word\($0)" }.joined(separator: " ") + " budget " +
             (41...80).map { "word\($0)" }.joined(separator: " ")

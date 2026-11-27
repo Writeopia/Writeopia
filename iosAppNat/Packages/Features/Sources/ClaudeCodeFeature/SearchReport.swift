@@ -107,16 +107,21 @@ enum SearchReport {
             if from > 0 { from = words.first { start, _ in start >= from }?.0 ?? from }
             to = min(from + excerptLength, clean.count)
             if to < clean.count {
-                to = words.last { start, end in end <= to && start > from }?.1 ?? to
+                let snapped = words.last { start, end in end <= to && start > from }?.1 ?? to
+                // Never before the end of the first match: a word longer than the excerpt is cut
+                // instead, showing its start.
+                let firstHit = hits.first { start, _ in start >= from }
+                if firstHit == nil || snapped >= firstHit!.1 { to = snapped }
             }
         }
 
         var result = from > 0 ? "…" : ""
         var cursor = from
-        for (start, end) in hits where start >= from && end <= to {
+        for (start, end) in hits where start >= from && start < to {
+            let shownEnd = min(end, to)
             result += String(clean[cursor..<start])
-            result += "**" + String(clean[start..<end]) + "**"
-            cursor = end
+            result += "**" + String(clean[start..<shownEnd]) + "**"
+            cursor = shownEnd
         }
         result += String(clean[cursor..<to])
         if to < clean.count { result += "…" }

@@ -30,12 +30,27 @@ import WrModels
         #expect(editors.editors.map(\.documentId) == ["b", "a"])
     }
 
-    @Test func aTabWithoutEditorsChangesNothing() {
+    @Test func aTabWithoutEditorsHasNoCurrentEditor() {
         let editors = LiveEditors()
         let tab = Tab()
+        let empty = Tab()
         editors.attach(documentId: "a", manager: manager("a"), owner: tab)
 
-        editors.bringToFront(owner: Tab())
+        editors.bringToFront(owner: empty)
+        #expect(editors.current == nil)
+        // The other tab's editor stays attached and is current again once its tab is in front.
+        editors.bringToFront(owner: tab)
+        #expect(editors.current?.documentId == "a")
+    }
+
+    @Test func anEditorOpeningInABackgroundTabIsNotCurrent() {
+        let editors = LiveEditors()
+        let front = Tab()
+        let back = Tab()
+        editors.attach(documentId: "a", manager: manager("a"), owner: front)
+        editors.bringToFront(owner: front)
+
+        editors.attach(documentId: "b", manager: manager("b"), owner: back)
         #expect(editors.current?.documentId == "a")
     }
 

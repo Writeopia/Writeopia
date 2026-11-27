@@ -24,6 +24,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.KeyEvent
+import java.util.concurrent.atomic.AtomicBoolean
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.Window
@@ -242,10 +243,16 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
     val tabsHost = remember { DesktopTabsHost() }
     val tabsStore = remember { PrefsTabsStore() }
 
+    // A Tab pressed with Ctrl moved between tabs: its release is swallowed, even when Ctrl was
+    // let go first, so the editor never reads it as an ordinary Tab (accepting the AI's text).
+    val swallowTabRelease = remember { AtomicBoolean(false) }
+
     // Tab shortcuts are seen before the focused text field: the editor would take Ctrl + Tab.
     val handlePreviewKeyEvent: (KeyEvent) -> Boolean = { keyEvent ->
         val tabs = tabsHost.state
         when {
+            KeyboardCommands.isTabKeyUp(keyEvent) && swallowTabRelease.getAndSet(false) -> true
+
             tabs == null -> false
 
             // Switching tabs would take the editor away from Claude Code while it writes.
@@ -263,11 +270,13 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
 
             KeyboardCommands.isNextTabEvent(keyEvent) -> {
                 tabs.next()
+                if (KeyboardCommands.isTabKeyDown(keyEvent)) swallowTabRelease.set(true)
                 true
             }
 
             KeyboardCommands.isPreviousTabEvent(keyEvent) -> {
                 tabs.previous()
+                if (KeyboardCommands.isTabKeyDown(keyEvent)) swallowTabRelease.set(true)
                 true
             }
 

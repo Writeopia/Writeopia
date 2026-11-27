@@ -107,6 +107,8 @@ public final class DocumentsRouter {
             if ancestors.last?.id == id {
                 shownFolderId = id
                 path = ancestors.map(DocumentsRoute.folder)
+            } else {
+                reset()
             }
         case .favorites:
             openFavorites()

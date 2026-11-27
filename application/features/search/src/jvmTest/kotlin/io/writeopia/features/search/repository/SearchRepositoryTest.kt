@@ -97,6 +97,26 @@ class SearchRepositoryTest {
         )
     }
 
+    @Test
+    fun `the offline space never asks the backend`() = runTest {
+        var asked = false
+        val engine = MockEngine {
+            asked = true
+            respond("", HttpStatusCode.OK)
+        }
+        val repository = SearchRepository(
+            folderSearch,
+            titleSearch,
+            SearchApi(HttpClient(engine), "https://api.example.com"),
+            mockk<AuthRepository> {
+                every { listenForWorkspace() } returns flowOf(Workspace.disconnectedWorkspace())
+            },
+        )
+
+        assertEquals(emptyList(), repository.searchNotesAndFoldersRemotely("zebra").first())
+        assertEquals(false, asked)
+    }
+
     private fun searchApi(response: SearchResponse): SearchApi {
         val engine = MockEngine {
             respond(

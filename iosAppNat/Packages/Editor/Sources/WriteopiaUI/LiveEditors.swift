@@ -29,8 +29,16 @@ public final class LiveEditors {
 
     public init() {}
 
-    /// The editor the person looks at now, if any.
-    public var current: Editor? { editors.last }
+    /// The tab in front (on the Mac, the key window's), once one was brought to front: only its
+    /// editors can be `current`. Nil where there are no tabs (iOS): the editor shown last is.
+    private var frontOwner: ObjectIdentifier?
+
+    /// The editor the person looks at now, if any: none when the tab in front shows no document,
+    /// even if another tab does.
+    public var current: Editor? {
+        guard let frontOwner else { return editors.last }
+        return editors.last { $0.owner == frontOwner }
+    }
 
     public func attach(
         documentId: String,
@@ -51,9 +59,11 @@ public final class LiveEditors {
     }
 
     /// The person moved to the tab of `owner`: its editors go last, in their order, so the one
-    /// it shows is `current`. The editors of the other tabs stay attached, out of sight.
+    /// it shows is `current` (none when it shows no document). The editors of the other tabs
+    /// stay attached, out of sight, for when the person comes back to them.
     public func bringToFront(owner: AnyObject) {
         let id = ObjectIdentifier(owner)
+        frontOwner = id
         let front = editors.filter { $0.owner == id }
         guard !front.isEmpty else { return }
         editors = editors.filter { $0.owner != id } + front
