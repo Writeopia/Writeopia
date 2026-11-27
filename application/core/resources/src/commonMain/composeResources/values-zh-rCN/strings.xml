@@ -447,7 +447,8 @@
   <string name="new_to_writeopia">第一次使用 Writeopia？</string>
   <string name="create_an_account">创建账户</string>
   <string name="claude_code_title">Claude Code</string>
-  <string name="claude_code_description">让 Claude Code 在此应用中撰写文档：文字会在写作时实时出现。它只能创建文档和追加内容，绝不会修改或删除已有内容。</string>
+  <string name="claude_code_description">让 Claude Code 在此应用中搜索、阅读和撰写文档：文字会在写作时实时出现。它可以创建文档和追加内容，绝不会修改或删除已有内容。</string>
+  <string name="claude_code_privacy">开启期间，Claude Code 可以搜索、阅读和撰写应用中打开的空间（包括私人空间）里的文档。它读取的内容会发送到 Claude Code 使用的 AI 服务（除非你设置了其他服务，否则为 Anthropic），因此这些文档将不再是私密的。关闭此项即可保持它们私密。</string>
   <string name="claude_code_enable">允许 Claude Code 写入</string>
   <string name="claude_code_command_hint">在终端中运行一次以下命令以连接 Claude Code：</string>
   <string name="claude_code_copy">复制</string>

@@ -447,7 +447,8 @@
   <string name="new_to_writeopia">Novo no Writeopia?</string>
   <string name="create_an_account">Criar uma conta</string>
   <string name="claude_code_title">Claude Code</string>
-  <string name="claude_code_description">Deixe o Claude Code escrever documentos neste app: você vê o texto aparecer enquanto é escrito. Ele só pode criar documentos e adicionar a eles, nunca mudar nem apagar o que já existe.</string>
+  <string name="claude_code_description">Deixe o Claude Code buscar, ler e escrever documentos neste app: você vê o texto aparecer enquanto é escrito. Ele pode criar documentos e adicionar a eles, nunca mudar nem apagar o que já existe.</string>
+  <string name="claude_code_privacy">Enquanto isto estiver ativado, o Claude Code pode buscar, ler e escrever os documentos do espaço aberto no app, inclusive os do espaço privado. O que ele lê é enviado ao serviço de IA que o Claude Code usa (a Anthropic, a menos que você configure outro), então esses documentos deixam de ser privados. Desative para mantê-los privados.</string>
   <string name="claude_code_enable">Permitir que o Claude Code escreva</string>
   <string name="claude_code_command_hint">Rode isto uma vez num terminal para conectar o Claude Code:</string>
   <string name="claude_code_copy">Copiar</string>

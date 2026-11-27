@@ -230,6 +230,8 @@ private struct FolderTreeLevel: View {
     let router: DocumentsRouter
     let open: (FolderItem) -> Void
     @Environment(AppSession.self) private var session
+    /// Set on the Mac, where each window is a tab: Cmd+click and the right-click menu use it.
+    @Environment(\.openInNewTab) private var openInNewTab
     @State private var contents = FolderContents()
     @State private var expanded: Set<String> = []
 
@@ -246,6 +248,7 @@ private struct FolderTreeLevel: View {
                     isExpanded: expanded.contains(folder.id),
                     toggle: { toggle(folder.id) }
                 ) { open(.folder(folder)) }
+                .openInNewTab(.folder(folder), openInNewTab)
 
                 if expanded.contains(folder.id) {
                     FolderTreeLevel(parentId: folder.id, depth: depth + 1, router: router, open: open)
@@ -261,6 +264,7 @@ private struct FolderTreeLevel: View {
                 ) {
                     open(.document(document))
                 }
+                .openInNewTab(.document(document), openInNewTab)
             }
         }
         .task(id: router.treeVersion) { await load() }
@@ -391,5 +395,14 @@ private struct FolderTreeLevel: View {
             try? await session.documents.updateDocumentIcon(id: documentId, icon: icon)
             router.contentsChanged()
         }
+    }
+}
+
+private extension View {
+    /// Cmd+click and the right-click menu open the item in a new tab, where there are tabs.
+    func openInNewTab(_ item: FolderItem, _ openInNewTab: ((TabPlace) -> Void)?) -> some View {
+        let open = openInNewTab.map { open in { open(item.tabPlace) } }
+        return openInNewTabOnCommandClick(open)
+            .itemContextMenu(item, openInNewTab: open)
     }
 }

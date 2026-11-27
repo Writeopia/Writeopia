@@ -705,7 +705,9 @@ private struct DocumentsNavigation: View {
 
 struct FolderContentsView: View {
     @State private var viewModel: FolderContentsViewModel
-    @Binding private var path: NavigationPath
+    @Binding private var path: [DocumentsRoute]
+    /// Set on the Mac, where each window is a tab: Cmd+click and the right-click menu use it.
+    @Environment(\.openInNewTab) private var openInNewTab
     /// New folders use `FolderEditSheet`, to pick an icon; new documents open right away.
     @State private var showsNewFolder = false
     @State private var showsMoveSelection = false
@@ -743,7 +745,7 @@ struct FolderContentsView: View {
         repository: DocumentsRepository,
         aiClient: AiStreaming? = nil,
         settings: FolderDisplaySettings,
-        path: Binding<NavigationPath>,
+        path: Binding<[DocumentsRoute]>,
         contentsVersion: Int = 0,
         onItemsChange: @escaping () -> Void = {},
         transitionNamespace: Namespace.ID? = nil
@@ -1065,7 +1067,12 @@ struct FolderContentsView: View {
             )
         }
         .buttonStyle(.plain)
-        .folderContextMenu(item) { folder in editingFolder = folder }
+        .openInNewTabOnCommandClick(openInNewTab.map { open in { open(item.tabPlace) } })
+        .itemContextMenu(
+            item,
+            openInNewTab: openInNewTab.map { open in { open(item.tabPlace) } },
+            onEdit: { folder in editingFolder = folder }
+        )
         .zoomTransitionSource(id: item.id, in: transitionNamespace, enabled: !item.isFolder)
         // Slide a card sideways to select it, like the Compose notes list.
         .slideToSelect { viewModel.toggleSelection(item.id) }
@@ -1160,7 +1167,7 @@ struct FolderContentsView: View {
                 Task {
                     if let newPath = await viewModel.moveFolder(to: targetId) {
                         // The back button now goes through the folders it's in after the move.
-                        path = NavigationPath(newPath.map(DocumentsRoute.folder))
+                        path = newPath.map(DocumentsRoute.folder)
                         // Its place in the side menu tree changed, not the items it shows.
                         onItemsChange()
                     }
@@ -1179,10 +1186,10 @@ struct FolderContentsView: View {
     /// Goes back to a folder of the breadcrumb; nil is the root.
     private func navigate(toAncestor folder: Folder?) {
         guard let folder, let index = viewModel.ancestors.firstIndex(where: { $0.id == folder.id }) else {
-            path = NavigationPath()
+            path = []
             return
         }
-        path = NavigationPath(viewModel.ancestors.prefix(through: index).map(DocumentsRoute.folder))
+        path = viewModel.ancestors.prefix(through: index).map(DocumentsRoute.folder)
     }
 
     /// Creates an untitled document and opens it, straight into the editor.
@@ -1198,6 +1205,14 @@ struct FolderContentsView: View {
 enum FolderItem: Identifiable {
     case folder(Folder)
     case document(WrDocument)
+
+    /// What a new tab opens on to show this item.
+    var tabPlace: TabPlace {
+        switch self {
+        case .folder(let folder): .folder(id: folder.id)
+        case .document(let document): .document(id: document.id, title: document.displayTitle)
+        }
+    }
 
     var id: String {
         switch self {
@@ -1638,19 +1653,47 @@ extension View {
         #endif
     }
 
-    /// On the Mac, a right click on a folder card offers to edit it, like the edition dialog of
-    /// a folder card in the Compose desktop app. On iOS a long press starts a drag instead.
+    /// On the Mac, a right click on a card offers to open it in a new tab, and on a folder to
+    /// edit it, like the edition dialog of a folder card in the Compose desktop app. On iOS a long
+    /// press starts a drag instead.
     @ViewBuilder
-    func folderContextMenu(_ item: FolderItem, onEdit: @escaping (Folder) -> Void) -> some View {
+    func itemContextMenu(
+        _ item: FolderItem,
+        openInNewTab: (() -> Void)?,
+        onEdit: ((Folder) -> Void)? = nil
+    ) -> some View {
         #if os(macOS)
-        if case .folder(let folder) = item {
+        if (item.isFolder && onEdit != nil) || openInNewTab != nil {
             contextMenu {
-                Button {
-                    onEdit(folder)
-                } label: {
-                    Label("Edit folder…", systemImage: "pencil")
+                if let openInNewTab {
+                    Button {
+                        openInNewTab()
+                    } label: {
+                        Label("Open in New Tab", systemImage: "plus.square.on.square")
+                    }
+                }
+                if case .folder(let folder) = item, let onEdit {
+                    Button {
+                        onEdit(folder)
+                    } label: {
+                        Label("Edit folder…", systemImage: "pencil")
+                    }
                 }
             }
+        } else {
+            self
+        }
+        #else
+        self
+        #endif
+    }
+
+    /// Cmd+click opens in a new tab, like a browser, instead of the plain click's navigation.
+    @ViewBuilder
+    func openInNewTabOnCommandClick(_ openInNewTab: (() -> Void)?) -> some View {
+        #if os(macOS)
+        if let openInNewTab {
+            highPriorityGesture(TapGesture().modifiers(.command).onEnded { openInNewTab() })
         } else {
             self
         }

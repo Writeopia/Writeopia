@@ -803,7 +803,8 @@ extension NoteEditorView {
         LiveEditors.shared.attach(
             documentId: viewModel.documentId,
             manager: viewModel.writeopiaManager,
-            tagger: viewModel
+            tagger: viewModel,
+            owner: openEditors
         )
     }
 }

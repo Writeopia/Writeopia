@@ -3,6 +3,8 @@ package io.writeopia.common.utils.keyboard
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isAltPressed
+import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
@@ -84,8 +86,10 @@ object KeyboardCommands {
     fun isCancelEvent(keyEvent: KeyEvent) =
         keyEvent.key.keyCode == Key.Escape.keyCode
 
+    // Not with Ctrl: Ctrl + Tab goes to the next tab.
     fun isAcceptAiEvent(keyEvent: KeyEvent) =
         keyEvent.key.keyCode == Key.Tab.keyCode &&
+            !keyEvent.isCtrlPressed &&
             keyEvent.type == KeyEventType.KeyUp
 
     fun isEquationEvent(keyEvent: KeyEvent) =
@@ -121,6 +125,67 @@ object KeyboardCommands {
     private val fontLargerKeys = setOf(Key.Equals.keyCode, Key.Plus.keyCode, Key.NumPadAdd.keyCode, Key.NumPadEquals.keyCode)
     private val fontSmallerKeys = setOf(Key.Minus.keyCode, Key.NumPadSubtract.keyCode)
     private val fontResetKeys = setOf(Key.Zero.keyCode, Key.NumPad0.keyCode)
+
+    // Tabs of the desktop app. On key down, so they act before a text field sees the key.
+    fun isNewTabEvent(keyEvent: KeyEvent) =
+        keyEvent.isCommandTrigger() &&
+            !keyEvent.isShiftPressed &&
+            !keyEvent.isAltPressed &&
+            keyEvent.key.keyCode == Key.T.keyCode &&
+            keyEvent.type == KeyEventType.KeyDown
+
+    fun isCloseTabEvent(keyEvent: KeyEvent) =
+        keyEvent.isCommandTrigger() &&
+            !keyEvent.isShiftPressed &&
+            !keyEvent.isAltPressed &&
+            keyEvent.key.keyCode == Key.W.keyCode &&
+            keyEvent.type == KeyEventType.KeyDown
+
+    /** Ctrl + Tab everywhere, and Cmd/Ctrl + Shift + ] like the browsers. */
+    fun isNextTabEvent(keyEvent: KeyEvent) =
+        keyEvent.type == KeyEventType.KeyDown &&
+            (
+                (keyEvent.isCtrlPressed && !keyEvent.isShiftPressed && keyEvent.key.keyCode == Key.Tab.keyCode) ||
+                    (keyEvent.isCommandTrigger() && keyEvent.isShiftPressed && keyEvent.key.keyCode == Key.RightBracket.keyCode)
+            )
+
+    /** Ctrl + Shift + Tab everywhere, and Cmd/Ctrl + Shift + [. */
+    fun isPreviousTabEvent(keyEvent: KeyEvent) =
+        keyEvent.type == KeyEventType.KeyDown &&
+            (
+                (keyEvent.isCtrlPressed && keyEvent.isShiftPressed && keyEvent.key.keyCode == Key.Tab.keyCode) ||
+                    (keyEvent.isCommandTrigger() && keyEvent.isShiftPressed && keyEvent.key.keyCode == Key.LeftBracket.keyCode)
+            )
+
+    /** Ctrl (+ Shift) + Tab moved between tabs: its Tab release must be swallowed too. */
+    fun isTabKeyDown(keyEvent: KeyEvent) =
+        keyEvent.key.keyCode == Key.Tab.keyCode && keyEvent.type == KeyEventType.KeyDown
+
+    /**
+     * The release of Tab. After a Ctrl + Tab that moved between tabs, Ctrl may be let go first:
+     * that release would otherwise read as an ordinary Tab (`isAcceptAiEvent`).
+     */
+    fun isTabKeyUp(keyEvent: KeyEvent) =
+        keyEvent.key.keyCode == Key.Tab.keyCode && keyEvent.type == KeyEventType.KeyUp
+
+    /** Cmd/Ctrl + 1...9: the index of the tab to show (from 0; 8 means the last), or null. */
+    fun selectTabIndex(keyEvent: KeyEvent): Int? {
+        if (!keyEvent.isCommandTrigger() || keyEvent.isShiftPressed || keyEvent.isAltPressed) return null
+        if (keyEvent.type != KeyEventType.KeyDown) return null
+        return tabNumberKeys.indexOf(keyEvent.key.keyCode).takeIf { it >= 0 }
+    }
+
+    private val tabNumberKeys = listOf(
+        Key.One,
+        Key.Two,
+        Key.Three,
+        Key.Four,
+        Key.Five,
+        Key.Six,
+        Key.Seven,
+        Key.Eight,
+        Key.Nine
+    ).map { it.keyCode }
 
     fun isShiftArrowUpEvent(keyEvent: KeyEvent) =
         keyEvent.isShiftPressed &&

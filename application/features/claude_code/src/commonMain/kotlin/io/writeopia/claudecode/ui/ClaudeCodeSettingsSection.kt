@@ -8,8 +8,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -27,6 +29,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import io.writeopia.claudecode.ClaudeCodeConnection
+import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.claudecode.ClaudeCodeState
 import io.writeopia.resources.WrStrings
 import io.writeopia.theme.WriteopiaTheme
@@ -55,6 +58,30 @@ fun ClaudeCodeSettingsSection(modifier: Modifier = Modifier) {
             style = MaterialTheme.typography.bodyMedium,
             color = textColor
         )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // What turning it on means for privacy: the documents reach the AI service Claude Code uses.
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
+                .padding(10.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            Icon(
+                imageVector = WrIcons.lock,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 2.dp).size(16.dp)
+            )
+            Text(
+                WrStrings.claudeCodePrivacy(),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 8.dp)
+            )
+        }
 
         Spacer(modifier = Modifier.height(12.dp))
 

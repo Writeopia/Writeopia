@@ -10,6 +10,10 @@ public enum LiveOutcome: Equatable, Sendable {
     case tags([LiveTag])
     /// The text of get_current_place.
     case place(String)
+    /// The text of search_documents.
+    case found(String)
+    /// The text of read_document.
+    case read(String)
     case tagged(documentId: String, title: String, added: [LiveTagged], already: [String])
     case failed(String)
     /// The person stopped Claude Code, in the middle of this call or a moment before it.
@@ -27,6 +31,8 @@ public protocol LiveDocumentsWriting: AnyObject {
     func listTags() async -> LiveOutcome
     func currentPlace(includeContent: Bool) async -> LiveOutcome
     func addTags(documentId: String?, names: [String]) async -> LiveOutcome
+    func search(query: String, limit: Int) async -> LiveOutcome
+    func read(documentId: String, offset: Int) async -> LiveOutcome
 }
 
 /// A tag of the workspace catalogue, as Claude Code sees it.
@@ -139,6 +145,16 @@ public final class McpHandler {
             outcome = await documents.currentPlace(includeContent: arguments["include_content"] as? Bool ?? true)
         case Self.listTags:
             outcome = await documents.listTags()
+        case Self.read:
+            guard let documentId = argument("document_id"), !documentId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                return result(id: id, toolText("The document_id is required.", isError: true))
+            }
+            outcome = await documents.read(documentId: documentId, offset: arguments["offset"] as? Int ?? 0)
+        case Self.search:
+            guard let query = argument("query"), !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                return result(id: id, toolText("The query is required: the words to look for.", isError: true))
+            }
+            outcome = await documents.search(query: query, limit: arguments["limit"] as? Int ?? SearchReport.defaultLimit)
         case Self.addTags:
             guard let names = arguments["tags"] as? [Any] else {
                 return result(id: id, toolText("The tags are required: a list of names.", isError: true))
@@ -170,6 +186,10 @@ public final class McpHandler {
         case .finished:
             return result(id: id, toolText(Self.finished))
         case let .place(text):
+            return result(id: id, toolText(text))
+        case let .found(text):
+            return result(id: id, toolText(text))
+        case let .read(text):
             return result(id: id, toolText(text))
         case let .tags(tags):
             return result(id: id, toolText(Self.describeTags(tags)))
@@ -229,6 +249,8 @@ public final class McpHandler {
     public static let listTags = "list_tags"
     public static let currentPlace = "get_current_place"
     public static let addTags = "add_tags"
+    public static let search = "search_documents"
+    public static let read = "read_document"
 
     static let finished = "Writeopia left AI mode: the person can edit the documents again."
 
@@ -254,7 +276,9 @@ public final class McpHandler {
         "Writes documents in the Writeopia app open on this computer. The person watches the text " +
         "appear in the editor as it is written. Tools only add: they never change nor delete " +
         "what is already there. Call \(currentPlace) first to see where the person is and what " +
-        "the open document holds, and again when a call says something changed. To organize " +
+        "the open document holds, and again when a call says something changed. To find " +
+        "documents the person wrote, by their title or the words inside them, use \(search), and " +
+        "\(read) to read one whole. To organize " +
         "documents, see the folders with \(listFolders) (reuse " +
         "one that fits before making a new one), make folders with \(createFolder), and pass a " +
         "folder_id to \(create). For anything longer than a few paragraphs, write in parts so " +
@@ -270,7 +294,7 @@ public final class McpHandler {
                 "name": create,
                 "title": "Create a Writeopia document",
                 "description":
-                    "Creates a new document in the folder folder_id (or the folder open in Writeopia), opens it in the editor and " +
+                    "Creates a new document in the folder folder_id (or the folder open in Writeopia), opens it in a new tab of the editor and " +
                     "types the title and the markdown into it. Returns the document_id. Start long " +
                     "documents with the first section only and add the others with \(append). " +
                     markdownGuide,
@@ -296,9 +320,10 @@ public final class McpHandler {
                 "name": append,
                 "title": "Append to a Writeopia document",
                 "description":
-                    "Opens the document in the Writeopia editor and types the markdown at its end, after " +
+                    "Types the markdown at the end of the document in the Writeopia editor, after " +
                     "everything already there. Without document_id, writes into the document open in " +
-                    "the editor now. " + markdownGuide,
+                    "the active tab now. Another document opens in a new tab first (or in the tab that " +
+                    "already shows it). " + markdownGuide,
                 "inputSchema": [
                     "type": "object",
                     "properties": [
@@ -306,7 +331,7 @@ public final class McpHandler {
                         "document_id": [
                             "type": "string",
                             "description":
-                                "The document_id returned by \(create). Leave it out to write into the document open in the editor.",
+                                "The document_id returned by \(create). Leave it out to write into the document open in the active tab.",
                         ],
                     ],
                     "required": ["markdown"],
@@ -329,7 +354,7 @@ public final class McpHandler {
                         "document_id": [
                             "type": "string",
                             "description":
-                                "The document_id returned by \(create). Leave it out to use the document open in the editor.",
+                                "The document_id returned by \(create). Leave it out to use the document open in the active tab.",
                         ],
                         "description": [
                             "type": "string",
@@ -394,7 +419,7 @@ public final class McpHandler {
                         "document_id": [
                             "type": "string",
                             "description":
-                                "The document_id returned by \(create). Leave it out to use the document open in the editor.",
+                                "The document_id returned by \(create). Leave it out to use the document open in the active tab.",
                         ],
                     ],
                     "required": ["tags"],
@@ -445,6 +470,52 @@ public final class McpHandler {
                         ],
                     ],
                     "required": ["name"],
+                    "additionalProperties": false,
+                ] as [String: Any],
+            ],
+            [
+                "name": search,
+                "title": "Search the Writeopia documents",
+                "description":
+                    "Searches the documents of the workspace open in Writeopia, like the search of the " +
+                    "app: by their title and by the words inside them, on this computer and in the " +
+                    "cloud. Every word must be found, each at the start of a word (\"plan\" finds " +
+                    "\"planning\"). Returns the documents best first, each with its document_id, its " +
+                    "folder and the passage the words were found in, and the folders whose name " +
+                    "matches, with their folder_id. Only reads.",
+                "inputSchema": [
+                    "type": "object",
+                    "properties": [
+                        "query": ["type": "string", "description": "The words to look for, like \"budget 2026\"."],
+                        "limit": [
+                            "type": "integer",
+                            "description":
+                                "How many documents to show, from 1 to \(SearchReport.maxLimit). " +
+                                "\(SearchReport.defaultLimit) when left out.",
+                        ],
+                    ],
+                    "required": ["query"],
+                    "additionalProperties": false,
+                ] as [String: Any],
+            ],
+            [
+                "name": read,
+                "title": "Read a Writeopia document",
+                "description":
+                    "Reads a whole document of the workspace as Markdown, without opening it in the app: " +
+                    "its title, its folder and its content. Long documents come in parts of " +
+                    "\(ReadReport.pageLength) characters, and the answer tells the offset of the next " +
+                    "part. Use a document_id from \(search), \(create) or \(currentPlace). Only reads.",
+                "inputSchema": [
+                    "type": "object",
+                    "properties": [
+                        "document_id": ["type": "string", "description": "The document to read."],
+                        "offset": [
+                            "type": "integer",
+                            "description": "Where to start reading, in characters, as the previous part said. 0 when left out.",
+                        ],
+                    ],
+                    "required": ["document_id"],
                     "additionalProperties": false,
                 ] as [String: Any],
             ],

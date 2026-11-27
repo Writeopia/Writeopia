@@ -197,6 +197,74 @@ public final class LiveDocuments: LiveDocumentsWriting {
     }
 
     /// The tag catalogue, to reuse tags before making new ones. Only reads: no AI mode.
+    /// Finds documents by their title and their words, like the global search: this device and
+    /// the backend at once (`searchAll`). Only reads: no AI mode, no banner.
+    public func search(query: String, limit: Int) async -> LiveOutcome {
+        guard !SearchReport.tokens(query).isEmpty else {
+            return .failed("The query has no words to look for: pass one or more words.")
+        }
+        guard let session = readySession() else {
+            return .failed("Writeopia could not search. Check that the app shows a workspace, not a sign-in screen.")
+        }
+
+        let found: [WrDocument]
+        do {
+            found = try await session.documents.searchAll(query: query).documents
+        } catch {
+            return .failed("Writeopia could not search: \(error.localizedDescription)")
+        }
+
+        // The passage: the first prose step holding the words, like the snippets of the search screen.
+        let terms = SearchTerms(query)
+        let matches = found.map { document in
+            SearchMatch(
+                documentId: document.id,
+                title: document.title,
+                parentId: document.parentId,
+                text: document.bodySteps.first { step in
+                    Self.proseTypes.contains(step.type.number) && step.text.map(terms.matches) == true
+                }?.text
+            )
+        }
+        let folders = ((try? await session.documents.allContents().folders) ?? [])
+            .filter { !$0.deleted }
+            .map { LiveFolder(id: $0.id, name: $0.title, parentId: $0.parentId) }
+        return .found(SearchReport.describe(query: query, matches: matches, folders: folders, limit: limit))
+    }
+
+    /// The whole document as Markdown, from `offset` on, without opening it. The document open in
+    /// the editor is read from the editor, with what the person typed and isn't saved yet; one
+    /// not on this device comes from the backend. Only reads: no AI mode, no banner.
+    public func read(documentId: String, offset: Int) async -> LiveOutcome {
+        let id = documentId.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let session = readySession() else {
+            return .failed("Writeopia could not read the document. Check that the app shows a workspace, not a sign-in screen.")
+        }
+        guard let stored = try? await session.documents.document(id: id), !stored.deleted else {
+            return .failed(
+                "Writeopia has no document with the id \(id). Use a document_id from search_documents, " +
+                    "create_document or get_current_place."
+            )
+        }
+
+        let steps = editors.current.flatMap { $0.documentId == id ? $0.manager.documentContent : nil } ?? stored.content
+        let document = ReadDocument(
+            id: id,
+            title: stored.title,
+            parentId: stored.parentId,
+            markdown: DocumentToMarkdown.parse(steps)
+        )
+        let folders = ((try? await session.documents.allContents().folders) ?? [])
+            .filter { !$0.deleted }
+            .map { LiveFolder(id: $0.id, name: $0.title, parentId: $0.parentId) }
+        return .read(ReadReport.describe(document, folders: folders, offset: offset))
+    }
+
+    /// Message, check item, list item, code block: the steps the searches look into.
+    private static let proseTypes: Set<Int> = [
+        StoryType.text.number, StoryType.checkItem.number, StoryType.unorderedListItem.number, StoryType.codeBlock.number,
+    ]
+
     public func listTags() async -> LiveOutcome {
         guard let session = readySession() else { return Self.noWorkspace }
         do {

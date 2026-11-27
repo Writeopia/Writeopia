@@ -2,6 +2,8 @@ package io.writeopia.claudecode.server
 
 import io.ktor.server.application.install
 import io.ktor.server.plugins.bodylimit.RequestBodyLimit
+import io.writeopia.claudecode.LiveReader
+import io.writeopia.claudecode.LiveSearch
 import io.writeopia.claudecode.LiveTags
 import io.writeopia.claudecode.LiveFolders
 import io.writeopia.claudecode.ClaudeCodeBridge
@@ -110,11 +112,20 @@ class ClaudeCodeServer private constructor(
          * Makes the server of the app and hands it to the settings; it starts right away when
          * the person had turned it on.
          */
-        fun install(appVersion: String, folders: LiveFolders? = null, tags: LiveTags? = null) {
+        fun install(
+            appVersion: String,
+            folders: LiveFolders? = null,
+            tags: LiveTags? = null,
+            search: LiveSearch? = null,
+            reader: LiveReader? = null,
+        ) {
             if (ClaudeCodeConnection.controller != null) return
 
             val server = ClaudeCodeServer(
-                handler = McpHandler(LiveDocuments(folders = folders, tags = tags), serverVersion = appVersion),
+                handler = McpHandler(
+                    LiveDocuments(folders = folders, tags = tags, search = search, reader = reader),
+                    serverVersion = appVersion
+                ),
                 preferences = Preferences.userRoot().node("io/writeopia/claudecode"),
                 port = ClaudeCodeConnection.PORT,
             )

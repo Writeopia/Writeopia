@@ -27,7 +27,8 @@ import kotlinx.coroutines.flow.StateFlow
 
 @Composable
 fun GlobalHeader(
-    navigationController: NavHostController,
+    /** The active tab's controller, read when clicked: tabs change it. */
+    navigationController: () -> NavHostController?,
     pathState: StateFlow<List<Folder>>,
     toggleMaxScreen: () -> Unit,
 ) {
@@ -48,8 +49,9 @@ fun GlobalHeader(
         if (platform == PlatformType.DESKTOP) {
             Icon(
                 modifier = Modifier.icon {
-                    if (navigationController.previousBackStackEntry != null) {
-                        navigationController.navigateUp()
+                    val controller = navigationController()
+                    if (controller?.previousBackStackEntry != null) {
+                        controller.navigateUp()
                     }
                 },
                 imageVector = PlatformIcons.backArrowMobile,
@@ -63,7 +65,7 @@ fun GlobalHeader(
         FolderBreadcrumb(
             path = path,
             onSelect = { folder ->
-                navigationController.navigateBackToNotes(
+                navigationController()?.navigateBackToNotes(
                     folder?.let { NotesNavigation.Folder(it.id) } ?: NotesNavigation.Root
                 )
             },

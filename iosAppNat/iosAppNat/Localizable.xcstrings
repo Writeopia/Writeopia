@@ -17233,71 +17233,6 @@
         }
       }
     },
-    "Let Claude Code write documents in this app: you see the text appear as it is written. It can only create documents and add to them, never change nor delete what is there." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lass Claude Code Dokumente in dieser App schreiben: Du siehst den Text erscheinen, während er geschrieben wird. Es kann nur Dokumente erstellen und ergänzen, nie Vorhandenes ändern oder löschen."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Deja que Claude Code escriba documentos en esta app: ves el texto aparecer mientras se escribe. Solo puede crear documentos y añadirles contenido, nunca cambiar ni borrar lo que ya hay."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Laissez Claude Code écrire des documents dans cette app : vous voyez le texte apparaître pendant qu'il est écrit. Il peut seulement créer des documents et y ajouter du contenu, jamais modifier ni supprimer ce qui existe."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lascia che Claude Code scriva documenti in questa app: vedi il testo comparire mentre viene scritto. Può solo creare documenti e aggiungervi contenuto, mai modificare né eliminare ciò che c'è."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Claude Code にこのアプリでドキュメントを書かせます。書かれていく文字がその場で表示されます。できるのはドキュメントの作成と追記だけで、既存の内容の変更や削除はできません。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Claude Code가 이 앱에서 문서를 작성하게 합니다. 글이 작성되는 대로 화면에 나타납니다. 문서를 만들고 내용을 추가할 수만 있으며, 기존 내용을 바꾸거나 지울 수는 없습니다."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Laat Claude Code documenten schrijven in deze app: je ziet de tekst verschijnen terwijl hij wordt geschreven. Het kan alleen documenten maken en aanvullen, nooit bestaande inhoud wijzigen of verwijderen."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Deixe o Claude Code escrever documentos neste app: você vê o texto aparecer enquanto é escrito. Ele só pode criar documentos e adicionar a eles, nunca mudar nem apagar o que já existe."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Разрешите Claude Code писать документы в этом приложении: текст появляется по мере написания. Он может только создавать документы и дополнять их, но не изменять и не удалять существующее."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "让 Claude Code 在此应用中撰写文档：文字会在写作时实时出现。它只能创建文档和追加内容，绝不会修改或删除已有内容。"
-          }
-        }
-      }
-    },
     "Light" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -19638,6 +19573,7 @@
         }
       }
     },
+    "New Tab" : {},
     "New tag" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -36601,6 +36537,134 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "你的团队"
+          }
+        }
+      }
+    },
+    "Let Claude Code search, read and write documents in this app: you see the text appear as it is written. It can create documents and add to them, never change nor delete what is there." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lass Claude Code Dokumente in dieser App durchsuchen, lesen und schreiben: Du siehst den Text erscheinen, während er geschrieben wird. Es kann Dokumente erstellen und ergänzen, nie Vorhandenes ändern oder löschen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deja que Claude Code busque, lea y escriba documentos en esta app: ves el texto aparecer mientras se escribe. Puede crear documentos y añadirles contenido, nunca cambiar ni borrar lo que ya hay."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laissez Claude Code rechercher, lire et écrire des documents dans cette app : vous voyez le texte apparaître pendant qu'il est écrit. Il peut créer des documents et y ajouter du contenu, jamais modifier ni supprimer ce qui existe."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lascia che Claude Code cerchi, legga e scriva documenti in questa app: vedi il testo comparire mentre viene scritto. Può creare documenti e aggiungervi contenuto, mai modificare né eliminare ciò che c'è."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code にこのアプリのドキュメントを検索・閲覧・作成させます。書かれていく文字がその場で表示されます。ドキュメントの作成と追記はできますが、既存の内容の変更や削除はできません。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Claude Code가 이 앱에서 문서를 검색하고 읽고 작성하게 합니다. 글이 작성되는 대로 화면에 나타납니다. 문서를 만들고 내용을 추가할 수 있으며, 기존 내용을 바꾸거나 지울 수는 없습니다."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laat Claude Code documenten in deze app zoeken, lezen en schrijven: je ziet de tekst verschijnen terwijl hij wordt geschreven. Het kan documenten maken en aanvullen, nooit bestaande inhoud wijzigen of verwijderen."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deixe o Claude Code buscar, ler e escrever documentos neste app: você vê o texto aparecer enquanto é escrito. Ele pode criar documentos e adicionar a eles, nunca mudar nem apagar o que já existe."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешите Claude Code искать, читать и писать документы в этом приложении: текст появляется по мере написания. Он может создавать документы и дополнять их, но не изменять и не удалять существующее."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "让 Claude Code 在此应用中搜索、阅读和撰写文档：文字会在写作时实时出现。它可以创建文档和追加内容，绝不会修改或删除已有内容。"
+          }
+        }
+      }
+    },
+    "While this is on, Claude Code can search, read and write the documents of the space open in the app, the private space too. What it reads is sent to the AI service Claude Code uses (Anthropic, unless you set up another one), so these documents are no longer private. Turn it off to keep them private." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solange dies aktiv ist, kann Claude Code die Dokumente des in der App geöffneten Bereichs durchsuchen, lesen und schreiben, auch die des privaten Bereichs. Was es liest, wird an den KI-Dienst gesendet, den Claude Code nutzt (Anthropic, sofern du keinen anderen eingerichtet hast). Diese Dokumente sind dann nicht mehr privat. Schalte es aus, um sie privat zu halten."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mientras esto esté activado, Claude Code puede buscar, leer y escribir los documentos del espacio abierto en la app, también los del espacio privado. Lo que lee se envía al servicio de IA que usa Claude Code (Anthropic, salvo que configures otro), así que esos documentos dejan de ser privados. Desactívalo para mantenerlos privados."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tant que c'est activé, Claude Code peut rechercher, lire et écrire les documents de l'espace ouvert dans l'app, y compris l'espace privé. Ce qu'il lit est envoyé au service d'IA qu'utilise Claude Code (Anthropic, sauf si vous en avez configuré un autre) : ces documents ne sont alors plus privés. Désactivez-le pour les garder privés."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finché è attivo, Claude Code può cercare, leggere e scrivere i documenti dello spazio aperto nell'app, anche quelli dello spazio privato. Ciò che legge viene inviato al servizio di IA usato da Claude Code (Anthropic, a meno che tu non ne abbia configurato un altro), quindi quei documenti non sono più privati. Disattivalo per mantenerli privati."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "オンの間、Claude Code はアプリで開いているスペース（プライベートスペースを含む）のドキュメントを検索・閲覧・作成できます。読み取った内容は Claude Code が使う AI サービス（別のサービスを設定していなければ Anthropic）に送信されるため、それらのドキュメントは非公開ではなくなります。非公開のままにするにはオフにしてください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "켜져 있는 동안 Claude Code는 앱에서 열린 공간(비공개 공간 포함)의 문서를 검색하고 읽고 작성할 수 있습니다. 읽은 내용은 Claude Code가 사용하는 AI 서비스(다른 서비스를 설정하지 않았다면 Anthropic)로 전송되므로, 해당 문서는 더 이상 비공개가 아닙니다. 비공개로 유지하려면 끄세요."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zolang dit aan staat, kan Claude Code de documenten van de ruimte die in de app open is zoeken, lezen en schrijven, ook die van de privéruimte. Wat het leest, wordt verstuurd naar de AI-dienst die Claude Code gebruikt (Anthropic, tenzij je een andere hebt ingesteld), dus die documenten zijn dan niet meer privé. Zet het uit om ze privé te houden."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enquanto isto estiver ativado, o Claude Code pode buscar, ler e escrever os documentos do espaço aberto no app, inclusive os do espaço privado. O que ele lê é enviado ao serviço de IA que o Claude Code usa (a Anthropic, a menos que você configure outro), então esses documentos deixam de ser privados. Desative para mantê-los privados."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пока это включено, Claude Code может искать, читать и писать документы пространства, открытого в приложении, в том числе личного. Прочитанное отправляется в ИИ-сервис, который использует Claude Code (Anthropic, если вы не настроили другой), поэтому эти документы перестают быть личными. Выключите, чтобы сохранить их личными."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开启期间，Claude Code 可以搜索、阅读和撰写应用中打开的空间（包括私人空间）里的文档。它读取的内容会发送到 Claude Code 使用的 AI 服务（除非你设置了其他服务，否则为 Anthropic），因此这些文档将不再是私密的。关闭此项即可保持它们私密。"
           }
         }
       }

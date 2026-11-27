@@ -36,6 +36,20 @@ private final class FakeDocuments: LiveDocumentsWriting {
         .folders([LiveFolder(id: "work", name: "Work", parentId: "root")], currentFolderId: "work")
     }
 
+    var searched: [(String, Int)] = []
+
+    func read(documentId: String, offset: Int) async -> LiveOutcome { .read("read \(documentId) from \(offset)") }
+
+    func search(query: String, limit: Int) async -> LiveOutcome {
+        searched.append((query, limit))
+        return .found(SearchReport.describe(
+            query: query,
+            matches: [SearchMatch(documentId: "d1", title: "Trip", parentId: "root", text: "Book the trip")],
+            folders: [],
+            limit: limit
+        ))
+    }
+
     func createFolder(name: String, parentId: String?) async -> LiveOutcome {
         folders.append((name, parentId))
         return .folderCreated(folderId: "f1", name: name, parentId: parentId ?? "root")
@@ -79,7 +93,7 @@ private func json(_ data: Data?) -> [String: Any] {
     @Test func listsTheTwoTools() async {
         let tools = (await call(#"{"jsonrpc":"2.0","id":"a","method":"tools/list"}"#)["result"] as? [String: Any])?["tools"] as? [[String: Any]]
 
-        #expect(tools?.compactMap { $0["name"] as? String } == ["create_document", "append_to_document", "set_header_image", "get_current_place", "list_tags", "add_tags", "finish_writing", "list_folders", "create_folder"])
+        #expect(tools?.compactMap { $0["name"] as? String } == ["create_document", "append_to_document", "set_header_image", "get_current_place", "list_tags", "add_tags", "finish_writing", "list_folders", "create_folder", "search_documents", "read_document"])
     }
 
     @Test func createAnswersWithTheDocumentId() async {
@@ -195,6 +209,8 @@ private func json(_ data: Data?) -> [String: Any] {
             func listTags() async -> LiveOutcome { .stopped }
             func currentPlace(includeContent: Bool) async -> LiveOutcome { .stopped }
             func addTags(documentId: String?, names: [String]) async -> LiveOutcome { .stopped }
+            func search(query: String, limit: Int) async -> LiveOutcome { .stopped }
+            func read(documentId: String, offset: Int) async -> LiveOutcome { .stopped }
         }
         let answer = json(await McpHandler(documents: Stopped(), serverVersion: "t").handle(Data(
             #"{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"append_to_document","arguments":{"markdown":"Hi"}}}"#.utf8

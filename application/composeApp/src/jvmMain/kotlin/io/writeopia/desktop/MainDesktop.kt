@@ -9,6 +9,7 @@ import io.writeopia.sdk.models.workspace.Workspace
 import io.writeopia.auth.core.di.AuthCoreInjectionNeo
 import io.writeopia.core.folders.di.FoldersInjector
 import io.writeopia.claudecode.RepositoryLiveFolders
+import io.writeopia.claudecode.RepositoryLiveReader
 import io.writeopia.claudecode.ClaudeCodeBridge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -23,6 +24,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.KeyEvent
+import java.util.concurrent.atomic.AtomicBoolean
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.Window
@@ -66,6 +68,8 @@ import io.writeopia.sqldelight.di.SqlDelightDaoInjector
 import io.writeopia.claudecode.server.ClaudeCodeServer
 import io.writeopia.genai.di.GenAiInjection
 import io.writeopia.writingagent.di.WritingAgentInjection
+import io.writeopia.notes.desktop.tabs.DesktopTabsHost
+import io.writeopia.notes.desktop.tabs.TabPlace
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import java.io.File
@@ -235,6 +239,56 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
         }
     }
 
+    // The tabs of the workspace on screen, set by DesktopApp; the shortcuts below act on them.
+    val tabsHost = remember { DesktopTabsHost() }
+    val tabsStore = remember { PrefsTabsStore() }
+
+    // A Tab pressed with Ctrl moved between tabs: its release is swallowed, even when Ctrl was
+    // let go first, so the editor never reads it as an ordinary Tab (accepting the AI's text).
+    val swallowTabRelease = remember { AtomicBoolean(false) }
+
+    // Tab shortcuts are seen before the focused text field: the editor would take Ctrl + Tab.
+    val handlePreviewKeyEvent: (KeyEvent) -> Boolean = { keyEvent ->
+        val tabs = tabsHost.state
+        when {
+            KeyboardCommands.isTabKeyUp(keyEvent) && swallowTabRelease.getAndSet(false) -> true
+
+            tabs == null -> false
+
+            // Switching tabs would take the editor away from Claude Code while it writes.
+            ClaudeCodeBridge.aiMode.value.isOn -> false
+
+            KeyboardCommands.isNewTabEvent(keyEvent) -> {
+                tabs.open(TabPlace.Root)
+                true
+            }
+
+            KeyboardCommands.isCloseTabEvent(keyEvent) -> {
+                tabs.closeActive()
+                true
+            }
+
+            KeyboardCommands.isNextTabEvent(keyEvent) -> {
+                tabs.next()
+                if (KeyboardCommands.isTabKeyDown(keyEvent)) swallowTabRelease.set(true)
+                true
+            }
+
+            KeyboardCommands.isPreviousTabEvent(keyEvent) -> {
+                tabs.previous()
+                if (KeyboardCommands.isTabKeyDown(keyEvent)) swallowTabRelease.set(true)
+                true
+            }
+
+            else -> KeyboardCommands.selectTabIndex(keyEvent)
+                ?.let { index ->
+                    tabs.select(index)
+                    true
+                }
+                ?: false
+        }
+    }
+
     val windowState = rememberWindowState(
         width = 1100.dp,
         height = 800.dp,
@@ -293,6 +347,23 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                                 ).id
                             },
                         ),
+                        search = AppLiveSearch(
+                            workspaceId = {
+                                (
+                                    AuthCoreInjectionNeo.singleton().provideAuthRepository().getWorkspace()
+                                        ?: Workspace.disconnectedWorkspace()
+                                ).id
+                            },
+                        ),
+                        reader = RepositoryLiveReader(
+                            documentRepository = { RepositoryInjector.singleton().provideDocumentRepository() },
+                            workspaceId = {
+                                (
+                                    AuthCoreInjectionNeo.singleton().provideAuthRepository().getWorkspace()
+                                        ?: Workspace.disconnectedWorkspace()
+                                ).id
+                            },
+                        ),
                     )
                 }
 
@@ -332,6 +403,8 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                                     selectionState = selectionState,
                                     keyboardEventFlow = keyboardEventFlow,
                                     coroutineScope = coroutineScope,
+                                    tabsStore = tabsStore,
+                                    tabsHost = tabsHost,
                                     colorThemeOption = colorTheme,
                                     accentColorOption = accentColorState,
                                     selectColorTheme =
@@ -416,6 +489,7 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
         onCloseRequest = onCloseRequest,
         title = "",
         state = windowState,
+        onPreviewKeyEvent = handlePreviewKeyEvent,
         onKeyEvent = handleKeyboardEvent,
         icon = CommonImages.logo()
     ) {
