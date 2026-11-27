@@ -44,7 +44,7 @@ public struct PrivateSpaceFolderPicker: View {
                     Spacer(minLength: 0)
                 }
                 .padding(.horizontal, WrTheme.Space.s150)
-                .frame(height: WrTheme.Size.controlLg)
+                .frame(height: 36)
                 .background(WrTheme.Colors.bgHover, in: RoundedRectangle(cornerRadius: WrTheme.Radius.md))
 
                 if session.privateSpaceFolder != nil {
@@ -57,9 +57,14 @@ public struct PrivateSpaceFolderPicker: View {
             if let errorMessage {
                 WrErrorText(errorMessage)
             } else {
-                Label("Ready to use.", systemImage: "checkmark")
-                    .wrTextStyle(.bodySmall)
-                    .foregroundStyle(WrTheme.Colors.textTertiary)
+                Label {
+                    Text("Ready to use.")
+                        .foregroundStyle(WrTheme.Colors.textTertiary)
+                } icon: {
+                    Image(systemName: "checkmark")
+                        .foregroundStyle(WrTheme.Colors.success)
+                }
+                .wrTextStyle(.bodySmall)
             }
         }
     }

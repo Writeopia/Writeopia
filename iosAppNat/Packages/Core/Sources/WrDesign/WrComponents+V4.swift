@@ -382,6 +382,91 @@ public struct WrDivider: View {
     }
 }
 
+/// `Brand/Mark`: the four dots of the Writeopia logo, from the Figma vector (86.8 pt box).
+/// The two top dots are `brand/ink`, so the mark follows the appearance it's drawn in, like
+/// `Brand/Mark · On dark`.
+public struct WrBrandMark: View {
+    private let size: CGFloat
+
+    public init(size: CGFloat = 32) {
+        self.size = size
+    }
+
+    public var body: some View {
+        Canvas { context, canvasSize in
+            let scale = canvasSize.width / Self.box
+            context.scaleBy(x: scale, y: scale)
+
+            let radius: CGFloat = 17.364
+            func dot(_ x: CGFloat, _ y: CGFloat) -> Path {
+                Path(ellipseIn: CGRect(x: x - radius, y: y - radius, width: radius * 2, height: radius * 2))
+            }
+            context.fill(dot(17.364, 17.364), with: .color(WrTheme.Colors.brandInk))
+            context.fill(dot(69.456, 17.364), with: .color(WrTheme.Colors.brandInk))
+            context.fill(dot(17.364, 69.456), with: .color(Self.violet))
+            context.fill(dot(69.456, 69.456), with: .color(Self.magenta))
+
+            context.fill(
+                Self.verticalLink,
+                with: .linearGradient(
+                    Gradient(colors: [Self.violet, Self.ink]),
+                    startPoint: CGPoint(x: 17.364, y: 58.604),
+                    endPoint: CGPoint(x: 17.364, y: 28.22)
+                )
+            )
+            context.fill(
+                Self.horizontalLink,
+                with: .linearGradient(
+                    Gradient(colors: [Self.violet, Self.magenta]),
+                    startPoint: CGPoint(x: 28.2161, y: 69.456),
+                    endPoint: CGPoint(x: 58.6001, y: 69.456)
+                )
+            )
+        }
+        .frame(width: size, height: size)
+        .accessibilityLabel("Writeopia")
+    }
+
+    private static let box: CGFloat = 86.8
+    private static let violet = Color(red: 0x66 / 255, green: 0x2D / 255, blue: 0x91 / 255)
+    private static let magenta = Color(red: 0xFF / 255, green: 0x55 / 255, blue: 0xF3 / 255)
+    private static let ink = Color(red: 0x38 / 255, green: 0x38 / 255, blue: 0x38 / 255)
+
+    private static func pt(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: x, y: y) }
+
+    /// Joins the top left dot to the bottom left one.
+    private static let verticalLink: Path = {
+        var p = Path()
+        p.move(to: pt(6.50781, 30.904))
+        p.addCurve(to: pt(13.0198, 43.408), control1: pt(10.4758, 33.688), control2: pt(13.0198, 38.612))
+        p.addCurve(to: pt(6.50781, 55.9), control1: pt(13.0198, 48.204), control2: pt(10.4758, 53.116))
+        p.addCurve(to: pt(17.3638, 58.604), control1: pt(9.48381, 57.988), control2: pt(13.2558, 58.604))
+        p.addCurve(to: pt(28.2158, 55.92), control1: pt(21.4678, 58.604), control2: pt(25.2398, 58.004))
+        p.addCurve(to: pt(21.7038, 43.408), control1: pt(24.2478, 53.136), control2: pt(21.7038, 48.204))
+        p.addCurve(to: pt(28.2158, 30.92), control1: pt(21.7038, 38.612), control2: pt(24.2478, 33.704))
+        p.addCurve(to: pt(17.3638, 28.216), control1: pt(25.2398, 28.832), control2: pt(21.4678, 28.216))
+        p.addCurve(to: pt(6.50781, 30.904), control1: pt(13.2558, 28.216), control2: pt(9.48381, 28.82))
+        p.closeSubpath()
+        return p
+    }()
+
+    /// Joins the bottom left dot to the bottom right one.
+    private static let horizontalLink: Path = {
+        var p = Path()
+        p.move(to: pt(43.4081, 65.116))
+        p.addCurve(to: pt(30.9201, 58.604), control1: pt(38.6121, 65.116), control2: pt(33.7041, 62.572))
+        p.addCurve(to: pt(28.2161, 69.456), control1: pt(28.8321, 61.576), control2: pt(28.2161, 65.348))
+        p.addCurve(to: pt(30.9001, 80.308), control1: pt(28.2161, 73.564), control2: pt(28.8121, 77.336))
+        p.addCurve(to: pt(43.4081, 73.796), control1: pt(33.6841, 76.34), control2: pt(38.6121, 73.796))
+        p.addCurve(to: pt(55.9001, 80.308), control1: pt(48.2041, 73.796), control2: pt(53.1161, 76.34))
+        p.addCurve(to: pt(58.6041, 69.456), control1: pt(57.9841, 77.336), control2: pt(58.6041, 73.564))
+        p.addCurve(to: pt(55.9121, 58.604), control1: pt(58.6041, 65.348), control2: pt(58.0001, 61.576))
+        p.addCurve(to: pt(43.4081, 65.116), control1: pt(53.1281, 62.572), control2: pt(48.2041, 65.116))
+        p.closeSubpath()
+        return p
+    }()
+}
+
 /// `v4/DialogHeader`.
 public struct WrDialogHeader: View {
     private let title: LocalizedStringKey
@@ -395,20 +480,22 @@ public struct WrDialogHeader: View {
     }
 
     public var body: some View {
-        HStack(alignment: .top, spacing: WrTheme.Space.s200) {
-            VStack(alignment: .leading, spacing: WrTheme.Space.s50) {
-                Text(title)
-                    .wrTextStyle(.headingMedium)
-                    .foregroundStyle(WrTheme.Colors.textPrimary)
-                if let description {
-                    Text(description)
-                        .wrTextStyle(.bodySmall)
-                        .foregroundStyle(WrTheme.Colors.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+        // The close button sits over the top right corner, beside the title only, so the
+        // description runs the whole width of the dialog like in Figma.
+        VStack(alignment: .leading, spacing: WrTheme.Space.s50) {
+            Text(title)
+                .wrTextStyle(.headingMedium)
+                .foregroundStyle(WrTheme.Colors.textPrimary)
+                .padding(.trailing, close == nil ? 0 : 24 + WrTheme.Space.s200)
+            if let description {
+                Text(description)
+                    .wrTextStyle(.bodySmall)
+                    .foregroundStyle(WrTheme.Colors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .overlay(alignment: .topTrailing) {
             if let close {
                 Button(action: close) {
                     Image(systemName: "xmark")

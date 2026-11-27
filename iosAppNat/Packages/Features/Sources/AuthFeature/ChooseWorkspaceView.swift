@@ -91,6 +91,8 @@ public struct ChooseWorkspaceView: View {
                     WrTitleBlock(eyebrow: "Open space", title: "Choose a workspace", subtitle: subtitle)
 
                     workspaces
+                        // Figma: 16 pt from the list to "New workspace", 24 above it.
+                        .padding(.bottom, -WrTheme.Space.s100)
 
                     WrButton("New workspace", systemImage: "plus", kind: .secondary, size: .large, fillsWidth: true, action: startCreating)
                         .accessibilityIdentifier("workspace.new")

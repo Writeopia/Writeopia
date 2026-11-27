@@ -351,7 +351,8 @@ struct LocalAiWizardSheet: View {
             .textCase(.uppercase)
             .wrTextStyle(.overline)
             .foregroundStyle(WrTheme.Colors.textTertiary)
-            .padding(.top, WrTheme.Space.s300)
+            // Figma: 20 pt above each section of the dialog.
+            .padding(.top, WrTheme.Space.s200 + WrTheme.Space.s50)
             .padding(.bottom, WrTheme.Space.s100)
     }
 
@@ -365,9 +366,9 @@ struct LocalAiWizardSheet: View {
 
     private func description(for tier: LocalAiAutoConfig.Tier) -> LocalizedStringKey {
         switch tier {
-        case .light: "Fast and efficient for basic tasks"
-        case .medium: "Balanced performance for most use cases"
-        case .heavy: "Maximum quality for complex tasks"
+        case .light: "Fast. Good for short edits."
+        case .medium: "Balanced for most writing."
+        case .heavy: "Best quality, slower."
         }
     }
 

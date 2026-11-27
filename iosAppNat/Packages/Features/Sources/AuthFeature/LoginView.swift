@@ -116,6 +116,10 @@ struct LoginView: View {
     var body: some View {
         WrOnboardingScreen(width: 440, back: backToSpaces) {
             VStack(alignment: .leading, spacing: WrTheme.Space.s200) {
+                // Figma: 20 pt between the mark and the eyebrow.
+                WrBrandMark()
+                    .padding(.bottom, WrTheme.Space.s50)
+
                 WrTitleBlock(
                     eyebrow: "Open space",
                     title: "Welcome back",

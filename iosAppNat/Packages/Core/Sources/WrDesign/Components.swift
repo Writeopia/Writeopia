@@ -71,9 +71,12 @@ public struct WrTextField: View {
 
     public var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: systemImage)
-                .foregroundStyle(usesV4 ? WrTheme.Colors.iconTertiary : WrColors.textLighter)
-                .frame(width: 20)
+            // v4 fields carry a label above them instead of a leading icon.
+            if !usesV4 {
+                Image(systemName: systemImage)
+                    .foregroundStyle(WrColors.textLighter)
+                    .frame(width: 20)
+            }
 
             field
                 .textFieldStyle(.plain)

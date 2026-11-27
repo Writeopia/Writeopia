@@ -42,11 +42,20 @@ public struct AiSetupContent: View {
 
     // MARK: Cards
 
+    // The Mac names the system and shows the computer, like the v4 design; iOS keeps the device.
+    #if os(macOS)
+    private static let appleDescription: LocalizedStringKey = "Built into macOS. No download."
+    private static let appleSystemImage = "laptopcomputer"
+    #else
+    private static let appleDescription: LocalizedStringKey = "Built into this device. No download."
+    private static let appleSystemImage = "apple.intelligence"
+    #endif
+
     private var appleIntelligenceCard: some View {
         WrOptionCard(
             "Apple Intelligence",
-            description: "Built into this device. No download.",
-            systemImage: "apple.intelligence",
+            description: Self.appleDescription,
+            systemImage: Self.appleSystemImage,
             isSelected: session.aiProvider == .appleIntelligence,
             status: appleStatus.isAvailable ? WrPill("Ready", kind: .success) : WrPill("Not ready yet", kind: .warning),
             meta: appleStatus.isAvailable ? nil : Text(verbatim: appleStatus.message),

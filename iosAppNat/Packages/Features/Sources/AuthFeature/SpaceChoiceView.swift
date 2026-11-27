@@ -61,12 +61,16 @@ private struct SpaceChoiceLayout: View {
     }
 
     private var header: some View {
-        WrTitleBlock(
-            eyebrow: "Choose your space",
-            title: "Where are you writing today?",
-            subtitle: "You can have both and switch anytime in Settings › Account.",
-            titleStyle: isWideLayout ? .displayLarge : .headingXL
-        )
+        VStack(alignment: .leading, spacing: WrTheme.Space.s300) {
+            WrBrandMark()
+
+            WrTitleBlock(
+                eyebrow: "Choose your space",
+                title: "Where are you writing today?",
+                subtitle: "You can have both and switch anytime in Settings › Account.",
+                titleStyle: isWideLayout ? .displayLarge : .headingXL
+            )
+        }
     }
 
     @ViewBuilder
