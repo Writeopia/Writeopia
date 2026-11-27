@@ -39,6 +39,8 @@ import io.writeopia.common.utils.icons.IconChange
 import io.writeopia.common.utils.icons.WrIcons
 import io.writeopia.commonui.IconsPicker
 import io.writeopia.commonui.dtos.MenuItemUi
+import io.writeopia.commonui.tabs.OpenInNewTabMenu
+import io.writeopia.commonui.tabs.openInNewTabGestures
 import io.writeopia.sdk.model.draganddrop.DropInfo
 import io.writeopia.theme.WriteopiaTheme
 import io.writeopia.ui.draganddrop.target.DragRowTarget
@@ -53,6 +55,8 @@ fun LazyListScope.documentList(
     moveRequest: (MenuItemUi, String) -> Unit,
     expandFolder: (String) -> Unit,
     changeIcon: (String, String, Int, IconChange) -> Unit,
+    /** Opens an item in a new tab (id, title, is a folder); null where there are no tabs. */
+    openInNewTab: ((String, String, Boolean) -> Unit)? = null,
 ) {
     itemsIndexed(
         menuItems,
@@ -69,6 +73,7 @@ fun LazyListScope.documentList(
                     changeIcon = { id, icon, tint ->
                         changeIcon(id, icon, tint, IconChange.DOCUMENT)
                     },
+                    openInNewTab = openInNewTab?.let { open -> { open(item.id, item.title, false) } },
                     modifier = itemModifier
                 )
             }
@@ -84,6 +89,7 @@ fun LazyListScope.documentList(
                     changeIcon = { id, icon, tint ->
                         changeIcon(id, icon, tint, IconChange.FOLDER)
                     },
+                    openInNewTab = openInNewTab?.let { open -> { open(item.id, item.title, true) } },
                     modifier = itemModifier
                 )
             }
@@ -100,9 +106,11 @@ private fun FolderItem(
     moveRequest: (MenuItemUi, String) -> Unit,
     expandFolder: (String) -> Unit,
     changeIcon: (String, String, Int) -> Unit,
+    openInNewTab: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val depth = folder.depth - 1
+    var showTabMenu by remember { mutableStateOf(false) }
     val dropInfo = DropInfo(folder, position)
 
     DropTarget { inBound, data ->
@@ -127,6 +135,7 @@ private fun FolderItem(
             modifier = modifier
                 .padding(start = 4.dp)
                 .clip(MaterialTheme.shapes.medium)
+                .openInNewTabGestures(openInNewTab, onContextMenu = { showTabMenu = true })
                 .clickable { navigateToFolder(folder.id) }
                 .background(bgColor)
                 .hoverable(interactionSource)
@@ -140,6 +149,14 @@ private fun FolderItem(
             showIcon = isHovered,
         ) {
             Spacer(modifier = Modifier.width(4.dp + 12.dp * depth))
+
+            if (openInNewTab != null) {
+                OpenInNewTabMenu(
+                    expanded = showTabMenu,
+                    onDismissRequest = { showTabMenu = false },
+                    onOpenInNewTab = openInNewTab
+                )
+            }
 
             val imageVector = if (folder.expanded) {
                 WrSdkIcons.smallArrowDown
@@ -227,9 +244,11 @@ private fun DocumentItem(
     position: String,
     navigateToEditDocument: (String, String) -> Unit,
     changeIcon: (String, String, Int) -> Unit,
+    openInNewTab: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val depth = document.depth - 1
+    var showTabMenu by remember { mutableStateOf(false) }
     val dropInfo = DropInfo(document, position)
 
     val interactionSource = remember { MutableInteractionSource() }
@@ -246,6 +265,7 @@ private fun DocumentItem(
         modifier = modifier
             .padding(start = 4.dp)
             .clip(MaterialTheme.shapes.medium)
+            .openInNewTabGestures(openInNewTab, onContextMenu = { showTabMenu = true })
             .clickable { navigateToEditDocument(document.id, document.title) }
             .background(background)
             .hoverable(interactionSource)
@@ -259,6 +279,14 @@ private fun DocumentItem(
         showIcon = isHovered
     ) {
         Spacer(modifier = Modifier.width(4.dp + 12.dp * depth))
+
+        if (openInNewTab != null) {
+            OpenInNewTabMenu(
+                expanded = showTabMenu,
+                onDismissRequest = { showTabMenu = false },
+                onOpenInNewTab = openInNewTab
+            )
+        }
 
         var showIconsOptions by remember {
             mutableStateOf(false)

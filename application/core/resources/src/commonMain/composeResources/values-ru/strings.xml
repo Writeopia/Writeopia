@@ -447,7 +447,8 @@
   <string name="new_to_writeopia">Впервые в Writeopia?</string>
   <string name="create_an_account">Создать учётную запись</string>
   <string name="claude_code_title">Claude Code</string>
-  <string name="claude_code_description">Разрешите Claude Code писать документы в этом приложении: текст появляется по мере написания. Он может только создавать документы и дополнять их, но не изменять и не удалять существующее.</string>
+  <string name="claude_code_description">Разрешите Claude Code искать, читать и писать документы в этом приложении: текст появляется по мере написания. Он может создавать документы и дополнять их, но не изменять и не удалять существующее.</string>
+  <string name="claude_code_privacy">Пока это включено, Claude Code может искать, читать и писать документы пространства, открытого в приложении, в том числе личного. Прочитанное отправляется в ИИ-сервис, который использует Claude Code (Anthropic, если вы не настроили другой), поэтому эти документы перестают быть личными. Выключите, чтобы сохранить их личными.</string>
   <string name="claude_code_enable">Разрешить Claude Code писать</string>
   <string name="claude_code_command_hint">Выполните это один раз в терминале, чтобы подключить Claude Code:</string>
   <string name="claude_code_copy">Копировать</string>

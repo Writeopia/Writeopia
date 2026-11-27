@@ -16,6 +16,9 @@ public final class LiveEditors {
         public let manager: WriteopiaStateManager
         /// Tags the document of this editor; nil where the editor has no tags.
         public let tagger: LiveTagger?
+        /// What the editor is shown in (on the Mac, the tab's window): `bringToFront(owner:)`
+        /// puts the editors of the tab the person moved to last, so they are `current`.
+        public let owner: ObjectIdentifier?
     }
 
     /// The editors on screen, the one shown last at the end.
@@ -29,10 +32,31 @@ public final class LiveEditors {
     /// The editor the person looks at now, if any.
     public var current: Editor? { editors.last }
 
-    public func attach(documentId: String, manager: WriteopiaStateManager, tagger: LiveTagger? = nil) {
+    public func attach(
+        documentId: String,
+        manager: WriteopiaStateManager,
+        tagger: LiveTagger? = nil,
+        owner: AnyObject? = nil
+    ) {
         editors.removeAll { $0.manager === manager }
-        editors.append(Editor(documentId: documentId, manager: manager, tagger: tagger))
+        editors.append(
+            Editor(
+                documentId: documentId,
+                manager: manager,
+                tagger: tagger,
+                owner: owner.map(ObjectIdentifier.init)
+            )
+        )
         manager.isInputLocked = mode.isOn
+    }
+
+    /// The person moved to the tab of `owner`: its editors go last, in their order, so the one
+    /// it shows is `current`. The editors of the other tabs stay attached, out of sight.
+    public func bringToFront(owner: AnyObject) {
+        let id = ObjectIdentifier(owner)
+        let front = editors.filter { $0.owner == id }
+        guard !front.isEmpty else { return }
+        editors = editors.filter { $0.owner != id } + front
     }
 
     public func detach(_ manager: WriteopiaStateManager) {

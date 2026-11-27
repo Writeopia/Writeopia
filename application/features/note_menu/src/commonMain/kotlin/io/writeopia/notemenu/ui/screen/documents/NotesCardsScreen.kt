@@ -1,5 +1,8 @@
 package io.writeopia.notemenu.ui.screen.documents
 
+import io.writeopia.commonui.tabs.LocalOpenInNewTab
+import io.writeopia.commonui.tabs.OpenInNewTabMenu
+import io.writeopia.commonui.tabs.openInNewTabGestures
 import io.writeopia.sdk.utils.iterables.Rank
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.Crossfade
@@ -621,6 +624,8 @@ private fun FolderItem(
     editFolder: (MenuItemUi.FolderUi) -> Unit,
 ) {
     val folderId = folderUi.documentId
+    val openInNewTab = LocalOpenInNewTab.current?.let { open -> { open(folderId, folderUi.title, true) } }
+    var showTabMenu by remember { mutableStateOf(false) }
 
     // The card grows into the folder screen and the title flies into its toolbar.
     val cardModifier = with(sharedTransitionScope) {
@@ -684,6 +689,7 @@ private fun FolderItem(
                     .background(WriteopiaTheme.colorScheme.cardBg)
                     .cardBorder(folderUi.selected)
                     .border(width = 2.dp, color = borderColor, shape = MaterialTheme.shapes.large)
+                    .openInNewTabGestures(openInNewTab, onContextMenu = { showTabMenu = true })
                     .clickable {
                         folderClick(folderUi.documentId)
                     },
@@ -696,6 +702,14 @@ private fun FolderItem(
                 activeColor = bgColor,
                 activeBorderColor = WriteopiaTheme.colorScheme.accentForeground
             ) {
+                if (openInNewTab != null) {
+                    OpenInNewTabMenu(
+                        expanded = showTabMenu,
+                        onDismissRequest = { showTabMenu = false },
+                        onOpenInNewTab = openInNewTab
+                    )
+                }
+
                 DragCardTarget(
                     modifier = Modifier.clip(MaterialTheme.shapes.large),
                     position = Rank.at(position),
@@ -825,6 +839,10 @@ private fun DocumentItem(
 ) {
     val titleFallback = "untitled"
 //        stringResource(R.string.untitled)
+    val openInNewTab = LocalOpenInNewTab.current?.let { open ->
+        { open(documentUi.documentId, documentUi.title, false) }
+    }
+    var showTabMenu by remember { mutableStateOf(false) }
 
     // Selection is shown by the border, the background stays the same.
     val backgroundColor = WriteopiaTheme.colorScheme.cardBg
@@ -849,6 +867,7 @@ private fun DocumentItem(
                     .clip(MaterialTheme.shapes.large)
                     .background(WriteopiaTheme.colorScheme.cardBg)
                     .cardBorder(documentUi.selected)
+                    .openInNewTabGestures(openInNewTab, onContextMenu = { showTabMenu = true })
                     .clickable {
                         documentClick(
                             documentUi.documentId,
@@ -866,6 +885,14 @@ private fun DocumentItem(
                 defaultColor = WriteopiaTheme.colorScheme.cardBg,
                 activeColor = backgroundColor
             ) {
+                if (openInNewTab != null) {
+                    OpenInNewTabMenu(
+                        expanded = showTabMenu,
+                        onDismissRequest = { showTabMenu = false },
+                        onOpenInNewTab = openInNewTab
+                    )
+                }
+
                 DragCardTarget(
                     position = Rank.at(position),
                     dataToDrop = DropInfo(documentUi, Rank.at(position)),

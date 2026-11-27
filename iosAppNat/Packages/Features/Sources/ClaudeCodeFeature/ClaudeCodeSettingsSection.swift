@@ -21,6 +21,16 @@ public struct ClaudeCodeSettingsSection: View {
                 ))
                 .accessibilityIdentifier("settings.claudeCode.enabled")
 
+                // What turning it on means for privacy: the documents reach the AI service Claude Code uses.
+                Label {
+                    Text("While this is on, Claude Code can search, read and write the documents of the space open in the app, the private space too. What it reads is sent to the AI service Claude Code uses (Anthropic, unless you set up another one), so these documents are no longer private. Turn it off to keep them private.")
+                } icon: {
+                    Image(systemName: "lock.open")
+                }
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .accessibilityIdentifier("settings.claudeCode.privacy")
+
                 switch server.state {
                 case .running:
                     if let plugin = server.pluginCommand { commandView(plugin: plugin) }
@@ -32,7 +42,7 @@ public struct ClaudeCodeSettingsSection: View {
             } header: {
                 Text("Claude Code")
             } footer: {
-                Text("Let Claude Code write documents in this app: you see the text appear as it is written. It can only create documents and add to them, never change nor delete what is there.")
+                Text("Let Claude Code search, read and write documents in this app: you see the text appear as it is written. It can create documents and add to them, never change nor delete what is there.")
             }
         }
     }

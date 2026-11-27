@@ -2,6 +2,9 @@ package io.writeopia.claudecode
 
 import io.writeopia.sdk.export.DocumentToMarkdown
 import io.writeopia.claudecode.mcp.PlaceReport
+import io.writeopia.claudecode.mcp.SearchReport
+import io.writeopia.claudecode.mcp.ReadReport
+import io.writeopia.claudecode.mcp.ReadDocument
 import io.writeopia.claudecode.mcp.OpenDocument
 import io.writeopia.claudecode.mcp.FolderTree
 import io.writeopia.claudecode.mcp.DocumentSnapshot
@@ -36,6 +39,10 @@ class LiveDocuments(
     private val folders: LiveFolders? = null,
     /** The tag catalogue of the workspace; null where the app has no tags. */
     private val tags: LiveTags? = null,
+    /** The global search of the app; null where Claude can't search. */
+    private val search: LiveSearch? = null,
+    /** Reads whole documents from the database; null where Claude can't read them. */
+    private val reader: LiveReader? = null,
 ) {
     private val mutex = Mutex()
 
@@ -67,6 +74,12 @@ class LiveDocuments(
 
         /** The text of get_current_place. */
         data class Place(val text: String) : Outcome
+
+        /** The text of search_documents. */
+        data class Found(val text: String) : Outcome
+
+        /** The text of read_document. */
+        data class Read(val text: String) : Outcome
 
         /** The person stopped Claude Code, in the middle of this call or a moment before it. */
         data object Stopped : Outcome
@@ -335,6 +348,45 @@ class LiveDocuments(
     suspend fun finish(): Outcome = mutex.withLock {
         bridge.finish()
         Outcome.Finished
+    }
+
+    /** Finds documents by their title and their words, like the global search. Only reads. */
+    suspend fun search(query: String, limit: Int): Outcome {
+        val search = search ?: return Outcome.Failed("This Writeopia app can't search.")
+        if (SearchReport.tokens(query).isEmpty()) {
+            return Outcome.Failed("The query has no words to look for: pass one or more words.")
+        }
+        val matches = search.search(query)
+        val allFolders = folders?.list().orEmpty()
+        return Outcome.Found(SearchReport.describe(query, matches, allFolders, limit))
+    }
+
+    /**
+     * The whole document as Markdown, from [offset] on, without opening it. The document open in
+     * the editor is read from the editor, with what the person typed and isn't saved yet. Only
+     * reads: no AI mode, no banner.
+     */
+    suspend fun read(documentId: String, offset: Int): Outcome {
+        val id = documentId.trim()
+        val onScreen = bridge.current?.takeIf { it.isInitialized() && it.documentInfo.value.id == id }
+        val document = if (onScreen != null) {
+            ReadDocument(
+                id = id,
+                title = titleOf(onScreen),
+                parentId = onScreen.documentInfo.value.parentId,
+                markdown = DocumentToMarkdown.parse(
+                    onScreen.currentStory.value.stories.filterValues { step -> !step.ephemeral }
+                ),
+            )
+        } else {
+            val reader = reader ?: return Outcome.Failed("This Writeopia app can't read documents.")
+            reader.read(id)
+        } ?: return Outcome.Failed(
+            "Writeopia has no document with the id $id. Use a document_id from search_documents, " +
+                "create_document or get_current_place."
+        )
+
+        return Outcome.Read(ReadReport.describe(document, folders?.list().orEmpty(), offset))
     }
 
     /** The folders, to choose where to write. Only reads: no AI mode, no banner. */

@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.compose.multiplatform.compiler)
     alias(libs.plugins.ktlint)
+    alias(libs.plugins.kotlinSerialization)
 }
 
 kotlin {
@@ -77,6 +78,8 @@ kotlin {
                 implementation(libs.material.icons.core)
 
                 implementation(libs.compose.navigation)
+                implementation(libs.lifecycle.viewmodel.compose)
+                implementation(libs.kotlinx.serialization.json)
             }
         }
 
@@ -84,6 +87,7 @@ kotlin {
             dependencies {
                 implementation(compose("org.jetbrains.compose.ui:ui-test-junit4"))
                 implementation(project(":application:core:common_ui_tests"))
+                implementation(libs.kotlin.test)
             }
         }
 

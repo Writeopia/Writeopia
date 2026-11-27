@@ -77,6 +77,8 @@ fun SideGlobalMenu(
     toggleMaxScreen: () -> Unit,
     isSyncingState: StateFlow<Boolean> = MutableStateFlow(false),
     isLoadingContentState: StateFlow<Boolean> = MutableStateFlow(false),
+    /** Opens a document or folder of the tree in a new tab (id, title, is a folder). */
+    openInNewTab: ((String, String, Boolean) -> Unit)? = null,
 ) {
     val widthState by derivedStateOf { width }
 
@@ -221,7 +223,8 @@ fun SideGlobalMenu(
                             selectedDocument = navigateToEditDocument,
                             moveRequest = moveRequest,
                             expandFolder = expandFolder,
-                            changeIcon = changeIcon
+                            changeIcon = changeIcon,
+                            openInNewTab = openInNewTab
                         )
                     }
                 }

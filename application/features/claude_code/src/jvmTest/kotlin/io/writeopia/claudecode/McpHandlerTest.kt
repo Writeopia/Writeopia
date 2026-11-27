@@ -65,7 +65,9 @@ class McpHandlerTest {
                 "add_tags",
                 "finish_writing",
                 "list_folders",
-                "create_folder"
+                "create_folder",
+                "search_documents",
+                "read_document"
             ),
             tools.map {
                 it.jsonObject["name"]!!.jsonPrimitive.content

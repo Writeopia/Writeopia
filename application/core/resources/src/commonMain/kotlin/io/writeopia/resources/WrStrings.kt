@@ -7,6 +7,7 @@ import writeopia.application.core.resources.generated.resources.claude_code_work
 import writeopia.application.core.resources.generated.resources.claude_code_stop
 import writeopia.application.core.resources.generated.resources.claude_code_title
 import writeopia.application.core.resources.generated.resources.claude_code_description
+import writeopia.application.core.resources.generated.resources.claude_code_privacy
 import writeopia.application.core.resources.generated.resources.claude_code_enable
 import writeopia.application.core.resources.generated.resources.claude_code_command_hint
 import writeopia.application.core.resources.generated.resources.claude_code_copy
@@ -1739,6 +1740,9 @@ object WrStrings {
 
     @Composable
     fun claudeCodeEnable() = stringResource(Res.string.claude_code_enable)
+
+    @Composable
+    fun claudeCodePrivacy() = stringResource(Res.string.claude_code_privacy)
 
     @Composable
     fun claudeCodeCommandHint() = stringResource(Res.string.claude_code_command_hint)

@@ -14,6 +14,7 @@ import kotlinx.serialization.json.addJsonObject
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
 
@@ -116,6 +117,20 @@ class McpHandler(
 
             LIST_TAGS -> documents.listTags()
 
+            READ -> {
+                val documentId = argument("document_id")?.takeIf { it.isNotBlank() }
+                    ?: return result(id, toolText("The document_id is required.", isError = true))
+                val offset = (arguments["offset"] as? JsonPrimitive)?.intOrNull ?: 0
+                documents.read(documentId, offset)
+            }
+
+            SEARCH -> {
+                val query = argument("query")?.takeIf { it.isNotBlank() }
+                    ?: return result(id, toolText("The query is required: the words to look for.", isError = true))
+                val limit = (arguments["limit"] as? JsonPrimitive)?.intOrNull ?: SearchReport.DEFAULT_LIMIT
+                documents.search(query, limit)
+            }
+
             ADD_TAGS -> {
                 val names = (arguments["tags"] as? JsonArray)
                     ?.mapNotNull { element -> (element as? JsonPrimitive)?.takeIf { it.isString }?.content }
@@ -149,6 +164,10 @@ class McpHandler(
                 LiveDocuments.Outcome.Finished -> toolText(FINISHED)
 
                 is LiveDocuments.Outcome.Place -> toolText(outcome.text)
+
+                is LiveDocuments.Outcome.Found -> toolText(outcome.text)
+
+                is LiveDocuments.Outcome.Read -> toolText(outcome.text)
 
                 is LiveDocuments.Outcome.Tags -> toolText(describeTags(outcome.tags))
 
@@ -223,6 +242,8 @@ class McpHandler(
         const val LIST_TAGS = "list_tags"
         const val CURRENT_PLACE = "get_current_place"
         const val ADD_TAGS = "add_tags"
+        const val SEARCH = "search_documents"
+        const val READ = "read_document"
 
         const val FINISHED = "Writeopia left AI mode: the person can edit the documents again."
 
@@ -248,7 +269,9 @@ class McpHandler(
             "Writes documents in the Writeopia app open on this computer. The person watches the text " +
                 "appear in the editor as it is written. Tools only add: they never change nor delete " +
                 "what is already there. Call $CURRENT_PLACE first to see where the person is and what " +
-                "the open document holds, and again when a call says something changed. To organize " +
+                "the open document holds, and again when a call says something changed. To find " +
+                "documents the person wrote, by their title or the words inside them, use $SEARCH, and " +
+                "$READ to read one whole. To organize " +
                 "documents, see the folders with $LIST_FOLDERS (reuse " +
                 "one that fits before making a new one), make folders with $CREATE_FOLDER, and pass a " +
                 "folder_id to $CREATE. For anything longer than a few paragraphs, write in parts so " +
@@ -264,7 +287,8 @@ class McpHandler(
                 put("title", "Create a Writeopia document")
                 put(
                     "description",
-                    "Creates a new document in the folder folder_id (or the folder open in Writeopia), opens it in the editor and " +
+                    "Creates a new document in the folder folder_id (or the folder open in Writeopia), " +
+                        "opens it in a new tab of the editor and " +
                         "types the title and the markdown into it. Returns the document_id. Start long " +
                         "documents with the first section only and add the others with $APPEND. " +
                         MARKDOWN_GUIDE
@@ -297,9 +321,10 @@ class McpHandler(
                 put("title", "Append to a Writeopia document")
                 put(
                     "description",
-                    "Opens the document in the Writeopia editor and types the markdown at its end, after " +
+                    "Types the markdown at the end of the document in the Writeopia editor, after " +
                         "everything already there. Without document_id, writes into the document open in " +
-                        "the editor now. " + MARKDOWN_GUIDE
+                        "the active tab now. Another document opens in a new tab first (or in the tab that " +
+                        "already shows it). " + MARKDOWN_GUIDE
                 )
                 putJsonObject("inputSchema") {
                     put("type", "object")
@@ -312,7 +337,7 @@ class McpHandler(
                             put("type", "string")
                             put(
                                 "description",
-                                "The document_id returned by $CREATE. Leave it out to write into the document open in the editor."
+                                "The document_id returned by $CREATE. Leave it out to write into the document open in the active tab."
                             )
                         }
                     }
@@ -339,7 +364,7 @@ class McpHandler(
                             put("type", "string")
                             put(
                                 "description",
-                                "The document_id returned by $CREATE. Leave it out to use the document open in the editor."
+                                "The document_id returned by $CREATE. Leave it out to use the document open in the active tab."
                             )
                         }
                         putJsonObject("description") {
@@ -417,7 +442,7 @@ class McpHandler(
                             put("type", "string")
                             put(
                                 "description",
-                                "The document_id returned by $CREATE. Leave it out to use the document open in the editor."
+                                "The document_id returned by $CREATE. Leave it out to use the document open in the active tab."
                             )
                         }
                     }
@@ -480,6 +505,67 @@ class McpHandler(
                         }
                     }
                     put("required", buildJsonArray { add("name") })
+                    put("additionalProperties", false)
+                }
+            }
+            addJsonObject {
+                put("name", SEARCH)
+                put("title", "Search the Writeopia documents")
+                put(
+                    "description",
+                    "Searches the documents of the workspace open in Writeopia, like the search of the " +
+                        "app: by their title and by the words inside them, on this computer and in the " +
+                        "cloud. Every word must be found, each at the start of a word (\"plan\" finds " +
+                        "\"planning\"). Returns the documents best first, each with its document_id, its " +
+                        "folder and the passage the words were found in, and the folders whose name " +
+                        "matches, with their folder_id. Only reads."
+                )
+                putJsonObject("inputSchema") {
+                    put("type", "object")
+                    putJsonObject("properties") {
+                        putJsonObject("query") {
+                            put("type", "string")
+                            put("description", "The words to look for, like \"budget 2026\".")
+                        }
+                        putJsonObject("limit") {
+                            put("type", "integer")
+                            put(
+                                "description",
+                                "How many documents to show, from 1 to ${SearchReport.MAX_LIMIT}. " +
+                                    "${SearchReport.DEFAULT_LIMIT} when left out."
+                            )
+                        }
+                    }
+                    put("required", buildJsonArray { add("query") })
+                    put("additionalProperties", false)
+                }
+            }
+            addJsonObject {
+                put("name", READ)
+                put("title", "Read a Writeopia document")
+                put(
+                    "description",
+                    "Reads a whole document of the workspace as Markdown, without opening it in the app: " +
+                        "its title, its folder and its content. Long documents come in parts of " +
+                        "${ReadReport.PAGE_LENGTH} characters, and the answer tells the offset of the next " +
+                        "part. Use a document_id from $SEARCH, $CREATE or $CURRENT_PLACE. Only reads."
+                )
+                putJsonObject("inputSchema") {
+                    put("type", "object")
+                    putJsonObject("properties") {
+                        putJsonObject("document_id") {
+                            put("type", "string")
+                            put("description", "The document to read.")
+                        }
+                        putJsonObject("offset") {
+                            put("type", "integer")
+                            put(
+                                "description",
+                                "Where to start reading, in characters, as the previous part said. 0 when left out."
+                            )
+                        }
+                    }
+                    put("required", buildJsonArray { add("document_id") })
                     put("additionalProperties", false)
                 }
             }

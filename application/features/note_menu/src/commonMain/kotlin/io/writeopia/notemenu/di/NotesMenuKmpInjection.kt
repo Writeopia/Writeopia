@@ -170,5 +170,19 @@ class NotesMenuKmpInjection private constructor(
         ).also {
             instanceDesktop = it
         }
+
+        /**
+         * Not cached: each desktop tab gets its own, with the keys that reach only that tab, so
+         * a shortcut doesn't act on the notes of a tab out of sight.
+         */
+        fun desktopForTab(
+            selectionState: StateFlow<Boolean>,
+            keyboardEventFlow: Flow<KeyboardEvent>,
+            localAiInjection: LocalAiInjection = LocalAiInjection.singleton(),
+        ) = NotesMenuKmpInjection(
+            selectionState = selectionState,
+            keyboardEventFlow = keyboardEventFlow,
+            localAiInjection = localAiInjection,
+        )
     }
 }

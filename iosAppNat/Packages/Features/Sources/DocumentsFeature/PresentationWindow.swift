@@ -1,4 +1,5 @@
 #if os(macOS)
+import AppKit
 import NoteEditor
 import SwiftUI
 import WrData
@@ -23,9 +24,25 @@ public struct PresentationWindowScene: Scene {
                     .environment(session)
                     .colorTheme(session.colorTheme)
                     .frame(minWidth: 800, minHeight: 500)
+                    // A presentation is never a tab of the documents' windows.
+                    .background { TabbingDisallowed() }
             }
         }
         .defaultSize(width: 1100, height: 700)
+    }
+}
+
+/// Keeps the window it is in out of any tab group.
+private struct TabbingDisallowed: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSView { DisallowingView() }
+
+    func updateNSView(_ nsView: NSView, context: Context) {}
+
+    private final class DisallowingView: NSView {
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            window?.tabbingMode = .disallowed
+        }
     }
 }
 
