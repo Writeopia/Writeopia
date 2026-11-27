@@ -8,6 +8,9 @@ public extension EnvironmentValues {
     /// True inside screens already on the v4 redesign: the shared form pieces (`WrTextField`,
     /// `WrPrimaryButton`, `WrBackButton`, `WrScreenHeader`) switch to the v4 look.
     @Entry var wrUsesV4: Bool = false
+    /// True where folder and document icons are all drawn in the icon gray, whatever color was
+    /// picked for them, like the tree of the v4 sidebar.
+    @Entry var wrMonochromeIcons: Bool = false
 }
 
 public extension View {

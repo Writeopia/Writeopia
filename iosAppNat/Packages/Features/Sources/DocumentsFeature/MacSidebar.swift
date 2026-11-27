@@ -45,6 +45,8 @@ public struct MacSidebar: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(WrTheme.Colors.bgApp)
         .wrV4()
+        // The tree draws every icon in the same gray, whatever color was picked for it.
+        .environment(\.wrMonochromeIcons, true)
     }
 
     /// The 44 pt bar the traffic lights sit in, with the button that hides the sidebar at its

@@ -100,6 +100,7 @@ public struct DocumentIconImage: View {
     let icon: IconInfo?
     let defaultColor: Color
     @Environment(\.wrUsesV4) private var usesV4
+    @Environment(\.wrMonochromeIcons) private var isMonochrome
 
     public init(icon: IconInfo?, defaultColor: Color = WrColors.textLighter) {
         self.icon = icon
@@ -109,7 +110,10 @@ public struct DocumentIconImage: View {
     public var body: some View {
         // v4 draws the plain page as an outline in the icon gray, like `Icon/file`.
         Image(systemName: MenuIcons.symbol(for: icon?.label) ?? (usesV4 ? "doc" : "doc.text"))
-            .foregroundStyle(MenuIcons.color(for: icon?.tint) ?? (usesV4 ? WrTheme.Colors.iconSecondary : defaultColor))
+            .foregroundStyle(
+                isMonochrome ? WrTheme.Colors.iconSecondary
+                    : MenuIcons.color(for: icon?.tint) ?? (usesV4 ? WrTheme.Colors.iconSecondary : defaultColor)
+            )
             .accessibilityLabel("Document icon")
     }
 }
@@ -119,6 +123,7 @@ public struct FolderIconImage: View {
     let icon: IconInfo?
     var isDropTarget = false
     @Environment(\.wrUsesV4) private var usesV4
+    @Environment(\.wrMonochromeIcons) private var isMonochrome
 
     public init(icon: IconInfo?, isDropTarget: Bool = false) {
         self.icon = icon
@@ -127,7 +132,7 @@ public struct FolderIconImage: View {
 
     public var body: some View {
         Image(systemName: symbol)
-            .foregroundStyle(MenuIcons.color(for: icon?.tint) ?? defaultColor)
+            .foregroundStyle(isMonochrome && !isDropTarget ? WrTheme.Colors.iconSecondary : MenuIcons.color(for: icon?.tint) ?? defaultColor)
     }
 
     /// v4 draws the default folder as an outline in the icon gray, like `Icon/folder`.
