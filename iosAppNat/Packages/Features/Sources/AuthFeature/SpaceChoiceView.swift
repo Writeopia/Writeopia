@@ -22,11 +22,95 @@ private enum HoveredSpace {
     case openSpace
 }
 
+/// A lantern hanging above the window, like the first native version and the Compose app: only
+/// its glow reaches the screen, brightest at the top and fading down, with the corners and the
+/// bottom of the room in shade.
+///
+/// At rest it hangs in the middle, dimmed. Over the open space it brightens and swings to
+/// follow the pointer, a little behind it. Over the private space the room goes dark and only
+/// a narrow, faint beam is left over the card, "nothing ever leaves the room". With Reduce
+/// Motion on it doesn't follow the pointer, it only changes in strength.
+private struct LanternLight: View {
+    let hovered: HoveredSpace
+    let pointerX: CGFloat?
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        GeometryReader { proxy in
+            let size = proxy.size
+            let beam = beamSize(in: size)
+
+            ZStack(alignment: .topLeading) {
+                // The shade: the room is darker away from the lantern.
+                LinearGradient(
+                    colors: [.black.opacity(0), .black.opacity(shade)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+
+                // The glow: an ellipse of light whose top half is above the window.
+                EllipticalGradient(
+                    colors: [glow.opacity(0.95), glow.opacity(0.4), glow.opacity(0)],
+                    center: .center,
+                    startRadiusFraction: 0,
+                    endRadiusFraction: 0.5
+                )
+                .frame(width: beam.width, height: beam.height)
+                .position(x: lanternX(in: size), y: 0)
+                .blur(radius: 24)
+                .opacity(intensity)
+                .blendMode(colorScheme == .dark ? .plusLighter : .normal)
+            }
+            .frame(width: size.width, height: size.height)
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    /// Follows the pointer while a card is hovered; in the middle otherwise.
+    private func lanternX(in size: CGSize) -> CGFloat {
+        guard hovered != .none, let pointerX, !reduceMotion else { return size.width / 2 }
+        return min(max(pointerX, 0), size.width)
+    }
+
+    private func beamSize(in size: CGSize) -> CGSize {
+        switch hovered {
+        case .none: CGSize(width: size.width * 1.2, height: size.height * 1.3)
+        case .openSpace: CGSize(width: size.width * 0.9, height: size.height * 1.6)
+        case .privateSpace: CGSize(width: size.width * 0.45, height: size.height * 1.4)
+        }
+    }
+
+    private var glow: Color {
+        colorScheme == .dark ? Color(white: 0.85) : .white
+    }
+
+    private var intensity: Double {
+        switch hovered {
+        case .none: 0.7
+        case .openSpace: 1
+        case .privateSpace: 0.16
+        }
+    }
+
+    /// Light mode needs the shade for the white glow to read; dark mode is mostly shade.
+    private var shade: Double {
+        switch (hovered, colorScheme) {
+        case (.privateSpace, _): 0.45
+        case (_, .dark): 0.3
+        case (.openSpace, _): 0.16
+        default: 0.09
+        }
+    }
+}
+
 private struct SpaceChoiceLayout: View {
     @Environment(AppSession.self) private var session
     @Environment(\.isWideLayout) private var isWideLayout
     @Environment(\.colorScheme) private var systemScheme
     @State private var hovered: HoveredSpace = .none
+    @State private var pointerX: CGFloat?
 
     var body: some View {
         Group {
@@ -53,7 +137,22 @@ private struct SpaceChoiceLayout: View {
                 }
             }
         }
-        .background(WrTheme.Colors.bgApp.ignoresSafeArea())
+        .background {
+            ZStack {
+                WrTheme.Colors.bgApp
+                LanternLight(hovered: hovered, pointerX: pointerX)
+            }
+            .ignoresSafeArea()
+        }
+        // Where the pointer is across the screen, so the lantern can follow it.
+        .onContinuousHover(coordinateSpace: .local) { phase in
+            switch phase {
+            case .active(let location):
+                withAnimation(.easeOut(duration: 0.6)) { pointerX = location.x }
+            case .ended:
+                pointerX = nil
+            }
+        }
         .wrV4()
         // The room goes dark while the pointer is on the private space.
         .environment(\.colorScheme, hovered == .privateSpace ? .dark : systemScheme)
