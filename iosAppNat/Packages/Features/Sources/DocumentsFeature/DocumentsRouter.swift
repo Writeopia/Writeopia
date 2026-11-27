@@ -8,6 +8,9 @@ import WrModels
 @Observable
 public final class DocumentsRouter {
     public var path = NavigationPath()
+    /// The folder shown last (the root when none, or for favorites and tags): where Claude Code
+    /// puts new folders and documents unless told otherwise.
+    public private(set) var shownFolderId = Folder.rootId
     /// Increases whenever the side menu should load its tree again.
     public private(set) var treeVersion = 0
     /// Increases whenever the side menu changed the folders, so the list loads them again.
@@ -17,7 +20,7 @@ public final class DocumentsRouter {
 
     /// Shows `folder` with its ancestors behind it, so back goes up the tree.
     @MainActor
-    func open(folder: Folder, repository: DocumentsRepository) async {
+    public func open(folder: Folder, repository: DocumentsRepository) async {
         favoritesOpened = false
         let ancestors = (try? await repository.folderPath(to: folder.id)) ?? []
         let folders = ancestors.last?.id == folder.id ? ancestors : [folder]
@@ -55,11 +58,22 @@ public final class DocumentsRouter {
 
     public func reset() {
         favoritesOpened = false
+        shownFolderId = Folder.rootId
         path = NavigationPath()
     }
 
+    /// A folder view appeared: `id` is a folder, or the favorites or a tag (then the root counts).
+    /// `folder` is about to be shown: it is the folder open from now on, before the navigation lands.
+    public func willShow(_ folder: Folder) {
+        shownFolderId = folder.id
+    }
+
+    func folderShown(_ id: String, isFolder: Bool) {
+        shownFolderId = isFolder ? id : Folder.rootId
+    }
+
     /// Folders or documents were added, moved or removed.
-    func treeChanged() {
+    public func treeChanged() {
         treeVersion += 1
     }
 

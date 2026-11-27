@@ -165,6 +165,14 @@ interface NoteEditorViewModel : BackstackInform, BackstackHandler {
     /** Asks the AI for a header picture, or for a different one. It costs tokens of the user. */
     fun generateHeaderImage()
 
+    /**
+     * Draws a header picture for the document with the cloud AI ([instructions] personalise it),
+     * keeps it with the pictures of the workspace and returns its URL, without putting it in the
+     * header. For Claude Code; fails where the cloud can't draw.
+     */
+    suspend fun drawHeaderImage(instructions: String): Result<String> =
+        Result.failure(Exception("This editor can't draw header pictures."))
+
     /** Puts the drawn picture in the header and keeps it with the pictures of the workspace. */
     fun approveHeaderImage()
 

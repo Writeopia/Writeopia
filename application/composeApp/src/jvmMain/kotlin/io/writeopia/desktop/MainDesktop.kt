@@ -1,5 +1,15 @@
 package io.writeopia.desktop
 
+import io.writeopia.core.folders.di.DocumentTagsInjector
+import io.writeopia.claudecode.RepositoryLiveTags
+import io.writeopia.sdk.models.document.Folder
+import io.writeopia.common.utils.NotesNavigation
+import io.writeopia.notemenu.data.usecase.NotesNavigationUseCase
+import io.writeopia.sdk.models.workspace.Workspace
+import io.writeopia.auth.core.di.AuthCoreInjectionNeo
+import io.writeopia.core.folders.di.FoldersInjector
+import io.writeopia.claudecode.RepositoryLiveFolders
+import io.writeopia.claudecode.ClaudeCodeBridge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,6 +18,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,6 +63,7 @@ import io.writeopia.common.utils.configuration.LocalPlatform
 import io.writeopia.common.utils.configuration.PlatformType
 import io.writeopia.sdk.persistence.core.di.RepositoryInjector
 import io.writeopia.sqldelight.di.SqlDelightDaoInjector
+import io.writeopia.claudecode.server.ClaudeCodeServer
 import io.writeopia.genai.di.GenAiInjection
 import io.writeopia.writingagent.di.WritingAgentInjection
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -101,6 +113,9 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
         selectionState.value = keyEvent.isMultiSelectionTrigger()
 
         when {
+            // While Claude Code writes, the editor's shortcuts (undo, delete, paste...) do nothing.
+            ClaudeCodeBridge.aiMode.value.isOn -> false
+
             KeyboardCommands.isDeleteEvent(keyEvent) -> {
                 sendEvent(KeyboardEvent.DELETE)
                 false
@@ -252,6 +267,34 @@ private fun ApplicationScope.App(onCloseRequest: () -> Unit = ::exitApplication)
                     baseUrl = "https://writeopia.io"
                 )
                 WritingAgentInjection.initialize(baseUrl = "https://writeopia.io")
+                // The local MCP server for Claude Code, off until turned on in the settings
+                remember {
+                    ClaudeCodeServer.install(
+                        appVersion = "desktop",
+                        folders = RepositoryLiveFolders(
+                            folderRepository = FoldersInjector.singleton().provideFoldersRepository(),
+                            workspaceId = {
+                                (
+                                    AuthCoreInjectionNeo.singleton().provideAuthRepository().getWorkspace()
+                                        ?: Workspace.disconnectedWorkspace()
+                                ).id
+                            },
+                            currentFolder = {
+                                (NotesNavigationUseCase.singleton().navigationState.value as? NotesNavigation.Folder)?.id
+                                    ?: Folder.ROOT_PATH
+                            },
+                        ),
+                        tags = RepositoryLiveTags(
+                            tagRepository = DocumentTagsInjector.singleton().provideDocumentTagRepository(),
+                            workspaceId = {
+                                (
+                                    AuthCoreInjectionNeo.singleton().provideAuthRepository().getWorkspace()
+                                        ?: Workspace.disconnectedWorkspace()
+                                ).id
+                            },
+                        ),
+                    )
+                }
 
                 val uiConfigurationInjector = UiConfigurationInjector.singleton()
 

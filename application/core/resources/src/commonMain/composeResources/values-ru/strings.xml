@@ -446,4 +446,13 @@
   <string name="google_signup_message">%1$s впервые входит в Writeopia. Выберите имя пользователя, чтобы создать аккаунт.</string>
   <string name="new_to_writeopia">Впервые в Writeopia?</string>
   <string name="create_an_account">Создать учётную запись</string>
+  <string name="claude_code_title">Claude Code</string>
+  <string name="claude_code_description">Разрешите Claude Code писать документы в этом приложении: текст появляется по мере написания. Он может только создавать документы и дополнять их, но не изменять и не удалять существующее.</string>
+  <string name="claude_code_enable">Разрешить Claude Code писать</string>
+  <string name="claude_code_command_hint">Выполните это один раз в терминале, чтобы подключить Claude Code:</string>
+  <string name="claude_code_copy">Копировать</string>
+  <string name="claude_code_copied">Скопировано</string>
+  <string name="claude_code_writing">Claude Code пишет…</string>
+  <string name="claude_code_working">Claude Code работает…</string>
+  <string name="claude_code_stop">Остановить</string>
 </resources>

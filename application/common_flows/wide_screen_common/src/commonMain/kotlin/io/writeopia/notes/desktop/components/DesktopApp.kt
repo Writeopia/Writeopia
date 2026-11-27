@@ -1,5 +1,9 @@
 package io.writeopia.notes.desktop.components
 
+import androidx.compose.foundation.layout.fillMaxSize
+import io.writeopia.claudecode.ui.ClaudeCodeAiModeBanner
+import io.writeopia.claudecode.ClaudeCodeBridge
+import io.writeopia.navigation.notes.navigateToNewNote
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
@@ -152,6 +156,29 @@ fun DesktopApp(
         }
     }
 
+    // Claude Code asks for documents to write into: show them, so the person watches.
+    LaunchedEffect(navigationController) {
+        ClaudeCodeBridge.openRequests.collect { request ->
+            when (request) {
+                is ClaudeCodeBridge.OpenRequest.NewDocument -> {
+                    val folderId = request.folderId
+                    if (folderId == null) {
+                        navigationController.navigateToNewNote()
+                    } else {
+                        navigationController.navigate("${Destinations.EDITOR.id}/$folderId")
+                    }
+                }
+
+                is ClaudeCodeBridge.OpenRequest.Folder ->
+                    navigationController.navigateToNotes(NotesNavigation.Folder(request.id))
+
+                // The title is read from the document once it loads.
+                is ClaudeCodeBridge.OpenRequest.Document ->
+                    navigationController.navigateToNoteMobile(request.id, "null")
+            }
+        }
+    }
+
     WriteopiaTheme(
         darkTheme = colorTheme.isDarkTheme(),
         accentColor = accentColor ?: AccentColor.DYNAMIC
@@ -159,257 +186,264 @@ fun DesktopApp(
         val density = LocalDensity.current
         val globalBackground = WriteopiaTheme.colorScheme.globalBackground
         val isTextSelected by editorInjector.textSelectionActiveState.collectAsState()
-        DragSelectionBox(modifier = modifier, isTextSelected = isTextSelected) {
-            DraggableScreen {
-                Row(Modifier.background(globalBackground)) {
-                    val sideMenuWidth by globalShellViewModel.showSideMenuState.collectAsState()
+        Box(modifier = Modifier.fillMaxSize()) {
+            DragSelectionBox(modifier = modifier, isTextSelected = isTextSelected) {
+                DraggableScreen {
+                    Row(Modifier.background(globalBackground)) {
+                        val sideMenuWidth by globalShellViewModel.showSideMenuState.collectAsState()
 
-                    SideGlobalMenu(
-                        modifier = Modifier.fillMaxHeight(),
-                        foldersState = globalShellViewModel.sideMenuItems,
-                        width = density.run { sideMenuWidth.toDp() },
-                        homeClick = {
-                            val navType = navigationController.currentBackStackEntry
-                                ?.savedStateHandle
-                                ?.get<String>(NAVIGATION_TYPE)
-                                ?.let(NotesNavigationType::fromType)
+                        SideGlobalMenu(
+                            modifier = Modifier.fillMaxHeight(),
+                            foldersState = globalShellViewModel.sideMenuItems,
+                            width = density.run { sideMenuWidth.toDp() },
+                            homeClick = {
+                                val navType = navigationController.currentBackStackEntry
+                                    ?.savedStateHandle
+                                    ?.get<String>(NAVIGATION_TYPE)
+                                    ?.let(NotesNavigationType::fromType)
 
-                            if (navType != NotesNavigationType.ROOT) {
-                                navigationController.navigateToNotes(NotesNavigation.Root)
-                            }
-                        },
-                        favoritesClick = {
-                            val navType = navigationController.currentBackStackEntry
-                                ?.savedStateHandle
-                                ?.get<String?>(NAVIGATION_TYPE)
-                                ?.let(NotesNavigationType::fromType)
+                                if (navType != NotesNavigationType.ROOT) {
+                                    navigationController.navigateToNotes(NotesNavigation.Root)
+                                }
+                            },
+                            favoritesClick = {
+                                val navType = navigationController.currentBackStackEntry
+                                    ?.savedStateHandle
+                                    ?.get<String?>(NAVIGATION_TYPE)
+                                    ?.let(NotesNavigationType::fromType)
 
-                            if (navType != NotesNavigationType.FAVORITES) {
-                                navigationController.navigateToNotes(NotesNavigation.Favorites)
-                            }
-                        },
-                        settingsClick = globalShellViewModel::showSettings,
-                        addFolder = globalShellViewModel::addFolder,
-                        editFolder = globalShellViewModel::editFolder,
-                        navigateToFolder = { id ->
-                            val navigation = NotesNavigation.Folder(id)
-                            navigationController.navigateToNotes(navigation)
-                        },
-                        navigateToEditDocument = navigationController::navigateToNoteMobile,
-                        moveRequest = globalShellViewModel::moveToFolder,
-                        expandFolder = globalShellViewModel::expandFolder,
-                        searchClick = globalShellViewModel::showSearch,
-                        highlightContent = {},
-                        changeIcon = globalShellViewModel::changeIcons,
-                        toggleMaxScreen = toggleMaxScreen,
-                        isSyncingState = globalShellViewModel.isSyncingState,
-                        isLoadingContentState = globalShellViewModel.isLoadingContentState
-                    )
+                                if (navType != NotesNavigationType.FAVORITES) {
+                                    navigationController.navigateToNotes(NotesNavigation.Favorites)
+                                }
+                            },
+                            settingsClick = globalShellViewModel::showSettings,
+                            addFolder = globalShellViewModel::addFolder,
+                            editFolder = globalShellViewModel::editFolder,
+                            navigateToFolder = { id ->
+                                val navigation = NotesNavigation.Folder(id)
+                                navigationController.navigateToNotes(navigation)
+                            },
+                            navigateToEditDocument = navigationController::navigateToNoteMobile,
+                            moveRequest = globalShellViewModel::moveToFolder,
+                            expandFolder = globalShellViewModel::expandFolder,
+                            searchClick = globalShellViewModel::showSearch,
+                            highlightContent = {},
+                            changeIcon = globalShellViewModel::changeIcons,
+                            toggleMaxScreen = toggleMaxScreen,
+                            isSyncingState = globalShellViewModel.isSyncingState,
+                            isLoadingContentState = globalShellViewModel.isLoadingContentState
+                        )
 
-                    Column {
-                        if (hasGlobalHeader) {
-                            GlobalHeader(
-                                navigationController,
-                                globalShellViewModel.folderPath,
-                                toggleMaxScreen
-                            )
-                        } else {
-                            Spacer(modifier = Modifier.height(8.dp))
-                        }
-
-                        Box(
-                            modifier = Modifier
-                                .padding(start = 8.dp, end = 8.dp, bottom = 8.dp)
-                                .clip(MaterialTheme.shapes.large)
-                                .background(MaterialTheme.colorScheme.background)
-                        ) {
-                            Navigation(
-                                isDarkTheme = colorTheme.isDarkTheme(),
-                                startDestination = startDestination,
-                                notesMenuInjection = actualNotesMenuInjection,
-                                sideMenuKmpInjector = actualSideMenuInjector,
-                                documentsGraphInjection = documentsGraphInjection,
-                                editorInjector = editorInjector,
-                                drawingInjection = drawingInjection,
-                                selectedColorTheme = colorThemeOption,
-                                selectedAccentColor = accentColorOption,
-                                selectColorTheme = selectColorTheme,
-                                selectAccentColor = selectAccentColor,
-                                onDrawingSaved = { documentId, storyStepId, drawingData ->
-                                    editorInjector.addDrawingToDocument(
-                                        documentId,
-                                        storyStepId,
-                                        drawingData
-                                    )
-                                },
-                                navigationBar = {},
-                                navController = navigationController
-                            ) {}
-
-                            val snackbarHostState = remember { SnackbarHostState() }
-
-                            // The side menu and the notes screen share the folder controller,
-                            // so this tells about the drops on both.
-                            FolderMoveSnackbarEffect(
-                                snackbarHostState = snackbarHostState,
-                                lastMoveState = globalShellViewModel.lastMoveState,
-                                undoMove = globalShellViewModel::undoMove,
-                                dismissMove = globalShellViewModel::dismissMove
-                            )
-
-                            SnackbarHost(
-                                hostState = snackbarHostState,
-                                modifier = Modifier.align(Alignment.BottomCenter)
-                            ) { data ->
-                                WriteopiaSnackbar(snackbarData = data)
-                            }
-
-                            val folderEdit =
-                                globalShellViewModel.editFolderState.collectAsState().value
-
-                            if (folderEdit != null) {
-                                EditFileDialog(
-                                    folderEdit = folderEdit,
-                                    onDismissRequest = globalShellViewModel::stopEditingFolder,
-                                    deleteFolder = globalShellViewModel::deleteFolder,
-                                    editFolder = globalShellViewModel::updateFolder
+                        Column {
+                            if (hasGlobalHeader) {
+                                GlobalHeader(
+                                    navigationController,
+                                    globalShellViewModel.folderPath,
+                                    toggleMaxScreen
                                 )
+                            } else {
+                                Spacer(modifier = Modifier.height(8.dp))
                             }
 
-                            val showSettingsState by globalShellViewModel
-                                .showSettingsState
-                                .collectAsState()
-
-                            if (showSettingsState) {
-                                SettingsDialog(
-                                    workplacePathState = globalShellViewModel.workspaceLocalPath,
+                            Box(
+                                modifier = Modifier
+                                    .padding(start = 8.dp, end = 8.dp, bottom = 8.dp)
+                                    .clip(MaterialTheme.shapes.large)
+                                    .background(MaterialTheme.colorScheme.background)
+                            ) {
+                                Navigation(
+                                    isDarkTheme = colorTheme.isDarkTheme(),
+                                    startDestination = startDestination,
+                                    notesMenuInjection = actualNotesMenuInjection,
+                                    sideMenuKmpInjector = actualSideMenuInjector,
+                                    documentsGraphInjection = documentsGraphInjection,
+                                    editorInjector = editorInjector,
+                                    drawingInjection = drawingInjection,
                                     selectedColorTheme = colorThemeOption,
                                     selectedAccentColor = accentColorOption,
-                                    localAiConfigController = globalShellViewModel,
-                                    aiProviderState = globalShellViewModel.aiProviderState,
-                                    aiProviderChoices = globalShellViewModel.aiProviderChoices,
-                                    isCloudAiAvailable = globalShellViewModel.isCloudAiAvailable,
-                                    selectAiProvider = globalShellViewModel::selectAiProvider,
-                                    cloudAiUsageState = globalShellViewModel.cloudAiUsageState,
-                                    userOnlineState = globalShellViewModel.userState,
-                                    showDeleteConfirmation = globalShellViewModel.showDeleteConfirmation,
-                                    workspaceToEdit = globalShellViewModel.workspaceToEdit,
-                                    logoutInProgress = globalShellViewModel.logoutInProgress,
-                                    deleteAccountInProgress =
-                                        globalShellViewModel.deleteAccountInProgress,
-                                    onDismissRequest = globalShellViewModel::hideSettings,
                                     selectColorTheme = selectColorTheme,
                                     selectAccentColor = selectAccentColor,
-                                    workspaces = globalShellViewModel.availableWorkspaces,
-                                    selectWorkplacePath = globalShellViewModel::changeWorkspaceLocalPath,
-                                    loadCloudAiUsage = globalShellViewModel::loadCloudAiUsage,
-                                    signIn = navigateToRegister,
-                                    switchSpace = navigateToSpaceChoice,
-                                    changeWorkspace = {
-                                        globalShellViewModel.changeWorkspace(sideEffect = navigateToChooseWorkspace)
-                                    },
-                                    resetPassword = navigateToResetPassword,
-                                    logout = {
-                                        // Resets the nav graph back to START_APP so the login-state
-                                        // check re-runs and can land on the space-choice screen.
-                                        globalShellViewModel.logout(
-                                            onSuccessSideEffect = navigateToChooseWorkspace
+                                    onDrawingSaved = { documentId, storyStepId, drawingData ->
+                                        editorInjector.addDrawingToDocument(
+                                            documentId,
+                                            storyStepId,
+                                            drawingData
                                         )
                                     },
-                                    showDeleteConfirm = globalShellViewModel::showDeleteConfirm,
-                                    dismissDeleteConfirm = globalShellViewModel::dismissDeleteConfirm,
-                                    deleteAccount = {
-                                        globalShellViewModel.deleteAccount(
-                                            sideEffect = navigateToAccountDeletionStarted
-                                        )
-                                    },
-                                    addUserToTeam = globalShellViewModel::addUserToTeam,
-                                    selectWorkspaceToManage =
-                                        globalShellViewModel::selectWorkspaceToManage,
-                                    usersInSelectedWorkspace = globalShellViewModel.usersOfWorkspaceToEdit,
-                                    exportWorkspaceState = globalShellViewModel.exportWorkspaceState,
-                                    onExportWorkspace = globalShellViewModel::exportWorkspace,
-                                    onResetExportState = globalShellViewModel::resetExportState,
-                                    userSearchQuery = globalShellViewModel.userSearchQuery,
-                                    userSearchResults = globalShellViewModel.userSearchResults,
-                                    onUserSearchQueryChange = globalShellViewModel::onUserSearchQueryChange,
-                                    onUserSuggestionSelect = globalShellViewModel::onUserSuggestionSelect,
-                                    onVersionEasterEgg = {
-                                        globalShellViewModel.createVersionEasterEgg { id, title ->
-                                            globalShellViewModel.hideSettings()
-                                            navigationController.navigateToNoteMobile(id, title)
-                                        }
-                                    },
+                                    navigationBar = {},
+                                    navController = navigationController
+                                ) {}
+
+                                val snackbarHostState = remember { SnackbarHostState() }
+
+                                // The side menu and the notes screen share the folder controller,
+                                // so this tells about the drops on both.
+                                FolderMoveSnackbarEffect(
+                                    snackbarHostState = snackbarHostState,
+                                    lastMoveState = globalShellViewModel.lastMoveState,
+                                    undoMove = globalShellViewModel::undoMove,
+                                    dismissMove = globalShellViewModel::dismissMove
                                 )
-                            }
 
-                            val showSearchState by globalShellViewModel
-                                .showSearchDialog
-                                .collectAsState()
-
-                            if (showSearchState) {
-                                LaunchedEffect(true) {
-                                    searchViewModel.init()
+                                SnackbarHost(
+                                    hostState = snackbarHostState,
+                                    modifier = Modifier.align(Alignment.BottomCenter)
+                                ) { data ->
+                                    WriteopiaSnackbar(snackbarData = data)
                                 }
 
-                                SearchDialog(
-                                    searchState = searchViewModel.searchState,
-                                    searchResults = searchViewModel.queryResults,
-                                    onSearchType = searchViewModel::onSearchType,
-                                    onDismissRequest = globalShellViewModel::hideSearch,
-                                    documentClick = navigationController::navigateToNoteMobile,
-                                    onFolderClick = navigationController::navigateToFolder,
-                                    presentationClick = navigationController::navigateToNoteWithPresentation,
-                                    documentContentClick = navigationController::navigateToNoteWithSearch
-                                )
-                            }
+                                val folderEdit =
+                                    globalShellViewModel.editFolderState.collectAsState().value
 
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxHeight()
-                                    .width(10.dp)
-                                    .align(alignment = Alignment.CenterStart)
-                                    .draggable(
-                                        orientation = Orientation.Horizontal,
-                                        state = rememberDraggableState { delta ->
-                                            globalShellViewModel.moveSideMenu(sideMenuWidth + delta)
+                                if (folderEdit != null) {
+                                    EditFileDialog(
+                                        folderEdit = folderEdit,
+                                        onDismissRequest = globalShellViewModel::stopEditingFolder,
+                                        deleteFolder = globalShellViewModel::deleteFolder,
+                                        editFolder = globalShellViewModel::updateFolder
+                                    )
+                                }
+
+                                val showSettingsState by globalShellViewModel
+                                    .showSettingsState
+                                    .collectAsState()
+
+                                if (showSettingsState) {
+                                    SettingsDialog(
+                                        workplacePathState = globalShellViewModel.workspaceLocalPath,
+                                        selectedColorTheme = colorThemeOption,
+                                        selectedAccentColor = accentColorOption,
+                                        localAiConfigController = globalShellViewModel,
+                                        aiProviderState = globalShellViewModel.aiProviderState,
+                                        aiProviderChoices = globalShellViewModel.aiProviderChoices,
+                                        isCloudAiAvailable = globalShellViewModel.isCloudAiAvailable,
+                                        selectAiProvider = globalShellViewModel::selectAiProvider,
+                                        cloudAiUsageState = globalShellViewModel.cloudAiUsageState,
+                                        userOnlineState = globalShellViewModel.userState,
+                                        showDeleteConfirmation = globalShellViewModel.showDeleteConfirmation,
+                                        workspaceToEdit = globalShellViewModel.workspaceToEdit,
+                                        logoutInProgress = globalShellViewModel.logoutInProgress,
+                                        deleteAccountInProgress =
+                                            globalShellViewModel.deleteAccountInProgress,
+                                        onDismissRequest = globalShellViewModel::hideSettings,
+                                        selectColorTheme = selectColorTheme,
+                                        selectAccentColor = selectAccentColor,
+                                        workspaces = globalShellViewModel.availableWorkspaces,
+                                        selectWorkplacePath = globalShellViewModel::changeWorkspaceLocalPath,
+                                        loadCloudAiUsage = globalShellViewModel::loadCloudAiUsage,
+                                        signIn = navigateToRegister,
+                                        switchSpace = navigateToSpaceChoice,
+                                        changeWorkspace = {
+                                            globalShellViewModel.changeWorkspace(sideEffect = navigateToChooseWorkspace)
                                         },
-                                        onDragStopped = {
-                                            globalShellViewModel.saveMenuWidth()
+                                        resetPassword = navigateToResetPassword,
+                                        logout = {
+                                            // Resets the nav graph back to START_APP so the login-state
+                                            // check re-runs and can land on the space-choice screen.
+                                            globalShellViewModel.logout(
+                                                onSuccessSideEffect = navigateToChooseWorkspace
+                                            )
+                                        },
+                                        showDeleteConfirm = globalShellViewModel::showDeleteConfirm,
+                                        dismissDeleteConfirm = globalShellViewModel::dismissDeleteConfirm,
+                                        deleteAccount = {
+                                            globalShellViewModel.deleteAccount(
+                                                sideEffect = navigateToAccountDeletionStarted
+                                            )
+                                        },
+                                        addUserToTeam = globalShellViewModel::addUserToTeam,
+                                        selectWorkspaceToManage =
+                                            globalShellViewModel::selectWorkspaceToManage,
+                                        usersInSelectedWorkspace = globalShellViewModel.usersOfWorkspaceToEdit,
+                                        exportWorkspaceState = globalShellViewModel.exportWorkspaceState,
+                                        onExportWorkspace = globalShellViewModel::exportWorkspace,
+                                        onResetExportState = globalShellViewModel::resetExportState,
+                                        userSearchQuery = globalShellViewModel.userSearchQuery,
+                                        userSearchResults = globalShellViewModel.userSearchResults,
+                                        onUserSearchQueryChange = globalShellViewModel::onUserSearchQueryChange,
+                                        onUserSuggestionSelect = globalShellViewModel::onUserSuggestionSelect,
+                                        onVersionEasterEgg = {
+                                            globalShellViewModel.createVersionEasterEgg { id, title ->
+                                                globalShellViewModel.hideSettings()
+                                                navigationController.navigateToNoteMobile(id, title)
+                                            }
                                         },
                                     )
-                                    .pointerHoverIcon(PointerIcon.Crosshair),
-                            )
+                                }
 
-                            Box(
-                                modifier = Modifier
-                                    .height(60.dp)
-                                    .width(24.dp)
-                                    .align(alignment = Alignment.CenterStart)
-                                    .clip(RoundedCornerShape(100))
-                                    .clickable(onClick = globalShellViewModel::toggleSideMenu)
-                                    .padding(top = 10.dp, bottom = 10.dp, start = 8.dp, end = 16.dp)
-                                    .draggable(
-                                        orientation = Orientation.Horizontal,
-                                        state = rememberDraggableState { delta ->
-                                            globalShellViewModel.moveSideMenu(sideMenuWidth + delta)
-                                        },
-                                        onDragStopped = {
-                                            globalShellViewModel.saveMenuWidth()
-                                        },
+                                val showSearchState by globalShellViewModel
+                                    .showSearchDialog
+                                    .collectAsState()
+
+                                if (showSearchState) {
+                                    LaunchedEffect(true) {
+                                        searchViewModel.init()
+                                    }
+
+                                    SearchDialog(
+                                        searchState = searchViewModel.searchState,
+                                        searchResults = searchViewModel.queryResults,
+                                        onSearchType = searchViewModel::onSearchType,
+                                        onDismissRequest = globalShellViewModel::hideSearch,
+                                        documentClick = navigationController::navigateToNoteMobile,
+                                        onFolderClick = navigationController::navigateToFolder,
+                                        presentationClick = navigationController::navigateToNoteWithPresentation,
+                                        documentContentClick = navigationController::navigateToNoteWithSearch
                                     )
-                                    .pointerHoverIcon(PointerIcon.Crosshair),
-                            ) {
-                                RoundedVerticalDivider(
-                                    modifier = Modifier.height(60.dp).align(Alignment.Center),
-                                    thickness = 4.dp,
-                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4F)
+                                }
+
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxHeight()
+                                        .width(10.dp)
+                                        .align(alignment = Alignment.CenterStart)
+                                        .draggable(
+                                            orientation = Orientation.Horizontal,
+                                            state = rememberDraggableState { delta ->
+                                                globalShellViewModel.moveSideMenu(sideMenuWidth + delta)
+                                            },
+                                            onDragStopped = {
+                                                globalShellViewModel.saveMenuWidth()
+                                            },
+                                        )
+                                        .pointerHoverIcon(PointerIcon.Crosshair),
                                 )
+
+                                Box(
+                                    modifier = Modifier
+                                        .height(60.dp)
+                                        .width(24.dp)
+                                        .align(alignment = Alignment.CenterStart)
+                                        .clip(RoundedCornerShape(100))
+                                        .clickable(onClick = globalShellViewModel::toggleSideMenu)
+                                        .padding(top = 10.dp, bottom = 10.dp, start = 8.dp, end = 16.dp)
+                                        .draggable(
+                                            orientation = Orientation.Horizontal,
+                                            state = rememberDraggableState { delta ->
+                                                globalShellViewModel.moveSideMenu(sideMenuWidth + delta)
+                                            },
+                                            onDragStopped = {
+                                                globalShellViewModel.saveMenuWidth()
+                                            },
+                                        )
+                                        .pointerHoverIcon(PointerIcon.Crosshair),
+                                ) {
+                                    RoundedVerticalDivider(
+                                        modifier = Modifier.height(60.dp).align(Alignment.Center),
+                                        thickness = 4.dp,
+                                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4F)
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
+
+            // Claude Code at work: the banner with the button to stop it, over everything.
+            ClaudeCodeAiModeBanner(
+                modifier = Modifier.align(Alignment.TopCenter).padding(top = 12.dp)
+            )
         }
     }
 }

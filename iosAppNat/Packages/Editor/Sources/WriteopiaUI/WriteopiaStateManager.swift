@@ -34,6 +34,10 @@ public final class WriteopiaStateManager {
     public internal(set) var currentStory: StoryState = .empty
     /// False while the document is locked: text, checkboxes, dragging and selection are disabled.
     public var isEditable = true
+    /// True while Claude Code writes (AI mode): the person can't type, click into the text nor
+    /// undo, but the content still changes, written by `LiveWriter`. Unlike `isEditable`, it
+    /// doesn't stop the changes that come from the code.
+    public var isInputLocked = false
     public var fontFamily: EditorFont = .system
     /// Position after which a dragged step would be dropped.
     public private(set) var dragPosition: String?
@@ -198,6 +202,11 @@ public final class WriteopiaStateManager {
 
     private func scrollToActiveMatch() {
         guard let stepId = activeSearchStepId else { return }
+        scrollRequest = ScrollRequest(stepId: stepId)
+    }
+
+    /// Brings the step with `stepId` into view, like the text Claude Code is writing.
+    public func scroll(toStepId stepId: String) {
         scrollRequest = ScrollRequest(stepId: stepId)
     }
 
@@ -1103,13 +1112,13 @@ public final class WriteopiaStateManager {
 
     /// Goes back to the document as it was before the last edit, like `undo` of the SDK.
     public func undo() {
-        guard isEditable, let state = backstack.previousState(current: currentStory) else { return }
+        guard isEditable, !isInputLocked, let state = backstack.previousState(current: currentStory) else { return }
         restore(state)
     }
 
     /// Reverts the last undo, like `redo` of the SDK.
     public func redo() {
-        guard isEditable, let state = backstack.nextState(current: currentStory) else { return }
+        guard isEditable, !isInputLocked, let state = backstack.nextState(current: currentStory) else { return }
         restore(state)
     }
 

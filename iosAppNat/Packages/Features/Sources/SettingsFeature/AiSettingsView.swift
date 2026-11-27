@@ -1,3 +1,4 @@
+import ClaudeCodeFeature
 import Observation
 import SetupFeature
 import SwiftUI
@@ -46,6 +47,9 @@ struct AiSettingsView: View {
     var body: some View {
         @Bindable var session = viewModel.session
         WrForm {
+            // First: Claude Code, only on the Mac, which runs its server; nothing on iOS.
+            ClaudeCodeSettingsSection()
+
             appleIntelligenceSection
 
             Section {

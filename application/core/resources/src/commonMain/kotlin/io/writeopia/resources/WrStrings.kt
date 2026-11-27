@@ -2,6 +2,15 @@ package io.writeopia.resources
 
 import androidx.compose.runtime.Composable
 import org.jetbrains.compose.resources.stringResource
+import writeopia.application.core.resources.generated.resources.claude_code_writing
+import writeopia.application.core.resources.generated.resources.claude_code_working
+import writeopia.application.core.resources.generated.resources.claude_code_stop
+import writeopia.application.core.resources.generated.resources.claude_code_title
+import writeopia.application.core.resources.generated.resources.claude_code_description
+import writeopia.application.core.resources.generated.resources.claude_code_enable
+import writeopia.application.core.resources.generated.resources.claude_code_command_hint
+import writeopia.application.core.resources.generated.resources.claude_code_copy
+import writeopia.application.core.resources.generated.resources.claude_code_copied
 import writeopia.application.core.resources.generated.resources.Res
 import writeopia.application.core.resources.generated.resources.accent_color
 import writeopia.application.core.resources.generated.resources.settings_workspace_content
@@ -1721,4 +1730,31 @@ object WrStrings {
 
     @Composable
     fun googleSignUpMessage(email: String) = stringResource(Res.string.google_signup_message, email)
+
+    @Composable
+    fun claudeCodeTitle() = stringResource(Res.string.claude_code_title)
+
+    @Composable
+    fun claudeCodeDescription() = stringResource(Res.string.claude_code_description)
+
+    @Composable
+    fun claudeCodeEnable() = stringResource(Res.string.claude_code_enable)
+
+    @Composable
+    fun claudeCodeCommandHint() = stringResource(Res.string.claude_code_command_hint)
+
+    @Composable
+    fun claudeCodeCopy() = stringResource(Res.string.claude_code_copy)
+
+    @Composable
+    fun claudeCodeCopied() = stringResource(Res.string.claude_code_copied)
+
+    @Composable
+    fun claudeCodeWriting() = stringResource(Res.string.claude_code_writing)
+
+    @Composable
+    fun claudeCodeWorking() = stringResource(Res.string.claude_code_working)
+
+    @Composable
+    fun claudeCodeStop() = stringResource(Res.string.claude_code_stop)
 }

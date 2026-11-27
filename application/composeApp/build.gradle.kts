@@ -88,6 +88,7 @@ kotlin {
                 implementation(project(":application:core:models"))
                 implementation(project(":application:core:genai"))
                 implementation(project(":application:features:writing_agent"))
+                implementation(project(":application:features:claude_code"))
                 implementation(project(":application:features:update"))
                 implementation(project(":plugins:writeopia_presentation"))
                 implementation(compose.desktop.currentOs)

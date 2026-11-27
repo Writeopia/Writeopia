@@ -2,6 +2,7 @@
 
 package io.writeopia.editor.features.editor.viewmodel
 
+import io.writeopia.claudecode.ClaudeCodeBridge
 import io.writeopia.sdk.utils.iterables.Rank
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.lifecycle.ViewModel
@@ -264,6 +265,20 @@ class NoteEditorKmpViewModel(
     }
 
     init {
+        // While Claude Code writes, the writing agent stays quiet: no suggestions, no offers. The
+        // first value counts too: Claude opens editors while AI mode is already on.
+        viewModelScope.launch(Dispatchers.Default) {
+            ClaudeCodeBridge.aiMode.map { mode -> mode.isOn }.distinctUntilChanged().collect { aiModeOn ->
+                val agent = writingAgent ?: return@collect
+                if (aiModeOn) {
+                    agent.stop()
+                    agent.dismiss()
+                } else {
+                    agent.start()
+                }
+            }
+        }
+
         viewModelScope.launch(Dispatchers.Default) {
             writeopiaManager.linkCardCreated.collect { creation ->
                 launch { describeLinkCard(creation) }
@@ -811,6 +826,38 @@ class NoteEditorKmpViewModel(
     override fun generateHeaderImage() {
         if (!isEditable.value) return
         headerImagesController.generate()
+    }
+
+    override suspend fun drawHeaderImage(instructions: String): Result<String> {
+        val source = resolveHeaderImages()
+            ?: return Result.failure(
+                Exception(
+                    "Header pictures are drawn by the Writeopia cloud: sign in to an online workspace with cloud AI to use them."
+                )
+            )
+        val workspaceId = authRepository.getWorkspace()?.id
+            ?: return Result.failure(Exception("Writeopia has no workspace open."))
+        val title = writeopiaManager.currentStory.value.stories.values
+            .firstOrNull { step -> step.type == StoryTypes.TITLE.type }
+            ?.text
+            ?: writeopiaManager.documentInfo.value.title
+        val text = writeopiaManager.getDocumentText().take(WritingAgentController.DOCUMENT_TEXT_LIMIT)
+
+        val url = when (val drawn = source.generate(workspaceId, title, text, instructions)) {
+            is ResultData.Complete -> drawn.data
+            is ResultData.Error -> return Result.failure(
+                Exception("The cloud AI drew no picture: ${drawn.exception?.message ?: "no reason given"}")
+            )
+            else -> return Result.failure(Exception("The cloud AI drew no picture."))
+        }
+
+        return when (val saved = source.save(workspaceId, url)) {
+            is ResultData.Complete -> Result.success(url)
+            is ResultData.Error -> Result.failure(
+                Exception("The picture could not be kept with the workspace: ${saved.exception?.message ?: "no reason given"}")
+            )
+            else -> Result.failure(Exception("The picture could not be kept with the workspace."))
+        }
     }
 
     override fun approveHeaderImage() {

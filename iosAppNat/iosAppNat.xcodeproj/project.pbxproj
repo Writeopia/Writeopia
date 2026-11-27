@@ -13,6 +13,7 @@
 		A10000000000000000001003 /* DocumentsFeature in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000002003 /* DocumentsFeature */; };
 		A10000000000000000001004 /* SearchFeature in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000002004 /* SearchFeature */; };
 		A10000000000000000001005 /* SettingsFeature in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000002005 /* SettingsFeature */; };
+		A10000000000000000001C1D /* ClaudeCodeFeature in Frameworks */ = {isa = PBXBuildFile; productRef = A10000000000000000002C1D /* ClaudeCodeFeature */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -67,6 +68,7 @@
 				A10000000000000000001003 /* DocumentsFeature in Frameworks */,
 				A10000000000000000001004 /* SearchFeature in Frameworks */,
 				A10000000000000000001005 /* SettingsFeature in Frameworks */,
+				A10000000000000000001C1D /* ClaudeCodeFeature in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -132,6 +134,7 @@
 				A10000000000000000002003 /* DocumentsFeature */,
 				A10000000000000000002004 /* SearchFeature */,
 				A10000000000000000002005 /* SettingsFeature */,
+				A10000000000000000002C1D /* ClaudeCodeFeature */,
 			);
 			productName = iosAppNat;
 			productReference = 762AEF3B306878D000CD91D1 /* Writeopia.app */;
@@ -388,6 +391,7 @@
 				DEVELOPMENT_TEAM = 955489N3YY;
 				"ENABLE_APP_SANDBOX[sdk=macosx*]" = YES;
 				"ENABLE_HARDENED_RUNTIME[sdk=macosx*]" = YES;
+				"ENABLE_INCOMING_NETWORK_CONNECTIONS[sdk=macosx*]" = YES;
 				"ENABLE_OUTGOING_NETWORK_CONNECTIONS[sdk=macosx*]" = YES;
 				ENABLE_PREVIEWS = YES;
 				"ENABLE_USER_SELECTED_FILES[sdk=macosx*]" = readwrite;
@@ -441,6 +445,7 @@
 				DEVELOPMENT_TEAM = 955489N3YY;
 				"ENABLE_APP_SANDBOX[sdk=macosx*]" = YES;
 				"ENABLE_HARDENED_RUNTIME[sdk=macosx*]" = YES;
+				"ENABLE_INCOMING_NETWORK_CONNECTIONS[sdk=macosx*]" = YES;
 				"ENABLE_OUTGOING_NETWORK_CONNECTIONS[sdk=macosx*]" = YES;
 				ENABLE_PREVIEWS = YES;
 				"ENABLE_USER_SELECTED_FILES[sdk=macosx*]" = readwrite;
@@ -586,6 +591,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = A1000000000000000000FEA7 /* XCLocalSwiftPackageReference "Packages/Features" */;
 			productName = SettingsFeature;
+		};
+		A10000000000000000002C1D /* ClaudeCodeFeature */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1000000000000000000FEA7 /* XCLocalSwiftPackageReference "Packages/Features" */;
+			productName = ClaudeCodeFeature;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

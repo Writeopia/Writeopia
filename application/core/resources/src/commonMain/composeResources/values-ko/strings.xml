@@ -446,4 +446,13 @@
   <string name="google_signup_message">%1$s 계정으로 Writeopia에 처음 로그인합니다. 계정을 만들 사용자 이름을 선택하세요.</string>
   <string name="new_to_writeopia">Writeopia가 처음이신가요?</string>
   <string name="create_an_account">계정 만들기</string>
+  <string name="claude_code_title">Claude Code</string>
+  <string name="claude_code_description">Claude Code가 이 앱에서 문서를 작성하게 합니다. 글이 작성되는 대로 화면에 나타납니다. 문서를 만들고 내용을 추가할 수만 있으며, 기존 내용을 바꾸거나 지울 수는 없습니다.</string>
+  <string name="claude_code_enable">Claude Code의 작성 허용</string>
+  <string name="claude_code_command_hint">Claude Code를 연결하려면 터미널에서 이것을 한 번 실행하세요:</string>
+  <string name="claude_code_copy">복사</string>
+  <string name="claude_code_copied">복사됨</string>
+  <string name="claude_code_writing">Claude Code가 작성 중입니다…</string>
+  <string name="claude_code_working">Claude Code가 작업 중입니다…</string>
+  <string name="claude_code_stop">중지</string>
 </resources>
